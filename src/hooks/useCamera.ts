@@ -1,39 +1,91 @@
-import { useState, useEffect } from 'react';
-// import * as ImagePicker from 'expo-image-picker'; // Placeholder for expo-image-picker
+import { useState, useCallback } from 'react';
+import * as ImagePicker from 'expo-image-picker';
 
-export const useCamera = () => {
+interface CameraOptions {
+  aspect?: [number, number];
+  quality?: number;
+}
+
+export const useCamera = (options: CameraOptions = {}) => {
+  const { aspect = [1, 1], quality = 0.8 } = options;
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      // Placeholder for camera permission request
-      // const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      // setHasPermission(status === 'granted');
-      console.log("Placeholder for camera permission request");
-      setHasPermission(true); // Assuming permission is granted for now
-    })();
+  const requestPermissions = useCallback(async (): Promise<boolean> => {
+    const { status: cameraStatus } =
+      await ImagePicker.requestCameraPermissionsAsync();
+    const { status: mediaStatus } =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const granted =
+      cameraStatus === 'granted' && mediaStatus === 'granted';
+    setHasPermission(granted);
+    return granted;
   }, []);
 
-  const takePicture = async () => {
-    // Placeholder for actual camera capture logic
-    // if (hasPermission && cameraRef.current) {
-    //   const photo = await cameraRef.current.takePictureAsync();
-    //   setCapturedImage(photo.uri);
-    // }
-    console.log("Placeholder for taking a picture");
-    setCapturedImage('file://path/to/mock/image.jpg'); // Mock image URI
-  };
+  const takePicture = useCallback(async (): Promise<string | null> => {
+    setIsLoading(true);
+    try {
+      if (hasPermission !== true) {
+        const granted = await requestPermissions();
+        if (!granted) return null;
+      }
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect,
+        quality,
+      });
+      if (!result.canceled && result.assets.length > 0) {
+        const uri = result.assets[0].uri;
+        setCapturedImage(uri);
+        return uri;
+      }
+    } catch (error) {
+      console.error('[useCamera] takePicture error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+    return null;
+  }, [hasPermission, requestPermissions, aspect, quality]);
 
-  const resetCapturedImage = () => {
+  const pickFromLibrary = useCallback(async (): Promise<string | null> => {
+    setIsLoading(true);
+    try {
+      if (hasPermission !== true) {
+        const granted = await requestPermissions();
+        if (!granted) return null;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect,
+        quality,
+      });
+      if (!result.canceled && result.assets.length > 0) {
+        const uri = result.assets[0].uri;
+        setCapturedImage(uri);
+        return uri;
+      }
+    } catch (error) {
+      console.error('[useCamera] pickFromLibrary error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+    return null;
+  }, [hasPermission, requestPermissions, aspect, quality]);
+
+  const resetCapturedImage = useCallback(() => {
     setCapturedImage(null);
-  };
+  }, []);
 
   return {
     hasPermission,
     capturedImage,
+    isLoading,
     takePicture,
+    pickFromLibrary,
     resetCapturedImage,
-    // cameraRef // Will need to be passed from the component using the hook
+    requestPermissions,
   };
 };
