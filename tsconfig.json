@@ -3,6 +3,7 @@
   "compilerOptions": {
     "strict": true,
     "skipLibCheck": true,
+    "jsx": "react-native",
     "baseUrl": ".",
     "lib": ["ES2015", "ES2017", "DOM"],
     "paths": {
