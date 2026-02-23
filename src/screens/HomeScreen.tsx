@@ -38,6 +38,21 @@ export default function HomeScreen({ navigation }: Props) {
                 </View>
             </TouchableOpacity>
 
+            {/* Search Button */}
+            <TouchableOpacity
+                style={styles.secondaryButton}
+                onPress={() => navigation.navigate('Search')}
+            >
+                <View style={styles.secondaryButtonContent}>
+                    <Text style={styles.secondaryIcon}>🔍</Text>
+                    <View style={styles.secondaryTextContainer}>
+                        <Text style={styles.secondaryTitle}>Search</Text>
+                        <Text style={styles.secondarySubtitle}>Find courses and lessons</Text>
+                    </View>
+                    <Text style={styles.arrow}>›</Text>
+                </View>
+            </TouchableOpacity>
+
             {/* Secondary Buttons */}
             <View style={styles.secondaryButtonsContainer}>
                 {/* Profile Button */}

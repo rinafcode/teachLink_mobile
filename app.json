@@ -58,7 +58,8 @@
           "sounds": [],
           "mode": "production"
         }
-      ]
+      ],
+      "expo-speech-recognition"
     ],
     "notification": {
       "icon": "./assets/notification-icon.png",
