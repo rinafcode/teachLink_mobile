@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Import screens
 import HomeScreen from '../screens/HomeScreen';
+import SearchScreen from '../screens/SearchScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import CourseViewerScreen from '../screens/CourseViewerScreen';
@@ -22,6 +23,11 @@ export default function AppNavigator() {
                         name="Home"
                         component={HomeScreen}
                         options={{ title: 'TeachLink' }}
+                    />
+                    <Stack.Screen
+                        name="Search"
+                        component={SearchScreen}
+                        options={{ title: 'Search' }}
                     />
                     <Stack.Screen name="Profile" component={ProfileScreen} />
                     <Stack.Screen name="Settings" component={SettingsScreen} />
