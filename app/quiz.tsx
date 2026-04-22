@@ -1,7 +1,7 @@
-import React from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import React from 'react';
 import MobileQuizManager from '../src/components/mobile/MobileQuizManager';
-import { Quiz, Course } from '../src/types/course';
+import { Course, Quiz } from '../src/types/course';
 
 export default function QuizScreen() {
   const router = useRouter();

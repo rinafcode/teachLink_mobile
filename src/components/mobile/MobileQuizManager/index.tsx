@@ -1,17 +1,15 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Quiz, Course } from '../../../types/course';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../../navigation/types';
 import { useQuizStore } from '../../../store/quizStore';
+import { Course, Quiz } from '../../../types/course';
 import PrimaryButton from '../../common/PrimaryButton';
 import QuizCarousel from './QuizCarousel';
 import QuizProgress from './QuizProgress';

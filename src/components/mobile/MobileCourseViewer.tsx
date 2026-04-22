@@ -1,32 +1,30 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  Modal,
-  TextInput,
-  ScrollView,
-  Alert,
-  ActivityIndicator,
-  StyleSheet,
+    ActivityIndicator,
+    Alert,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Course, Lesson, Note, Quiz } from '../../types/course';
-import { RootStackParamList } from '../../navigation/types';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useCourseProgress } from '../../hooks/useCourseProgress';
+import { Course, Lesson, Note } from '../../types/course';
+import logger from '../../utils/logger';
+import PrimaryButton from '../common/PrimaryButton';
+import BookmarkButton from './BookmarkButton';
 import LessonCarousel from './LessonCarousel';
 import MobileSyllabus from './MobileSyllabus';
-import BookmarkButton from './BookmarkButton';
-import PrimaryButton from '../common/PrimaryButton';
-import logger from '../../utils/logger';
 
 interface MobileCourseViewerProps {
   course: Course;
   initialLessonId?: string;
   initialViewMode?: ViewMode;
   onBack?: () => void;
-  navigation?: NativeStackNavigationProp<RootStackParamList>;
+  navigation?: any; // Using any type to work with expo-router navigation adapter
 }
 
 type ViewMode = 'lesson' | 'syllabus' | 'notes';
