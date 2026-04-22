@@ -1,6 +1,5 @@
+import { Stack } from 'expo-router';
 import React from 'react';
-import { View } from 'react-native';
-import { SwipeableNavigation } from '../src/components/mobile/SwipeableNavigation';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 import "../global.css"; // NativeWind CSS
@@ -10,7 +9,15 @@ export default function RootLayout() {
   return (
     <AnalyticsProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <SwipeableNavigation />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="search" options={{ headerShown: false }} />
+          <Stack.Screen name="profile/[userId]" options={{ headerShown: false }} />
+          <Stack.Screen name="settings" options={{ headerShown: false }} />
+          <Stack.Screen name="course-viewer" options={{ headerShown: false }} />
+          <Stack.Screen name="quiz" options={{ headerShown: false }} />
+          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+        </Stack>
       </GestureHandlerRootView>
     </AnalyticsProvider>
   );

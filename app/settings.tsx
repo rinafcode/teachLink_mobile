@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Switch } from 'react-native';
-import { useAppStore } from '../store';
+import { useAppStore } from '../src/store';
 
 export default function SettingsScreen() {
     const { theme, setTheme } = useAppStore();
