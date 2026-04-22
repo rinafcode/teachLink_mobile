@@ -1,20 +1,22 @@
-import React, { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
+import React, { useEffect } from 'react';
 import { LogBox } from 'react-native';
-import AppNavigator from './src/navigation/AppNavigator';
-import { useAppStore } from './src/store';
-import socketService from './src/services/socket';
-import { ErrorBoundary } from './src/components/common/ErrorBoundary';
 import "./global.css";
+import { ErrorBoundary } from './src/components/common/ErrorBoundary';
+import AppNavigator from './src/navigation/AppNavigator';
+import socketService from './src/services/socket';
+import { useAppStore } from './src/store';
 
 // Notification imports
 import { setupNotificationNavigation } from './src/navigation/linking';
-import { handleNotificationReceived } from './src/utils/notificationHandlers';
+import apiClient from './src/services/api/axios.config';
+import requestQueue from './src/services/api/requestQueue';
 import {
-  addNotificationReceivedListener,
-  getLastNotificationResponse,
-  removeNotificationListener,
+    addNotificationReceivedListener,
+    getLastNotificationResponse,
+    removeNotificationListener,
 } from './src/services/pushNotifications';
+import { handleNotificationReceived } from './src/utils/notificationHandlers';
 
 // Enable error logging to console (visible in Metro bundler)
 if (__DEV__) {
@@ -37,6 +39,9 @@ export default function App() {
   useEffect(() => {
     // Connect to socket when app starts
     socketService.connect();
+
+    // Start request queue monitoring
+    requestQueue.startMonitoring(apiClient);
 
     // Set up notification navigation handler
     const notificationCleanup = setupNotificationNavigation();

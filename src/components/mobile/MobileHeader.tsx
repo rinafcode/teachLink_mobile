@@ -1,9 +1,10 @@
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { useSafeArea } from '../../hooks/useSafeArea';
-import { Menu, ArrowLeft, Bell } from 'lucide-react-native';
-import { useNavigation } from '@react-navigation/native';
 import { DrawerNavigationProp } from '@react-navigation/drawer';
+import { useNavigation } from '@react-navigation/native';
+import { ArrowLeft, Bell, Menu } from 'lucide-react-native';
+import React from 'react';
+import { Text, TouchableOpacity, View } from 'react-native';
+import { usePendingRequests } from '../../hooks/usePendingRequests';
+import { useSafeArea } from '../../hooks/useSafeArea';
 
 interface MobileHeaderProps {
     title: string;
@@ -14,6 +15,7 @@ interface MobileHeaderProps {
 export const MobileHeader = ({ title, showBack = false, rightAction }: MobileHeaderProps) => {
     const { top } = useSafeArea();
     const navigation = useNavigation<DrawerNavigationProp<any>>();
+    const pendingCount = usePendingRequests();
 
     return (
         <View
@@ -46,13 +48,22 @@ export const MobileHeader = ({ title, showBack = false, rightAction }: MobileHea
 
             <View className="flex-row items-center">
                 {rightAction || (
-                    <TouchableOpacity 
-                        className="p-2"
-                        accessibilityRole="button"
-                        accessibilityLabel="View notifications"
-                    >
-                        <Bell color="#4B5563" size={20} />
-                    </TouchableOpacity>
+                    <View className="relative">
+                        <TouchableOpacity 
+                            className="p-2"
+                            accessibilityRole="button"
+                            accessibilityLabel="View notifications"
+                        >
+                            <Bell color="#4B5563" size={20} />
+                        </TouchableOpacity>
+                        {pendingCount > 0 && (
+                            <View className="absolute -top-1 -right-1 bg-red-500 rounded-full min-w-[18px] h-[18px] items-center justify-center">
+                                <Text className="text-white text-xs font-bold">
+                                    {pendingCount > 99 ? '99+' : pendingCount}
+                                </Text>
+                            </View>
+                        )}
+                    </View>
                 )}
             </View>
         </View>

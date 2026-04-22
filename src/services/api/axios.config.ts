@@ -7,6 +7,7 @@ import {
   getRefreshToken,
   saveTokens,
 } from "../secureStorage";
+import requestQueue from "./requestQueue";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -85,7 +86,13 @@ apiClient.interceptors.response.use(
       }
     }
 
-    const status = error.response?.status;
+    // ── Queue network errors for retry ───────────────────────────────────
+    if (error.code === "ERR_NETWORK" || error.message === "Network Error") {
+      if (originalRequest) {
+        await requestQueue.addToQueue(originalRequest);
+      }
+      return Promise.reject(error);
+    }
 
     // ─── 401: Token refresh flow ───────────────────────────────────────────
 
