@@ -9,6 +9,27 @@ type NavigationRef = {
 
 let navigationRef: NavigationRef | null = null;
 
+function isNotificationType(value: unknown): value is NotificationType {
+  return typeof value === 'string' && Object.values(NotificationType).includes(value as NotificationType);
+}
+
+function toNotificationData(value: unknown): NotificationData | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+
+  const maybeData = value as Record<string, unknown>;
+  if (!isNotificationType(maybeData.type)) return undefined;
+
+  return {
+    type: maybeData.type,
+    courseId: typeof maybeData.courseId === 'string' ? maybeData.courseId : undefined,
+    conversationId:
+      typeof maybeData.conversationId === 'string' ? maybeData.conversationId : undefined,
+    achievementId: typeof maybeData.achievementId === 'string' ? maybeData.achievementId : undefined,
+    postId: typeof maybeData.postId === 'string' ? maybeData.postId : undefined,
+    deepLink: typeof maybeData.deepLink === 'string' ? maybeData.deepLink : undefined,
+  };
+}
+
 /**
  * Set the navigation reference for deep linking
  * Call this from your root navigation container
@@ -23,7 +44,7 @@ export function setNavigationRef(ref: NavigationRef): void {
 export function handleNotificationResponse(
   response: Notifications.NotificationResponse
 ): void {
-  const data = response.notification.request.content.data as NotificationData | undefined;
+  const data = toNotificationData(response.notification.request.content.data);
 
   if (!data?.type) {
     console.warn('Notification received without type data');
@@ -152,7 +173,7 @@ export function handleNotificationReceived(
   notification: Notifications.Notification
 ): void {
   const { title, body, data } = notification.request.content;
-  const notificationData = data as NotificationData | undefined;
+  const notificationData = toNotificationData(data);
 
   // Check if this notification type is enabled
   if (notificationData?.type) {

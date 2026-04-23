@@ -79,7 +79,10 @@ describe('pushNotifications service', () => {
         type: NotificationType.LEARNING_REMINDER,
       };
 
-      const trigger = { seconds: 60 };
+      const trigger: Notifications.TimeIntervalTriggerInput = {
+        type: 'timeInterval' as unknown as Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 60,
+      };
 
       await scheduleLocalNotification(
         'Time to Learn',
