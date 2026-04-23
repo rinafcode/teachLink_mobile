@@ -1,5 +1,12 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { Component, ErrorInfo, ReactNode } from "react";
+import {
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import crashReportingService from "../../services/crashReporting";
 
 interface Props {
   children: ReactNode;
@@ -32,10 +39,16 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log error to console (visible in Metro bundler)
-    console.error('ErrorBoundary caught an error:', error);
-    console.error('Error Info:', errorInfo);
-    console.error('Component Stack:', errorInfo.componentStack);
-    
+    console.error("ErrorBoundary caught an error:", error);
+    console.error("Error Info:", errorInfo);
+    console.error("Component Stack:", errorInfo.componentStack);
+
+    // Report error to crash reporting service
+    crashReportingService.reportError(error, "ErrorBoundary", {
+      componentStack: errorInfo.componentStack,
+      isFatal: true,
+    });
+
     this.setState({
       error,
       errorInfo,
@@ -60,14 +73,16 @@ export class ErrorBoundary extends Component<Props, State> {
         <View style={styles.container}>
           <View style={styles.header}>
             <Text style={styles.title}>⚠️ Something went wrong</Text>
-            <Text style={styles.subtitle}>Check your PC terminal for details</Text>
+            <Text style={styles.subtitle}>
+              Check your PC terminal for details
+            </Text>
           </View>
 
           <ScrollView style={styles.scrollView}>
             <View style={styles.errorSection}>
               <Text style={styles.sectionTitle}>Error Message:</Text>
               <Text style={styles.errorText}>
-                {this.state.error?.toString() || 'Unknown error'}
+                {this.state.error?.toString() || "Unknown error"}
               </Text>
             </View>
 
@@ -102,24 +117,24 @@ export class ErrorBoundary extends Component<Props, State> {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     padding: 20,
   },
   header: {
     marginBottom: 20,
     paddingBottom: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: "#e0e0e0",
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#d32f2f',
+    fontWeight: "bold",
+    color: "#d32f2f",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
   },
   scrollView: {
     flex: 1,
@@ -128,35 +143,35 @@ const styles = StyleSheet.create({
   errorSection: {
     marginBottom: 20,
     padding: 15,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
     borderRadius: 8,
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: "600",
+    color: "#333",
     marginBottom: 8,
   },
   errorText: {
     fontSize: 14,
-    color: '#d32f2f',
-    fontFamily: 'monospace',
+    color: "#d32f2f",
+    fontFamily: "monospace",
   },
   stackText: {
     fontSize: 12,
-    color: '#666',
-    fontFamily: 'monospace',
+    color: "#666",
+    fontFamily: "monospace",
   },
   button: {
-    backgroundColor: '#00BFFF',
+    backgroundColor: "#00BFFF",
     padding: 15,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   buttonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });
 
