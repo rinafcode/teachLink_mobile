@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/types';
+import React, { useEffect } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Skeleton } from '../components/ui/Skeleton';
 import { sampleCourse } from '../data/sampleCourse';
+import { RootStackParamList } from '../navigation/types';
 import { useAppStore } from '../store';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
@@ -42,15 +43,19 @@ export default function HomeScreen({ navigation }: Props) {
 
     if (isLoading) {
         return (
-            <View style={styles.skeletonContainer}>
-                <ActivityIndicator size="large" color="#19c3e6" />
-                <View style={styles.skeletonTextContainer}>
-                    <View style={styles.skeletonTitle} />
-                    <View style={styles.skeletonSubtitle} />
+            <ScrollView style={homeStyles.skeletonContainer}>
+                <View style={homeStyles.headerSkeleton}>
+                    <Skeleton variant="circular" width={80} height={80} />
+                    <Skeleton width="60%" height={28} borderRadius={8} style={{ marginTop: 16 }} />
+                    <Skeleton width="40%" height={16} borderRadius={4} style={{ marginTop: 8 }} />
                 </View>
-                <View style={styles.skeletonCard} />
-                <View style={styles.skeletonCard} />
-            </View>
+                <View style={homeStyles.buttonsSkeleton}>
+                    <Skeleton height={70} borderRadius={12} />
+                    <Skeleton height={70} borderRadius={12} style={{ marginTop: 12 }} />
+                    <Skeleton height={70} borderRadius={12} style={{ marginTop: 12 }} />
+                    <Skeleton height={70} borderRadius={12} style={{ marginTop: 12 }} />
+                </View>
+            </ScrollView>
         );
     }
 
@@ -151,39 +156,6 @@ export default function HomeScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-    skeletonContainer: {
-        flex: 1,
-        padding: 24,
-        alignItems: 'center',
-        backgroundColor: '#F9FAFB',
-        marginTop: 40,
-    },
-    skeletonTextContainer: {
-        alignItems: 'center',
-        marginTop: 20,
-        marginBottom: 30,
-        width: '100%',
-    },
-    skeletonTitle: {
-        width: '70%',
-        height: 28,
-        backgroundColor: '#E5E7EB',
-        borderRadius: 8,
-        marginBottom: 12,
-    },
-    skeletonSubtitle: {
-        width: '50%',
-        height: 16,
-        backgroundColor: '#E5E7EB',
-        borderRadius: 4,
-    },
-    skeletonCard: {
-        width: '100%',
-        height: 80,
-        backgroundColor: '#E5E7EB',
-        borderRadius: 12,
-        marginBottom: 16,
-    },
     scrollContent: {
         flexGrow: 1,
         paddingBottom: 30,
@@ -289,5 +261,19 @@ const styles = StyleSheet.create({
         fontSize: 24,
         color: '#d1d5db',
         marginLeft: 8,
+    },
+});
+
+const homeStyles = StyleSheet.create({
+    skeletonContainer: {
+        flex: 1,
+        backgroundColor: '#F9FAFB',
+    },
+    headerSkeleton: {
+        alignItems: 'center',
+        paddingVertical: 40,
+    },
+    buttonsSkeleton: {
+        paddingHorizontal: 16,
     },
 });

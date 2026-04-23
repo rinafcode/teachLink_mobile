@@ -4,6 +4,7 @@
     "strict": true,
     "skipLibCheck": true,
     "jsx": "react-native",
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "lib": ["ES2015", "ES2017", "DOM"],
     "paths": {
