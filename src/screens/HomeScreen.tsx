@@ -1,12 +1,59 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { sampleCourse } from '../data/sampleCourse';
+import { useAppStore } from '../store';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
 export default function HomeScreen({ navigation }: Props) {
+    const { isLoading, setLoading } = useAppStore();
+
+    const fetchHomeData = () => {
+        setLoading(true);
+        
+        const timeoutId = setTimeout(() => {
+            Alert.alert(
+                'Request Timeout',
+                'The server took too long to respond. Please check your connection.',
+                [
+                    { text: 'Retry', onPress: fetchHomeData },
+                    { text: 'Cancel', onPress: () => setLoading(false), style: 'cancel' }
+                ]
+            );
+        }, 10000);
+
+        const successId = setTimeout(() => {
+            clearTimeout(timeoutId);
+            setLoading(false);
+        }, 1500);
+
+        return () => {
+            clearTimeout(timeoutId);
+            clearTimeout(successId);
+        };
+    };
+
+    useEffect(() => {
+        const cleanup = fetchHomeData();
+        return cleanup;
+    }, []);
+
+    if (isLoading) {
+        return (
+            <View style={styles.skeletonContainer}>
+                <ActivityIndicator size="large" color="#19c3e6" />
+                <View style={styles.skeletonTextContainer}>
+                    <View style={styles.skeletonTitle} />
+                    <View style={styles.skeletonSubtitle} />
+                </View>
+                <View style={styles.skeletonCard} />
+                <View style={styles.skeletonCard} />
+            </View>
+        );
+    }
+
     return (
         <ScrollView 
             className="flex-1 bg-gray-50 dark:bg-slate-800"
@@ -104,6 +151,39 @@ export default function HomeScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+    skeletonContainer: {
+        flex: 1,
+        padding: 24,
+        alignItems: 'center',
+        backgroundColor: '#F9FAFB',
+        marginTop: 40,
+    },
+    skeletonTextContainer: {
+        alignItems: 'center',
+        marginTop: 20,
+        marginBottom: 30,
+        width: '100%',
+    },
+    skeletonTitle: {
+        width: '70%',
+        height: 28,
+        backgroundColor: '#E5E7EB',
+        borderRadius: 8,
+        marginBottom: 12,
+    },
+    skeletonSubtitle: {
+        width: '50%',
+        height: 16,
+        backgroundColor: '#E5E7EB',
+        borderRadius: 4,
+    },
+    skeletonCard: {
+        width: '100%',
+        height: 80,
+        backgroundColor: '#E5E7EB',
+        borderRadius: 12,
+        marginBottom: 16,
+    },
     scrollContent: {
         flexGrow: 1,
         paddingBottom: 30,
@@ -209,45 +289,5 @@ const styles = StyleSheet.create({
         fontSize: 24,
         color: '#d1d5db',
         marginLeft: 8,
-    },
-    infoCardsContainer: {
-        marginHorizontal: 16,
-        gap: 12,
-        marginBottom: 20,
-    },
-    infoCard: {
-        backgroundColor: '#ffffff',
-        borderRadius: 12,
-        padding: 16,
-        borderWidth: 1,
-        borderColor: '#e5e7eb',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 1,
-    },
-    infoCardContent: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-    },
-    infoIcon: {
-        fontSize: 24,
-        marginRight: 12,
-        marginTop: 2,
-    },
-    infoTextContainer: {
-        flex: 1,
-    },
-    infoTitle: {
-        fontSize: 15,
-        fontWeight: '700',
-        color: '#111827',
-        marginBottom: 4,
-    },
-    infoSubtitle: {
-        fontSize: 13,
-        color: '#6b7280',
-        fontWeight: '500',
     },
 });

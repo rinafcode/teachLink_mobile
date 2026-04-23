@@ -1,5 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { getAccessToken, getRefreshToken, saveTokens } from "../secureStorage";
+import requestQueue from "./requestQueue";
 
 // ─── Client ───────────────────────────────────────────────────────────────────
 
@@ -56,6 +57,14 @@ apiClient.interceptors.response.use(
       } else if (error.response?.status !== 401) {
         console.error("API Error:", error.response?.data || error.message);
       }
+    }
+
+    // ── Queue network errors for retry ───────────────────────────────────
+    if (error.code === "ERR_NETWORK" || error.message === "Network Error") {
+      if (originalRequest) {
+        await requestQueue.addToQueue(originalRequest);
+      }
+      return Promise.reject(error);
     }
 
     // ── Token refresh on 401 ─────────────────────────────────────────────
