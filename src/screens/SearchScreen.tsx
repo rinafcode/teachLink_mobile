@@ -1,12 +1,13 @@
-import React, { useEffect } from 'react';
-import { View, StyleSheet, ActivityIndicator, Text, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/types';
-import { MobileSearch } from '../components/mobile/MobileSearch';
+import React, { useEffect } from 'react';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { MobileHeader } from '../components/mobile/MobileHeader';
+import { MobileSearch } from '../components/mobile/MobileSearch';
 import { SearchResultItem } from '../components/mobile/SearchResultCard';
+import { Skeleton } from '../components/ui/Skeleton';
 import { sampleCourse } from '../data/sampleCourse';
+import { RootStackParamList } from '../navigation/types';
 import { useAppStore } from '../store';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Search'>;
@@ -55,13 +56,23 @@ export default function SearchScreen() {
     return (
       <View style={styles.container}>
         <MobileHeader title="Search" showBack />
-        <View style={styles.skeletonContainer}>
-          <ActivityIndicator size="large" color="#19c3e6" />
-          <Text style={styles.skeletonText}>Loading results...</Text>
-          <View style={styles.skeletonBox} />
-          <View style={styles.skeletonBox} />
-          <View style={styles.skeletonBox} />
-        </View>
+        <ScrollView style={styles.skeletonContainer}>
+          <Skeleton width="40%" height={20} borderRadius={4} style={{ marginBottom: 24 }} />
+          <View style={styles.searchSkeleton}>
+            <Skeleton height={48} borderRadius={24} />
+          </View>
+          <View style={styles.resultsSkeleton}>
+            {[1, 2, 3].map((i) => (
+              <View key={i} style={styles.resultItemSkeleton}>
+                <Skeleton variant="rectangular" width={60} height={60} borderRadius={8} />
+                <View style={styles.resultTextSkeleton}>
+                  <Skeleton width="70%" height={16} borderRadius={4} />
+                  <Skeleton width="40%" height={12} borderRadius={4} style={{ marginTop: 6 }} />
+                </View>
+              </View>
+            ))}
+          </View>
+        </ScrollView>
       </View>
     );
   }
@@ -82,20 +93,22 @@ const styles = StyleSheet.create({
   skeletonContainer: {
     flex: 1,
     padding: 16,
-    alignItems: 'center',
-    marginTop: 20,
   },
-  skeletonText: {
-    marginTop: 12,
+  searchSkeleton: {
     marginBottom: 24,
-    fontSize: 16,
-    color: '#6B7280',
   },
-  skeletonBox: {
-    width: '100%',
-    height: 70,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 8,
-    marginBottom: 12,
+  resultsSkeleton: {
+    gap: 16,
+  },
+  resultItemSkeleton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 12,
+    borderRadius: 12,
+    gap: 12,
+  },
+  resultTextSkeleton: {
+    flex: 1,
   },
 });
