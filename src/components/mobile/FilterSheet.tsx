@@ -1,22 +1,23 @@
+import { Check, X } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  Modal,
-  Pressable,
-  StyleSheet,
-  Dimensions,
-  ScrollView,
+    Dimensions,
+    Modal,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-  runOnJS,
+    runOnJS,
+    useAnimatedStyle,
+    useSharedValue,
+    withTiming,
 } from 'react-native-reanimated';
-import { X, Check } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ErrorBoundary } from '../common/ErrorBoundary';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SHEET_HEIGHT = Math.min(SCREEN_HEIGHT * 0.6, 420);
@@ -102,56 +103,58 @@ export function FilterSheet({
   if (!visible) return null;
 
   return (
-    <Modal transparent visible={visible} animationType="none" onRequestClose={close}>
-      <Pressable style={StyleSheet.absoluteFill} onPress={close}>
-        <Animated.View style={[styles.overlay, overlayStyle]} />
-      </Pressable>
-      <Animated.View
-        style={[
-          styles.sheet,
-          sheetStyle,
-          {
-            paddingBottom: insets.bottom + 16,
-            maxHeight: SHEET_HEIGHT,
-          },
-        ]}
-      >
-        <View style={styles.handle} />
-        <View style={styles.header}>
-          <Text style={styles.title}>Filters</Text>
-          <TouchableOpacity onPress={close} hitSlop={12} style={styles.closeBtn}>
-            <X size={24} color="#6B7280" />
-          </TouchableOpacity>
-        </View>
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+    <ErrorBoundary boundaryName="FilterSheetModal">
+      <Modal transparent visible={visible} animationType="none" onRequestClose={close}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={close}>
+          <Animated.View style={[styles.overlay, overlayStyle]} />
+        </Pressable>
+        <Animated.View
+          style={[
+            styles.sheet,
+            sheetStyle,
+            {
+              paddingBottom: insets.bottom + 16,
+              maxHeight: SHEET_HEIGHT,
+            },
+          ]}
         >
-          {filters.map((field) => (
-            <FilterSection
-              key={field.key}
-              label={field.label}
-              options={field.options}
-              selectedValue={localValues[field.key]}
-              onSelect={(value) => handleSelect(field.key, value)}
-            />
-          ))}
-        </ScrollView>
-        <View style={styles.footer}>
-          {onReset && (
-            <TouchableOpacity onPress={handleReset} style={styles.resetBtn}>
-              <Text style={styles.resetText}>Reset</Text>
+          <View style={styles.handle} />
+          <View style={styles.header}>
+            <Text style={styles.title}>Filters</Text>
+            <TouchableOpacity onPress={close} hitSlop={12} style={styles.closeBtn}>
+              <X size={24} color="#6B7280" />
             </TouchableOpacity>
-          )}
-          <TouchableOpacity onPress={handleApply} style={styles.applyBtn} activeOpacity={0.8}>
-            <Check size={18} color="#fff" />
-            <Text style={styles.applyText}>Apply</Text>
-          </TouchableOpacity>
-        </View>
-      </Animated.View>
-    </Modal>
+          </View>
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {filters.map((field) => (
+              <FilterSection
+                key={field.key}
+                label={field.label}
+                options={field.options}
+                selectedValue={localValues[field.key]}
+                onSelect={(value) => handleSelect(field.key, value)}
+              />
+            ))}
+          </ScrollView>
+          <View style={styles.footer}>
+            {onReset && (
+              <TouchableOpacity onPress={handleReset} style={styles.resetBtn}>
+                <Text style={styles.resetText}>Reset</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity onPress={handleApply} style={styles.applyBtn} activeOpacity={0.8}>
+              <Check size={18} color="#fff" />
+              <Text style={styles.applyText}>Apply</Text>
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+      </Modal>
+    </ErrorBoundary>
   );
 }
 

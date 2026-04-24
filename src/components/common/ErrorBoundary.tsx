@@ -1,22 +1,26 @@
-import React, { Component, ErrorInfo, ReactNode } from "react";
-import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from "react-native";
-import crashReportingService from "../../services/crashReporting";
+import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { crashReportingService } from '../../services/crashReporting';
 
 interface Props {
   children: ReactNode;
-  fallback?: ReactNode;
+  fallback?: ReactNode | ((props: ErrorBoundaryFallbackProps) => ReactNode);
+  boundaryName?: string;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
+  onReset?: () => void;
 }
 
 interface State {
   hasError: boolean;
   error: Error | null;
   errorInfo: ErrorInfo | null;
+  resetKey: number;
+}
+
+export interface ErrorBoundaryFallbackProps {
+  error: Error | null;
+  errorInfo: ErrorInfo | null;
+  resetError: () => void;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -26,10 +30,11 @@ export class ErrorBoundary extends Component<Props, State> {
       hasError: false,
       error: null,
       errorInfo: null,
+      resetKey: 0,
     };
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<State> {
     return {
       hasError: true,
       error,
@@ -38,17 +43,23 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Log error to console (visible in Metro bundler)
-    console.error("ErrorBoundary caught an error:", error);
-    console.error("Error Info:", errorInfo);
-    console.error("Component Stack:", errorInfo.componentStack);
+    const boundaryName = this.props.boundaryName ?? 'ErrorBoundary';
 
-    // Report error to crash reporting service
-    crashReportingService.reportError(error, "ErrorBoundary", {
-      componentStack: errorInfo.componentStack,
-      isFatal: true,
-    });
+    try {
+      crashReportingService.reportError(error, boundaryName, {
+        componentStack: errorInfo.componentStack,
+      });
+    } catch (reportingError) {
+      console.error('Error reporting failed:', reportingError);
+    }
 
+    // Always log locally as a fallback for development and non-configured monitoring.
+    console.error(`[${boundaryName}] Caught runtime error:`, error.message);
+    console.error(error);
+    console.error(`[${boundaryName}] Component stack:\n${errorInfo.componentStack}`);
+
+    this.props.onError?.(error, errorInfo);
+    
     this.setState({
       error,
       errorInfo,
@@ -60,71 +71,71 @@ export class ErrorBoundary extends Component<Props, State> {
       hasError: false,
       error: null,
       errorInfo: null,
+      resetKey: this.state.resetKey + 1,
     });
+
+    this.props.onReset?.();
   };
+
+  renderFallback() {
+    const fallbackProps: ErrorBoundaryFallbackProps = {
+      error: this.state.error,
+      errorInfo: this.state.errorInfo,
+      resetError: this.handleReset,
+    };
+
+    if (typeof this.props.fallback === 'function') {
+      return this.props.fallback(fallbackProps);
+    }
+
+    if (this.props.fallback) {
+      return this.props.fallback;
+    }
+
+    return (
+      <View style={styles.container}>
+        <View style={styles.card}>
+          <Text style={styles.title}>Something went wrong</Text>
+          <Text style={styles.subtitle}>We could not display this section. Try again.</Text>
+
+          {this.state.error?.message ? (
+            <Text style={styles.errorText}>{this.state.error.message}</Text>
+          ) : null}
+
+          <TouchableOpacity style={styles.button} onPress={this.handleReset}>
+            <Text style={styles.buttonText}>Retry</Text>
+          </TouchableOpacity>
+
+          {__DEV__ && this.state.errorInfo?.componentStack ? (
+            <Text style={styles.devStack}>{this.state.errorInfo.componentStack}</Text>
+          ) : null}
+        </View>
+      </View>
+    );
+  }
 
   render() {
     if (this.state.hasError) {
-      if (this.props.fallback) {
-        return this.props.fallback;
-      }
-
-      return (
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <Text style={styles.title}>⚠️ Something went wrong</Text>
-            <Text style={styles.subtitle}>
-              Check your PC terminal for details
-            </Text>
-          </View>
-
-          <ScrollView style={styles.scrollView}>
-            <View style={styles.errorSection}>
-              <Text style={styles.sectionTitle}>Error Message:</Text>
-              <Text style={styles.errorText}>
-                {this.state.error?.toString() || "Unknown error"}
-              </Text>
-            </View>
-
-            {this.state.errorInfo && (
-              <View style={styles.errorSection}>
-                <Text style={styles.sectionTitle}>Component Stack:</Text>
-                <Text style={styles.stackText}>
-                  {this.state.errorInfo.componentStack}
-                </Text>
-              </View>
-            )}
-
-            {this.state.error?.stack && (
-              <View style={styles.errorSection}>
-                <Text style={styles.sectionTitle}>Stack Trace:</Text>
-                <Text style={styles.stackText}>{this.state.error.stack}</Text>
-              </View>
-            )}
-          </ScrollView>
-
-          <TouchableOpacity style={styles.button} onPress={this.handleReset}>
-            <Text style={styles.buttonText}>Try Again</Text>
-          </TouchableOpacity>
-        </View>
-      );
+      return this.renderFallback();
     }
 
-    return this.props.children;
+    return <React.Fragment key={this.state.resetKey}>{this.props.children}</React.Fragment>;
   }
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: '#f8fafc',
     padding: 20,
+    justifyContent: 'center',
   },
-  header: {
-    marginBottom: 20,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
+  card: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   title: {
     fontSize: 24,
@@ -149,8 +160,8 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#333",
     marginBottom: 8,
+    color: '#334155',
   },
   errorText: {
     fontSize: 14,
@@ -159,19 +170,27 @@ const styles = StyleSheet.create({
   },
   stackText: {
     fontSize: 12,
-    color: "#666",
     fontFamily: "monospace",
+    color: '#b91c1c',
+    marginBottom: 16,
   },
   button: {
-    backgroundColor: "#00BFFF",
-    padding: 15,
+    backgroundColor: "#0ea5e9",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderRadius: 8,
     alignItems: "center",
   },
   buttonText: {
     color: "#fff",
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
+  },
+  devStack: {
+    marginTop: 14,
+    fontSize: 11,
+    color: '#64748b',
+    fontFamily: 'monospace',
   },
 });
 

@@ -1,17 +1,18 @@
-import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  Image,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Modal,
-  Pressable,
-} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Award, Lock, X } from 'lucide-react-native';
-import { combineAriaLabels, getAccessibilityProps, announceToScreenReader } from '../../utils/accessibility';
+import React, { useCallback, useState } from 'react';
+import {
+    Image,
+    Modal,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import { announceToScreenReader, combineAriaLabels, getAccessibilityProps } from '../../utils/accessibility';
+import { ErrorBoundary } from '../common/ErrorBoundary';
 import { AccessibleButton } from './AccessibleButton';
 
 type BadgeRarity = 'common' | 'rare' | 'epic' | 'legendary';
@@ -226,20 +227,21 @@ export const AchievementBadges: React.FC<AchievementBadgesProps> = ({
         onRequestClose={() => setSelectedBadge(null)}
         accessibilityLabel="Achievement details"
       >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setSelectedBadge(null)}
-          accessibilityLabel="Close modal"
-          accessibilityRole="button"
-        >
-          <View
-            style={[
-              styles.modalCard,
-              { backgroundColor: isDark ? '#1e293b' : '#fff' },
-            ]}
-            onStartShouldSetResponder={() => true}
-            onTouchEnd={(e: any) => e.stopPropagation()}
+        <ErrorBoundary boundaryName="AchievementBadgesModal">
+          <Pressable
+            style={styles.modalOverlay}
+            onPress={() => setSelectedBadge(null)}
+            accessibilityLabel="Close modal"
+            accessibilityRole="button"
           >
+            <View
+              style={[
+                styles.modalCard,
+                { backgroundColor: isDark ? '#1e293b' : '#fff' },
+              ]}
+              onStartShouldSetResponder={() => true}
+              onTouchEnd={(e: any) => e.stopPropagation()}
+            >
             <AccessibleButton
               label="Close details"
               onPress={() => setSelectedBadge(null)}
@@ -366,8 +368,9 @@ export const AchievementBadges: React.FC<AchievementBadgesProps> = ({
                 </>
               );
             })()}
-          </View>
-        </Pressable>
+            </View>
+          </Pressable>
+        </ErrorBoundary>
       </Modal>
     </View>
   );

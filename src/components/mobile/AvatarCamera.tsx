@@ -1,18 +1,18 @@
+import { LinearGradient } from 'expo-linear-gradient';
+import { Camera, Check, ImageIcon, RefreshCw, X } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  Modal,
-  TouchableOpacity,
-  Image,
-  ActivityIndicator,
-  StyleSheet,
-  Pressable,
-  SafeAreaView,
+    ActivityIndicator,
+    Image,
+    Modal,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Camera, ImageIcon, X, Check, RefreshCw } from 'lucide-react-native';
 import { useCamera } from '../../hooks/useCamera';
+import { ErrorBoundary } from '../common/ErrorBoundary';
 
 interface AvatarCameraProps {
   visible: boolean;
@@ -62,9 +62,10 @@ export const AvatarCamera: React.FC<AvatarCameraProps> = ({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <SafeAreaView style={styles.overlay}>
-        <View style={styles.container}>
+    <ErrorBoundary boundaryName="AvatarCameraModal">
+      <Modal visible={visible} transparent animationType="slide">
+        <SafeAreaView style={styles.overlay}>
+          <View style={styles.container}>
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Update Profile Photo</Text>
@@ -146,9 +147,10 @@ export const AvatarCamera: React.FC<AvatarCameraProps> = ({
               </View>
             </View>
           )}
-        </View>
-      </SafeAreaView>
-    </Modal>
+          </View>
+        </SafeAreaView>
+      </Modal>
+    </ErrorBoundary>
   );
 };
 

@@ -1,15 +1,16 @@
+import { Eye, FingerprintPattern, KeyRound, ScanFace } from 'lucide-react-native';
 import React from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Modal,
-  Pressable,
+    ActivityIndicator,
+    Modal,
+    Pressable,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { FingerprintPattern, ScanFace, Eye, KeyRound } from 'lucide-react-native';
 import { BiometricType } from '../../services/mobileAuth';
+import { ErrorBoundary } from '../common/ErrorBoundary';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -80,18 +81,19 @@ export const BiometricPrompt: React.FC<BiometricPromptProps> = ({
   const label = biometricLabel(biometricType);
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onDismiss}
-      statusBarTranslucent
-    >
-      <Pressable style={[styles.overlay, { backgroundColor: overlay }]} onPress={onDismiss}>
-        <Pressable
-          style={[styles.sheet, { backgroundColor: bg }]}
-          onPress={(e) => e.stopPropagation()}
-        >
+    <ErrorBoundary boundaryName="BiometricPromptModal">
+      <Modal
+        visible={visible}
+        transparent
+        animationType="fade"
+        onRequestClose={onDismiss}
+        statusBarTranslucent
+      >
+        <Pressable style={[styles.overlay, { backgroundColor: overlay }]} onPress={onDismiss}>
+          <Pressable
+            style={[styles.sheet, { backgroundColor: bg }]}
+            onPress={(e) => e.stopPropagation()}
+          >
           {/* Icon */}
           <View style={[styles.iconBg, { backgroundColor: iconBg }]}>
             {isLoading ? (
@@ -143,9 +145,10 @@ export const BiometricPrompt: React.FC<BiometricPromptProps> = ({
               </Text>
             </TouchableOpacity>
           )}
+          </Pressable>
         </Pressable>
-      </Pressable>
-    </Modal>
+      </Modal>
+    </ErrorBoundary>
   );
 };
 

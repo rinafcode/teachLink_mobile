@@ -1,11 +1,15 @@
-import { MobileHeader } from '@/src/components/mobile/MobileHeader';
-import { MobileSearch } from '@/src/components/mobile/MobileSearch';
-import { SearchResultItem } from '@/src/components/mobile/SearchResultCard';
-import { sampleCourse } from '@/src/data/sampleCourse';
-import { useAppStore } from '@/src/store';
-import { useRouter } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
+import { MobileHeader } from '../components/mobile/MobileHeader';
+import { MobileSearch } from '../components/mobile/MobileSearch';
+import { SearchResultItem } from '../components/mobile/SearchResultCard';
+import { sampleCourse } from '../data/sampleCourse';
+import { RootStackParamList } from '../navigation/types';
+import { useAppStore } from '../store';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Search'>;
 
 export default function SearchScreen() {
   const router = useRouter();

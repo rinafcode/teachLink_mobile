@@ -1,30 +1,31 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Modal,
-  Pressable,
-  StyleProp,
-  StyleSheet,
-  Text,
-  View,
-  ViewStyle,
-} from 'react-native';
 import { Audio, AVPlaybackStatus, AVPlaybackStatusToSet, ResizeMode, Video } from 'expo-av';
 import * as Network from 'expo-network';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+    ActivityIndicator,
+    Modal,
+    Pressable,
+    StyleProp,
+    StyleSheet,
+    Text,
+    View,
+    ViewStyle,
+} from 'react-native';
 
-import VideoControls from './VideoControls';
 import { usePictureInPicture } from '../../hooks/usePictureInPicture';
 import { useVideoGestures } from '../../hooks/useVideoGestures';
 import {
-  AUTO_QUALITY_ID,
-  deriveNetworkType,
-  getQualityOptions,
-  normalizeSources,
-  selectSourceById,
-  type NetworkType,
-  type NormalizedVideoSource,
-  type VideoSource,
+    AUTO_QUALITY_ID,
+    deriveNetworkType,
+    getQualityOptions,
+    normalizeSources,
+    selectSourceById,
+    type NetworkType,
+    type NormalizedVideoSource,
+    type VideoSource,
 } from '../../services/videoQuality';
+import { ErrorBoundary } from '../common/ErrorBoundary';
+import VideoControls from './VideoControls';
 
 const AUTO_HIDE_MS = 3000;
 const DEFAULT_ASPECT_RATIO = 16 / 9;
@@ -506,14 +507,16 @@ const MobileVideoPlayer = ({
 
   if (isFullscreen) {
     return (
-      <Modal
-        visible
-        animationType="fade"
-        supportedOrientations={['portrait', 'landscape']}
-        onRequestClose={handleToggleFullscreen}
-      >
-        {renderPlayer(true)}
-      </Modal>
+      <ErrorBoundary boundaryName="MobileVideoPlayer.FullscreenModal">
+        <Modal
+          visible
+          animationType="fade"
+          supportedOrientations={['portrait', 'landscape']}
+          onRequestClose={handleToggleFullscreen}
+        >
+          {renderPlayer(true)}
+        </Modal>
+      </ErrorBoundary>
     );
   }
 
