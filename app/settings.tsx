@@ -1,26 +1,23 @@
-import { useAppStore } from '@/src/store';
+import { useRouter } from 'expo-router';
 import React from 'react';
-import { Switch, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { MobileSettings } from '@/src/components/mobile/MobileSettings';
+import { useAppStore } from '@/src/store';
+import mobileAuthService from '@/src/services/mobileAuth';
 
 export default function SettingsScreen() {
-    const { theme, setTheme } = useAppStore();
-    const isDark = theme === 'dark';
+  const router = useRouter();
+  const { logout } = useAppStore();
 
-    return (
-        <View className="flex-1 bg-white dark:bg-gray-900 p-4">
-            <Text className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-                Settings
-            </Text>
+  const handleSignOut = async () => {
+    await mobileAuthService.logout();
+    logout();
+    router.replace('/');
+  };
 
-            <View className="flex-row items-center justify-between mb-4">
-                <Text className="text-gray-900 dark:text-white text-lg">
-                    Dark Mode
-                </Text>
-                <Switch
-                    value={isDark}
-                    onValueChange={(value) => setTheme(value ? 'dark' : 'light')}
-                />
-            </View>
-        </View>
-    );
+  return (
+    <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+      <MobileSettings onSignOut={handleSignOut} />
+    </SafeAreaView>
+  );
 }
