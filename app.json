@@ -28,7 +28,8 @@
       "permissions": [
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE",
-        "WAKE_LOCK"
+        "WAKE_LOCK",
+        "RECORD_AUDIO"
       ]
     },
     "web": {
@@ -59,7 +60,13 @@
           "mode": "production"
         }
       ],
-      "expo-speech-recognition"
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow TeachLink to use the microphone for voice search.",
+          "speechRecognitionPermission": "Allow TeachLink to use speech recognition for voice search."
+        }
+      ]
     ],
     "notification": {
       "icon": "./assets/notification-icon.png",
