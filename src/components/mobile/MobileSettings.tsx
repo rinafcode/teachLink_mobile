@@ -34,6 +34,9 @@ import { NativeToggle } from './NativeToggle';
 import { SettingsPicker, PickerOption } from './SettingsPicker';
 import { SettingsSection } from './SettingsSection';
 
+import { AppText } from '../common/AppText';
+import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
+
 // ─── Shared row ────────────────────────────────────────────────────────────────
 
 /**
@@ -66,6 +69,8 @@ function SettingRow({
   destructive = false,
 }: SettingRowProps) {
   const Row = onPress ? TouchableOpacity : View;
+  const { scale } = useDynamicFontSize();
+
   return (
     <Row
       activeOpacity={0.7}
@@ -76,20 +81,24 @@ function SettingRow({
         {icon}
       </View>
       <View className="flex-1">
-        <Text
-          className={`text-[15px] font-medium ${
+        <AppText
+          style={{ fontSize: 15 }}
+          className={`font-medium ${
             destructive ? 'text-red-500' : 'text-gray-900 dark:text-white'
           }`}
         >
           {label}
-        </Text>
+        </AppText>
         {description ? (
-          <Text className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+          <AppText 
+            style={{ fontSize: 12 }}
+            className="text-gray-500 dark:text-gray-400 mt-0.5"
+          >
             {description}
-          </Text>
+          </AppText>
         ) : null}
       </View>
-      {right ?? (onPress ? <ChevronRight size={16} color="#9CA3AF" /> : null)}
+      {right ?? (onPress ? <ChevronRight size={scale(16)} color="#9CA3AF" /> : null)}
     </Row>
   );
 }
@@ -207,7 +216,7 @@ export function MobileSettings({
   return (
     <ScrollView
       className="flex-1 bg-gray-50 dark:bg-gray-900"
-      contentContainerStyle={{ paddingTop: 20, paddingBottom: 40 }}
+      contentContainerStyle={{ paddingTop: scale(20), paddingBottom: scale(40) }}
       showsVerticalScrollIndicator={false}
     >
       {/* ── Account ─────────────────────────────────────────── */}
@@ -242,13 +251,13 @@ export function MobileSettings({
         />
         <SettingRow
           iconBg="bg-blue-100 dark:bg-blue-900/50"
-          icon={<User size={18} color="#3b82f6" />}
+          icon={<User size={scale(18)} color="#3b82f6" />}
           label="Change Password"
           onPress={onChangePassword}
         />
         <SettingRow
           iconBg="bg-purple-100 dark:bg-purple-900/50"
-          icon={<Shield size={18} color="#8b5cf6" />}
+          icon={<Shield size={scale(18)} color="#8b5cf6" />}
           label="Linked Accounts"
           onPress={onLinkedAccounts}
         />
@@ -497,7 +506,7 @@ export function MobileSettings({
       <SettingsSection title="Account Actions">
         <SettingRow
           iconBg="bg-red-100 dark:bg-red-900/50"
-          icon={<LogOut size={18} color="#ef4444" />}
+          icon={<LogOut size={scale(18)} color="#ef4444" />}
           label="Sign Out"
           onPress={handleSignOut}
           destructive

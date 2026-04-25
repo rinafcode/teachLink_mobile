@@ -4,6 +4,8 @@
     "strict": true,
     "skipLibCheck": true,
     "jsx": "react-native",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "lib": ["ES2015", "ES2017", "DOM"],
     "paths": {

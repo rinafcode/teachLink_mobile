@@ -6,11 +6,12 @@ import {
   Modal,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { AppText as Text } from "../common/AppText";
+import { useDynamicFontSize } from "../../hooks/useDynamicFontSize";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCourseProgress } from "../../hooks/useCourseProgress";
 import { RootStackParamList } from "../../navigation/types";
@@ -47,6 +48,7 @@ export default function MobileCourseViewer({
   onBack,
   navigation,
 }: MobileCourseViewerProps) {
+  const { scale } = useDynamicFontSize();
   const [viewMode, setViewMode] = useState<ViewMode>(
     initialViewMode || "lesson",
   );
@@ -393,7 +395,7 @@ export default function MobileCourseViewer({
         </View>
 
         {/* Progress Bar */}
-        <View style={styles.progressBarContainer}>
+        <View style={[styles.progressBarContainer, { height: scale(8) }]}>
           <View
             style={[styles.progressBar, { width: `${overallProgress}%` }]}
           />

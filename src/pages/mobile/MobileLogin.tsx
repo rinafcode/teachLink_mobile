@@ -26,6 +26,7 @@ import {
   AlertCircle,
 } from 'lucide-react-native';
 import { useBiometricAuth } from '../../hooks/useBiometricAuth';
+import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
 import { BiometricInlineButton, BiometricPrompt } from '../../components/mobile/BiometricPrompt';
 import mobileAuthService, { AuthResult } from '../../services/mobileAuth';
 import * as secureStorage from '../../services/secureStorage';
@@ -69,6 +70,9 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
     error: biometricError,
     clearError: clearBiometricError,
   } = useBiometricAuth();
+
+  const { scale } = useDynamicFontSize();
+  const styles = createStyles(scale, isDark);
 
   // ── Load remembered email on mount ───────────────────────────────────────
   useEffect(() => {
@@ -186,10 +190,10 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
               end={{ x: 1, y: 1 }}
               style={styles.logoGradient}
             >
-              <BookOpen size={30} color="#fff" />
+              <BookOpen size={scale(30)} color="#fff" />
             </LinearGradient>
-            <Text style={[styles.appName, { color: textPrimary }]}>TeachLink</Text>
-            <Text style={[styles.tagline, { color: textSecondary }]}>
+            <Text allowFontScaling={false} style={[styles.appName, { color: textPrimary }]}>TeachLink</Text>
+            <Text allowFontScaling={false} style={[styles.tagline, { color: textSecondary }]}>
               Sign in to continue learning
             </Text>
           </View>
@@ -199,22 +203,23 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
             {/* Error banner */}
             {error && (
               <View style={styles.errorBanner}>
-                <AlertCircle size={14} color="#dc2626" />
-                <Text style={styles.errorText}>{error}</Text>
+                <AlertCircle size={scale(14)} color="#dc2626" />
+                <Text allowFontScaling={false} style={styles.errorText}>{error}</Text>
               </View>
             )}
 
             {/* Email */}
             <View style={styles.fieldWrap}>
-              <Text style={[styles.label, { color: textSecondary }]}>Email</Text>
+              <Text allowFontScaling={false} style={[styles.label, { color: textSecondary }]}>Email</Text>
               <View
                 style={[
                   styles.inputRow,
                   { borderColor: emailBorder, backgroundColor: isDark ? '#0f172a' : '#f8fafc' },
                 ]}
               >
-                <Mail size={18} color={emailFocused ? accentColor : textSecondary} />
+                <Mail size={scale(18)} color={emailFocused ? accentColor : textSecondary} />
                 <TextInput
+                  allowFontScaling={false}
                   style={[styles.input, { color: textPrimary }]}
                   value={email}
                   onChangeText={(v) => { setEmail(v); setError(null); }}
@@ -234,10 +239,10 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
             {/* Password */}
             <View style={styles.fieldWrap}>
               <View style={styles.labelRow}>
-                <Text style={[styles.label, { color: textSecondary }]}>Password</Text>
+                <Text allowFontScaling={false} style={[styles.label, { color: textSecondary }]}>Password</Text>
                 {onForgotPassword && (
                   <TouchableOpacity onPress={onForgotPassword}>
-                    <Text style={[styles.forgotLink, { color: accentColor }]}>
+                    <Text allowFontScaling={false} style={[styles.forgotLink, { color: accentColor }]}>
                       Forgot password?
                     </Text>
                   </TouchableOpacity>
@@ -249,8 +254,9 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
                   { borderColor: passwordBorder, backgroundColor: isDark ? '#0f172a' : '#f8fafc' },
                 ]}
               >
-                <Lock size={18} color={passwordFocused ? accentColor : textSecondary} />
+                <Lock size={scale(18)} color={passwordFocused ? accentColor : textSecondary} />
                 <TextInput
+                  allowFontScaling={false}
                   ref={passwordRef}
                   style={[styles.input, { color: textPrimary }]}
                   value={password}
@@ -269,9 +275,9 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
                   {showPassword ? (
-                    <EyeOff size={18} color={textSecondary} />
+                    <EyeOff size={scale(18)} color={textSecondary} />
                   ) : (
-                    <Eye size={18} color={textSecondary} />
+                    <Eye size={scale(18)} color={textSecondary} />
                   )}
                 </TouchableOpacity>
               </View>
@@ -286,7 +292,7 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
                 thumbColor="#fff"
                 ios_backgroundColor={borderColor}
               />
-              <Text style={[styles.rememberLabel, { color: textSecondary }]}>
+              <Text allowFontScaling={false} style={[styles.rememberLabel, { color: textSecondary }]}>
                 Remember me
               </Text>
             </View>
@@ -311,8 +317,8 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
                   <ActivityIndicator color="#fff" />
                 ) : (
                   <>
-                    <LogIn size={18} color="#fff" />
-                    <Text style={styles.loginBtnText}>Sign In</Text>
+                    <LogIn size={scale(18)} color="#fff" />
+                    <Text allowFontScaling={false} style={styles.loginBtnText}>Sign In</Text>
                   </>
                 )}
               </LinearGradient>
@@ -323,7 +329,7 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
               <>
                 <View style={styles.dividerRow}>
                   <View style={[styles.divider, { backgroundColor: borderColor }]} />
-                  <Text style={[styles.dividerText, { color: textSecondary }]}>or</Text>
+                  <Text allowFontScaling={false} style={[styles.dividerText, { color: textSecondary }]}>or</Text>
                   <View style={[styles.divider, { backgroundColor: borderColor }]} />
                 </View>
 
@@ -342,8 +348,8 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
                     onPress={() => handleSocialLogin('google')}
                     activeOpacity={0.7}
                   >
-                    <Chrome size={22} color="#4285F4" />
-                    <Text style={[styles.socialBtnText, { color: textSecondary }]}>Google</Text>
+                    <Chrome size={scale(22)} color="#4285F4" />
+                    <Text allowFontScaling={false} style={[styles.socialBtnText, { color: textSecondary }]}>Google</Text>
                   </TouchableOpacity>
 
                   {Platform.OS === 'ios' && (
@@ -352,8 +358,8 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
                       onPress={() => handleSocialLogin('apple')}
                       activeOpacity={0.7}
                     >
-                      <Apple size={22} color={isDark ? '#f1f5f9' : '#1e293b'} />
-                      <Text style={[styles.socialBtnText, { color: textSecondary }]}>Apple</Text>
+                      <Apple size={scale(22)} color={isDark ? '#f1f5f9' : '#1e293b'} />
+                      <Text allowFontScaling={false} style={[styles.socialBtnText, { color: textSecondary }]}>Apple</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -364,11 +370,11 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
           {/* ── Register link ── */}
           {onRegister && (
             <View style={styles.registerRow}>
-              <Text style={[styles.registerText, { color: textSecondary }]}>
+              <Text allowFontScaling={false} style={[styles.registerText, { color: textSecondary }]}>
                 Don't have an account?
               </Text>
               <TouchableOpacity onPress={onRegister}>
-                <Text style={[styles.registerLink, { color: accentColor }]}>
+                <Text allowFontScaling={false} style={[styles.registerLink, { color: accentColor }]}>
                   {' '}Sign up
                 </Text>
               </TouchableOpacity>
@@ -394,7 +400,9 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const createStyles = (scale: (size: number) => number, isDark: boolean) => StyleSheet.create({
   safe: {
     flex: 1,
   },
@@ -403,69 +411,69 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flexGrow: 1,
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: scale(20),
+    paddingBottom: scale(40),
     justifyContent: 'center',
   },
   // Header
   header: {
     alignItems: 'center',
-    paddingTop: 32,
-    paddingBottom: 28,
-    gap: 10,
+    paddingTop: scale(32),
+    paddingBottom: scale(28),
+    gap: scale(10),
   },
   logoGradient: {
-    width: 68,
-    height: 68,
-    borderRadius: 20,
+    width: scale(68),
+    height: scale(68),
+    borderRadius: scale(20),
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#20afe7',
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: scale(8) },
     shadowOpacity: 0.35,
-    shadowRadius: 16,
+    shadowRadius: scale(16),
     elevation: 10,
   },
   appName: {
-    fontSize: 28,
+    fontSize: scale(28),
     fontWeight: '900',
     letterSpacing: -0.5,
   },
   tagline: {
-    fontSize: 14,
+    fontSize: scale(14),
   },
   // Card
   card: {
-    borderRadius: 20,
-    padding: 22,
+    borderRadius: scale(20),
+    padding: scale(22),
     borderWidth: 1,
-    gap: 4,
+    gap: scale(4),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: scale(4) },
     shadowOpacity: 0.07,
-    shadowRadius: 16,
+    shadowRadius: scale(16),
     elevation: 4,
   },
   errorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: scale(8),
     backgroundColor: '#fee2e2',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: 4,
+    borderRadius: scale(10),
+    paddingHorizontal: scale(14),
+    paddingVertical: scale(10),
+    marginBottom: scale(4),
   },
   errorText: {
     color: '#dc2626',
-    fontSize: 13,
+    fontSize: scale(13),
     fontWeight: '500',
     flex: 1,
   },
   // Fields
   fieldWrap: {
-    marginBottom: 12,
-    gap: 6,
+    marginBottom: scale(12),
+    gap: scale(6),
   },
   labelRow: {
     flexDirection: 'row',
@@ -473,89 +481,89 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   label: {
-    fontSize: 13,
+    fontSize: scale(13),
     fontWeight: '600',
   },
   forgotLink: {
-    fontSize: 13,
+    fontSize: scale(13),
     fontWeight: '600',
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: scale(10),
     borderWidth: 1.5,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: Platform.OS === 'ios' ? 13 : 10,
+    borderRadius: scale(12),
+    paddingHorizontal: scale(14),
+    paddingVertical: Platform.OS === 'ios' ? scale(13) : scale(10),
   },
   input: {
     flex: 1,
-    fontSize: 15,
+    fontSize: scale(15),
     paddingVertical: 0,
   },
   // Remember Me
   rememberRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingVertical: 4,
-    marginBottom: 4,
+    gap: scale(10),
+    paddingVertical: scale(4),
+    marginBottom: scale(4),
   },
   rememberLabel: {
-    fontSize: 14,
+    fontSize: scale(14),
     fontWeight: '500',
   },
   // Login button
   loginBtn: {
-    borderRadius: 14,
+    borderRadius: scale(14),
     overflow: 'hidden',
-    marginTop: 6,
+    marginTop: scale(6),
   },
   loginBtnGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 15,
+    gap: scale(8),
+    paddingVertical: scale(15),
   },
   loginBtnText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: scale(16),
     fontWeight: '700',
   },
   // Divider
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginVertical: 8,
+    gap: scale(10),
+    marginVertical: scale(8),
   },
   divider: {
     flex: 1,
     height: 1,
   },
   dividerText: {
-    fontSize: 13,
+    fontSize: scale(13),
     fontWeight: '500',
   },
   // Alt auth row
   altRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: scale(10),
   },
   socialBtn: {
     flex: 1,
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 14,
-    borderRadius: 14,
+    gap: scale(6),
+    paddingVertical: scale(14),
+    borderRadius: scale(14),
     borderWidth: 1.5,
   },
   socialBtnText: {
-    fontSize: 12,
+    fontSize: scale(12),
     fontWeight: '600',
   },
   // Register
@@ -563,13 +571,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: scale(20),
   },
   registerText: {
-    fontSize: 14,
+    fontSize: scale(14),
   },
   registerLink: {
-    fontSize: 14,
+    fontSize: scale(14),
     fontWeight: '700',
   },
 });

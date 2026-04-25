@@ -2,9 +2,11 @@ import { DrawerNavigationProp } from '@react-navigation/drawer';
 import { useNavigation } from '@react-navigation/native';
 import { ArrowLeft, Bell, Menu } from 'lucide-react-native';
 import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
 import { usePendingRequests } from '../../hooks/usePendingRequests';
 import { useSafeArea } from '../../hooks/useSafeArea';
+import { AppText } from '../common/AppText';
+import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
 
 /**
  * Props for the MobileHeader component
@@ -22,6 +24,7 @@ export const MobileHeader = ({ title, showBack = false, rightAction }: MobileHea
     const { top } = useSafeArea();
     const navigation = useNavigation<DrawerNavigationProp<any>>();
     const pendingCount = usePendingRequests();
+    const { scale } = useDynamicFontSize();
 
     return (
         <View
@@ -37,7 +40,7 @@ export const MobileHeader = ({ title, showBack = false, rightAction }: MobileHea
                         accessibilityRole="button"
                         accessibilityLabel="Go back"
                     >
-                        <ArrowLeft color="#1F2937" size={24} />
+                        <ArrowLeft color="#1F2937" size={scale(24)} />
                     </TouchableOpacity>
                 ) : (
                     <TouchableOpacity 
@@ -46,10 +49,15 @@ export const MobileHeader = ({ title, showBack = false, rightAction }: MobileHea
                         accessibilityRole="button"
                         accessibilityLabel="Open navigation drawer"
                     >
-                        <Menu color="#1F2937" size={24} />
+                        <Menu color="#1F2937" size={scale(24)} />
                     </TouchableOpacity>
                 )}
-                <Text className="text-lg font-bold text-gray-900">{title}</Text>
+                <AppText 
+                    style={{ fontSize: scale(18) }}
+                    className="font-bold text-gray-900"
+                >
+                    {title}
+                </AppText>
             </View>
 
             <View className="flex-row items-center">
@@ -60,13 +68,16 @@ export const MobileHeader = ({ title, showBack = false, rightAction }: MobileHea
                             accessibilityRole="button"
                             accessibilityLabel="View notifications"
                         >
-                            <Bell color="#4B5563" size={20} />
+                            <Bell color="#4B5563" size={scale(20)} />
                         </TouchableOpacity>
                         {pendingCount > 0 && (
                             <View className="absolute -top-1 -right-1 bg-red-500 rounded-full min-w-[18px] h-[18px] items-center justify-center">
-                                <Text className="text-white text-xs font-bold">
+                                <AppText 
+                                    style={{ fontSize: 12 }}
+                                    className="text-white font-bold"
+                                >
                                     {pendingCount > 99 ? '99+' : pendingCount}
-                                </Text>
+                                </AppText>
                             </View>
                         )}
                     </View>

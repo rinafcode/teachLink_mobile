@@ -4,10 +4,11 @@ import {
   Alert,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { AppText as Text } from "@/src/components/common/AppText";
+import { useDynamicFontSize } from "@/src/hooks/useDynamicFontSize";
 
 import { sampleCourse } from "@/src/data/sampleCourse";
 import { useAppStore } from "@/src/store";
@@ -17,6 +18,7 @@ import { CourseCardSkeleton } from "@/src/components/mobile/CourseCardSkeleton";
 export default function HomeScreen() {
   const router = useRouter();
   const { isLoading, setLoading } = useAppStore();
+  const { scale } = useDynamicFontSize();
 
   const fetchHomeData = () => {
     setLoading(true);
@@ -74,7 +76,7 @@ export default function HomeScreen() {
     >
       {/* Header */}
       <View style={styles.headerSection}>
-        <Text style={styles.headerIcon}>? </Text>
+        <Text style={[styles.headerIcon, { fontSize: scale(60) }]}>? </Text>
         <Text style={styles.title}>Welcome to TeachLink</Text>
         <Text style={styles.subtitle}>
           Share and consume knowledge on the go
@@ -95,7 +97,7 @@ export default function HomeScreen() {
         accessibilityHint="Opens the course viewer with a sample lesson"
       >
         <View style={styles.buttonContent}>
-          <Text style={styles.buttonIcon}>? </Text>
+          <Text style={[styles.buttonIcon, { fontSize: scale(28) }]}>? </Text>
           <View style={styles.buttonTextContainer}>
             <Text style={styles.buttonTitle}>Start Learning</Text>
             <Text style={styles.buttonSubtitle}>Open course viewer</Text>
@@ -111,14 +113,14 @@ export default function HomeScreen() {
         accessibilityHint="Navigates to the search screen"
       >
         <View style={styles.secondaryButtonContent}>
-          <Text style={styles.secondaryIcon}>? </Text>
+          <Text style={[styles.secondaryIcon, { fontSize: scale(32) }]}>? </Text>
           <View style={styles.secondaryTextContainer}>
             <Text style={styles.secondaryTitle}>Search</Text>
             <Text style={styles.secondarySubtitle}>
               Find courses and lessons
             </Text>
           </View>
-          <Text style={styles.arrow}>{">"}</Text>
+          <Text style={[styles.arrow, { fontSize: scale(24) }]}>{">"}</Text>
         </View>
       </TouchableOpacity>
 

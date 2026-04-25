@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
+import { AppText } from '../common/AppText';
 
 interface SettingsSectionProps {
   /** Section header label displayed above the card (uppercase). */
@@ -27,9 +28,12 @@ export function SettingsSection({ title, footer, children }: SettingsSectionProp
   return (
     <View className="mb-6">
       {title ? (
-        <Text className="px-4 pb-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+        <AppText 
+          style={{ fontSize: 12 }}
+          className="px-4 pb-2 font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest"
+        >
           {title}
-        </Text>
+        </AppText>
       ) : null}
 
       <View className="bg-white dark:bg-gray-800 mx-4 rounded-2xl overflow-hidden">
@@ -44,9 +48,12 @@ export function SettingsSection({ title, footer, children }: SettingsSectionProp
       </View>
 
       {footer ? (
-        <Text className="px-4 pt-2 text-xs text-gray-400 dark:text-gray-500 leading-4">
+        <AppText 
+          style={{ fontSize: 12, lineHeight: 16 }}
+          className="px-4 pt-2 text-gray-400 dark:text-gray-500"
+        >
           {footer}
-        </Text>
+        </AppText>
       ) : null}
     </View>
   );
