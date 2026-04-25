@@ -1,2 +1,4 @@
-export * from './useNotificationPermission';
-export * from './useVoiceRecognition';
+export { AuthProvider, useAuth } from "./useAuth";
+export * from "./useNotificationPermission";
+export * from "./useVoiceRecognition";
+

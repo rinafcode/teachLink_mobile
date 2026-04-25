@@ -1,24 +1,20 @@
-import { StatusBar } from 'expo-status-bar';
-import React, { useEffect } from 'react';
-import { LogBox } from 'react-native';
-import '../assets/global.css';
-import { requireEnvVariables } from './src/config/env';
-import { ErrorBoundary } from './src/components/common/ErrorBoundary';
-import crashReportingService from './src/services/crashReporting';
-import socketService from './src/services/socket';
-import { useAppStore } from './src/store';
-import logger from './src/utils/logger';
-import AppNavigator from './src/navigation/AppNavigator';
+import { StatusBar } from "expo-status-bar";
+import React, { useEffect } from "react";
+import { LogBox } from "react-native";
+import "./global.css";
+import { ErrorBoundary } from "./src/components/common/ErrorBoundary";
+import AppNavigator from "./src/navigation/AppNavigator";
+import socketService from "./src/services/socket";
+import { useAppStore } from "./src/store";
 
 requireEnvVariables();
 // Notification imports
+import { AuthProvider } from "./src/hooks";
 import { setupNotificationNavigation } from "./src/navigation/linking";
-import apiClient from "./src/services/api/axios.config";
-import requestQueue from "./src/services/api/requestQueue";
 import {
-    addNotificationReceivedListener,
-    getLastNotificationResponse,
-    removeNotificationListener,
+  addNotificationReceivedListener,
+  getLastNotificationResponse,
+  removeNotificationListener,
 } from "./src/services/pushNotifications";
 import { handleNotificationReceived } from "./src/utils/notificationHandlers";
 
@@ -75,7 +71,7 @@ export default function App() {
     // Check if app was launched from a notification
     getLastNotificationResponse().then((response) => {
       if (response) {
-        logger.info("App launched from notification:", response);
+        console.log("App launched from notification:", response);
       }
     });
 
@@ -92,8 +88,10 @@ export default function App() {
 
 return (
     <ErrorBoundary>
-      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
-      <AppNavigator />
+      <AuthProvider>
+        <StatusBar style={theme === "dark" ? "light" : "dark"} />
+        <AppNavigator />
+      </AuthProvider>
     </ErrorBoundary>
   );
 }
