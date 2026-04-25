@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform, Linking } from 'react-native';
+import logger from '../utils/logger';
 import {
   registerForPushNotifications,
   registerTokenWithBackend,
@@ -37,14 +38,14 @@ export function useNotificationPermission(): UseNotificationPermissionReturn {
       setPermissionStatus(mappedStatus);
       return mappedStatus;
     } catch (error) {
-      console.error('Error checking notification permission:', error);
+      logger.error('Error checking notification permission:', error);
       return 'undetermined';
     }
   }, [isDevice]);
 
   const requestPermission = useCallback(async (): Promise<boolean> => {
     if (!isDevice) {
-      console.warn('Push notifications require a physical device');
+      logger.warn('Push notifications require a physical device');
       return false;
     }
 
@@ -71,7 +72,7 @@ export function useNotificationPermission(): UseNotificationPermissionReturn {
       setIsLoading(false);
       return false;
     } catch (error) {
-      console.error('Error requesting notification permission:', error);
+      logger.error('Error requesting notification permission:', error);
       setIsLoading(false);
       return false;
     }

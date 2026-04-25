@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import logger from '../utils/logger';
 import * as ImagePicker from 'expo-image-picker';
 
 interface CameraOptions {
@@ -42,7 +43,7 @@ export const useCamera = (options: CameraOptions = {}) => {
         return uri;
       }
     } catch (error) {
-      console.error('[useCamera] takePicture error:', error);
+      logger.error('[useCamera] takePicture error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -68,7 +69,7 @@ export const useCamera = (options: CameraOptions = {}) => {
         return uri;
       }
     } catch (error) {
-      console.error('[useCamera] pickFromLibrary error:', error);
+      logger.error('[useCamera] pickFromLibrary error:', error);
     } finally {
       setIsLoading(false);
     }

@@ -1,17 +1,37 @@
-import React from 'react';
-import { View } from 'react-native';
-import { SwipeableNavigation } from '../src/components/mobile/SwipeableNavigation';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import 'react-native-reanimated';
+import { Stack } from "expo-router";
+import React from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import "react-native-reanimated";
 import "../global.css"; // NativeWind CSS
-import { AnalyticsProvider } from '../src/components/mobile/AnalyticsProvider';
+import { ErrorBoundary } from '../src/components/common/ErrorBoundary';
+import { AnalyticsProvider } from "../src/components/mobile/AnalyticsProvider";
+import { OfflineIndicatorProvider } from "../src/components/mobile/OfflineIndicatorProvider";
+import { SwipeableNavigation } from '../src/components/mobile/SwipeableNavigation';
 
 export default function RootLayout() {
   return (
-    <AnalyticsProvider>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <SwipeableNavigation />
-      </GestureHandlerRootView>
+    <ErrorBoundary boundaryName="RootLayout">
+      <AnalyticsProvider>
+        <OfflineIndicatorProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+            <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="course-viewer"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="profile/[userId]"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen name="search" options={{ headerShown: false }} />
+            <Stack.Screen name="settings" options={{ headerShown: false }} />
+            <Stack.Screen name="quiz" options={{ headerShown: false }} />
+            <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+          </Stack>
+          </GestureHandlerRootView>
+        </OfflineIndicatorProvider>
     </AnalyticsProvider>
+    </ErrorBoundary>
   );
 }

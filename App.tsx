@@ -7,6 +7,7 @@ import AppNavigator from "./src/navigation/AppNavigator";
 import socketService from "./src/services/socket";
 import { useAppStore } from "./src/store";
 
+requireEnvVariables();
 // Notification imports
 import { AuthProvider } from "./src/hooks";
 import { setupNotificationNavigation } from "./src/navigation/linking";
@@ -17,27 +18,47 @@ import {
 } from "./src/services/pushNotifications";
 import { handleNotificationReceived } from "./src/utils/notificationHandlers";
 
-// Enable error logging to console (visible in Metro bundler)
+// Centralized logging is handled by src/utils/logger.
+// Suppress known non-actionable navigation warnings in all environments.
 if (__DEV__) {
-  // Log all errors to console
-  const originalError = console.error;
-  console.error = (...args) => {
-    originalError(...args);
-    // Errors will appear in Metro bundler terminal
-  };
-
-  // Show warnings in console but don't break the app
+  logger.debug("Development mode: centralized logger active");
   LogBox.ignoreLogs([
     "Non-serializable values were found in the navigation state",
   ]);
+} else {
+  // Strip all logs except errors in production for performance and security
+  console.log = () => {};
+  console.info = () => {};
+  console.warn = () => {};
+  console.debug = () => {};
 }
 
 export default function App() {
   const theme = useAppStore((state) => state.theme);
 
   useEffect(() => {
+    // Initialize crash reporting at app startup
+    crashReportingService.init();
+
+    // Add global handler for unhandled promise rejections
+    const unhandledRejectionHandler = (reason: any) => {
+      const error =
+        reason instanceof Error ? reason : new Error(String(reason));
+      logger.error("Unhandled Promise Rejection:", error);
+      crashReportingService.reportError(error, "UnhandledPromiseRejection");
+    };
+
+    // Register unhandled rejection listener
+    if (global.onunhandledrejection === undefined) {
+      // @ts-ignore - Setting global error handler
+      global.onunhandledrejection = unhandledRejectionHandler;
+    }
+
     // Connect to socket when app starts
     socketService.connect();
+
+    // Start request queue monitoring
+    requestQueue.startMonitoring(apiClient);
 
     // Set up notification navigation handler
     const notificationCleanup = setupNotificationNavigation();
@@ -59,10 +80,13 @@ export default function App() {
       socketService.disconnect();
       notificationCleanup();
       removeNotificationListener(subscription);
+      // Clean up the unhandled rejection handler
+      // @ts-ignore
+      global.onunhandledrejection = undefined;
     };
   }, []);
 
-  return (
+return (
     <ErrorBoundary>
       <AuthProvider>
         <StatusBar style={theme === "dark" ? "light" : "dark"} />

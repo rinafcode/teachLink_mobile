@@ -1,46 +1,61 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Modal,
-  Pressable,
-  StyleProp,
-  StyleSheet,
-  Text,
-  View,
-  ViewStyle,
-} from 'react-native';
 import { Audio, AVPlaybackStatus, AVPlaybackStatusToSet, ResizeMode, Video } from 'expo-av';
 import * as Network from 'expo-network';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+    ActivityIndicator,
+    Modal,
+    Pressable,
+    StyleProp,
+    StyleSheet,
+    Text,
+    View,
+    ViewStyle,
+} from 'react-native';
 
-import VideoControls from './VideoControls';
 import { usePictureInPicture } from '../../hooks/usePictureInPicture';
 import { useVideoGestures } from '../../hooks/useVideoGestures';
 import {
-  AUTO_QUALITY_ID,
-  deriveNetworkType,
-  getQualityOptions,
-  normalizeSources,
-  selectSourceById,
-  type NetworkType,
-  type NormalizedVideoSource,
-  type VideoSource,
+    AUTO_QUALITY_ID,
+    deriveNetworkType,
+    getQualityOptions,
+    normalizeSources,
+    selectSourceById,
+    type NetworkType,
+    type NormalizedVideoSource,
+    type VideoSource,
 } from '../../services/videoQuality';
+import { ErrorBoundary } from '../common/ErrorBoundary';
+import VideoControls from './VideoControls';
 
 const AUTO_HIDE_MS = 3000;
 const DEFAULT_ASPECT_RATIO = 16 / 9;
 const DEFAULT_RATES = [0.75, 1, 1.25, 1.5, 2];
 
+/**
+ * Props for the MobileVideoPlayer component
+ */
 export type MobileVideoPlayerProps = {
+  /** Array of video sources with different quality options */
   sources: VideoSource[];
+  /** URI of the poster image to display before playback */
   posterUri?: string;
+  /** Whether to start playback automatically */
   autoPlay?: boolean;
+  /** Initial playback rate */
   initialRate?: number;
+  /** Available playback rate options */
   rateOptions?: number[];
+  /** ID of the initial quality to use */
   initialQualityId?: string;
+  /** Custom style for the video container */
   style?: StyleProp<ViewStyle>;
+  /** Whether to enable background audio playback */
   enableBackgroundAudio?: boolean;
+  /** Callback when a playback error occurs */
   onError?: (message: string) => void;
+  /** Callback when playback status updates */
   onPlaybackStatusUpdate?: (status: AVPlaybackStatus) => void;
+  /** Callback when video quality changes */
   onQualityChange?: (qualityId: string) => void;
 };
 
@@ -506,14 +521,16 @@ const MobileVideoPlayer = ({
 
   if (isFullscreen) {
     return (
-      <Modal
-        visible
-        animationType="fade"
-        supportedOrientations={['portrait', 'landscape']}
-        onRequestClose={handleToggleFullscreen}
-      >
-        {renderPlayer(true)}
-      </Modal>
+      <ErrorBoundary boundaryName="MobileVideoPlayer.FullscreenModal">
+        <Modal
+          visible
+          animationType="fade"
+          supportedOrientations={['portrait', 'landscape']}
+          onRequestClose={handleToggleFullscreen}
+        >
+          {renderPlayer(true)}
+        </Modal>
+      </ErrorBoundary>
     );
   }
 

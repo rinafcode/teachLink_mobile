@@ -1,13 +1,13 @@
 import { io, Socket } from "socket.io-client";
+import logger from "../../utils/logger";
+import { getEnv } from "../../config";
 
 class SocketService {
   private socket: Socket | null = null;
 
   connect() {
     if (!this.socket) {
-      // Use Expo's native env vars or fallback
-      const socketUrl =
-        process.env.EXPO_PUBLIC_SOCKET_URL || "ws://localhost:3000";
+      const socketUrl = getEnv("EXPO_PUBLIC_SOCKET_URL");
 
       this.socket = io(socketUrl, {
         transports: ["websocket"],
@@ -15,15 +15,15 @@ class SocketService {
       });
 
       this.socket.on("connect", () => {
-        console.log("Socket connected:", this.socket?.id);
+        logger.info("Socket connected:", this.socket?.id);
       });
 
       this.socket.on("disconnect", () => {
-        console.log("Socket disconnected");
+        logger.info("Socket disconnected");
       });
 
       this.socket.on("error", (error) => {
-        console.error("Socket error:", error);
+        logger.error("Socket error:", error);
       });
     }
     return this.socket;

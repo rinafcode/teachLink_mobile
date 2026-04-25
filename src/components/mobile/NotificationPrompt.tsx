@@ -1,13 +1,14 @@
 import React from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  Modal,
-  SafeAreaView,
+    Modal,
+    SafeAreaView,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { useNotificationPermission } from '../../hooks/useNotificationPermission';
 import { useNotificationStore } from '../../store/notificationStore';
+import { ErrorBoundary } from '../common/ErrorBoundary';
 
 interface NotificationPromptProps {
   visible: boolean;
@@ -78,29 +79,32 @@ export function NotificationPrompt({
 
   if (!isDevice) {
     return (
-      <Modal visible={visible} animationType="slide" transparent>
-        <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-white dark:bg-gray-900 rounded-t-3xl px-6 pt-6 pb-10">
-            <Text className="text-lg text-center text-gray-600 dark:text-gray-400 mb-4">
-              Push notifications are only available on physical devices.
-            </Text>
-            <TouchableOpacity
-              onPress={onClose}
-              className="bg-indigo-600 rounded-xl py-4 items-center"
-            >
-              <Text className="text-white font-semibold text-base">Got it</Text>
-            </TouchableOpacity>
+      <ErrorBoundary boundaryName="NotificationPrompt.DeviceModal">
+        <Modal visible={visible} animationType="slide" transparent>
+          <View className="flex-1 justify-end bg-black/50">
+            <View className="bg-white dark:bg-gray-900 rounded-t-3xl px-6 pt-6 pb-10">
+              <Text className="text-lg text-center text-gray-600 dark:text-gray-400 mb-4">
+                Push notifications are only available on physical devices.
+              </Text>
+              <TouchableOpacity
+                onPress={onClose}
+                className="bg-indigo-600 rounded-xl py-4 items-center"
+              >
+                <Text className="text-white font-semibold text-base">Got it</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      </ErrorBoundary>
     );
   }
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <View className="flex-1 justify-end bg-black/50">
-        <SafeAreaView className="bg-white dark:bg-gray-900 rounded-t-3xl">
-          <View className="px-6 pt-6 pb-4">
+    <ErrorBoundary boundaryName="NotificationPrompt.Modal">
+      <Modal visible={visible} animationType="slide" transparent>
+        <View className="flex-1 justify-end bg-black/50">
+          <SafeAreaView className="bg-white dark:bg-gray-900 rounded-t-3xl">
+            <View className="px-6 pt-6 pb-4">
             {/* Header */}
             <View className="items-center mb-6">
               <View className="w-16 h-16 rounded-full bg-indigo-100 items-center justify-center mb-4">
@@ -171,10 +175,11 @@ export function NotificationPrompt({
             <Text className="text-xs text-gray-500 dark:text-gray-500 text-center mt-4">
               You can change your notification preferences anytime in Settings
             </Text>
-          </View>
-        </SafeAreaView>
-      </View>
-    </Modal>
+            </View>
+          </SafeAreaView>
+        </View>
+      </Modal>
+    </ErrorBoundary>
   );
 }
 

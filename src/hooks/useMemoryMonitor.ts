@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
+import logger from '../utils/logger';
 
 interface MemoryMonitorOptions {
     componentId: string;
@@ -25,7 +26,7 @@ export function useMemoryMonitor({
         // Warn if a large list is rendered, especially on Android where memory limits
         // can be stricter. This is a proxy warning.
         if (itemCount > thresholdWarning) {
-            console.warn(
+            logger.warn(
                 `[Memory Monitor] ${componentId}: Rendering ${itemCount} items. ` +
                 `Ensure VirtualList/FlatList is used with appropriate windowSize ` +
                 `to prevent excessive memory consumption.`

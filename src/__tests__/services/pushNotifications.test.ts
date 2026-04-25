@@ -1,17 +1,17 @@
 import * as Notifications from 'expo-notifications';
 import {
-  getChannelId,
-  scheduleLocalNotification,
-  cancelScheduledNotification,
-  cancelAllScheduledNotifications,
-  getBadgeCount,
-  setBadgeCount,
-  clearBadgeCount,
   addNotificationReceivedListener,
   addNotificationResponseListener,
+  cancelAllScheduledNotifications,
+  cancelScheduledNotification,
+  clearBadgeCount,
+  getBadgeCount,
+  getChannelId,
   removeNotificationListener,
+  scheduleLocalNotification,
+  setBadgeCount,
 } from '../../services/pushNotifications';
-import { NotificationType, NotificationData } from '../../types/notifications';
+import { NotificationData, NotificationType } from '../../types/notifications';
 
 describe('pushNotifications service', () => {
   beforeEach(() => {
@@ -79,7 +79,7 @@ describe('pushNotifications service', () => {
         type: NotificationType.LEARNING_REMINDER,
       };
 
-      const trigger = { seconds: 60 };
+      const trigger = { seconds: 60 } as unknown as Notifications.NotificationTriggerInput;
 
       await scheduleLocalNotification(
         'Time to Learn',

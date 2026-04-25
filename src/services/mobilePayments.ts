@@ -13,6 +13,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiService } from './api';
+import logger from '../utils/logger';
 
 // import * as IAP from 'react-native-iap'; // Uncomment after installing
 
@@ -190,7 +191,7 @@ class MobilePaymentsService {
 
       this.isInitialized = true;
     } catch (error) {
-      console.error('[Payments] initialize error:', error);
+      logger.error('[Payments] initialize error:', error);
       throw error;
     }
   }
@@ -212,7 +213,7 @@ class MobilePaymentsService {
       // return storeProducts.map(sp => { ... })
       return SUBSCRIPTION_PLANS.filter((p) => productIds.includes(p.productId));
     } catch (error) {
-      console.error('[Payments] getProducts error:', error);
+      logger.error('[Payments] getProducts error:', error);
       throw error;
     }
   }
@@ -251,7 +252,7 @@ class MobilePaymentsService {
       await this._setTier(plan.tier);
       return record;
     } catch (error) {
-      console.error('[Payments] purchaseSubscription error:', error);
+      logger.error('[Payments] purchaseSubscription error:', error);
       throw error;
     }
   }
@@ -276,7 +277,7 @@ class MobilePaymentsService {
       await this._savePurchaseRecord(record);
       return record;
     } catch (error) {
-      console.error('[Payments] purchaseProduct error:', error);
+      logger.error('[Payments] purchaseProduct error:', error);
       throw error;
     }
   }
@@ -322,7 +323,7 @@ class MobilePaymentsService {
 
       return restoredRecords;
     } catch (error) {
-      console.error('[Payments] restorePurchases error:', error);
+      logger.error('[Payments] restorePurchases error:', error);
       throw error;
     }
   }

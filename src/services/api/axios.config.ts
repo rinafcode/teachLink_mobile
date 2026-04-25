@@ -1,10 +1,15 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+import logger from "../../utils/logger";
 import { getAccessToken, getRefreshToken, saveTokens } from "../secureStorage";
+import requestQueue from "./requestQueue";
+import { getEnv } from "../../config";
 
 // ─── Client ───────────────────────────────────────────────────────────────────
 
+const baseURL = getEnv("EXPO_PUBLIC_API_BASE_URL");
+
 const apiClient = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:3000",
+  baseURL,
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
@@ -49,13 +54,19 @@ apiClient.interceptors.response.use(
       _retry?: boolean;
     };
 
-    // ── Log non-network errors in dev ────────────────────────────────────
-    if (__DEV__) {
-      if (error.code === "ERR_NETWORK" || error.message === "Network Error") {
-        console.warn("⚠️ API not available (running in offline mode)");
-      } else if (error.response?.status !== 401) {
-        console.error("API Error:", error.response?.data || error.message);
+    // ── Log non-network errors ────────────────────────────────────────────
+    if (error.code === "ERR_NETWORK" || error.message === "Network Error") {
+      logger.warn("API not available (running in offline mode)");
+    } else if (error.response?.status !== 401) {
+      logger.error("API Error:", error.response?.data || error.message);
+    }
+
+    // ── Queue network errors for retry ───────────────────────────────────
+    if (error.code === "ERR_NETWORK" || error.message === "Network Error") {
+      if (originalRequest) {
+        await requestQueue.addToQueue(originalRequest);
       }
+      return Promise.reject(error);
     }
 
     // ── Token refresh on 401 ─────────────────────────────────────────────
@@ -82,7 +93,7 @@ apiClient.interceptors.response.use(
         if (!refreshToken) throw new Error("No refresh token");
 
         const { data } = await axios.post(
-          `${process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:3000"}/auth/refresh`,
+          `${baseURL}/auth/refresh`,
           { refreshToken },
         );
 

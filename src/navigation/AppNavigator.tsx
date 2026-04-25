@@ -14,6 +14,13 @@ import SettingsScreen from "../screens/SettingsScreen";
 import { AuthGuard } from "./AuthGuard";
 import { RootStackParamList } from "./types";
 
+// ── Stack navigator typed against RootStackParamList ────────────────────────
+/**
+ * `Stack` is fully typed via the generic parameter — no `any` required.
+ * TypeScript will enforce that every `Stack.Screen name` is a valid key of
+ * `RootStackParamList` and that the corresponding `component` prop receives the
+ * correct route and navigation props.
+ */
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 // Auth-guarded profile screen - receives navigation props from React Navigation

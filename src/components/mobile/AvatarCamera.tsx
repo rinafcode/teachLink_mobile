@@ -1,23 +1,30 @@
+import { LinearGradient } from 'expo-linear-gradient';
+import { Camera, Check, ImageIcon, RefreshCw, X } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  Modal,
-  TouchableOpacity,
-  Image,
-  ActivityIndicator,
-  StyleSheet,
-  Pressable,
-  SafeAreaView,
+    ActivityIndicator,
+    Image,
+    Modal,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Camera, ImageIcon, X, Check, RefreshCw } from 'lucide-react-native';
 import { useCamera } from '../../hooks/useCamera';
+import { ErrorBoundary } from '../common/ErrorBoundary';
 
+/**
+ * Props for the AvatarCamera component
+ */
 interface AvatarCameraProps {
+  /** Whether the camera modal is visible */
   visible: boolean;
+  /** Current avatar URI to display */
   currentAvatar?: string | null;
+  /** Callback when a new photo is confirmed */
   onConfirm: (imageUri: string) => void;
+  /** Callback when the modal is closed */
   onClose: () => void;
 }
 
@@ -62,13 +69,19 @@ export const AvatarCamera: React.FC<AvatarCameraProps> = ({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <SafeAreaView style={styles.overlay}>
-        <View style={styles.container}>
+    <ErrorBoundary boundaryName="AvatarCameraModal">
+      <Modal visible={visible} transparent animationType="slide">
+        <SafeAreaView style={styles.overlay}>
+          <View style={styles.container}>
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Update Profile Photo</Text>
-            <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+            <TouchableOpacity
+              onPress={handleClose}
+              style={styles.closeButton}
+              accessibilityRole="button"
+              accessibilityLabel="Close photo picker"
+            >
               <X size={22} color="#64748b" />
             </TouchableOpacity>
           </View>
@@ -76,17 +89,28 @@ export const AvatarCamera: React.FC<AvatarCameraProps> = ({
           {preview ? (
             /* Preview Mode */
             <View style={styles.previewSection}>
-              <Image source={{ uri: preview }} style={styles.previewImage} />
+              <Image
+                source={{ uri: preview }}
+                style={styles.previewImage}
+                accessibilityRole="image"
+                accessibilityLabel="Preview of selected profile photo"
+              />
               <Text style={styles.previewLabel}>Looking good!</Text>
               <View style={styles.previewActions}>
                 <TouchableOpacity
                   style={styles.retakeButton}
                   onPress={handleRetake}
+                  accessibilityRole="button"
+                  accessibilityLabel="Retake photo"
                 >
                   <RefreshCw size={18} color="#64748b" />
                   <Text style={styles.retakeText}>Retake</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={handleConfirm}>
+                <TouchableOpacity
+                  onPress={handleConfirm}
+                  accessibilityRole="button"
+                  accessibilityLabel="Use selected photo"
+                >
                   <LinearGradient
                     colors={['#20afe7', '#2c8aec', '#586ce9']}
                     start={{ x: 0, y: 0 }}
@@ -106,6 +130,8 @@ export const AvatarCamera: React.FC<AvatarCameraProps> = ({
                 <Image
                   source={{ uri: currentAvatar }}
                   style={styles.currentAvatar}
+                  accessibilityRole="image"
+                  accessibilityLabel="Current profile photo"
                 />
               ) : (
                 <View style={styles.avatarPlaceholder}>
@@ -124,6 +150,8 @@ export const AvatarCamera: React.FC<AvatarCameraProps> = ({
                   style={styles.optionButton}
                   onPress={handleTakePhoto}
                   disabled={isLoading}
+                  accessibilityRole="button"
+                  accessibilityLabel="Take photo with camera"
                 >
                   <View style={styles.optionIcon}>
                     <Camera size={28} color="#19c3e6" />
@@ -137,6 +165,8 @@ export const AvatarCamera: React.FC<AvatarCameraProps> = ({
                   style={styles.optionButton}
                   onPress={handlePickFromLibrary}
                   disabled={isLoading}
+                  accessibilityRole="button"
+                  accessibilityLabel="Choose photo from gallery"
                 >
                   <View style={styles.optionIcon}>
                     <ImageIcon size={28} color="#2c8aec" />
@@ -146,9 +176,10 @@ export const AvatarCamera: React.FC<AvatarCameraProps> = ({
               </View>
             </View>
           )}
-        </View>
-      </SafeAreaView>
-    </Modal>
+          </View>
+        </SafeAreaView>
+      </Modal>
+    </ErrorBoundary>
   );
 };
 

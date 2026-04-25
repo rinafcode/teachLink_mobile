@@ -74,8 +74,13 @@ function filterCourse(course: Course, query: string, filters: FilterValues): boo
   return true;
 }
 
+/**
+ * Props for the MobileSearch component
+ */
 export interface MobileSearchProps {
+  /** Callback when a search result is pressed */
   onResultPress?: (item: SearchResultItem) => void;
+  /** Placeholder text for the search input */
   placeholder?: string;
 }
 

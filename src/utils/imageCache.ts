@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import logger from './logger';
 
 export class ImageCache {
   /**
@@ -17,14 +18,14 @@ export class ImageCache {
         try {
           return await Image.prefetch(url);
         } catch (e) {
-          console.warn(`Failed to prefetch image: ${url}`, e);
+          logger.warn(`Failed to prefetch image: ${url}`, e);
           return false;
         }
       });
 
       return await Promise.all(promises);
     } catch (e) {
-      console.warn('Error prefetching images', e);
+      logger.warn('Error prefetching images', e);
       return [];
     }
   }
@@ -37,7 +38,7 @@ export class ImageCache {
       await Image.clearMemoryCache();
       await Image.clearDiskCache();
     } catch (e) {
-      console.warn('Failed to clear image cache', e);
+      logger.warn('Failed to clear image cache', e);
     }
   }
 }

@@ -22,12 +22,18 @@ export interface SearchResultCardProps {
 export function SearchResultCard({ item, onPress }: SearchResultCardProps) {
   const metaParts = [item.category, item.level].filter(Boolean);
   const metaText = metaParts.join(' · ');
+  const screenReaderDescription = [item.title, item.description || item.subtitle, metaText]
+    .filter(Boolean)
+    .join('. ');
 
   return (
     <TouchableOpacity
       style={styles.card}
       onPress={onPress}
       activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={screenReaderDescription}
+      accessibilityHint="Opens course details"
     >
       <View style={styles.iconWrap}>
         <BookOpen size={24} color="#19c3e6" />

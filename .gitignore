@@ -40,8 +40,30 @@ yarn-error.*
 # IDE
 .idea/
 .vscode/
+.vs/
 *.swp
 *.swo
+*.swn
+*~
+*.bak
+*.iml
+.project
+.classpath
+.cproject
+.settings/
+
+# Duplicate files
+* copy*
+* Copy*
+*-copy*
+*_copy*
+
+# Build outputs
+build/
+*.apk
+*.aab
+*.ipa
+*.app
 
 # Testing
 coverage/

@@ -36,13 +36,23 @@ import { SettingsSection } from './SettingsSection';
 
 // ─── Shared row ────────────────────────────────────────────────────────────────
 
+/**
+ * Props for the SettingRow component
+ */
 interface SettingRowProps {
+  /** Icon to display for the setting */
   icon: React.ReactNode;
+  /** Background color class for the icon container */
   iconBg?: string;
+  /** Label text for the setting */
   label: string;
+  /** Optional description text */
   description?: string;
+  /** Optional right-side component */
   right?: React.ReactNode;
+  /** Optional callback when the row is pressed */
   onPress?: () => void;
+  /** Whether the action is destructive (e.g., sign out, delete) */
   destructive?: boolean;
 }
 
@@ -125,12 +135,15 @@ const FONT_SIZE_OPTIONS: PickerOption[] = [
 
 // ─── Main component ─────────────────────────────────────────────────────────────
 
+/**
+ * Props for the MobileSettings component
+ */
 interface MobileSettingsProps {
-  /** Called when the user taps the sign-out row. */
+  /** Called when the user taps the sign-out row */
   onSignOut?: () => void;
-  /** Called when the user taps "Change Password". */
+  /** Called when the user taps "Change Password" */
   onChangePassword?: () => void;
-  /** Called when the user taps "Linked Accounts". */
+  /** Called when the user taps "Linked Accounts" */
   onLinkedAccounts?: () => void;
 }
 

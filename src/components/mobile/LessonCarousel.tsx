@@ -14,15 +14,26 @@ import { Lesson, CourseProgress } from '../../types/course';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+/**
+ * Props for the LessonCarousel component
+ */
 interface LessonCarouselProps {
+  /** Array of lessons to display in the carousel */
   lessons: Lesson[];
+  /** ID of the currently active lesson */
   currentLessonId: string;
+  /** Course progress data */
   progress?: CourseProgress | null;
+  /** Callback when the active lesson changes */
   onLessonChange: (lessonId: string, index: number) => void;
+  /** Callback when lesson progress is updated */
   onProgressUpdate?: (lessonId: string, position: number) => void;
+  /** Function to render the content for each lesson */
   renderLessonContent: (lesson: Lesson) => React.ReactNode;
-  onLastLessonNext?: () => void; // Callback when "Next" is clicked on last lesson
-  isLastLessonInSection?: boolean; // Whether current lesson is last in its section
+  /** Callback when "Next" is clicked on the last lesson */
+  onLastLessonNext?: () => void;
+  /** Whether the current lesson is the last in its section */
+  isLastLessonInSection?: boolean;
 }
 
 export default function LessonCarousel({
