@@ -7,6 +7,8 @@ export interface VoiceSearchProps {
   onTranscript: (text: string) => void;
   onTranscriptFinal?: (text: string) => void;
   disabled?: boolean;
+  /** Renders a compact mic-only icon button for inline use inside a search input */
+  compact?: boolean;
 }
 
 export function VoiceSearch({
