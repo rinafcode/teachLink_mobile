@@ -66,6 +66,26 @@ class SocketService {
           `Socket failed to reconnect after ${RECONNECTION_ATTEMPTS} attempts`
         );
       });
+
+      // ── Real-time event handlers ──────────────────────────────────────
+
+      this.socket.on("notification_created", (notification: any) => {
+        logger.info("New notification received:", notification);
+        // TODO: Handle notification display/storage
+        // This could trigger a notification banner, update notification count, etc.
+      });
+
+      this.socket.on("course_updated", (courseData: any) => {
+        logger.info("Course updated:", courseData);
+        // TODO: Handle course data refresh
+        // This could update cached course data, refresh UI components, etc.
+      });
+
+      this.socket.on("message_received", (message: any) => {
+        logger.info("New message received:", message);
+        // TODO: Handle new message
+        // This could update chat UI, show message notification, etc.
+      });
     }
 
     return this.socket;
