@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import {
   User,
@@ -26,10 +27,12 @@ import {
   Play,
   Vibrate,
   LogOut,
+  FingerprintPattern,
 } from 'lucide-react-native';
 import { useAppStore } from '../../store';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useNotificationStore } from '../../store/notificationStore';
+import { useBiometricAuth } from '../../hooks/useBiometricAuth';
 import { NativeToggle } from './NativeToggle';
 import { SettingsPicker, PickerOption } from './SettingsPicker';
 import { SettingsSection } from './SettingsSection';
@@ -155,6 +158,29 @@ export function MobileSettings({
   const { theme, setTheme } = useAppStore();
 
   const {
+    isAvailable: biometricAvailable,
+    isEnabled: biometricEnabled,
+    biometricType,
+    enable: enableBiometric,
+    disable: disableBiometric,
+    isLoading: biometricLoading,
+  } = useBiometricAuth();
+
+  const handleBiometricToggle = async (value: boolean) => {
+    if (value) {
+      const success = await enableBiometric();
+      if (!success) {
+        Alert.alert(
+          'Biometric Login',
+          'Could not enable biometric login. Please check your device settings.',
+        );
+      }
+    } else {
+      await disableBiometric();
+    }
+  };
+
+  const {
     profileVisibility, setProfileVisibility,
     twoFactorEnabled, setTwoFactorEnabled,
     dataSharing, setDataSharing,
@@ -240,6 +266,31 @@ export function MobileSettings({
             />
           }
         />
+        {biometricAvailable && (
+          <SettingRow
+            iconBg="bg-cyan-100 dark:bg-cyan-900/50"
+            icon={
+              biometricLoading
+                ? <ActivityIndicator size="small" color="#06b6d4" />
+                : <FingerprintPattern size={18} color="#06b6d4" />
+            }
+            label={
+              biometricType === 'face'
+                ? 'Face ID Login'
+                : biometricType === 'iris'
+                ? 'Iris Login'
+                : 'Fingerprint Login'
+            }
+            description={biometricEnabled ? 'Enabled — sign in without a password' : 'Disabled'}
+            right={
+              <NativeToggle
+                value={biometricEnabled}
+                onValueChange={handleBiometricToggle}
+                disabled={biometricLoading}
+              />
+            }
+          />
+        )}
         <SettingRow
           iconBg="bg-blue-100 dark:bg-blue-900/50"
           icon={<User size={18} color="#3b82f6" />}
