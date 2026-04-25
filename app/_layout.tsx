@@ -1,5 +1,5 @@
-import { Stack } from "expo-router";
-import React from "react";
+import { Stack, usePathname, useSegments } from "expo-router";
+import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import "../global.css"; // NativeWind CSS
@@ -7,11 +7,29 @@ import { ErrorBoundary } from '../src/components/common/ErrorBoundary';
 import { AnalyticsProvider } from "../src/components/mobile/AnalyticsProvider";
 import { OfflineIndicatorProvider } from "../src/components/mobile/OfflineIndicatorProvider";
 import { SwipeableNavigation } from '../src/components/mobile/SwipeableNavigation';
+import { useAnalytics } from '../src/hooks/useAnalytics';
+
+// Component to handle auto screen tracking
+function ScreenTracker() {
+  const pathname = usePathname();
+  const segments = useSegments();
+  const { trackScreen } = useAnalytics();
+
+  useEffect(() => {
+    if (pathname) {
+      // Basic screen tracking based on pathname
+      trackScreen(pathname, { segments: segments.join('/') });
+    }
+  }, [pathname, segments, trackScreen]);
+
+  return null;
+}
 
 export default function RootLayout() {
   return (
     <ErrorBoundary boundaryName="RootLayout">
       <AnalyticsProvider>
+        <ScreenTracker />
         <OfflineIndicatorProvider>
         <GestureHandlerRootView style={{ flex: 1 }}>
             <Stack>
