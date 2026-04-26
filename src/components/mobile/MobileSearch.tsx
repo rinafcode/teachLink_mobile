@@ -9,8 +9,8 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { Search, SlidersHorizontal, Mic, Square } from 'lucide-react-native';
-import { useVoiceRecognition } from '../../hooks/useVoiceRecognition';
+import { Search, SlidersHorizontal } from 'lucide-react-native';
+import { VoiceSearch } from './VoiceSearch';
 import { SearchHistory } from './SearchHistory';
 import { FilterSheet, FilterField, FilterValues } from './FilterSheet';
 import { SearchResultCard, SearchResultItem } from './SearchResultCard';
@@ -94,25 +94,7 @@ export function MobileSearch({
   const [filterValues, setFilterValues] = useState<FilterValues>({});
   const [results, setResults] = useState<SearchResultItem[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
-
-  const { isListening, isAvailable, startListening, stopListening, resetTranscript } =
-    useVoiceRecognition({
-      lang: 'en-US',
-      interimResults: true,
-      onResult(text, isFinal) {
-        setQuery(text);
-        if (isFinal && text.trim()) performSearch(text);
-      },
-    });
-
-  const handleVoicePress = useCallback(() => {
-    if (isListening) {
-      stopListening();
-    } else {
-      resetTranscript();
-      startListening();
-    }
-  }, [isListening, startListening, stopListening, resetTranscript]);
+  const [isListening, setIsListening] = useState(false);
 
   const suggestions = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -190,13 +172,18 @@ export function MobileSearch({
             onSubmitEditing={handleSubmit}
             returnKeyType="search"
           />
-          {isAvailable && (
-            <TouchableOpacity onPress={handleVoicePress} style={styles.micBtn} accessibilityLabel={isListening ? 'Stop voice search' : 'Start voice search'}>
-              {isListening
-                ? <Square size={18} color="#19c3e6" fill="#19c3e6" />
-                : <Mic size={20} color="#9CA3AF" />}
-            </TouchableOpacity>
-          )}
+          <VoiceSearch
+            compact
+            onTranscript={(text) => {
+              setQuery(text);
+              setIsListening(true);
+            }}
+            onTranscriptFinal={(text) => {
+              setQuery(text);
+              setIsListening(false);
+              performSearch(text);
+            }}
+          />
         </View>
         <View style={styles.actions}>
           <TouchableOpacity
@@ -296,11 +283,6 @@ const styles = StyleSheet.create({
     color: '#111827',
     paddingVertical: 12,
     paddingRight: 12,
-  },
-  micBtn: {
-    padding: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   actions: {
     flexDirection: 'row',
