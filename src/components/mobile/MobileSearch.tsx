@@ -182,12 +182,13 @@ export function MobileSearch({
             onSubmitEditing={handleSubmit}
             returnKeyType="search"
           />
-        </View>
-        <View style={styles.actions}>
           <VoiceSearch
+            compact
             onTranscript={setQuery}
             onTranscriptFinal={handleVoiceResult}
           />
+        </View>
+        <View style={styles.actions}>
           <TouchableOpacity
             onPress={() => setFilterSheetVisible(true)}
             style={[styles.filterBtn, Object.keys(filterValues).length > 0 && styles.filterBtnActive]}
