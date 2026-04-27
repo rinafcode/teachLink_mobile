@@ -69,7 +69,17 @@
           "mode": "production"
         }
       ],
-      "expo-speech-recognition"
+      "expo-speech-recognition",
+      [
+        "@sentry/react-native",
+        {
+          "dsn": "https://your-dsn-here@sentry.io/project-id",
+          "enableAutoSessionTracking": true,
+          "enableNativeCrashHandling": true,
+          "environment": "production",
+          "debug": false
+        }
+      ]
     ],
     "notification": {
       "icon": "./assets/notification-icon.png",

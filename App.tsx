@@ -1,20 +1,30 @@
-import React, { useEffect } from 'react';
+import * as Sentry from '@sentry/react-native';
 import { StatusBar } from 'expo-status-bar';
+import React, { useEffect } from 'react';
 import { LogBox } from 'react-native';
-import AppNavigator from './src/navigation/AppNavigator';
-import { useAppStore } from './src/store';
-import socketService from './src/services/socket';
-import { ErrorBoundary } from './src/components/common/ErrorBoundary';
 import "./global.css";
+import { ErrorBoundary } from './src/components/common/ErrorBoundary';
+import AppNavigator from './src/navigation/AppNavigator';
+import socketService from './src/services/socket';
+import { useAppStore } from './src/store';
 
 // Notification imports
 import { setupNotificationNavigation } from './src/navigation/linking';
-import { handleNotificationReceived } from './src/utils/notificationHandlers';
 import {
-  addNotificationReceivedListener,
-  getLastNotificationResponse,
-  removeNotificationListener,
+    addNotificationReceivedListener,
+    getLastNotificationResponse,
+    removeNotificationListener,
 } from './src/services/pushNotifications';
+import { handleNotificationReceived } from './src/utils/notificationHandlers';
+
+// Initialize Sentry for performance monitoring and crash reporting
+Sentry.init({
+  dsn: 'https://your-dsn-here@sentry.io/project-id',
+  enableAutoSessionTracking: true,
+  enableNativeCrashHandling: true,
+  environment: __DEV__ ? 'development' : 'production',
+  debug: __DEV__,
+});
 
 // Enable error logging to console (visible in Metro bundler)
 if (__DEV__) {
@@ -60,9 +70,9 @@ export default function App() {
   }, []);
 
   return (
-    <ErrorBoundary>
+    <Sentry.ErrorBoundary fallback={<ErrorBoundary />}>
       <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
       <AppNavigator />
-    </ErrorBoundary>
+    </Sentry.ErrorBoundary>
   );
 }
