@@ -11,7 +11,17 @@
     "lint": "expo lint",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "build:android": "eas build --platform android --profile production",
+    "build:ios": "eas build --platform ios --profile production",
+    "build:preview": "eas build --platform all --profile preview",
+    "build:dev": "eas build --platform all --profile development",
+    "submit:android": "eas submit --platform android --profile production",
+    "submit:ios": "eas submit --platform ios --profile production",
+    "deploy:android": "bash ./scripts/deploy-android.sh",
+    "deploy:ios": "bash ./scripts/deploy-ios.sh",
+    "deploy:both": "bash ./scripts/deploy-both.sh",
+    "deploy:preview": "bash ./scripts/deploy-preview.sh"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
