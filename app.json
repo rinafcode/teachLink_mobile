@@ -13,7 +13,12 @@
       "bundleIdentifier": "com.teachlink.mobile",
       "infoPlist": {
         "UIBackgroundModes": ["remote-notification"]
-      }
+      },
+      "buildNumber": "1",
+      "appStoreUrl": "https://apps.apple.com/app/teachlink/id1234567890",
+      "privacyPolicy": "https://teachlink.com/privacy",
+      "supportUrl": "https://teachlink.com/support",
+      "marketingUrl": "https://teachlink.com"
     },
     "android": {
       "adaptiveIcon": {
@@ -23,13 +28,18 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "package": "com.teachlink.mobile",
+      "versionCode": 1,
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE",
         "WAKE_LOCK"
-      ]
+      ],
+      "playStoreUrl": "https://play.google.com/store/apps/details?id=com.teachlink.mobile",
+      "privacyPolicy": "https://teachlink.com/privacy",
+      "supportUrl": "https://teachlink.com/support",
+      "marketingUrl": "https://teachlink.com"
     },
     "web": {
       "output": "static",
