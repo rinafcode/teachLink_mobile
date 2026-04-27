@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
-  Text,
   TextInput,
   TouchableOpacity,
   FlatList,
@@ -11,12 +10,13 @@ import {
 } from 'react-native';
 import { AppText as Text } from '../common/AppText';
 import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
-import { Search, SlidersHorizontal } from 'lucide-react-native';
+import { Search, SlidersHorizontal, AlertCircle } from 'lucide-react-native';
 import { VoiceSearch } from './VoiceSearch';
 import { SearchHistory } from './SearchHistory';
 import { FilterSheet, FilterField, FilterValues } from './FilterSheet';
 import { SearchResultCard, SearchResultItem } from './SearchResultCard';
 import { addToSearchHistory } from '../../utils/searchHistory';
+import { validateSearchQuery } from '../../utils/validation';
 import { sampleCourse } from '../../data/sampleCourse';
 import { Course } from '../../types/course';
 
@@ -91,6 +91,7 @@ export function MobileSearch({
   placeholder = 'Search courses...',
 }: MobileSearchProps) {
   const [query, setQuery] = useState('');
+  const [queryError, setQueryError] = useState<string | null>(null);
   const [suggestionsVisible, setSuggestionsVisible] = useState(false);
   const [filterSheetVisible, setFilterSheetVisible] = useState(false);
   const [filterValues, setFilterValues] = useState<FilterValues>({});
@@ -108,12 +109,15 @@ export function MobileSearch({
 
   const performSearch = useCallback(
     (searchQuery: string) => {
-      const trimmed = searchQuery.trim();
-      if (!trimmed) {
+      const validation = validateSearchQuery(searchQuery);
+      if (!validation.valid) {
+        setQueryError(validation.message ?? 'Invalid search query.');
         setResults([]);
-        setHasSearched(true);
+        setHasSearched(false);
         return;
       }
+      setQueryError(null);
+      const trimmed = searchQuery.trim();
       addToSearchHistory(trimmed);
       const filtered = filterCourse(sampleCourse, trimmed, filterValues)
         ? [courseToSearchResult(sampleCourse)]
@@ -176,7 +180,7 @@ export function MobileSearch({
             placeholder={placeholder}
             placeholderTextColor="#9CA3AF"
             value={query}
-            onChangeText={setQuery}
+            onChangeText={(text) => { setQuery(text); setQueryError(null); }}
             onFocus={() => setSuggestionsVisible(true)}
             onBlur={() => setTimeout(() => setSuggestionsVisible(false), 180)}
             onSubmitEditing={handleSubmit}
@@ -197,6 +201,13 @@ export function MobileSearch({
           </TouchableOpacity>
         </View>
       </View>
+
+      {queryError && (
+        <View style={styles.queryErrorRow}>
+          <AlertCircle size={scale(14)} color="#ef4444" />
+          <Text style={[styles.queryErrorText, { fontSize: scale(13) }]}>{queryError}</Text>
+        </View>
+      )}
 
       {showHistory && (
         <View style={styles.suggestSection}>
@@ -344,5 +355,20 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     paddingHorizontal: 16,
     paddingTop: 8,
+  },
+  queryErrorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#fee2e2',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#fca5a5',
+  },
+  queryErrorText: {
+    color: '#dc2626',
+    flex: 1,
+    fontWeight: '500',
   },
 });
