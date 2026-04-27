@@ -1,6 +1,10 @@
-import MobileQuizManager from '@/src/components/mobile/MobileQuizManager';
+import { lazyScreen } from '@/src/utils/LazyScreen';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
+
+const MobileQuizManager = lazyScreen(
+  () => import('@/src/components/mobile/MobileQuizManager')
+);
 
 export default function QuizScreen() {
   const router = useRouter();
