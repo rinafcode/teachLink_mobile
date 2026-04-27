@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { AppText as Text } from '../common/AppText';
 import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
+import { useMemoryMonitor } from '../../hooks/useMemoryMonitor';
 import { Search, SlidersHorizontal } from 'lucide-react-native';
 import { VoiceSearch } from './VoiceSearch';
 import { SearchHistory } from './SearchHistory';
@@ -97,6 +98,8 @@ export function MobileSearch({
   const [results, setResults] = useState<SearchResultItem[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const { scale } = useDynamicFontSize();
+
+  useMemoryMonitor({ componentId: 'MobileSearch', itemCount: results.length });
 
   const suggestions = useMemo(() => {
     const q = query.trim().toLowerCase();
