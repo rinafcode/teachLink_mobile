@@ -2,7 +2,7 @@ import * as Sentry from '@sentry/react-native';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef } from 'react';
 import { Alert, AppState, AppStateStatus, LogBox } from 'react-native';
-import "./global.css";
+import './global.css';
 import { ErrorBoundary } from './src/components/common/ErrorBoundary';
 import AppNavigator from './src/navigation/AppNavigator';
 import mobileAuthService from './src/services/mobileAuth';
@@ -18,9 +18,9 @@ import { initializeLogging } from './src/config/logging';
 // Notification imports
 import { setupNotificationNavigation } from './src/navigation/linking';
 import {
-    addNotificationReceivedListener,
-    getLastNotificationResponse,
-    removeNotificationListener,
+  addNotificationReceivedListener,
+  getLastNotificationResponse,
+  removeNotificationListener,
 } from './src/services/pushNotifications';
 import { handleNotificationReceived } from './src/utils/notificationHandlers';
 
@@ -28,15 +28,13 @@ import { handleNotificationReceived } from './src/utils/notificationHandlers';
 requireEnvVariables();
 
 // Initialize centralized logging on app start
-initializeLogging().catch((err) => {
+initializeLogging().catch(err => {
   console.error('[App] Failed to initialize logging:', err);
 });
 
 if (__DEV__) {
-  appLogger.infoSync("Development mode: centralized logger active");
-  LogBox.ignoreLogs([
-    "Non-serializable values were found in the navigation state",
-  ]);
+  appLogger.infoSync('Development mode: centralized logger active');
+  LogBox.ignoreLogs(['Non-serializable values were found in the navigation state']);
 } else {
   // Strip all logs except errors in production for performance
   console.log = () => {};
@@ -46,7 +44,7 @@ if (__DEV__) {
 }
 
 export default function App() {
-  const theme = useAppStore((state) => state.theme);
+  const theme = useAppStore(state => state.theme);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
 
   const SESSION_REFRESH_WINDOW_MS = 5 * 60 * 1000;
@@ -57,10 +55,9 @@ export default function App() {
 
     // Add global handler for unhandled promise rejections
     const unhandledRejectionHandler = (reason: any) => {
-      const error =
-        reason instanceof Error ? reason : new Error(String(reason));
-      appLogger.errorSync("Unhandled Promise Rejection", error);
-      crashReportingService.reportError(error, "UnhandledPromiseRejection");
+      const error = reason instanceof Error ? reason : new Error(String(reason));
+      appLogger.errorSync('Unhandled Promise Rejection', error);
+      crashReportingService.reportError(error, 'UnhandledPromiseRejection');
     };
 
     // Register unhandled rejection listener
@@ -79,14 +76,12 @@ export default function App() {
     const notificationCleanup = setupNotificationNavigation();
 
     // Listen for notifications received while app is foregrounded
-    const subscription = addNotificationReceivedListener(
-      handleNotificationReceived,
-    );
+    const subscription = addNotificationReceivedListener(handleNotificationReceived);
 
     // Check if app was launched from a notification
-    getLastNotificationResponse().then((response) => {
+    getLastNotificationResponse().then(response => {
       if (response) {
-        appLogger.infoSync("App launched from notification", { response });
+        appLogger.infoSync('App launched from notification', { response });
       }
     });
 
@@ -136,19 +131,13 @@ export default function App() {
           setTokens(
             refreshedSession.tokens.accessToken,
             refreshedSession.tokens.refreshToken,
-            refreshedSession.tokens.expiresAt,
+            refreshedSession.tokens.expiresAt
           );
           setSessionExpiringSoon(false);
         } catch (error) {
-          appLogger.errorSync(
-            'Failed to refresh session on app foreground',
-            error as Error
-          );
+          appLogger.errorSync('Failed to refresh session on app foreground', error as Error);
           logout();
-          Alert.alert(
-            'Session expired',
-            'We could not refresh your session. Please log in again.',
-          );
+          Alert.alert('Session expired', 'We could not refresh your session. Please log in again.');
         }
       } else {
         setSessionExpiringSoon(false);
@@ -157,7 +146,7 @@ export default function App() {
 
     checkSessionOnForeground();
 
-    const appStateSubscription = AppState.addEventListener('change', (nextAppState) => {
+    const appStateSubscription = AppState.addEventListener('change', nextAppState => {
       const wasInBackground = appStateRef.current.match(/inactive|background/);
       const isForegrounded = nextAppState === 'active';
 

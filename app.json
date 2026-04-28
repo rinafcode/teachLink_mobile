@@ -31,11 +31,7 @@
       "versionCode": 1,
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "permissions": [
-        "RECEIVE_BOOT_COMPLETED",
-        "VIBRATE",
-        "WAKE_LOCK"
-      ],
+      "permissions": ["RECEIVE_BOOT_COMPLETED", "VIBRATE", "WAKE_LOCK"],
       "playStoreUrl": "https://play.google.com/store/apps/details?id=com.jaynomyaro.teachlink",
       "privacyPolicy": "https://teachlink.com/privacy",
       "supportUrl": "https://teachlink.com/support",

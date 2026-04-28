@@ -34,11 +34,11 @@ export const GridFiltering = <T extends GridRow = GridRow>({
   onClearAll,
   columnMinWidth = 120,
 }: GridFilteringProps<T>): React.ReactElement | null => {
-  const filterableColumns = columns.filter((c) => c.filterable);
+  const filterableColumns = columns.filter(c => c.filterable);
   const hasActiveFilters = filters.length > 0;
 
   const getFilterValue = useCallback(
-    (columnKey: string) => filters.find((f) => f.columnKey === columnKey)?.value ?? '',
+    (columnKey: string) => filters.find(f => f.columnKey === columnKey)?.value ?? '',
     [filters]
   );
 
@@ -52,7 +52,7 @@ export const GridFiltering = <T extends GridRow = GridRow>({
         contentContainerStyle={styles.row}
         keyboardShouldPersistTaps="handled"
       >
-        {filterableColumns.map((col) => {
+        {filterableColumns.map(col => {
           const currentValue = getFilterValue(col.key);
           const isActive = currentValue.trim().length > 0;
 
@@ -64,7 +64,7 @@ export const GridFiltering = <T extends GridRow = GridRow>({
               value={currentValue}
               isActive={isActive}
               minWidth={col.minWidth ?? columnMinWidth}
-              onChangeText={(text) => onFilterChange(col.key, text)}
+              onChangeText={text => onFilterChange(col.key, text)}
             />
           );
         })}

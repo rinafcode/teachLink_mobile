@@ -20,7 +20,7 @@ export default function BookmarkList() {
 
   return (
     <ScrollView contentContainerStyle={styles.list}>
-      {bookmarks.map((item) => (
+      {bookmarks.map(item => (
         <TouchableOpacity
           key={item.itemId}
           testID={`bookmark-item-${item.itemId}`}

@@ -107,7 +107,7 @@ export const MobileSearch = ({
     const q = query.trim().toLowerCase();
     if (!q) return SUGGESTION_KEYWORDS.slice(0, 5);
     return SUGGESTION_KEYWORDS.filter(
-      (s) => s.toLowerCase().includes(q) || q.includes(s.toLowerCase())
+      s => s.toLowerCase().includes(q) || q.includes(s.toLowerCase())
     ).slice(0, 6);
   }, [query]);
 
@@ -188,18 +188,20 @@ export const MobileSearch = ({
             onSubmitEditing={handleSubmit}
             returnKeyType="search"
           />
-          <VoiceSearch
-            compact
-            onTranscript={setQuery}
-            onTranscriptFinal={handleVoiceResult}
-          />
+          <VoiceSearch compact onTranscript={setQuery} onTranscriptFinal={handleVoiceResult} />
         </View>
         <View style={styles.actions}>
           <TouchableOpacity
             onPress={() => setFilterSheetVisible(true)}
-            style={[styles.filterBtn, Object.keys(filterValues).length > 0 && styles.filterBtnActive]}
+            style={[
+              styles.filterBtn,
+              Object.keys(filterValues).length > 0 && styles.filterBtnActive,
+            ]}
           >
-            <SlidersHorizontal size={scale(20)} color={Object.keys(filterValues).length > 0 ? '#fff' : '#6B7280'} />
+            <SlidersHorizontal
+              size={scale(20)}
+              color={Object.keys(filterValues).length > 0 ? '#fff' : '#6B7280'}
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -213,7 +215,7 @@ export const MobileSearch = ({
       {showSuggestions && query.length > 0 && suggestions.length > 0 && !showResults && (
         <View style={styles.suggestSection}>
           <Text style={styles.suggestLabel}>Suggestions</Text>
-          {suggestions.map((s) => (
+          {suggestions.map(s => (
             <TouchableOpacity
               key={s}
               style={styles.suggestItem}
@@ -229,16 +231,15 @@ export const MobileSearch = ({
       {showResults && (
         <View style={styles.resultsSection}>
           <Text style={styles.resultsLabel}>
-            {results.length === 0 ? 'No results' : `${results.length} result${results.length === 1 ? '' : 's'}`}
+            {results.length === 0
+              ? 'No results'
+              : `${results.length} result${results.length === 1 ? '' : 's'}`}
           </Text>
           <FlatList
             data={results}
-            keyExtractor={(item) => item.id}
+            keyExtractor={item => item.id}
             renderItem={({ item }) => (
-              <SearchResultCard
-                item={item}
-                onPress={() => onResultPress?.(item)}
-              />
+              <SearchResultCard item={item} onPress={() => onResultPress?.(item)} />
             )}
             contentContainerStyle={styles.resultsList}
             ListEmptyComponent={
@@ -258,7 +259,7 @@ export const MobileSearch = ({
       />
     </KeyboardAvoidingView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {

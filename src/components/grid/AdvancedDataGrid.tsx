@@ -92,7 +92,7 @@ export const AdvancedDataGrid = <T extends GridRow = GridRow>({
   } = grid;
 
   // ── Stable column widths ─────────────────────────────────────────────────
-  const columnWidths = useMemo(() => columns.map((c) => c.minWidth ?? 120), [columns]);
+  const columnWidths = useMemo(() => columns.map(c => c.minWidth ?? 120), [columns]);
 
   const totalWidth = useMemo(() => columnWidths.reduce((sum, w) => sum + w, 0), [columnWidths]);
 

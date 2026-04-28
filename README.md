@@ -72,13 +72,13 @@ try {
 
 ### Log Levels
 
-| Level | Usage | Prod Logged |
-|-------|-------|------------|
-| `ERROR` | Exceptions, failures, critical issues | ✓ Always |
-| `WARN` | Recoverable issues, deprecations | ✓ Always |
-| `INFO` | Important events, state changes | ✓ Always |
-| `DEBUG` | Diagnostic info, flow tracking | Dev only |
-| `TRACE` | Verbose flow, parameter values | Dev only |
+| Level   | Usage                                 | Prod Logged |
+| ------- | ------------------------------------- | ----------- |
+| `ERROR` | Exceptions, failures, critical issues | ✓ Always    |
+| `WARN`  | Recoverable issues, deprecations      | ✓ Always    |
+| `INFO`  | Important events, state changes       | ✓ Always    |
+| `DEBUG` | Diagnostic info, flow tracking        | Dev only    |
+| `TRACE` | Verbose flow, parameter values        | Dev only    |
 
 ### Output Formats
 
@@ -90,6 +90,7 @@ try {
 ### Structured Log Values
 
 Every log entry includes:
+
 - `timestamp` — ISO 8601 timestamp
 - `level` — ERROR, WARN, INFO, DEBUG, TRACE
 - `app` — 'teachlink_mobile'
@@ -147,16 +148,14 @@ logs.forEach(log => console.log(log));
 await clearLogFiles();
 ```
 
-
-
 Copy `.env.example` to `.env` and set the following:
 
-| Variable | Required | Description |
-|---|---|---|
-| `EXPO_PUBLIC_API_BASE_URL` | Yes | Base URL for the REST API (`https://...`) |
-| `EXPO_PUBLIC_SOCKET_URL` | Yes | WebSocket server URL (`wss://...`) |
-| `EXPO_PUBLIC_APP_ENV` | No | Runtime environment (`development` / `production`) |
-| `EXPO_PUBLIC_ENABLE_PUSH_NOTIFICATIONS` | No | Enable push notifications (`true` / `false`) |
+| Variable                                | Required | Description                                        |
+| --------------------------------------- | -------- | -------------------------------------------------- |
+| `EXPO_PUBLIC_API_BASE_URL`              | Yes      | Base URL for the REST API (`https://...`)          |
+| `EXPO_PUBLIC_SOCKET_URL`                | Yes      | WebSocket server URL (`wss://...`)                 |
+| `EXPO_PUBLIC_APP_ENV`                   | No       | Runtime environment (`development` / `production`) |
+| `EXPO_PUBLIC_ENABLE_PUSH_NOTIFICATIONS` | No       | Enable push notifications (`true` / `false`)       |
 
 The app validates `EXPO_PUBLIC_API_BASE_URL` and `EXPO_PUBLIC_SOCKET_URL` at startup and will refuse to launch with invalid or missing values.
 
@@ -165,11 +164,13 @@ For EAS builds, secrets are configured per build profile in `eas.json` rather th
 ## Common Issues
 
 **Metro bundler cache errors**
+
 ```bash
 npx expo start --clear
 ```
 
 **`Cannot find module` or module resolution errors after installing a package**
+
 ```bash
 npx expo start --clear
 # If that doesn't help:
@@ -178,12 +179,14 @@ rm -rf node_modules && npm install
 
 **iOS Simulator not detected**
 Make sure Xcode command-line tools are installed:
+
 ```bash
 xcode-select --install
 ```
 
 **Android Emulator not detected**
 Ensure `ANDROID_HOME` is set and the emulator is running before starting Expo:
+
 ```bash
 export ANDROID_HOME=$HOME/Library/Android/sdk
 export PATH=$PATH:$ANDROID_HOME/emulator:$ANDROID_HOME/tools
@@ -191,6 +194,7 @@ export PATH=$PATH:$ANDROID_HOME/emulator:$ANDROID_HOME/tools
 
 **App crashes on startup with "Environment Configuration Error"**
 Your `.env` is missing required variables or contains malformed URLs. Check that:
+
 - `EXPO_PUBLIC_API_BASE_URL` is a valid `https://` URL
 - `EXPO_PUBLIC_SOCKET_URL` is a valid `ws://` or `wss://` URL
 

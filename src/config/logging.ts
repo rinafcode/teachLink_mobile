@@ -61,7 +61,7 @@ import * as Sentry from '@sentry/react-native';
 // ─── CONFIGURATION ─────────────────────────────────────────────────────────
 
 // Safe check for development environment
-const isDev = (typeof __DEV__ !== 'undefined' ? __DEV__ : process.env.NODE_ENV !== 'production');
+const isDev = typeof __DEV__ !== 'undefined' ? __DEV__ : process.env.NODE_ENV !== 'production';
 
 export enum LogLevel {
   ERROR = 0,
@@ -177,7 +177,7 @@ async function rotateLogFiles(): Promise<void> {
   try {
     const keys = await AsyncStorage.getAllKeys();
     const logKeys = keys
-      .filter((k) => k.startsWith(LOG_STORAGE_PREFIX))
+      .filter(k => k.startsWith(LOG_STORAGE_PREFIX))
       .sort()
       .reverse();
 
@@ -207,7 +207,7 @@ async function rotateLogFiles(): Promise<void> {
 export async function retrieveLogFiles(): Promise<string[]> {
   try {
     const keys = await AsyncStorage.getAllKeys();
-    const logKeys = keys.filter((k) => k.startsWith(LOG_STORAGE_PREFIX));
+    const logKeys = keys.filter(k => k.startsWith(LOG_STORAGE_PREFIX));
 
     const logs: string[] = [];
     for (const key of logKeys) {
@@ -224,7 +224,7 @@ export async function retrieveLogFiles(): Promise<string[]> {
 export async function clearLogFiles(): Promise<void> {
   try {
     const keys = await AsyncStorage.getAllKeys();
-    const logKeys = keys.filter((k) => k.startsWith(LOG_STORAGE_PREFIX));
+    const logKeys = keys.filter(k => k.startsWith(LOG_STORAGE_PREFIX));
     await AsyncStorage.multiRemove(logKeys);
   } catch {
     // Silent fail
@@ -233,10 +233,7 @@ export async function clearLogFiles(): Promise<void> {
 
 // ─── REMOTE LOGGING (SENTRY INTEGRATION) ──────────────────────────────────
 
-export function sendToRemoteLogging(
-  entry: StructuredLogEntry,
-  error?: Error
-): void {
+export function sendToRemoteLogging(entry: StructuredLogEntry, error?: Error): void {
   // Critical errors go to Sentry immediately
   if (entry.level === 'ERROR') {
     if (error instanceof Error) {

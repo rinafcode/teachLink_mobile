@@ -2,15 +2,19 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Award, Lock, X } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import {
-    Modal,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { announceToScreenReader, combineAriaLabels, getAccessibilityProps } from '../../utils/accessibility';
+import {
+  announceToScreenReader,
+  combineAriaLabels,
+  getAccessibilityProps,
+} from '../../utils/accessibility';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 import { CachedImage } from '../ui/CachedImage';
 import { AccessibleButton } from './AccessibleButton';
@@ -74,7 +78,7 @@ export const AchievementBadges: React.FC<AchievementBadgesProps> = ({
 }) => {
   const [selectedBadge, setSelectedBadge] = useState<Achievement | null>(null);
 
-  const unlockedCount = achievements.filter((a) => !a.isLocked).length;
+  const unlockedCount = achievements.filter(a => !a.isLocked).length;
   const totalCount = achievements.length;
 
   const handleSelectBadge = useCallback((achievement: Achievement) => {
@@ -91,7 +95,7 @@ export const AchievementBadges: React.FC<AchievementBadgesProps> = ({
       `${achievement.name} badge`,
       RARITY_LABELS[rarity],
       isLocked ? 'Locked' : `Unlocked on ${achievement.unlockedAt ?? 'unknown date'}`,
-      achievement.progress && !achievement.unlockedAt 
+      achievement.progress && !achievement.unlockedAt
         ? `Progress: ${achievement.progress.current} of ${achievement.progress.total}`
         : null
     );
@@ -110,10 +114,7 @@ export const AchievementBadges: React.FC<AchievementBadgesProps> = ({
               <Lock size={22} color="#94a3b8" />
             </View>
           ) : (
-            <LinearGradient
-              colors={gradColors}
-              style={styles.badgeInner}
-            >
+            <LinearGradient colors={gradColors} style={styles.badgeInner}>
               {achievement.iconUrl ? (
                 <CachedImage
                   uri={achievement.iconUrl}
@@ -122,19 +123,14 @@ export const AchievementBadges: React.FC<AchievementBadgesProps> = ({
                   autoPrefetch={true}
                 />
               ) : (
-                <Text 
-                  style={styles.badgeEmoji}
-                  importantForAccessibility="no-hide-descendants"
-                >
+                <Text style={styles.badgeEmoji} importantForAccessibility="no-hide-descendants">
                   {achievement.emoji ?? '🏆'}
                 </Text>
               )}
             </LinearGradient>
           )}
           {!isLocked && rarity !== 'common' && (
-            <View
-              style={[styles.rarityDot, { backgroundColor: gradColors[0] }]}
-            />
+            <View style={[styles.rarityDot, { backgroundColor: gradColors[0] }]} />
           )}
         </View>
 
@@ -142,11 +138,7 @@ export const AchievementBadges: React.FC<AchievementBadgesProps> = ({
           style={[
             styles.badgeName,
             {
-              color: isLocked
-                ? '#94a3b8'
-                : isDark
-                ? '#e2e8f0'
-                : '#334155',
+              color: isLocked ? '#94a3b8' : isDark ? '#e2e8f0' : '#334155',
             },
           ]}
           numberOfLines={2}
@@ -156,7 +148,7 @@ export const AchievementBadges: React.FC<AchievementBadgesProps> = ({
         </Text>
 
         {achievement.progress && !achievement.unlockedAt && (
-          <View 
+          <View
             style={styles.progressBar}
             accessibilityRole="progressbar"
             accessibilityValue={{
@@ -170,11 +162,7 @@ export const AchievementBadges: React.FC<AchievementBadgesProps> = ({
               style={[
                 styles.progressFill,
                 {
-                  width: `${
-                    (achievement.progress.current /
-                      achievement.progress.total) *
-                    100
-                  }%`,
+                  width: `${(achievement.progress.current / achievement.progress.total) * 100}%`,
                   backgroundColor: gradColors[0],
                 },
               ]}
@@ -188,22 +176,14 @@ export const AchievementBadges: React.FC<AchievementBadgesProps> = ({
   return (
     <View style={[styles.container, { backgroundColor: isDark ? '#0f172a' : '#fff' }]}>
       {/* Section header */}
-      <View 
-        style={styles.sectionHeader}
-        accessibilityRole="header"
-      >
+      <View style={styles.sectionHeader} accessibilityRole="header">
         <View style={styles.headerLeft}>
           <Award size={20} color="#19c3e6" />
-          <Text
-            style={[
-              styles.sectionTitle,
-              { color: isDark ? '#f1f5f9' : '#1e293b' },
-            ]}
-          >
+          <Text style={[styles.sectionTitle, { color: isDark ? '#f1f5f9' : '#1e293b' }]}>
             Achievements
           </Text>
         </View>
-        <View 
+        <View
           style={styles.countBadge}
           accessibilityLabel={`${unlockedCount} out of ${totalCount} achievements unlocked`}
         >
@@ -223,26 +203,24 @@ export const AchievementBadges: React.FC<AchievementBadgesProps> = ({
           {achievements.map(renderBadge)}
         </ScrollView>
       ) : (
-        <View 
+        <View
           style={styles.emptyState}
-          {...getAccessibilityProps('No achievements earned yet. Complete courses to earn badges.', 'none')}
+          {...getAccessibilityProps(
+            'No achievements earned yet. Complete courses to earn badges.',
+            'none'
+          )}
         >
           <Award size={40} color="#e2e8f0" />
-          <Text
-            style={[
-              styles.emptyText,
-              { color: isDark ? '#475569' : '#94a3b8' },
-            ]}
-          >
+          <Text style={[styles.emptyText, { color: isDark ? '#475569' : '#94a3b8' }]}>
             Complete courses to earn badges
           </Text>
         </View>
       )}
 
       {/* Badge detail modal */}
-      <Modal 
-        visible={!!selectedBadge} 
-        transparent 
+      <Modal
+        visible={!!selectedBadge}
+        transparent
         animationType="fade"
         onRequestClose={() => setSelectedBadge(null)}
         accessibilityLabel="Achievement details"
@@ -255,139 +233,121 @@ export const AchievementBadges: React.FC<AchievementBadgesProps> = ({
             accessibilityRole="button"
           >
             <View
-              style={[
-                styles.modalCard,
-                { backgroundColor: isDark ? '#1e293b' : '#fff' },
-              ]}
+              style={[styles.modalCard, { backgroundColor: isDark ? '#1e293b' : '#fff' }]}
               onStartShouldSetResponder={() => true}
               onTouchEnd={(e: any) => e.stopPropagation()}
             >
-            <AccessibleButton
-              label="Close details"
-              onPress={() => setSelectedBadge(null)}
-              containerStyle={styles.modalClose}
-              activeOpacity={0.6}
-            >
-              <X size={18} color="#64748b" />
-            </AccessibleButton>
+              <AccessibleButton
+                label="Close details"
+                onPress={() => setSelectedBadge(null)}
+                containerStyle={styles.modalClose}
+                activeOpacity={0.6}
+              >
+                <X size={18} color="#64748b" />
+              </AccessibleButton>
 
-            {selectedBadge && (() => {
-              const rarity: BadgeRarity = selectedBadge.rarity ?? 'common';
-              const gradColors = RARITY_COLORS[rarity];
-              return (
-                <>
-                  <View style={styles.modalBadgeContainer}>
-                    {selectedBadge.isLocked ? (
-                      <View
-                        style={[
-                          styles.modalBadgeInner,
-                          styles.lockedInner,
-                        ]}
-                        accessibilityLabel="Locked badge"
-                      >
-                        <Lock size={32} color="#94a3b8" />
+              {selectedBadge &&
+                (() => {
+                  const rarity: BadgeRarity = selectedBadge.rarity ?? 'common';
+                  const gradColors = RARITY_COLORS[rarity];
+                  return (
+                    <>
+                      <View style={styles.modalBadgeContainer}>
+                        {selectedBadge.isLocked ? (
+                          <View
+                            style={[styles.modalBadgeInner, styles.lockedInner]}
+                            accessibilityLabel="Locked badge"
+                          >
+                            <Lock size={32} color="#94a3b8" />
+                          </View>
+                        ) : (
+                          <LinearGradient
+                            colors={gradColors}
+                            style={styles.modalBadgeInner}
+                            accessibilityLabel="Unlocked badge icon"
+                          >
+                            <Text
+                              style={styles.modalEmoji}
+                              importantForAccessibility="no-hide-descendants"
+                            >
+                              {selectedBadge.emoji ?? '🏆'}
+                            </Text>
+                          </LinearGradient>
+                        )}
                       </View>
-                    ) : (
-                      <LinearGradient
-                        colors={gradColors}
-                        style={styles.modalBadgeInner}
-                        accessibilityLabel="Unlocked badge icon"
-                      >
-                        <Text 
-                          style={styles.modalEmoji}
-                          importantForAccessibility="no-hide-descendants"
-                        >
-                          {selectedBadge.emoji ?? '🏆'}
-                        </Text>
-                      </LinearGradient>
-                    )}
-                  </View>
 
-                  <Text
-                    style={[
-                      styles.modalName,
-                      { color: isDark ? '#f1f5f9' : '#1e293b' },
-                    ]}
-                  >
-                    {selectedBadge.name}
-                  </Text>
-
-                  <View 
-                    style={styles.rarityTag}
-                    accessibilityLabel={`Rarity: ${RARITY_LABELS[rarity]}`}
-                  >
-                    <Text
-                      style={[
-                        styles.rarityText,
-                        { color: gradColors[0] },
-                      ]}
-                    >
-                      {RARITY_LABELS[rarity]}
-                    </Text>
-                  </View>
-
-                  {selectedBadge.description && (
-                    <Text
-                      style={[
-                        styles.modalDescription,
-                        { color: isDark ? '#94a3b8' : '#64748b' },
-                      ]}
-                    >
-                      {selectedBadge.description}
-                    </Text>
-                  )}
-
-                  {selectedBadge.unlockedAt && (
-                    <Text
-                      style={[
-                        styles.unlockedDate,
-                        { color: isDark ? '#475569' : '#94a3b8' },
-                      ]}
-                      accessibilityLabel={`Unlocked on ${selectedBadge.unlockedAt}`}
-                    >
-                      Unlocked {selectedBadge.unlockedAt}
-                    </Text>
-                  )}
-
-                  {selectedBadge.progress && !selectedBadge.unlockedAt && (
-                    <View style={styles.modalProgress}>
-                      <Text
-                        style={[
-                          styles.progressLabel,
-                          { color: isDark ? '#94a3b8' : '#64748b' },
-                        ]}
-                      >
-                        Progress: {selectedBadge.progress.current}/
-                        {selectedBadge.progress.total}
+                      <Text style={[styles.modalName, { color: isDark ? '#f1f5f9' : '#1e293b' }]}>
+                        {selectedBadge.name}
                       </Text>
-                      <View 
-                        style={styles.modalProgressBar}
-                        accessibilityRole="progressbar"
-                        accessibilityValue={{
-                          min: 0,
-                          max: selectedBadge.progress.total,
-                          now: selectedBadge.progress.current,
-                        }}
+
+                      <View
+                        style={styles.rarityTag}
+                        accessibilityLabel={`Rarity: ${RARITY_LABELS[rarity]}`}
                       >
-                        <View
-                          style={[
-                            styles.modalProgressFill,
-                            {
-                              width: `${
-                                (selectedBadge.progress.current /
-                                  selectedBadge.progress.total) *
-                                100
-                              }%`,
-                              backgroundColor: gradColors[0],
-                            },
-                          ]}
-                        />
+                        <Text style={[styles.rarityText, { color: gradColors[0] }]}>
+                          {RARITY_LABELS[rarity]}
+                        </Text>
                       </View>
-                    </View>
-                  )}
-                </>
-              );
-            })()}
+
+                      {selectedBadge.description && (
+                        <Text
+                          style={[
+                            styles.modalDescription,
+                            { color: isDark ? '#94a3b8' : '#64748b' },
+                          ]}
+                        >
+                          {selectedBadge.description}
+                        </Text>
+                      )}
+
+                      {selectedBadge.unlockedAt && (
+                        <Text
+                          style={[styles.unlockedDate, { color: isDark ? '#475569' : '#94a3b8' }]}
+                          accessibilityLabel={`Unlocked on ${selectedBadge.unlockedAt}`}
+                        >
+                          Unlocked {selectedBadge.unlockedAt}
+                        </Text>
+                      )}
+
+                      {selectedBadge.progress && !selectedBadge.unlockedAt && (
+                        <View style={styles.modalProgress}>
+                          <Text
+                            style={[
+                              styles.progressLabel,
+                              { color: isDark ? '#94a3b8' : '#64748b' },
+                            ]}
+                          >
+                            Progress: {selectedBadge.progress.current}/
+                            {selectedBadge.progress.total}
+                          </Text>
+                          <View
+                            style={styles.modalProgressBar}
+                            accessibilityRole="progressbar"
+                            accessibilityValue={{
+                              min: 0,
+                              max: selectedBadge.progress.total,
+                              now: selectedBadge.progress.current,
+                            }}
+                          >
+                            <View
+                              style={[
+                                styles.modalProgressFill,
+                                {
+                                  width: `${
+                                    (selectedBadge.progress.current /
+                                      selectedBadge.progress.total) *
+                                    100
+                                  }%`,
+                                  backgroundColor: gradColors[0],
+                                },
+                              ]}
+                            />
+                          </View>
+                        </View>
+                      )}
+                    </>
+                  );
+                })()}
             </View>
           </Pressable>
         </ErrorBoundary>

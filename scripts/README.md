@@ -19,11 +19,13 @@ This directory contains deployment scripts for the TeachLink mobile app using Ex
 ### Prerequisites
 
 1. Install EAS CLI globally:
+
    ```bash
    npm install -g eas-cli
    ```
 
 2. Login to your Expo account:
+
    ```bash
    eas login
    ```

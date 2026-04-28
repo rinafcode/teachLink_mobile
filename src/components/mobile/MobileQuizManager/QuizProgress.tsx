@@ -8,10 +8,7 @@ interface QuizProgressProps {
   totalQuestions: number;
 }
 
-export default function QuizProgress({
-  currentQuestion,
-  totalQuestions,
-}: QuizProgressProps) {
+export default function QuizProgress({ currentQuestion, totalQuestions }: QuizProgressProps) {
   const progress = (currentQuestion / totalQuestions) * 100;
 
   return (

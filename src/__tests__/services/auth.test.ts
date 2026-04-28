@@ -29,7 +29,11 @@ import mobileAuthService from '../../services/mobileAuth';
 const mockMobileAuth = mobileAuthService as jest.Mocked<typeof mobileAuthService>;
 
 const MOCK_USER = { id: 'u1', name: 'Ada Lovelace', email: 'ada@teachlink.com' };
-const MOCK_TOKENS = { accessToken: 'at_abc', refreshToken: 'rt_xyz', expiresAt: Date.now() + 3_600_000 };
+const MOCK_TOKENS = {
+  accessToken: 'at_abc',
+  refreshToken: 'rt_xyz',
+  expiresAt: Date.now() + 3_600_000,
+};
 const MOCK_AUTH_RESULT = { user: MOCK_USER, tokens: MOCK_TOKENS };
 
 function getStore() {
@@ -80,7 +84,7 @@ describe('auth service', () => {
       await login({ email: '  ADA@teachLink.com  ', password: 'secret123' });
 
       expect(mockMobileAuth.login).toHaveBeenCalledWith(
-        expect.objectContaining({ email: 'ada@teachlink.com' }),
+        expect.objectContaining({ email: 'ada@teachlink.com' })
       );
     });
 
@@ -90,7 +94,7 @@ describe('auth service', () => {
       await login({ email: 'ada@teachlink.com', password: 'secret123', rememberMe: true });
 
       expect(mockMobileAuth.login).toHaveBeenCalledWith(
-        expect.objectContaining({ rememberMe: true }),
+        expect.objectContaining({ rememberMe: true })
       );
     });
 
@@ -99,7 +103,7 @@ describe('auth service', () => {
       mockMobileAuth.login.mockRejectedValueOnce(apiError);
 
       await expect(login({ email: 'ada@teachlink.com', password: 'wrongpass' })).rejects.toThrow(
-        'Invalid credentials',
+        'Invalid credentials'
       );
 
       const state = getStore();
@@ -111,28 +115,28 @@ describe('auth service', () => {
     describe('input validation', () => {
       it('throws when email is missing', async () => {
         await expect(login({ email: '', password: 'secret123' })).rejects.toThrow(
-          'Email is required.',
+          'Email is required.'
         );
         expect(mockMobileAuth.login).not.toHaveBeenCalled();
       });
 
       it('throws when email is malformed', async () => {
         await expect(login({ email: 'not-an-email', password: 'secret123' })).rejects.toThrow(
-          'valid email address',
+          'valid email address'
         );
         expect(mockMobileAuth.login).not.toHaveBeenCalled();
       });
 
       it('throws when password is missing', async () => {
         await expect(login({ email: 'ada@teachlink.com', password: '' })).rejects.toThrow(
-          'Password is required.',
+          'Password is required.'
         );
         expect(mockMobileAuth.login).not.toHaveBeenCalled();
       });
 
       it('throws when password is too short', async () => {
         await expect(login({ email: 'ada@teachlink.com', password: '123' })).rejects.toThrow(
-          'at least 6 characters',
+          'at least 6 characters'
         );
         expect(mockMobileAuth.login).not.toHaveBeenCalled();
       });

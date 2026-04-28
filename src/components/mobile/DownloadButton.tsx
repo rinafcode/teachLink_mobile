@@ -17,7 +17,7 @@ interface DownloadButtonProps {
 export function DownloadButton({ id, title, url, size, className }: DownloadButtonProps) {
   const { tasks, startDownload, removeDownload } = useDownloads();
   const { scale } = useDynamicFontSize();
-  
+
   const task = tasks.find(t => t.id === id);
 
   const handlePress = async () => {
@@ -61,10 +61,12 @@ export function DownloadButton({ id, title, url, size, className }: DownloadButt
     <TouchableOpacity
       onPress={handlePress}
       className={clsx(
-        'flex-row items-center justify-center px-4 py-2 rounded-full border',
-        !task && 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700',
-        task?.status === 'downloading' && 'bg-indigo-50 border-indigo-200 dark:bg-indigo-900/30 dark:border-indigo-800',
-        task?.status === 'completed' && 'bg-emerald-50 border-emerald-200 dark:bg-emerald-900/30 dark:border-emerald-800',
+        'flex-row items-center justify-center rounded-full border px-4 py-2',
+        !task && 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800',
+        task?.status === 'downloading' &&
+          'border-indigo-200 bg-indigo-50 dark:border-indigo-800 dark:bg-indigo-900/30',
+        task?.status === 'completed' &&
+          'border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-900/30',
         className
       )}
     >

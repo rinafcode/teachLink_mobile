@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  TouchableOpacity,
-  Text,
-  View,
-  ActivityIndicator,
-  StyleSheet,
-} from 'react-native';
+import { TouchableOpacity, Text, View, ActivityIndicator, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Check, Zap, Lock } from 'lucide-react-native';
 
@@ -55,16 +49,8 @@ export const PurchaseButton: React.FC<PurchaseButtonProps> = ({
     if (isLoading) {
       return (
         <View style={styles.contentRow}>
-          <ActivityIndicator
-            size="small"
-            color={variant === 'outline' ? '#19c3e6' : '#fff'}
-          />
-          <Text
-            style={[
-              styles.label,
-              { color: variant === 'outline' ? '#19c3e6' : '#fff' },
-            ]}
-          >
+          <ActivityIndicator size="small" color={variant === 'outline' ? '#19c3e6' : '#fff'} />
+          <Text style={[styles.label, { color: variant === 'outline' ? '#19c3e6' : '#fff' }]}>
             Processing…
           </Text>
         </View>
@@ -90,11 +76,7 @@ export const PurchaseButton: React.FC<PurchaseButtonProps> = ({
               styles.label,
               {
                 color:
-                  variant === 'outline'
-                    ? '#19c3e6'
-                    : variant === 'secondary'
-                    ? '#19c3e6'
-                    : '#fff',
+                  variant === 'outline' ? '#19c3e6' : variant === 'secondary' ? '#19c3e6' : '#fff',
               },
             ]}
           >
@@ -109,8 +91,8 @@ export const PurchaseButton: React.FC<PurchaseButtonProps> = ({
                     variant === 'outline'
                       ? '#64748b'
                       : variant === 'secondary'
-                      ? '#64748b'
-                      : 'rgba(255,255,255,0.8)',
+                        ? '#64748b'
+                        : 'rgba(255,255,255,0.8)',
                 },
               ]}
             >
@@ -148,11 +130,7 @@ export const PurchaseButton: React.FC<PurchaseButtonProps> = ({
       >
         {variant === 'primary' ? (
           <LinearGradient
-            colors={
-              isSuccess
-                ? ['#10b981', '#059669']
-                : ['#20afe7', '#2c8aec', '#586ce9']
-            }
+            colors={isSuccess ? ['#10b981', '#059669'] : ['#20afe7', '#2c8aec', '#586ce9']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.gradientInner}
