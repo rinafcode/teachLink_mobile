@@ -7,6 +7,7 @@ import {
   removeFromSearchHistory,
   SearchHistoryItem,
 } from '../../utils/searchHistory';
+import { useMemoryMonitor } from '../../hooks/useMemoryMonitor';
 
 export interface SearchHistoryProps {
   onSelectQuery: (query: string) => void;
@@ -16,6 +17,8 @@ export interface SearchHistoryProps {
 export function SearchHistory({ onSelectQuery, maxItems = 10 }: SearchHistoryProps) {
   const [items, setItems] = useState<SearchHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useMemoryMonitor({ componentId: 'SearchHistory', itemCount: items.length });
 
   const loadHistory = useCallback(async () => {
     setLoading(true);

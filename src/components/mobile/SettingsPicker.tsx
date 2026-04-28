@@ -1,14 +1,15 @@
+import { Check, ChevronRight } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  Modal,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { Check, ChevronRight } from 'lucide-react-native';
 import { useHapticFeedback } from '../../hooks/useHapticFeedback';
+import { ErrorBoundary } from '../common/ErrorBoundary';
 
 export interface PickerOption {
   label: string;
@@ -89,79 +90,81 @@ export function SettingsPicker({
         animationType="slide"
         onRequestClose={() => setIsOpen(false)}
       >
-        <View style={styles.modalContainer}>
-          {/* Dim backdrop — tap to dismiss */}
-          <TouchableOpacity
-            style={StyleSheet.absoluteFillObject}
-            activeOpacity={1}
-            onPress={() => setIsOpen(false)}
-          >
-            <View style={styles.backdrop} />
-          </TouchableOpacity>
-
-          {/* Sheet */}
-          <View className="bg-white dark:bg-gray-800 rounded-t-3xl pb-8">
-            {/* Drag handle */}
-            <View className="items-center pt-3 pb-1">
-              <View className="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
-            </View>
-
-            {/* Title */}
-            <View className="px-6 py-3 border-b border-gray-100 dark:border-gray-700">
-              <Text className="text-base font-semibold text-gray-900 dark:text-white text-center">
-                {label}
-              </Text>
-            </View>
-
-            {/* Options list */}
-            <ScrollView className="max-h-80" bounces={false}>
-              {options.map((option, index) => (
-                <TouchableOpacity
-                  key={option.value}
-                  activeOpacity={0.7}
-                  onPress={() => handleSelect(option.value)}
-                  className={`flex-row items-center px-6 py-4 ${
-                    index < options.length - 1
-                      ? 'border-b border-gray-100 dark:border-gray-700'
-                      : ''
-                  }`}
-                >
-                  <View className="flex-1">
-                    <Text
-                      className={`text-[15px] ${
-                        option.value === value
-                          ? 'font-semibold text-cyan-500'
-                          : 'font-normal text-gray-900 dark:text-white'
-                      }`}
-                    >
-                      {option.label}
-                    </Text>
-                    {option.description ? (
-                      <Text className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        {option.description}
-                      </Text>
-                    ) : null}
-                  </View>
-
-                  {option.value === value ? (
-                    <Check size={18} color="#19c3e6" />
-                  ) : null}
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-
-            {/* Cancel */}
+        <ErrorBoundary boundaryName="SettingsPickerModal">
+          <View style={styles.modalContainer}>
+            {/* Dim backdrop — tap to dismiss */}
             <TouchableOpacity
-              activeOpacity={0.7}
+              style={StyleSheet.absoluteFillObject}
+              activeOpacity={1}
               onPress={() => setIsOpen(false)}
-              className="mx-4 mt-3 py-4 bg-gray-100 dark:bg-gray-700 rounded-2xl"
             >
-              <Text className="text-[15px] font-semibold text-gray-900 dark:text-white text-center">
-                Cancel
-              </Text>
+              <View style={styles.backdrop} />
             </TouchableOpacity>
+
+            {/* Sheet */}
+            <View className="bg-white dark:bg-gray-800 rounded-t-3xl pb-8">
+              {/* Drag handle */}
+              <View className="items-center pt-3 pb-1">
+                <View className="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+              </View>
+
+              {/* Title */}
+              <View className="px-6 py-3 border-b border-gray-100 dark:border-gray-700">
+                <Text className="text-base font-semibold text-gray-900 dark:text-white text-center">
+                  {label}
+                </Text>
+              </View>
+
+              {/* Options list */}
+              <ScrollView className="max-h-80" bounces={false}>
+                {options.map((option, index) => (
+                  <TouchableOpacity
+                    key={option.value}
+                    activeOpacity={0.7}
+                    onPress={() => handleSelect(option.value)}
+                    className={`flex-row items-center px-6 py-4 ${
+                      index < options.length - 1
+                        ? 'border-b border-gray-100 dark:border-gray-700'
+                        : ''
+                    }`}
+                  >
+                    <View className="flex-1">
+                      <Text
+                        className={`text-[15px] ${
+                          option.value === value
+                            ? 'font-semibold text-cyan-500'
+                            : 'font-normal text-gray-900 dark:text-white'
+                        }`}
+                      >
+                        {option.label}
+                      </Text>
+                      {option.description ? (
+                        <Text className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          {option.description}
+                        </Text>
+                      ) : null}
+                    </View>
+
+                    {option.value === value ? (
+                      <Check size={18} color="#19c3e6" />
+                    ) : null}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              {/* Cancel */}
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => setIsOpen(false)}
+                className="mx-4 mt-3 py-4 bg-gray-100 dark:bg-gray-700 rounded-2xl"
+              >
+                <Text className="text-[15px] font-semibold text-gray-900 dark:text-white text-center">
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        </ErrorBoundary>
       </Modal>
     </>
   );

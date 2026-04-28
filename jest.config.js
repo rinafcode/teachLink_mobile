@@ -1,9 +1,6 @@
 module.exports = {
-  testEnvironment: 'node',
-  roots: ['<rootDir>/src'],
-  transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', { tsconfig: 'tsconfig.json' }],
-  },
+  preset: 'jest-expo',
+  roots: ['<rootDir>/src', '<rootDir>/tests'],
   testRegex: '(/__tests__/.*|(\\.|/)(test|spec))\\.(ts|tsx)$',
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
@@ -15,8 +12,11 @@ module.exports = {
     '^@store/(.*)$': '<rootDir>/src/store/$1',
     '^@types/(.*)$': '<rootDir>/src/types/$1',
     '^@utils/(.*)$': '<rootDir>/src/utils/$1',
-    '^react-native$': '<rootDir>/node_modules/react-native',
   },
+  transformIgnorePatterns: [
+    // Transform all expo-* packages and other native modules
+    'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(-.*)?|@expo(-.*)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg)',
+  ],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',

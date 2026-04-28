@@ -2,6 +2,8 @@ import { LinkingOptions } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
 import * as Notifications from 'expo-notifications';
 import { NotificationData, NotificationType } from '../types/notifications';
+import { RootStackParamList } from './types';
+import logger from '../utils/logger';
 
 // Define your navigation param list types
 export type RootStackParamList = {
@@ -142,7 +144,7 @@ export function setupNotificationNavigation(): () => void {
   const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
     // Navigation is handled by the linking config above
     // This is here for any additional side effects
-    console.log('Notification response received:', response);
+    logger.info('Notification response received:', response);
   });
 
   return () => {

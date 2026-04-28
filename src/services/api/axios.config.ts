@@ -1,24 +1,36 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+import { getEnv } from "../../config";
+import logger from "../../utils/logger";
 import { getAccessToken, getRefreshToken, saveTokens } from "../secureStorage";
+import { requestQueue } from "./requestQueue";
 
-// ─── Client ───────────────────────────────────────────────────────────────────
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const getBackoffTime = (retryCount: number) =>
+  Math.min(1000 * 2 ** retryCount, 10000);
+
+// ─── Client ────────────────────────────────────────────────────────────────
+
+const baseURL = getEnv("EXPO_PUBLIC_API_BASE_URL");
 
 const apiClient = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:3000",
+  baseURL,
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// ─── Token refresh queue ──────────────────────────────────────────────────────
-// Prevents multiple concurrent token refreshes when several requests 401 at once.
+// ─── Refresh queue ─────────────────────────────────────────────────────────
 
 let isRefreshing = false;
-let refreshQueue: Array<{
+
+let refreshQueue: {
   resolve: (token: string) => void;
   reject: (err: unknown) => void;
-}> = [];
+}[] = [];
 
 function processRefreshQueue(token: string | null, error: unknown) {
   refreshQueue.forEach(({ resolve, reject }) =>
@@ -27,43 +39,54 @@ function processRefreshQueue(token: string | null, error: unknown) {
   refreshQueue = [];
 }
 
-// ─── Request interceptor — attach Bearer token ────────────────────────────────
+// ─── Request interceptor ───────────────────────────────────────────────────
 
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     const token = await getAccessToken();
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
     return config;
   },
   (error) => Promise.reject(error),
 );
 
-// ─── Response interceptor — handle 401 / token refresh ───────────────────────
+// ─── Response interceptor ───────────────────────────────────────────────────
 
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;
+      _retryCount?: number;
     };
 
-    // ── Log non-network errors in dev ────────────────────────────────────
-    if (__DEV__) {
-      if (error.code === "ERR_NETWORK" || error.message === "Network Error") {
-        console.warn("⚠️ API not available (running in offline mode)");
-      } else if (error.response?.status !== 401) {
-        console.error("API Error:", error.response?.data || error.message);
-      }
+    // ── Log non-network errors ────────────────────────────────────────────
+    if (error.code === "ERR_NETWORK" || error.message === "Network Error") {
+      logger.warn("API not available (running in offline mode)");
+    } else if (error.response?.status !== 401) {
+      logger.error("API Error:", error.response?.data || error.message);
     }
 
-    // ── Token refresh on 401 ─────────────────────────────────────────────
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // ── Queue network errors for retry ───────────────────────────────────
+    if (error.code === "ERR_NETWORK" || error.message === "Network Error") {
+      if (originalRequest) {
+        await requestQueue.addToQueue(originalRequest);
+      }
+      return Promise.reject(error);
+    }
+
+    const status = error.response?.status;
+
+    // ─── 401: Token refresh flow ───────────────────────────────────────────
+
+    if (status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       if (isRefreshing) {
-        // Queue this request until the ongoing refresh completes
         return new Promise((resolve, reject) => {
           refreshQueue.push({
             resolve: (token: string) => {
@@ -81,25 +104,85 @@ apiClient.interceptors.response.use(
         const refreshToken = await getRefreshToken();
         if (!refreshToken) throw new Error("No refresh token");
 
-        const { data } = await axios.post(
-          `${process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:3000"}/auth/refresh`,
-          { refreshToken },
-        );
+        const { data } = await axios.post(`${baseURL}/auth/refresh`, {
+          refreshToken,
+        });
 
-        const { accessToken, refreshToken: newRefresh, expiresAt } = data.tokens;
+        const {
+          accessToken,
+          refreshToken: newRefresh,
+          expiresAt,
+        } = data.tokens;
+
         await saveTokens(accessToken, newRefresh, expiresAt);
 
         processRefreshQueue(accessToken, null);
+
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+
         return apiClient(originalRequest);
       } catch (refreshError) {
         processRefreshQueue(null, refreshError);
-        // Let callers handle the auth failure (e.g. navigate to login)
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
       }
     }
+
+    // ─── 403: Forbidden ────────────────────────────────────────────────────
+
+    if (status === 403) {
+      console.warn("403 Forbidden - access denied");
+
+      return Promise.reject({
+        message: "You are not allowed to perform this action",
+        status: 403,
+      });
+    }
+
+    // ─── 429: Rate limit (exponential backoff) ─────────────────────────────
+
+    if (status === 429) {
+      originalRequest._retryCount = originalRequest._retryCount || 0;
+
+      if (originalRequest._retryCount < 3) {
+        originalRequest._retryCount += 1;
+
+        const delayTime = getBackoffTime(originalRequest._retryCount);
+
+        await delay(delayTime);
+
+        return apiClient(originalRequest);
+      }
+
+      return Promise.reject({
+        message: "Too many requests. Try again later.",
+        status: 429,
+      });
+    }
+
+    // ─── 500+: Server errors (retry limited) ───────────────────────────────
+
+    if (status && status >= 500) {
+      originalRequest._retryCount = originalRequest._retryCount || 0;
+
+      if (originalRequest._retryCount < 2) {
+        originalRequest._retryCount += 1;
+
+        const delayTime = getBackoffTime(originalRequest._retryCount);
+
+        await delay(delayTime);
+
+        return apiClient(originalRequest);
+      }
+
+      return Promise.reject({
+        message: "Server error. Please try again later.",
+        status,
+      });
+    }
+
+    // ─── Default fallback ──────────────────────────────────────────────────
 
     return Promise.reject(error);
   },

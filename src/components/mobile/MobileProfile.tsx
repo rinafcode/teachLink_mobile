@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
   ScrollView,
   TouchableOpacity,
   Image,
@@ -9,7 +8,9 @@ import {
   SafeAreaView,
   ActivityIndicator,
 } from 'react-native';
+import { AppText as Text } from '../common/AppText';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Skeleton } from '../ui/Skeleton';
 import {
   Camera,
   Edit3,
@@ -33,33 +34,62 @@ import { StatisticsDisplay } from './StatisticsDisplay';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
+/**
+ * User connection data structure
+ */
 interface Connection {
+  /** Unique identifier for the connection */
   id: string;
+  /** Display name of the connected user */
   name: string;
+  /** Role of the connected user */
   role: 'student' | 'teacher';
+  /** Number of mutual connections */
   mutualConnections?: number;
+  /** Whether the current user is following this connection */
   isFollowing: boolean;
 }
 
+/**
+ * User profile data structure
+ */
 interface ProfileData {
+  /** Unique identifier for the user */
   id: string;
+  /** Display name of the user */
   name: string;
+  /** Email address of the user */
   email: string;
+  /** User bio/description */
   bio: string;
+  /** User location */
   location: string;
+  /** User website URL */
   website: string;
+  /** User role in the platform */
   role: 'student' | 'teacher';
+  /** Profile avatar image URI */
   avatar: string | null;
+  /** Date when the user joined */
   joinedAt: string;
+  /** User statistics */
   stats: {
+    /** Number of completed courses */
     coursesCompleted: number;
+    /** Number of enrolled courses */
     coursesEnrolled: number;
+    /** Total learning hours */
     totalHours: number;
+    /** Current learning streak in days */
     streak: number;
+    /** Number of connections */
     connections: number;
+    /** Number of achievements earned */
     achievements: number;
   };
+  /** Array of user achievements */
   achievements: Achievement[];
+  /** Array of user connections */
   connections: Connection[];
 }
 
@@ -194,16 +224,67 @@ const MOCK_PROFILE: ProfileData = {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+/**
+ * Props for the MobileProfile component
+ */
 interface MobileProfileProps {
+  /** User ID to display profile for */
   userId: string;
+  /** Whether to use dark mode styling */
   isDark?: boolean;
+  /** Whether the profile data is loading */
+  isLoading?: boolean;
 }
+
+import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
 
 export const MobileProfile: React.FC<MobileProfileProps> = ({
   userId: _userId,
   isDark = false,
+  isLoading = false,
 }) => {
   const [profile, setProfile] = useState<ProfileData>(MOCK_PROFILE);
+  const { scale } = useDynamicFontSize();
+
+  if (isLoading) {
+    const bg = isDark ? '#0f172a' : '#f8fafc';
+    const cardBg = isDark ? '#1e293b' : '#fff';
+    const borderColor = isDark ? '#334155' : '#e2e8f0';
+
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
+        <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
+          <View>
+            <Skeleton width="100%" height={120} borderRadius={0} />
+            <View style={styles.avatarRow}>
+               <Skeleton width={88} height={88} circle style={styles.avatarGradient} />
+               <Skeleton width={110} height={36} borderRadius={20} style={styles.editButton} />
+            </View>
+            <View style={styles.profileInfo}>
+               <Skeleton width="50%" height={24} style={{ marginBottom: 8 }} />
+               <Skeleton width="80%" height={16} style={{ marginBottom: 6 }} />
+               <Skeleton width="40%" height={14} style={{ marginBottom: 12 }} />
+            </View>
+            <View style={[styles.statsStrip, { backgroundColor: cardBg, borderColor }]}>
+               <Skeleton width="25%" height={48} />
+               <Skeleton width="25%" height={48} />
+               <Skeleton width="25%" height={48} />
+               <Skeleton width="25%" height={48} />
+            </View>
+          </View>
+          <View style={[styles.tabNav, { backgroundColor: cardBg, borderColor, marginTop: 8 }]}>
+             <Skeleton width="25%" height={40} />
+             <Skeleton width="25%" height={40} />
+             <Skeleton width="25%" height={40} />
+             <Skeleton width="25%" height={40} />
+          </View>
+          <View style={{ padding: 16 }}>
+             <Skeleton width="100%" height={180} borderRadius={16} />
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
   const [activeTab, setActiveTab] = useState<ProfileTab>('overview');
   const [isEditing, setIsEditing] = useState(false);
   const [isCameraVisible, setIsCameraVisible] = useState(false);
@@ -355,6 +436,8 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                 <Image
                   source={{ uri: profile.avatar }}
                   style={styles.avatar}
+                  accessibilityRole="image"
+                  accessibilityLabel={`${profile.name}'s profile photo`}
                 />
               ) : (
                 <LinearGradient
@@ -386,6 +469,8 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                 <TouchableOpacity
                   style={styles.cancelBtn}
                   onPress={handleCancelEdit}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cancel profile edits"
                 >
                   <X size={16} color="#64748b" />
                 </TouchableOpacity>
@@ -393,6 +478,9 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                   style={styles.saveBtn}
                   onPress={handleSave}
                   disabled={isSaving}
+                  accessibilityRole="button"
+                  accessibilityLabel="Save profile changes"
+                  accessibilityState={{ disabled: isSaving, busy: isSaving }}
                 >
                   {isSaving ? (
                     <ActivityIndicator size="small" color="#fff" />

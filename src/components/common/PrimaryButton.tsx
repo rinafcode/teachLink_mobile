@@ -9,17 +9,32 @@ import {
   StyleSheet,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
 
+/**
+ * Props for the PrimaryButton component
+ */
 interface PrimaryButtonProps {
+  /** Callback function when the button is pressed */
   onPress: () => void;
+  /** Text to display on the button */
   title: string;
+  /** Whether the button is in a loading state */
   loading?: boolean;
+  /** Whether the button is disabled */
   disabled?: boolean;
+  /** Visual style variant of the button */
   variant?: 'gradient' | 'solid' | 'outline';
+  /** Size variant of the button */
   size?: 'small' | 'medium' | 'large';
+  /** Custom style for the button container */
   style?: ViewStyle;
+  /** Custom style for the button text */
   textStyle?: TextStyle;
+  /** Optional icon to display before the title */
   icon?: React.ReactNode;
+  accessibilityHint?: string;
+  accessibilityLabel?: string;
 }
 
 export default function PrimaryButton({
@@ -32,13 +47,32 @@ export default function PrimaryButton({
   style,
   textStyle,
   icon,
+  accessibilityHint,
+  accessibilityLabel,
 }: PrimaryButtonProps) {
   const isDisabled = loading || disabled;
+  const { scale } = useDynamicFontSize();
+  const buttonLabel = accessibilityLabel ?? title;
 
   const sizeConfig = {
-    small: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, fontSize: 14 },
-    medium: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, fontSize: 16 },
-    large: { paddingHorizontal: 32, paddingVertical: 16, borderRadius: 12, fontSize: 18 },
+    small: { 
+      paddingHorizontal: scale(12), 
+      paddingVertical: scale(8), 
+      borderRadius: 8, 
+      fontSize: scale(14) 
+    },
+    medium: { 
+      paddingHorizontal: scale(24), 
+      paddingVertical: scale(12), 
+      borderRadius: 12, 
+      fontSize: scale(16) 
+    },
+    large: { 
+      paddingHorizontal: scale(32), 
+      paddingVertical: scale(16), 
+      borderRadius: 12, 
+      fontSize: scale(18) 
+    },
   };
 
   const config = sizeConfig[size];
@@ -50,6 +84,10 @@ export default function PrimaryButton({
         disabled={isDisabled}
         activeOpacity={0.8}
         style={[{ opacity: isDisabled ? 0.6 : 1 }, style]}
+        accessibilityRole="button"
+        accessibilityLabel={buttonLabel}
+        accessibilityHint={accessibilityHint}
+        accessibilityState={{ disabled: isDisabled, busy: loading }}
       >
         <LinearGradient
           colors={['#20afe7', '#2c8aec', '#586ce9']}
@@ -71,6 +109,7 @@ export default function PrimaryButton({
             <>
               {icon}
               <Text
+                allowFontScaling={false}
                 style={[
                   styles.buttonText,
                   { fontSize: config.fontSize, color: '#ffffff' },
@@ -92,6 +131,10 @@ export default function PrimaryButton({
         onPress={onPress}
         disabled={isDisabled}
         activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel={buttonLabel}
+        accessibilityHint={accessibilityHint}
+        accessibilityState={{ disabled: isDisabled, busy: loading }}
         style={[
           styles.button,
           {
@@ -110,6 +153,7 @@ export default function PrimaryButton({
           <>
             {icon}
             <Text
+              allowFontScaling={false}
               style={[
                 styles.buttonText,
                 { fontSize: config.fontSize, color: '#ffffff' },
@@ -130,6 +174,10 @@ export default function PrimaryButton({
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityLabel={buttonLabel}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
       style={[
         styles.button,
         {
@@ -150,6 +198,7 @@ export default function PrimaryButton({
         <>
           {icon}
           <Text
+            allowFontScaling={false}
             style={[
               styles.buttonText,
               { fontSize: config.fontSize, color: '#19c3e6' },

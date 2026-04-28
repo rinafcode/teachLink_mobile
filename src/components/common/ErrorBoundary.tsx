@@ -1,15 +1,48 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { crashReportingService } from '../../services/crashReporting';
+import logger from '../../utils/logger';
 
+/**
+ * Props for the ErrorBoundary component
+ */
 interface Props {
+  /** Child components to be wrapped by the error boundary */
   children: ReactNode;
-  fallback?: ReactNode;
+  /** Fallback UI to display when an error occurs. Can be a React node or a function that receives error info */
+  fallback?: ReactNode | ((props: ErrorBoundaryFallbackProps) => ReactNode);
+  /** Optional name for the error boundary to help identify it in error logs */
+  boundaryName?: string;
+  /** Callback function called when an error is caught */
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
+  /** Callback function called when the error boundary is reset */
+  onReset?: () => void;
 }
 
+/**
+ * State for the ErrorBoundary component
+ */
 interface State {
+  /** Whether an error has been caught */
   hasError: boolean;
+  /** The error that was caught */
   error: Error | null;
+  /** Additional error information from React */
   errorInfo: ErrorInfo | null;
+  /** Key used to force re-render after reset */
+  resetKey: number;
+}
+
+/**
+ * Props passed to the fallback render function
+ */
+export interface ErrorBoundaryFallbackProps {
+  /** The error that was caught */
+  error: Error | null;
+  /** Additional error information from React */
+  errorInfo: ErrorInfo | null;
+  /** Function to reset the error boundary and retry */
+  resetError: () => void;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -19,10 +52,11 @@ export class ErrorBoundary extends Component<Props, State> {
       hasError: false,
       error: null,
       errorInfo: null,
+      resetKey: 0,
     };
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<State> {
     return {
       hasError: true,
       error,
@@ -31,10 +65,22 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Log error to console (visible in Metro bundler)
-    console.error('ErrorBoundary caught an error:', error);
-    console.error('Error Info:', errorInfo);
-    console.error('Component Stack:', errorInfo.componentStack);
+    const boundaryName = this.props.boundaryName ?? 'ErrorBoundary';
+
+    try {
+      crashReportingService.reportError(error, boundaryName, {
+        componentStack: errorInfo.componentStack,
+      });
+    } catch (reportingError) {
+      logger.error('Error reporting failed:', reportingError);
+    }
+
+    // Always log locally as a fallback for development and non-configured monitoring.
+    logger.error(`[${boundaryName}] Caught runtime error:`, error.message);
+    logger.error(error);
+    logger.error(`[${boundaryName}] Component stack:\n${errorInfo.componentStack}`);
+
+    this.props.onError?.(error, errorInfo);
     
     this.setState({
       error,
@@ -47,79 +93,81 @@ export class ErrorBoundary extends Component<Props, State> {
       hasError: false,
       error: null,
       errorInfo: null,
+      resetKey: this.state.resetKey + 1,
     });
+
+    this.props.onReset?.();
   };
+
+  renderFallback() {
+    const fallbackProps: ErrorBoundaryFallbackProps = {
+      error: this.state.error,
+      errorInfo: this.state.errorInfo,
+      resetError: this.handleReset,
+    };
+
+    if (typeof this.props.fallback === 'function') {
+      return this.props.fallback(fallbackProps);
+    }
+
+    if (this.props.fallback) {
+      return this.props.fallback;
+    }
+
+    return (
+      <View style={styles.container}>
+        <View style={styles.card}>
+          <Text style={styles.title}>Something went wrong</Text>
+          <Text style={styles.subtitle}>We could not display this section. Try again.</Text>
+
+          {this.state.error?.message ? (
+            <Text style={styles.errorText}>{this.state.error.message}</Text>
+          ) : null}
+
+          <TouchableOpacity style={styles.button} onPress={this.handleReset}>
+            <Text style={styles.buttonText}>Retry</Text>
+          </TouchableOpacity>
+
+          {__DEV__ && this.state.errorInfo?.componentStack ? (
+            <Text style={styles.devStack}>{this.state.errorInfo.componentStack}</Text>
+          ) : null}
+        </View>
+      </View>
+    );
+  }
 
   render() {
     if (this.state.hasError) {
-      if (this.props.fallback) {
-        return this.props.fallback;
-      }
-
-      return (
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <Text style={styles.title}>⚠️ Something went wrong</Text>
-            <Text style={styles.subtitle}>Check your PC terminal for details</Text>
-          </View>
-
-          <ScrollView style={styles.scrollView}>
-            <View style={styles.errorSection}>
-              <Text style={styles.sectionTitle}>Error Message:</Text>
-              <Text style={styles.errorText}>
-                {this.state.error?.toString() || 'Unknown error'}
-              </Text>
-            </View>
-
-            {this.state.errorInfo && (
-              <View style={styles.errorSection}>
-                <Text style={styles.sectionTitle}>Component Stack:</Text>
-                <Text style={styles.stackText}>
-                  {this.state.errorInfo.componentStack}
-                </Text>
-              </View>
-            )}
-
-            {this.state.error?.stack && (
-              <View style={styles.errorSection}>
-                <Text style={styles.sectionTitle}>Stack Trace:</Text>
-                <Text style={styles.stackText}>{this.state.error.stack}</Text>
-              </View>
-            )}
-          </ScrollView>
-
-          <TouchableOpacity style={styles.button} onPress={this.handleReset}>
-            <Text style={styles.buttonText}>Try Again</Text>
-          </TouchableOpacity>
-        </View>
-      );
+      return this.renderFallback();
     }
 
-    return this.props.children;
+    return <React.Fragment key={this.state.resetKey}>{this.props.children}</React.Fragment>;
   }
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f8fafc',
     padding: 20,
+    justifyContent: 'center',
   },
-  header: {
-    marginBottom: 20,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+  card: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#d32f2f',
+    fontWeight: "bold",
+    color: "#d32f2f",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
   },
   scrollView: {
     flex: 1,
@@ -128,35 +176,43 @@ const styles = StyleSheet.create({
   errorSection: {
     marginBottom: 20,
     padding: 15,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
     borderRadius: 8,
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: "600",
     marginBottom: 8,
+    color: '#334155',
   },
   errorText: {
     fontSize: 14,
-    color: '#d32f2f',
-    fontFamily: 'monospace',
+    color: "#d32f2f",
+    fontFamily: "monospace",
   },
   stackText: {
     fontSize: 12,
-    color: '#666',
-    fontFamily: 'monospace',
+    fontFamily: "monospace",
+    color: '#b91c1c',
+    marginBottom: 16,
   },
   button: {
-    backgroundColor: '#00BFFF',
-    padding: 15,
+    backgroundColor: "#0ea5e9",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   buttonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
     fontWeight: '600',
+  },
+  devStack: {
+    marginTop: 14,
+    fontSize: 11,
+    color: '#64748b',
+    fontFamily: 'monospace',
   },
 });
 

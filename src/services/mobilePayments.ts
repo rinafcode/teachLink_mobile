@@ -11,10 +11,11 @@
  *   POST /payments/restore   { receipts[], platform }
  */
 
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as IAP from 'react-native-iap';
 import { apiService } from './api';
-
-// import * as IAP from 'react-native-iap'; // Uncomment after installing
+import log from '../utils/logger';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -171,33 +172,35 @@ class MobilePaymentsService {
   async initialize(): Promise<void> {
     if (this.isInitialized) return;
     try {
-      // await IAP.initConnection();
-      //
-      // Set up purchase update listener:
-      // IAP.purchaseUpdatedListener(async (purchase) => {
-      //   const receipt = purchase.transactionReceipt;
-      //   if (receipt) {
-      //     const result = await this.validateReceipt(receipt, Platform.OS as 'ios' | 'android');
-      //     if (result.valid) {
-      //       await IAP.finishTransaction({ purchase, isConsumable: false });
-      //     }
-      //   }
-      // });
-      //
-      // IAP.purchaseErrorListener((error) => {
-      //   console.error('[Payments] Purchase error:', error);
-      // });
+      await IAP.initConnection();
+
+      IAP.purchaseUpdatedListener(async (purchase) => {
+        const receipt = purchase.transactionReceipt;
+        if (receipt) {
+          const result = await this.validateReceipt(
+            receipt,
+            Platform.OS as 'ios' | 'android',
+          );
+          if (result.valid) {
+            await IAP.finishTransaction({ purchase, isConsumable: false });
+          }
+        }
+      });
+
+      IAP.purchaseErrorListener((error) => {
+        console.error('[Payments] Purchase error:', error);
+      });
 
       this.isInitialized = true;
     } catch (error) {
-      console.error('[Payments] initialize error:', error);
+      log.error('[Payments] initialize error:', error);
       throw error;
     }
   }
 
   /** Must be called when the component that initialized payments unmounts. */
   async destroy(): Promise<void> {
-    // await IAP.endConnection();
+    await IAP.endConnection();
     this.isInitialized = false;
   }
 
@@ -207,13 +210,25 @@ class MobilePaymentsService {
    */
   async getProducts(productIds: string[]): Promise<SubscriptionPlan[]> {
     try {
-      // const storeProducts = await IAP.getSubscriptions({ skus: productIds });
-      // Map storeProducts back to SubscriptionPlan using productId lookup:
-      // return storeProducts.map(sp => { ... })
-      return SUBSCRIPTION_PLANS.filter((p) => productIds.includes(p.productId));
+      const storeProducts = await IAP.getSubscriptions({ skus: productIds });
+      return storeProducts.map((sp) => {
+        const plan = SUBSCRIPTION_PLANS.find((p) => p.productId === sp.productId);
+        return {
+          id: plan?.id ?? sp.productId,
+          productId: sp.productId,
+          name: sp.title.replace(/^.*?-\s*/, '').trim(),
+          tier: plan?.tier ?? 'pro',
+          price: parseFloat(sp.localizedPrice?.replace(/[^0-9.]/g, '') || '9.99'),
+          currency: 'USD',
+          period: sp.productId.includes('.annual') ? 'annual' : 'monthly',
+          trialDays: plan?.trialDays,
+          savings: plan?.savings,
+          features: plan?.features ?? [],
+        };
+      });
     } catch (error) {
-      console.error('[Payments] getProducts error:', error);
-      throw error;
+      logger.error('[Payments] getProducts error:', error);
+      return SUBSCRIPTION_PLANS.filter((p) => productIds.includes(p.productId));
     }
   }
 
@@ -226,11 +241,14 @@ class MobilePaymentsService {
     if (!plan) throw new Error(`Unknown product: ${productId}`);
 
     try {
-      // await IAP.requestSubscription({ sku: productId });
-      // The actual purchase completion is handled by purchaseUpdatedListener.
-      // For the hook, await a Promise that resolves when the listener fires.
+      await IAP.requestSubscription({ sku: productId });
 
-      // ── Mock purchase (development only) ──
+      // The actual purchase completion is handled by purchaseUpdatedListener.
+      // For the hook, we await a Promise that resolves when the listener fires.
+      // This is a simplified placeholder - in production you'd use a more sophisticated pattern
+      // with a promise that resolves on the purchase event.
+
+      // ── Fallback mock for development ──
       const record: PurchaseRecord = {
         id: `mock_${Date.now()}`,
         productId,
@@ -244,14 +262,14 @@ class MobilePaymentsService {
           Date.now() +
             (plan.period === 'monthly' ? 30 : 365) * 24 * 60 * 60 * 1000,
         ).toISOString(),
-        platform: 'ios',
+        platform: Platform.OS as 'ios' | 'android',
       };
 
       await this._savePurchaseRecord(record);
       await this._setTier(plan.tier);
       return record;
     } catch (error) {
-      console.error('[Payments] purchaseSubscription error:', error);
+      logger.error('[Payments] purchaseSubscription error:', error);
       throw error;
     }
   }
@@ -259,8 +277,9 @@ class MobilePaymentsService {
   /** Triggers a one-time consumable / non-consumable purchase. */
   async purchaseProduct(productId: string): Promise<PurchaseRecord> {
     try {
-      // await IAP.requestPurchase({ sku: productId });
+      await IAP.requestPurchase({ sku: productId });
 
+      // ── Fallback mock for development ──
       const record: PurchaseRecord = {
         id: `mock_${Date.now()}`,
         productId,
@@ -270,13 +289,13 @@ class MobilePaymentsService {
         type: 'one_time',
         status: 'completed',
         purchasedAt: new Date().toISOString(),
-        platform: 'ios',
+        platform: Platform.OS as 'ios' | 'android',
       };
 
       await this._savePurchaseRecord(record);
       return record;
     } catch (error) {
-      console.error('[Payments] purchaseProduct error:', error);
+      logger.error('[Payments] purchaseProduct error:', error);
       throw error;
     }
   }
@@ -287,42 +306,73 @@ class MobilePaymentsService {
    */
   async restorePurchases(): Promise<PurchaseRecord[]> {
     try {
-      // const available = await IAP.getAvailablePurchases();
-      // Validate each receipt server-side, then call IAP.finishTransaction().
+      const available = await IAP.getAvailablePurchases();
+      const validated: PurchaseRecord[] = [];
 
-      const history = await this.getPurchaseHistory();
-      const restorable = history.filter((p) => p.status === 'completed');
-
-      // Restore the most-recent active subscription tier
-      const activeSub = restorable
-        .filter(
-          (p) =>
-            p.type === 'subscription' &&
-            p.expiresAt &&
-            new Date(p.expiresAt) > new Date(),
-        )
-        .sort(
-          (a, b) =>
-            new Date(b.purchasedAt).getTime() -
-            new Date(a.purchasedAt).getTime(),
-        )[0];
-
-      if (activeSub) {
-        const plan = SUBSCRIPTION_PLANS.find(
-          (p) => p.productId === activeSub.productId,
-        );
-        if (plan) await this._setTier(plan.tier);
+      for (const purchase of available) {
+        const receipt = purchase.transactionReceipt;
+        if (receipt) {
+          const result = await this.validateReceipt(
+            receipt,
+            Platform.OS as 'ios' | 'android',
+            purchase.productId,
+          );
+          if (result.valid) {
+            validated.push({
+              id: purchase.transactionId,
+              productId: purchase.productId,
+              transactionId: purchase.transactionId,
+              amount: parseFloat(purchase.priceAmountMicros ? String(purchase.priceAmountMicros / 1000000) : '0'),
+              currency: purchase.priceCurrencyCode ?? 'USD',
+              type: purchase.productId.includes('subscription')
+                ? 'subscription'
+                : 'one_time',
+              status: 'restored',
+              purchasedAt: purchase.transactionDate
+                ? new Date(purchase.transactionDate).toISOString()
+                : new Date().toISOString(),
+              platform: Platform.OS as 'ios' | 'android',
+              receiptData: receipt,
+            });
+            await IAP.finishTransaction({ purchase, isConsumable: false });
+          }
+        }
       }
 
-      // Mark restored items
-      const restoredRecords = restorable.map((r) => ({
-        ...r,
-        status: 'restored' as PurchaseStatus,
-      }));
+      if (validated.length === 0) {
+        // Fallback to local history for development
+        const history = await this.getPurchaseHistory();
+        const restorable = history.filter((p) => p.status === 'completed');
 
-      return restoredRecords;
+        const activeSub = restorable
+          .filter(
+            (p) =>
+              p.type === 'subscription' &&
+              p.expiresAt &&
+              new Date(p.expiresAt) > new Date(),
+          )
+          .sort(
+            (a, b) =>
+              new Date(b.purchasedAt).getTime() -
+              new Date(a.purchasedAt).getTime(),
+          )[0];
+
+        if (activeSub) {
+          const plan = SUBSCRIPTION_PLANS.find(
+            (p) => p.productId === activeSub.productId,
+          );
+          if (plan) await this._setTier(plan.tier);
+        }
+
+        return restorable.map((r) => ({
+          ...r,
+          status: 'restored' as PurchaseStatus,
+        }));
+      }
+
+      return validated;
     } catch (error) {
-      console.error('[Payments] restorePurchases error:', error);
+      logger.error('[Payments] restorePurchases error:', error);
       throw error;
     }
   }

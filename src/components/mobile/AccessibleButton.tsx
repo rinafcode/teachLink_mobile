@@ -8,13 +8,17 @@ import {
 } from 'react-native';
 import { getAccessibilityProps } from '../../utils/accessibility';
 
+/**
+ * Props for the AccessibleButton component
+ */
 interface AccessibleButtonProps extends TouchableOpacityProps {
+  /** Accessibility label for screen readers */
   label: string;
+  /** Additional accessibility hint for screen readers */
   hint?: string;
+  /** Accessibility role for the button */
   role?: 'button' | 'link';
-  /**
-   * Optional custom styles for the button.
-   */
+  /** Optional custom styles for the button container */
   containerStyle?: StyleProp<ViewStyle>;
 }
 

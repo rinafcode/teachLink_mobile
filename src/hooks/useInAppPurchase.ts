@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import logger from '../utils/logger';
 import {
   mobilePaymentsService,
   SubscriptionPlan,
@@ -74,7 +75,7 @@ export const useInAppPurchase = (): UseInAppPurchase => {
         setCurrentTier(tier);
         setPurchaseHistory(history);
       } catch (err) {
-        console.error('[useInAppPurchase] init error:', err);
+        logger.error('[useInAppPurchase] init error:', err);
       }
     };
 

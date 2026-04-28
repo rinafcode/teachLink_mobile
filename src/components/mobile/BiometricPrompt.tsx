@@ -1,27 +1,38 @@
+import { Eye, FingerprintPattern, KeyRound, ScanFace } from 'lucide-react-native';
 import React from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Modal,
-  Pressable,
+    ActivityIndicator,
+    Modal,
+    Pressable,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { FingerprintPattern, ScanFace, Eye, KeyRound } from 'lucide-react-native';
 import { BiometricType } from '../../services/mobileAuth';
+import { ErrorBoundary } from '../common/ErrorBoundary';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+/**
+ * Props for the BiometricPrompt component
+ */
 interface BiometricPromptProps {
-  /** Visible as a modal overlay */
+  /** Whether the biometric prompt modal is visible */
   visible: boolean;
+  /** Type of biometric authentication to use */
   biometricType: BiometricType;
+  /** Whether authentication is in progress */
   isLoading?: boolean;
+  /** Error message to display if authentication fails */
   error?: string | null;
+  /** Callback when user initiates biometric authentication */
   onAuthenticate: () => void;
+  /** Callback when user chooses to use password fallback */
   onFallback: () => void;
+  /** Callback when the modal is dismissed */
   onDismiss: () => void;
+  /** Whether to use dark mode styling */
   isDark?: boolean;
 }
 
@@ -80,18 +91,19 @@ export const BiometricPrompt: React.FC<BiometricPromptProps> = ({
   const label = biometricLabel(biometricType);
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onDismiss}
-      statusBarTranslucent
-    >
-      <Pressable style={[styles.overlay, { backgroundColor: overlay }]} onPress={onDismiss}>
-        <Pressable
-          style={[styles.sheet, { backgroundColor: bg }]}
-          onPress={(e) => e.stopPropagation()}
-        >
+    <ErrorBoundary boundaryName="BiometricPromptModal">
+      <Modal
+        visible={visible}
+        transparent
+        animationType="fade"
+        onRequestClose={onDismiss}
+        statusBarTranslucent
+      >
+        <Pressable style={[styles.overlay, { backgroundColor: overlay }]} onPress={onDismiss}>
+          <Pressable
+            style={[styles.sheet, { backgroundColor: bg }]}
+            onPress={(e) => e.stopPropagation()}
+          >
           {/* Icon */}
           <View style={[styles.iconBg, { backgroundColor: iconBg }]}>
             {isLoading ? (
@@ -143,18 +155,26 @@ export const BiometricPrompt: React.FC<BiometricPromptProps> = ({
               </Text>
             </TouchableOpacity>
           )}
+          </Pressable>
         </Pressable>
-      </Pressable>
-    </Modal>
+      </Modal>
+    </ErrorBoundary>
   );
 };
 
 // ─── Inline variant (non-modal) ───────────────────────────────────────────────
 
+/**
+ * Props for the BiometricInlineButton component
+ */
 interface BiometricInlineButtonProps {
+  /** Type of biometric authentication to use */
   biometricType: BiometricType;
+  /** Whether authentication is in progress */
   isLoading?: boolean;
+  /** Callback when the button is pressed */
   onPress: () => void;
+  /** Whether to use dark mode styling */
   isDark?: boolean;
 }
 

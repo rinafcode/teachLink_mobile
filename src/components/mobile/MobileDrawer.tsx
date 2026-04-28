@@ -4,6 +4,9 @@ import { DrawerContentComponentProps, DrawerContentScrollView, DrawerItemList } 
 import { useSafeArea } from '../../hooks/useSafeArea';
 import { Settings, LogOut, Sun, Moon } from 'lucide-react-native';
 
+/**
+ * Props for the MobileDrawer component
+ */
 export const MobileDrawer = (props: DrawerContentComponentProps) => {
     const { top, bottom } = useSafeArea();
     const [isDark, setIsDark] = React.useState(false);

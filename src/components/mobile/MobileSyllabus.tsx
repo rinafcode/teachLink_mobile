@@ -17,11 +17,19 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
+/**
+ * Props for the MobileSyllabus component
+ */
 interface MobileSyllabusProps {
+  /** Array of course sections to display */
   sections: Section[];
+  /** Course progress data */
   progress?: CourseProgress | null;
+  /** ID of the currently active lesson */
   currentLessonId?: string;
+  /** Callback when a lesson is selected */
   onLessonSelect: (lessonId: string, sectionId: string) => void;
+  /** Optional callback when a section is toggled */
   onSectionToggle?: (sectionId: string, isExpanded: boolean) => void;
 }
 

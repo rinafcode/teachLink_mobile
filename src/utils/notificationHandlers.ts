@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
-import { NotificationType, NotificationData } from '../types/notifications';
 import { useNotificationStore } from '../store/notificationStore';
+import { NotificationData, NotificationType } from '../types/notifications';
+import logger from './logger';
 
 type NavigationRef = {
   navigate: (screen: string, params?: Record<string, unknown>) => void;
@@ -8,6 +9,27 @@ type NavigationRef = {
 };
 
 let navigationRef: NavigationRef | null = null;
+
+function isNotificationType(value: unknown): value is NotificationType {
+  return typeof value === 'string' && Object.values(NotificationType).includes(value as NotificationType);
+}
+
+function toNotificationData(value: unknown): NotificationData | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+
+  const maybeData = value as Record<string, unknown>;
+  if (!isNotificationType(maybeData.type)) return undefined;
+
+  return {
+    type: maybeData.type,
+    courseId: typeof maybeData.courseId === 'string' ? maybeData.courseId : undefined,
+    conversationId:
+      typeof maybeData.conversationId === 'string' ? maybeData.conversationId : undefined,
+    achievementId: typeof maybeData.achievementId === 'string' ? maybeData.achievementId : undefined,
+    postId: typeof maybeData.postId === 'string' ? maybeData.postId : undefined,
+    deepLink: typeof maybeData.deepLink === 'string' ? maybeData.deepLink : undefined,
+  };
+}
 
 /**
  * Set the navigation reference for deep linking
@@ -23,10 +45,10 @@ export function setNavigationRef(ref: NavigationRef): void {
 export function handleNotificationResponse(
   response: Notifications.NotificationResponse
 ): void {
-  const data = response.notification.request.content.data as NotificationData | undefined;
+  const data = toNotificationData(response.notification.request.content.data);
 
   if (!data?.type) {
-    console.warn('Notification received without type data');
+    logger.warn('Notification received without type data');
     return;
   }
 
@@ -54,7 +76,7 @@ export function handleNotificationResponse(
       handleCommunityActivity(data);
       break;
     default:
-      console.warn('Unknown notification type:', data.type);
+      logger.warn('Unknown notification type:', data.type);
   }
 }
 
@@ -64,7 +86,7 @@ export function handleNotificationResponse(
  */
 export function handleCourseUpdate(data: NotificationData): void {
   if (!navigationRef?.isReady()) {
-    console.warn('Navigation not ready for course update');
+    logger.warn('Navigation not ready for course update');
     return;
   }
 
@@ -82,7 +104,7 @@ export function handleCourseUpdate(data: NotificationData): void {
  */
 export function handleMessage(data: NotificationData): void {
   if (!navigationRef?.isReady()) {
-    console.warn('Navigation not ready for message');
+    logger.warn('Navigation not ready for message');
     return;
   }
 
@@ -100,7 +122,7 @@ export function handleMessage(data: NotificationData): void {
  */
 export function handleLearningReminder(data: NotificationData): void {
   if (!navigationRef?.isReady()) {
-    console.warn('Navigation not ready for learning reminder');
+    logger.warn('Navigation not ready for learning reminder');
     return;
   }
 
@@ -114,7 +136,7 @@ export function handleLearningReminder(data: NotificationData): void {
  */
 export function handleAchievementUnlock(data: NotificationData): void {
   if (!navigationRef?.isReady()) {
-    console.warn('Navigation not ready for achievement');
+    logger.warn('Navigation not ready for achievement');
     return;
   }
 
@@ -132,7 +154,7 @@ export function handleAchievementUnlock(data: NotificationData): void {
  */
 export function handleCommunityActivity(data: NotificationData): void {
   if (!navigationRef?.isReady()) {
-    console.warn('Navigation not ready for community activity');
+    logger.warn('Navigation not ready for community activity');
     return;
   }
 
@@ -152,7 +174,7 @@ export function handleNotificationReceived(
   notification: Notifications.Notification
 ): void {
   const { title, body, data } = notification.request.content;
-  const notificationData = data as NotificationData | undefined;
+  const notificationData = toNotificationData(data);
 
   // Check if this notification type is enabled
   if (notificationData?.type) {
@@ -225,7 +247,7 @@ export function parseDeepLink(url: string): NotificationData | null {
         return null;
     }
   } catch (error) {
-    console.error('Error parsing deep link:', error);
+    logger.error('Error parsing deep link:', error);
     return null;
   }
 }

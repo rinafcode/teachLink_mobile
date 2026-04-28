@@ -8,4 +8,8 @@ export const apiService = {
   delete: (url: string) => apiClient.delete(url),
 };
 
+export { courseApi } from "./courseApi";
+export { userApi } from "./userApi";
+export { fetchWithSWR, invalidateCache, clearCache } from "./cache";
+
 export default apiService;

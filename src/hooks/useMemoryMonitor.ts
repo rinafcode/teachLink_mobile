@@ -1,10 +1,17 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
+import logger from '../utils/logger';
 
 interface MemoryMonitorOptions {
     componentId: string;
     itemCount?: number;
     thresholdWarning?: number; // Number of items considered large
+    thresholdCritical?: number; // Number of items considered critical
+}
+
+interface MemoryMonitorResult {
+    isHighMemory: boolean;
+    isCriticalMemory: boolean;
 }
 
 /**
@@ -16,16 +23,28 @@ export function useMemoryMonitor({
     componentId,
     itemCount = 0,
     thresholdWarning = 100,
-}: MemoryMonitorOptions) {
+    thresholdCritical = 500,
+}: MemoryMonitorOptions): MemoryMonitorResult {
     const isMounted = useRef(false);
+    const [isHighMemory, setIsHighMemory] = useState(false);
+    const [isCriticalMemory, setIsCriticalMemory] = useState(false);
 
     useEffect(() => {
         isMounted.current = true;
 
-        // Warn if a large list is rendered, especially on Android where memory limits
-        // can be stricter. This is a proxy warning.
-        if (itemCount > thresholdWarning) {
-            console.warn(
+        const high = itemCount > thresholdWarning;
+        const critical = itemCount > thresholdCritical;
+
+        setIsHighMemory(high);
+        setIsCriticalMemory(critical);
+
+        if (critical) {
+            logger.warn(
+                `[Memory Monitor] ${componentId}: CRITICAL — ${itemCount} items rendered. ` +
+                `This may cause significant memory pressure. Consider pagination or infinite scroll.`
+            );
+        } else if (high) {
+            logger.warn(
                 `[Memory Monitor] ${componentId}: Rendering ${itemCount} items. ` +
                 `Ensure VirtualList/FlatList is used with appropriate windowSize ` +
                 `to prevent excessive memory consumption.`
@@ -35,14 +54,15 @@ export function useMemoryMonitor({
         return () => {
             isMounted.current = false;
         };
+    }, [componentId, itemCount, thresholdWarning, thresholdCritical]);
+
+    useEffect(() => {
+        if (Platform.OS === 'android' && itemCount > thresholdWarning) {
+            logger.debug(
+                `[Memory Monitor] ${componentId}: Android memory hint — consider reducing windowSize on FlatList.`
+            );
+        }
     }, [componentId, itemCount, thresholdWarning]);
 
-    // If you added a native module for actual memory tracking (e.g. react-native-device-info),
-    // you would poll getUsedMemory() here and trigger alerts.
-    useEffect(() => {
-        if (Platform.OS === 'android') {
-            // Android specific memory optimization hints
-            // This is a placeholder for potential Native Module calls if added later
-        }
-    }, []);
+    return { isHighMemory, isCriticalMemory };
 }

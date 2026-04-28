@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ListRenderItemInfo } from 'react-native';
+import { useMemoryMonitor } from '../../hooks/useMemoryMonitor';
 
 interface Connection {
   id: string;
@@ -18,6 +19,8 @@ export const ConnectionManager: React.FC<ConnectionManagerProps> = ({
   onAddConnection,
   onRemoveConnection,
 }) => {
+  useMemoryMonitor({ componentId: 'ConnectionManager', itemCount: connections.length });
+
   const renderConnectionItem = ({ item }: ListRenderItemInfo<Connection>) => (
     <View style={styles.connectionItem}>
       <View style={styles.connectionInfo}>

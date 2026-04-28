@@ -4,7 +4,10 @@
     "strict": true,
     "skipLibCheck": true,
     "jsx": "react-native",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
     "lib": ["ES2015", "ES2017", "DOM"],
     "paths": {
       "@/*": [

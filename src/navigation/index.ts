@@ -1,1 +1,3 @@
-export * from './linking';
+export * from "./AuthGuard";
+export * from "./linking";
+

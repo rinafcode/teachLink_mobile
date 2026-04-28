@@ -8,9 +8,13 @@ export const useScreenReader = () => {
   const [isEnabled, setIsEnabled] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+
     // Check initial state
     AccessibilityInfo.isScreenReaderEnabled().then((status) => {
-      setIsEnabled(status);
+      if (isMounted) {
+        setIsEnabled(status);
+      }
     });
 
     // Subscribe to changes
@@ -22,6 +26,7 @@ export const useScreenReader = () => {
     );
 
     return () => {
+      isMounted = false;
       subscription.remove();
     };
   }, []);

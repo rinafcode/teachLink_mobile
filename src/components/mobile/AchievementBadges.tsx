@@ -1,35 +1,56 @@
-import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  Image,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Modal,
-  Pressable,
-} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Award, Lock, X } from 'lucide-react-native';
-import { combineAriaLabels, getAccessibilityProps, announceToScreenReader } from '../../utils/accessibility';
+import React, { useCallback, useState } from 'react';
+import {
+    Image,
+    Modal,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import { announceToScreenReader, combineAriaLabels, getAccessibilityProps } from '../../utils/accessibility';
+import { ErrorBoundary } from '../common/ErrorBoundary';
 import { AccessibleButton } from './AccessibleButton';
 
+/**
+ * Rarity levels for achievement badges
+ */
 type BadgeRarity = 'common' | 'rare' | 'epic' | 'legendary';
 
+/**
+ * Achievement data structure
+ */
 export interface Achievement {
+  /** Unique identifier for the achievement */
   id: string;
+  /** Display name of the achievement */
   name: string;
+  /** Description of what the achievement represents */
   description?: string;
+  /** URL to an icon image for the achievement */
   iconUrl?: string;
+  /** Emoji to display as the achievement icon */
   emoji?: string;
+  /** Rarity level of the achievement */
   rarity?: BadgeRarity;
+  /** Date when the achievement was unlocked */
   unlockedAt?: string;
+  /** Whether the achievement is locked/not yet earned */
   isLocked?: boolean;
+  /** Progress towards unlocking the achievement */
   progress?: { current: number; total: number };
 }
 
+/**
+ * Props for the AchievementBadges component
+ */
 interface AchievementBadgesProps {
+  /** Array of achievements to display */
   achievements: Achievement[];
+  /** Whether to use dark mode styling */
   isDark?: boolean;
 }
 
@@ -226,20 +247,21 @@ export const AchievementBadges: React.FC<AchievementBadgesProps> = ({
         onRequestClose={() => setSelectedBadge(null)}
         accessibilityLabel="Achievement details"
       >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setSelectedBadge(null)}
-          accessibilityLabel="Close modal"
-          accessibilityRole="button"
-        >
-          <View
-            style={[
-              styles.modalCard,
-              { backgroundColor: isDark ? '#1e293b' : '#fff' },
-            ]}
-            onStartShouldSetResponder={() => true}
-            onTouchEnd={(e: any) => e.stopPropagation()}
+        <ErrorBoundary boundaryName="AchievementBadgesModal">
+          <Pressable
+            style={styles.modalOverlay}
+            onPress={() => setSelectedBadge(null)}
+            accessibilityLabel="Close modal"
+            accessibilityRole="button"
           >
+            <View
+              style={[
+                styles.modalCard,
+                { backgroundColor: isDark ? '#1e293b' : '#fff' },
+              ]}
+              onStartShouldSetResponder={() => true}
+              onTouchEnd={(e: any) => e.stopPropagation()}
+            >
             <AccessibleButton
               label="Close details"
               onPress={() => setSelectedBadge(null)}
@@ -366,8 +388,9 @@ export const AchievementBadges: React.FC<AchievementBadgesProps> = ({
                 </>
               );
             })()}
-          </View>
-        </Pressable>
+            </View>
+          </Pressable>
+        </ErrorBoundary>
       </Modal>
     </View>
   );

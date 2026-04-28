@@ -1,13 +1,27 @@
 /**
- * Enhanced logging utility that ensures errors are visible in Metro bundler
- * All logs appear in your PC terminal where npm start is running
+ * Centralized logging utility for TeachLink Mobile.
+ *
+ * - Development: all log levels are output to the Metro bundler terminal.
+ * - Production: only errors are logged; info/warn/debug are silenced.
+ *
+ * Import and use this instead of direct console.* calls throughout the codebase.
  */
 
-const isDev = __DEV__;
+/** Supported log severity levels. */
+export enum LogLevel {
+  DEBUG = 'DEBUG',
+  INFO = 'INFO',
+  WARN = 'WARN',
+  ERROR = 'ERROR',
+}
+
+// Safe __DEV__ check — falls back gracefully in non-RN environments (e.g. Jest).
+const isDev =
+  typeof __DEV__ !== 'undefined' ? __DEV__ : process.env.NODE_ENV !== 'production';
 
 export const logger = {
   /**
-   * Log info messages (appears in Metro terminal)
+   * Log informational messages. Only emitted in development.
    */
   info: (...args: any[]) => {
     if (isDev) {
@@ -16,7 +30,7 @@ export const logger = {
   },
 
   /**
-   * Log warnings (appears in Metro terminal in YELLOW)
+   * Log warning messages. Only emitted in development.
    */
   warn: (...args: any[]) => {
     if (isDev) {
@@ -25,19 +39,19 @@ export const logger = {
   },
 
   /**
-   * Log errors (appears in Metro terminal in RED)
+   * Log error messages. Always emitted, including in production.
+   * Prints the stack trace when the first argument is an Error instance.
    */
   error: (...args: any[]) => {
     console.error('❌ [ERROR]', ...args);
-    
-    // Also log stack trace if available
+
     if (args[0] instanceof Error) {
       console.error('Stack:', args[0].stack);
     }
   },
 
   /**
-   * Log debug messages
+   * Log debug-level messages. Only emitted in development.
    */
   debug: (...args: any[]) => {
     if (isDev) {
@@ -46,11 +60,11 @@ export const logger = {
   },
 
   /**
-   * Log component lifecycle
+   * Log a component lifecycle event. Only emitted in development.
    */
   component: (componentName: string, action: string, data?: any) => {
     if (isDev) {
-      console.log(`📱 [${componentName}] ${action}`, data || '');
+      console.log(`📱 [${componentName}] ${action}`, data ?? '');
     }
   },
 };

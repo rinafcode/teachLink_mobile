@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useEffect, useRef, Component, ErrorInfo, ReactNode } from 'react';
+import React, { createContext, ReactNode, useContext, useEffect, useRef } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
-import { mobileAnalyticsService } from '../../services/mobileAnalytics';
 import { crashReportingService } from '../../services/crashReporting';
+import { mobileAnalyticsService } from '../../services/mobileAnalytics';
 import logger from '../../utils/logger';
+import { ErrorBoundary } from '../common/ErrorBoundary';
 
 // ─── Analytics Context ────────────────────────────────────────────────────────
 
@@ -11,39 +12,6 @@ interface AnalyticsContextValue {
 }
 
 const AnalyticsContext = createContext<AnalyticsContextValue | undefined>(undefined);
-
-// ─── Error Boundary Component ──────────────────────────────────────────────────
-
-interface ErrorBoundaryProps {
-  children: ReactNode;
-  fallback?: ReactNode;
-}
-
-interface ErrorBoundaryState {
-  hasError: boolean;
-}
-
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  static getDerivedStateFromError(_: Error): ErrorBoundaryState {
-    return { hasError: true };
-  }
-
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    crashReportingService.reportError(error, 'ErrorBoundary', { componentStack: errorInfo.componentStack });
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (this.props.fallback as ReactNode) || null;
-    }
-    return this.props.children;
-  }
-}
 
 // ─── Provider Component ───────────────────────────────────────────────────────
 
@@ -81,7 +49,7 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({ children }
 
   return (
     <AnalyticsContext.Provider value={{ service: mobileAnalyticsService }}>
-      <ErrorBoundary>
+      <ErrorBoundary boundaryName="AnalyticsProvider">
         {children}
       </ErrorBoundary>
     </AnalyticsContext.Provider>

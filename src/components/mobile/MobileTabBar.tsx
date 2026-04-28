@@ -4,6 +4,9 @@ import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeArea } from '../../hooks/useSafeArea';
 import { Home, Compass, PlusCircle, MessageCircle, User } from 'lucide-react-native';
 
+/**
+ * Custom bottom tab bar component for TeachLink mobile
+ */
 export const MobileTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
     const { bottom } = useSafeArea();
 

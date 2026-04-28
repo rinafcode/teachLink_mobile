@@ -1,0 +1,109 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── JS-level build verification ──────────────────────────────────────────────
+  # Runs on Linux: bundles JS for both platforms and checks TypeScript types.
+  # Catches import errors, type errors, and broken module resolution without
+  # requiring native toolchains.
+  build:
+    name: Build Verification (JS bundles + TypeScript)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript type check
+        run: npx tsc --noEmit
+
+      - name: Verify Android bundle
+        run: npx expo export --platform android
+
+      - name: Verify iOS bundle
+        run: npx expo export --platform ios
+
+  # ── Android native build ──────────────────────────────────────────────────────
+  # Prebuilds the managed Expo project into a native Android project and
+  # assembles a debug APK to confirm the native build is not broken.
+  build-android:
+    name: Android Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate native Android project
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x android/gradlew
+
+      - name: Assemble Android debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+  # ── iOS native build ──────────────────────────────────────────────────────────
+  # Prebuilds the managed Expo project into a native iOS project and compiles
+  # for the iOS Simulator (no code signing required).
+  # Only runs on macOS where Xcode is available.
+  build-ios:
+    name: iOS Build
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate native iOS project
+        run: npx expo prebuild --platform ios --no-install
+
+      - name: Install CocoaPods
+        working-directory: ios
+        run: pod install
+
+      - name: Build iOS (simulator, no code signing)
+        run: |
+          WORKSPACE=$(find ios -maxdepth 1 -name "*.xcworkspace" | head -1)
+          SCHEME=$(basename "$WORKSPACE" .xcworkspace)
+          xcodebuild \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath /tmp/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            build
