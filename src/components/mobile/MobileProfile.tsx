@@ -236,7 +236,7 @@ interface MobileProfileProps {
   isLoading?: boolean;
 }
 
-import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
+import { useDynamicFontSize } from '../../hooks';
 
 export const MobileProfile: React.FC<MobileProfileProps> = ({
   userId: _userId,

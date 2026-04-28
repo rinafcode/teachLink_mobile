@@ -7,8 +7,8 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { useHapticFeedback } from '../../../hooks/useHapticFeedback';
 import { Question } from '../../../types/course';
+import { useHapticFeedback } from '../../../hooks';
 
 interface MobileQuestionCardProps {
   /** The question data to display */

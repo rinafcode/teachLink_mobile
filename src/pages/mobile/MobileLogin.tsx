@@ -25,10 +25,8 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { useBiometricAuth } from '../../hooks/useBiometricAuth';
-import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
+import { useBiometricAuth, useDynamicFontSize } from '../../hooks';
 import { BiometricInlineButton, BiometricPrompt } from '../../components/mobile/BiometricPrompt';
-import { useBiometricAuth } from '../../hooks/useBiometricAuth';
 import mobileAuthService, { AuthResult } from '../../services/mobileAuth';
 import * as secureStorage from '../../services/secureStorage';
 

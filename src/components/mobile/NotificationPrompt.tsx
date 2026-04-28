@@ -6,7 +6,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { useNotificationPermission } from '../../hooks/useNotificationPermission';
+import { useNotificationPermission } from '../../hooks';
 import { useNotificationStore } from '../../store/notificationStore';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 

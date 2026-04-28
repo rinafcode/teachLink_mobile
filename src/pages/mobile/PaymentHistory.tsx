@@ -11,7 +11,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { AppText as Text } from '../../components/common/AppText';
-import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
+import { useDynamicFontSize, useInAppPurchase } from '../../hooks';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
     ArrowLeft,
@@ -25,19 +25,6 @@ import {
     TrendingUp,
     XCircle,
 } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
-import {
-    ActivityIndicator,
-    Alert,
-    RefreshControl,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
-import { useInAppPurchase } from '../../hooks/useInAppPurchase';
 import {
     PurchaseRecord,
     PurchaseStatus,

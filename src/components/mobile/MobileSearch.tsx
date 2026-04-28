@@ -10,19 +10,17 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-
-import { FilterSheet, FilterField, FilterValues } from './FilterSheet';
-import { SearchHistory } from './SearchHistory';
-import { SearchResultCard, SearchResultItem } from './SearchResultCard';
-import { VoiceSearch } from './VoiceSearch';
-import { sampleCourse } from '../../data/sampleCourse';
-import { useAnalytics } from '../../hooks/useAnalytics';
-import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
-import { useMemoryMonitor } from '../../hooks/useMemoryMonitor';
-import { Course } from '../../types/course';
-import { addToSearchHistory } from '../../utils/searchHistory';
-import { AnalyticsEvent } from '../../utils/trackingEvents';
 import { AppText as Text } from '../common/AppText';
+import { useDynamicFontSize, useMemoryMonitor } from '../../hooks';
+import { Search, SlidersHorizontal } from 'lucide-react-native';
+import { VoiceSearch } from './VoiceSearch';
+import { SearchHistory } from './SearchHistory';
+import { FilterSheet, FilterField, FilterValues } from './FilterSheet';
+import { SearchResultCard, SearchResultItem } from './SearchResultCard';
+import { addToSearchHistory } from '../../utils/searchHistory';
+import { sampleCourse } from '../../data/sampleCourse';
+import { Course } from '../../types/course';
+import { AnalyticsEvent } from '../../utils/trackingEvents';
 
 const DEFAULT_FILTERS: FilterField[] = [
   {

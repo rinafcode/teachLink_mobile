@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ListRenderItemInfo } from 'react-native';
-import { useMemoryMonitor } from '../../hooks/useMemoryMonitor';
+import { useMemoryMonitor } from '../../hooks';
 
 interface Connection {
   id: string;

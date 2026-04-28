@@ -11,7 +11,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import { useCamera } from '../../hooks/useCamera';
+import { useCamera } from '../../hooks';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 
 /**

@@ -1,6 +1,6 @@
 import React from 'react';
-import { Switch, Text, TouchableOpacity, View } from 'react-native';
-import { useHapticFeedback } from '../../hooks/useHapticFeedback';
+import { View, Text, Switch, TouchableOpacity } from 'react-native';
+import { useHapticFeedback } from '../../hooks';
 
 interface NativeToggleProps {
   /** Current toggle state */

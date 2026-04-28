@@ -34,7 +34,7 @@ import { PickerOption, SettingsPicker } from './SettingsPicker';
 import { SettingsSection } from './SettingsSection';
 
 import { AppText } from '../common/AppText';
-import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
+import { useDynamicFontSize } from '../../hooks';
 
 // ─── Shared row ────────────────────────────────────────────────────────────────
 

@@ -12,8 +12,7 @@ import {
     ViewStyle,
 } from 'react-native';
 
-import { usePictureInPicture } from '../../hooks/usePictureInPicture';
-import { useVideoGestures } from '../../hooks/useVideoGestures';
+import { usePictureInPicture, useVideoGestures } from '../../hooks';
 import {
     AUTO_QUALITY_ID,
     deriveNetworkType,

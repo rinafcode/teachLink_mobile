@@ -20,7 +20,7 @@ import {
   Shield,
 } from 'lucide-react-native';
 import { PurchaseButton } from './PurchaseButton';
-import { useInAppPurchase } from '../../hooks/useInAppPurchase';
+import { useInAppPurchase } from '../../hooks';
 import {
   SUBSCRIPTION_PLANS,
   SubscriptionPlan,
