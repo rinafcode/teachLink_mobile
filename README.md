@@ -214,3 +214,19 @@ Run `eas credentials` to set up or repair iOS/Android signing credentials.
 - [Figma Design](https://www.figma.com/design/0RX6a19AbtemWmq8GLX1Y4/TeachLink-Project?node-id=0-1&t=gfrhW9c55Pxnfrl1-0)
 - [Expo Documentation](https://docs.expo.dev)
 - [EAS Build](https://docs.expo.dev/build/introduction/)
+
+## Build Profiles
+
+The project defines three EAS build profiles in `eas.json`:
+
+| Profile | Description | Usage |
+|---|---|---|
+| **development** | Fast internal build for debugging, includes development client and runs on the `development` channel. | `eas build --profile development` |
+| **preview** | Internal preview build, generates an APK for Android, runs on the `preview` channel. | `eas build --profile preview` |
+| **production** | Production‑ready build with auto‑incremented version numbers for iOS and Android, publishes to the `production` channel. | `eas build --profile production` |
+
+These profiles can also be used when submitting:
+
+- `eas submit --profile production` will use the production credentials defined in the `submit.production` section of `eas.json`.
+
+Refer to the official EAS docs for more details.
