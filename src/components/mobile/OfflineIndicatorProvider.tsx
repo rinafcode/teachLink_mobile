@@ -6,7 +6,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import { useNetworkStatus } from "../../hooks/useNetworkStatus";
+import { useNetworkStatus } from '../../hooks';
 import logger from "../../utils/logger";
 import { OfflineIndicator } from "./OfflineIndicator";
 

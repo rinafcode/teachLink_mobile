@@ -1,5 +1,3 @@
-import { CourseCardSkeleton, Skeleton, AppText as Text } from "@/src/components";
-import { useDynamicFontSize } from "@/src/hooks";
 import { useRouter } from "expo-router";
 import { useEffect } from "react";
 import {
@@ -10,13 +8,21 @@ import {
   View,
 } from "react-native";
 
+import { CourseCardSkeleton, Skeleton, AppText as Text } from "@/src/components";
 import { sampleCourse } from "@/src/data/sampleCourse";
+import { useDynamicFontSize , useAnalytics } from "@/src/hooks";
 import { useAppStore } from "@/src/store";
+import { AnalyticsEvent, ScreenName } from "@/src/utils/trackingEvents";
 
 export default function HomeScreen() {
   const router = useRouter();
   const { isLoading, setLoading } = useAppStore();
   const { scale } = useDynamicFontSize();
+  const { trackEvent, trackScreen } = useAnalytics();
+
+  useEffect(() => {
+    trackScreen(ScreenName.HOME);
+  }, []);
 
   const fetchHomeData = () => {
     setLoading(true);
@@ -84,12 +90,13 @@ export default function HomeScreen() {
       {/* Course Viewer Button - Primary */}
       <TouchableOpacity
         style={styles.primaryButton}
-        onPress={() =>
+        onPress={() => {
+          trackEvent(AnalyticsEvent.BUTTON_CLICK, { button: 'start_learning', screen: 'home' });
           router.push({
             pathname: "../course-viewer",
             params: { course: JSON.stringify(sampleCourse) },
-          })
-        }
+          });
+        }}
         accessibilityRole="button"
         accessibilityLabel="Start Learning"
         accessibilityHint="Opens the course viewer with a sample lesson"
@@ -105,7 +112,10 @@ export default function HomeScreen() {
 
       <TouchableOpacity
         style={styles.secondaryButton}
-        onPress={() => router.push("../search")}
+        onPress={() => {
+          trackEvent(AnalyticsEvent.BUTTON_CLICK, { button: 'search', screen: 'home' });
+          router.push("../search");
+        }}
         accessibilityRole="button"
         accessibilityLabel="Search courses"
         accessibilityHint="Navigates to the search screen"
@@ -126,7 +136,10 @@ export default function HomeScreen() {
         {/* Profile Button */}
         <TouchableOpacity
           style={styles.secondaryButton}
-          onPress={() => router.push("../profile/123")}
+          onPress={() => {
+            trackEvent(AnalyticsEvent.BUTTON_CLICK, { button: 'profile', screen: 'home' });
+            router.push("../profile/123");
+          }}
           accessibilityRole="button"
           accessibilityLabel="My Profile"
           accessibilityHint="View your learning progress and achievements"
@@ -143,7 +156,10 @@ export default function HomeScreen() {
 
         <TouchableOpacity
           style={styles.secondaryButton}
-          onPress={() => router.push("../settings")}
+          onPress={() => {
+            trackEvent(AnalyticsEvent.BUTTON_CLICK, { button: 'settings', screen: 'home' });
+            router.push("../settings");
+          }}
           accessibilityRole="button"
           accessibilityLabel="Settings"
           accessibilityHint="Customize your app experience"

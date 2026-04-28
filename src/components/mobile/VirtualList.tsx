@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { FlatList, FlatListProps, ViewStyle, StyleProp } from 'react-native';
-import { useMemoryMonitor } from '../../hooks/useMemoryMonitor';
+import { useMemoryMonitor } from '../../hooks';
 
 export interface VirtualListProps<T> extends Omit<FlatListProps<T>, 'renderItem'> {
     data: ReadonlyArray<T> | null | undefined;

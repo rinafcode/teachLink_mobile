@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { useNetworkStatus } from '../../hooks/useNetworkStatus';
+import { useNetworkStatus } from '../../hooks';
 import logger from '../../utils/logger';
 
 // Props interface

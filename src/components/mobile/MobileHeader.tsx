@@ -3,10 +3,8 @@ import { useNavigation } from '@react-navigation/native';
 import { ArrowLeft, Bell, Menu } from 'lucide-react-native';
 import React from 'react';
 import { TouchableOpacity, View } from 'react-native';
-import { usePendingRequests } from '../../hooks/usePendingRequests';
-import { useSafeArea } from '../../hooks/useSafeArea';
+import { useDynamicFontSize, usePendingRequests, useSafeArea } from '../../hooks';
 import { AppText } from '../common/AppText';
-import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
 
 /**
  * Props for the MobileHeader component

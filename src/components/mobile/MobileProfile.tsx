@@ -1,35 +1,35 @@
+import { LinearGradient } from 'expo-linear-gradient';
+import {
+    BookOpen,
+    Camera,
+    Clock,
+    Edit3,
+    Globe,
+    Mail,
+    MapPin,
+    Save,
+    Trophy,
+    User,
+    UserCheck,
+    UserPlus,
+    Users,
+    X,
+} from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
-  View,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-  SafeAreaView,
-  ActivityIndicator,
+    ActivityIndicator,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { AppText as Text } from '../common/AppText';
-import { LinearGradient } from 'expo-linear-gradient';
+import { CachedImage } from '../ui/CachedImage';
 import { Skeleton } from '../ui/Skeleton';
-import {
-  Camera,
-  Edit3,
-  Save,
-  X,
-  User,
-  Mail,
-  MapPin,
-  BookOpen,
-  Users,
-  Trophy,
-  Clock,
-  Globe,
-  UserPlus,
-  UserCheck,
-} from 'lucide-react-native';
+import { Achievement, AchievementBadges } from './AchievementBadges';
 import { AvatarCamera } from './AvatarCamera';
 import { MobileFormInput } from './MobileFormInput';
-import { AchievementBadges, Achievement } from './AchievementBadges';
 import { StatisticsDisplay } from './StatisticsDisplay';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -236,7 +236,7 @@ interface MobileProfileProps {
   isLoading?: boolean;
 }
 
-import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
+import { useDynamicFontSize } from '../../hooks';
 
 export const MobileProfile: React.FC<MobileProfileProps> = ({
   userId: _userId,
@@ -433,11 +433,11 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
               accessibilityHint="Opens the camera to take a new profile picture"
             >
               {profile.avatar ? (
-                <Image
-                  source={{ uri: profile.avatar }}
+                <CachedImage
+                  uri={profile.avatar}
                   style={styles.avatar}
-                  accessibilityRole="image"
-                  accessibilityLabel={`${profile.name}'s profile photo`}
+                  alt={`${profile.name}'s profile photo`}
+                  autoPrefetch={true}
                 />
               ) : (
                 <LinearGradient
