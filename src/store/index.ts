@@ -1,6 +1,5 @@
-import * as SecureStore from "expo-secure-store";
 import { create } from "zustand";
-import { createJSONStorage, devtools, persist, subscribeWithSelector } from "zustand/middleware";
+import { devtools, persist, subscribeWithSelector } from "zustand/middleware";
 
 export interface User {
   id: string;
@@ -118,5 +117,7 @@ export const useAppStore = create<AppState>()(
   )
 );
 
-export * from "./notificationStore";
+export * from "./achievementStore";
 export * from "./courseProgressStore";
+export * from "./notificationStore";
+
