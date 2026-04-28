@@ -1,6 +1,6 @@
 Here is the complete, consolidated `README.md` file. It incorporates your latest cleanup, updates the **Folder Structure** to accurately reflect your current directory, and ensures the repo links match your terminal path.
 
-```markdown
+````markdown
 # TeachLink Mobile
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
@@ -12,6 +12,7 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    ```bash
    npm install
    ```
+````
 
 2. **Start the app**
 
@@ -20,6 +21,7 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    ```
 
 In the output, you'll find options to open the app in a:
+
 - [Development build](https://docs.expo.dev/develop/development-builds/introduction/)
 - [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
 - [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
@@ -40,6 +42,7 @@ npx expo start
 ```
 
 ## Features
+
 - **Cross-platform (iOS & Android)**
 - **Share and browse knowledge content**
 - **Live chat and push notifications**
@@ -63,6 +66,16 @@ npx expo start
 └── tsconfig.json       # TypeScript configuration
 ```
 
+## Storybook
+
+- **Start:** `npm run storybook` to start the app in Storybook mode.
+- **Add Story:** Create `*.stories.tsx` files in `src/components`.
+- **View:** Open the app on your device/emulator to interact with components.
+
 ## Resources
+
 - [Figma Design](https://www.figma.com/design/0RX6a19AbtemWmq8GLX1Y4/TeachLink-Project?node-id=0-1&t=gfrhW9c55Pxnfrl1-0)
+
+```
+
 ```

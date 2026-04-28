@@ -1,39 +1,33 @@
-import * as Sentry from '@sentry/react-native';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect } from 'react';
-import { LogBox } from 'react-native';
-import "./global.css";
-import { ErrorBoundary } from './src/components/common/ErrorBoundary';
-import AppNavigator from './src/navigation/AppNavigator';
-import socketService from './src/services/socket';
-import { useAppStore } from './src/store';
 import React, { useEffect, useRef } from 'react';
-import { StatusBar } from 'expo-status-bar';
 import { Alert, AppState, AppStateStatus, LogBox } from 'react-native';
-import AppNavigator from './src/navigation/AppNavigator';
-import socketService from './src/services/socket';
-import { ErrorBoundary } from './src/components/common/ErrorBoundary';
-import mobileAuthService from './src/services/mobileAuth';
-import "./global.css";
 
-requireEnvVariables();
-// Notification imports
-import { AuthProvider } from "./src/hooks";
-import { setupNotificationNavigation } from "./src/navigation/linking";
+import './global.css';
+import StorybookUI from './.rnstorybook';
+import { ErrorBoundary } from './src/components/common/ErrorBoundary';
+import { AuthProvider } from './src/hooks';
+import AppNavigator from './src/navigation/AppNavigator';
+import { setupNotificationNavigation } from './src/navigation/linking';
+import { mobileAuthService } from './src/services/mobileAuth';
 import {
   addNotificationReceivedListener,
   getLastNotificationResponse,
   removeNotificationListener,
-} from "./src/services/pushNotifications";
-import { handleNotificationReceived } from "./src/utils/notificationHandlers";
+} from './src/services/pushNotifications';
+import socketService from './src/services/socket';
+import { useAppStore } from './src/store';
+import { handleNotificationReceived } from './src/utils/notificationHandlers';
+
+// SHOW_STORYBOOK flag based on environment variable
+const SHOW_STORYBOOK = process.env.EXPO_PUBLIC_STORYBOOK === 'true';
+
+// Initialization and environment checks
+requireEnvVariables();
 
 // Centralized logging is handled by src/utils/logger.
-// Suppress known non-actionable navigation warnings in all environments.
 if (__DEV__) {
-  logger.debug("Development mode: centralized logger active");
-  LogBox.ignoreLogs([
-    "Non-serializable values were found in the navigation state",
-  ]);
+  logger.debug('Development mode: centralized logger active');
+  LogBox.ignoreLogs(['Non-serializable values were found in the navigation state']);
 } else {
   // Strip all logs except errors in production for performance and security
   console.log = () => {};
@@ -42,7 +36,7 @@ if (__DEV__) {
   console.debug = () => {};
 }
 
-export default function App() {
+const App = () => {
   const theme = useAppStore((state) => state.theme);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
 
@@ -54,10 +48,9 @@ export default function App() {
 
     // Add global handler for unhandled promise rejections
     const unhandledRejectionHandler = (reason: any) => {
-      const error =
-        reason instanceof Error ? reason : new Error(String(reason));
-      logger.error("Unhandled Promise Rejection:", error);
-      crashReportingService.reportError(error, "UnhandledPromiseRejection");
+      const error = reason instanceof Error ? reason : new Error(String(reason));
+      logger.error('Unhandled Promise Rejection:', error);
+      crashReportingService.reportError(error, 'UnhandledPromiseRejection');
     };
 
     // Register unhandled rejection listener
@@ -76,14 +69,12 @@ export default function App() {
     const notificationCleanup = setupNotificationNavigation();
 
     // Listen for notifications received while app is foregrounded
-    const subscription = addNotificationReceivedListener(
-      handleNotificationReceived,
-    );
+    const subscription = addNotificationReceivedListener(handleNotificationReceived);
 
     // Check if app was launched from a notification
     getLastNotificationResponse().then((response) => {
       if (response) {
-        console.log("App launched from notification:", response);
+        console.log('App launched from notification:', response);
       }
     });
 
@@ -133,15 +124,12 @@ export default function App() {
           setTokens(
             refreshedSession.tokens.accessToken,
             refreshedSession.tokens.refreshToken,
-            refreshedSession.tokens.expiresAt,
+            refreshedSession.tokens.expiresAt
           );
           setSessionExpiringSoon(false);
         } catch {
           logout();
-          Alert.alert(
-            'Session expired',
-            'We could not refresh your session. Please log in again.',
-          );
+          Alert.alert('Session expired', 'We could not refresh your session. Please log in again.');
         }
       } else {
         setSessionExpiringSoon(false);
@@ -164,14 +152,16 @@ export default function App() {
     return () => {
       appStateSubscription.remove();
     };
-  }, []);
+  }, [SESSION_REFRESH_WINDOW_MS]);
 
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <StatusBar style={theme === "dark" ? "light" : "dark"} />
+        <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
         <AppNavigator />
       </AuthProvider>
     </ErrorBoundary>
   );
-}
+};
+
+export default SHOW_STORYBOOK ? StorybookUI : App;

@@ -2,7 +2,6 @@ import { Search, SlidersHorizontal } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
-  Text,
   TextInput,
   TouchableOpacity,
   FlatList,
@@ -190,18 +189,20 @@ export const MobileSearch = ({
             onSubmitEditing={handleSubmit}
             returnKeyType="search"
           />
-          <VoiceSearch
-            compact
-            onTranscript={setQuery}
-            onTranscriptFinal={handleVoiceResult}
-          />
+          <VoiceSearch compact onTranscript={setQuery} onTranscriptFinal={handleVoiceResult} />
         </View>
         <View style={styles.actions}>
           <TouchableOpacity
             onPress={() => setFilterSheetVisible(true)}
-            style={[styles.filterBtn, Object.keys(filterValues).length > 0 && styles.filterBtnActive]}
+            style={[
+              styles.filterBtn,
+              Object.keys(filterValues).length > 0 && styles.filterBtnActive,
+            ]}
           >
-            <SlidersHorizontal size={scale(20)} color={Object.keys(filterValues).length > 0 ? '#fff' : '#6B7280'} />
+            <SlidersHorizontal
+              size={scale(20)}
+              color={Object.keys(filterValues).length > 0 ? '#fff' : '#6B7280'}
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -231,16 +232,15 @@ export const MobileSearch = ({
       {showResults && (
         <View style={styles.resultsSection}>
           <Text style={styles.resultsLabel}>
-            {results.length === 0 ? 'No results' : `${results.length} result${results.length === 1 ? '' : 's'}`}
+            {results.length === 0
+              ? 'No results'
+              : `${results.length} result${results.length === 1 ? '' : 's'}`}
           </Text>
           <FlatList
             data={results}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <SearchResultCard
-                item={item}
-                onPress={() => onResultPress?.(item)}
-              />
+              <SearchResultCard item={item} onPress={() => onResultPress?.(item)} />
             )}
             contentContainerStyle={styles.resultsList}
             ListEmptyComponent={
@@ -260,7 +260,7 @@ export const MobileSearch = ({
       />
     </KeyboardAvoidingView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
