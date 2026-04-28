@@ -15,8 +15,10 @@ export * from "./useOfflineData";
 export * from "./usePendingRequests";
 export * from "./usePictureInPicture";
 export * from "./usePinchZoom";
+export * from "./usePrefetchImages";
 export * from "./useSafeArea";
 export * from "./useScreenReader";
 export * from "./useSwipe";
 export * from "./useVideoGestures";
 export * from "./useVoiceRecognition";
+

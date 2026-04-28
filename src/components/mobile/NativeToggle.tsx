@@ -1,12 +1,17 @@
 import React from 'react';
 import { View, Text, Switch, TouchableOpacity } from 'react-native';
-import { useHapticFeedback } from '../../hooks/useHapticFeedback';
+import { useHapticFeedback } from '../../hooks';
 
 interface NativeToggleProps {
+  /** Current toggle state */
   value: boolean;
+  /** Callback when toggle value changes */
   onValueChange: (value: boolean) => void;
+  /** Optional label text to display */
   label?: string;
+  /** Optional description text to display below the label */
   description?: string;
+  /** Whether the toggle is disabled */
   disabled?: boolean;
   /** Hex colour for the active track. Defaults to the project's primary cyan. */
   activeTrackColor?: string;

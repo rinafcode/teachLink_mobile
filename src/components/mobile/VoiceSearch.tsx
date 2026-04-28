@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Mic, Square } from 'lucide-react-native';
-import { useVoiceRecognition } from '../../hooks/useVoiceRecognition';
+import { useVoiceRecognition } from '../../hooks';
 
 export interface VoiceSearchProps {
   onTranscript: (text: string) => void;

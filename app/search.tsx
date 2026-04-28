@@ -1,9 +1,13 @@
-import { CourseCardSkeleton, MobileHeader, MobileSearch, SearchResultItem, Skeleton } from '@/src/components';
+import { CourseCardSkeleton, MobileHeader, SearchResultItem, Skeleton } from '@/src/components';
 import { sampleCourse } from '@/src/data/sampleCourse';
 import { useAppStore } from '@/src/store';
 import { useRouter } from 'expo-router';
-import React, { useEffect } from 'react';
+import React, { lazy, Suspense, useEffect } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
+
+const MobileSearch = lazy(() =>
+  import('@/src/components/mobile/MobileSearch').then((m) => ({ default: m.MobileSearch }))
+);
 
 export default function SearchScreen() {
   const router = useRouter();
@@ -69,7 +73,9 @@ export default function SearchScreen() {
   return (
     <View style={styles.container}>
       <MobileHeader title="Search" showBack />
-      <MobileSearch onResultPress={handleResultPress} placeholder="Search courses..." />
+      <Suspense fallback={null}>
+        <MobileSearch onResultPress={handleResultPress} placeholder="Search courses..." />
+      </Suspense>
     </View>
   );
 }

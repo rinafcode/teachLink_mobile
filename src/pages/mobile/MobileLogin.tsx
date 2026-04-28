@@ -1,32 +1,31 @@
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-  ActivityIndicator,
-  Switch,
-  TextInput,
-} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
-  Mail,
-  Lock,
-  LogIn,
-  Eye,
-  EyeOff,
-  Chrome,
-  Apple,
-  BookOpen,
-  AlertCircle,
+    AlertCircle,
+    Apple,
+    BookOpen,
+    Chrome,
+    Eye,
+    EyeOff,
+    Lock,
+    LogIn,
+    Mail,
 } from 'lucide-react-native';
-import { useBiometricAuth } from '../../hooks/useBiometricAuth';
-import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import { useBiometricAuth, useDynamicFontSize } from '../../hooks';
 import { BiometricInlineButton, BiometricPrompt } from '../../components/mobile/BiometricPrompt';
 import mobileAuthService, { AuthResult } from '../../services/mobileAuth';
 import * as secureStorage from '../../services/secureStorage';
@@ -34,9 +33,13 @@ import * as secureStorage from '../../services/secureStorage';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface MobileLoginProps {
+  /** Callback when login is successful with the auth result */
   onLoginSuccess: (result: AuthResult) => void;
+  /** Optional callback when user taps "Forgot password" */
   onForgotPassword?: () => void;
+  /** Optional callback when user taps "Sign up" */
   onRegister?: () => void;
+  /** Whether to use dark theme styling */
   isDark?: boolean;
 }
 

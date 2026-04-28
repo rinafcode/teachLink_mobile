@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react-native';
 import { AppText as Text } from '../common/AppText';
-import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
+import { useDynamicFontSize } from '../../hooks';
 
 /**
  * Props for the MobileFormInput component

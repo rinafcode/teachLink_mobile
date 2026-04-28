@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
@@ -7,22 +8,27 @@ import {
   StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Quiz, Course } from '../../../types/course';
-import { QuizNavigationProp } from '../../../navigation/types';
-import { useQuizStore } from '../../../store/quizStore';
-import PrimaryButton from '../../common/PrimaryButton';
+
 import QuizCarousel from './QuizCarousel';
 import QuizProgress from './QuizProgress';
 import QuizResults from './QuizResults';
+import { useAnalytics } from '../../../hooks/useAnalytics';
+import { QuizNavigationProp } from '../../../navigation/types';
+import { useQuizStore } from '../../../store/quizStore';
+import { Quiz, Course } from '../../../types/course';
 import logger from '../../../utils/logger';
+import { AnalyticsEvent, ScreenName } from '../../../utils/trackingEvents';
+import PrimaryButton from '../../common/PrimaryButton';
 
 interface MobileQuizManagerProps {
+  /** The quiz data to display and manage */
   quiz: Quiz;
+  /** The ID of the course containing this quiz */
   courseId: string;
+  /** Optional callback for back navigation */
   onBack?: () => void;
-  /** Optional React Navigation prop used to navigate back to CourseViewer after a passed quiz. */
-  navigation?: QuizNavigationProp;
+  /** Optional navigation prop used to navigate back to CourseViewer after a passed quiz. */
+  navigation?: LegacyNavigationProp;
   /** Course data forwarded to the CourseViewer when navigating after quiz completion. */
   course?: Course;
 }
@@ -48,16 +54,18 @@ export default function MobileQuizManager({
 
   const [currentView, setCurrentView] = useState<QuizView>('intro');
   const [quizResults, setQuizResults] = useState<{ score: number; passed: boolean } | null>(null);
+  const { trackEvent, trackScreen } = useAnalytics();
 
   useEffect(() => {
     loadQuizProgress(courseId);
-    // Always start with intro screen
+    trackScreen(ScreenName.QUIZ, { quizId: quiz.id, courseId });
     setCurrentView('intro');
   }, [courseId, loadQuizProgress]);
 
   const handleStartQuiz = async () => {
     try {
       await startQuiz(quiz.id, quiz.sectionId, courseId);
+      trackEvent(AnalyticsEvent.QUIZ_STARTED, { quizId: quiz.id, courseId });
       setCurrentView('questions');
     } catch (error) {
       logger.error('Error starting quiz:', error);
@@ -80,6 +88,7 @@ export default function MobileQuizManager({
       const results = await completeQuiz(quiz);
       setQuizResults(results);
       setCurrentView('results');
+      trackEvent(AnalyticsEvent.QUIZ_COMPLETED, { quizId: quiz.id, courseId, score: results.score, passed: results.passed });
       
       // If passed, navigate back to course with syllabus view
       if (results.passed && navigation && course) {
@@ -138,7 +147,7 @@ export default function MobileQuizManager({
           </View>
           <Text style={styles.title}>{quiz.title}</Text>
           <Text style={styles.subtitle}>
-            Test your knowledge and see how well you've mastered this section
+            Test your knowledge and see how well you&apos;ve mastered this section
           </Text>
         </View>
 

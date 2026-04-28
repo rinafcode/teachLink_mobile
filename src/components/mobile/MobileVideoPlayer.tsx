@@ -12,8 +12,7 @@ import {
     ViewStyle,
 } from 'react-native';
 
-import { usePictureInPicture } from '../../hooks/usePictureInPicture';
-import { useVideoGestures } from '../../hooks/useVideoGestures';
+import { usePictureInPicture, useVideoGestures } from '../../hooks';
 import {
     AUTO_QUALITY_ID,
     deriveNetworkType,
@@ -37,6 +36,17 @@ const DEFAULT_RATES = [0.75, 1, 1.25, 1.5, 2];
 export type MobileVideoPlayerProps = {
   /** Array of video sources with different quality options */
   sources: VideoSource[];
+  /** Optional poster image URI to display before playback */
+  posterUri?: string;
+  /** Whether to start playback automatically when loaded */
+  autoPlay?: boolean;
+  /** Initial playback rate (speed) */
+  initialRate?: number;
+  /** Available playback rate options */
+  rateOptions?: number[];
+  /** Initial quality ID to use for playback */
+  initialQualityId?: string;
+  /** Optional style for the video container */
   /** URI of the poster image to display before playback */
   posterUri?: string;
   /** Whether to start playback automatically */

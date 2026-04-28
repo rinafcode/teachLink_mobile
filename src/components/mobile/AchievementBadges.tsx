@@ -2,7 +2,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Award, Lock, X } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import {
-    Image,
     Modal,
     Pressable,
     ScrollView,
@@ -13,6 +12,7 @@ import {
 } from 'react-native';
 import { announceToScreenReader, combineAriaLabels, getAccessibilityProps } from '../../utils/accessibility';
 import { ErrorBoundary } from '../common/ErrorBoundary';
+import { CachedImage } from '../ui/CachedImage';
 import { AccessibleButton } from './AccessibleButton';
 
 /**
@@ -115,11 +115,11 @@ export const AchievementBadges: React.FC<AchievementBadgesProps> = ({
               style={styles.badgeInner}
             >
               {achievement.iconUrl ? (
-                <Image
-                  source={{ uri: achievement.iconUrl }}
+                <CachedImage
+                  uri={achievement.iconUrl}
                   style={styles.badgeImage}
-                  accessibilityRole="image"
-                  accessibilityLabel={`${achievement.name} icon`}
+                  alt={`${achievement.name} icon`}
+                  autoPrefetch={true}
                 />
               ) : (
                 <Text 

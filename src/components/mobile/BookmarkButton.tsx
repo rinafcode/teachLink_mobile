@@ -1,89 +1,57 @@
 import React from 'react';
 import { TouchableOpacity, Text, ActivityIndicator, View, StyleSheet } from 'react-native';
 
-/**
- * Props for the BookmarkButton component
- */
+import { useBookmarkStore, BookmarkItem } from '../../store/bookmarkStore';
+
 interface BookmarkButtonProps {
-  /** Whether the item is currently bookmarked */
-  isBookmarked: boolean;
-  /** Callback when the bookmark toggle is pressed */
-  onToggle: () => void;
-  /** Whether the button is in a loading state */
-  isLoading?: boolean;
-  /** Size variant of the button */
+  item: BookmarkItem;
   size?: 'small' | 'medium' | 'large';
-  /** Whether to show the label text */
   showLabel?: boolean;
 }
 
-export default function BookmarkButton({
-  isBookmarked,
-  onToggle,
-  isLoading = false,
-  size = 'medium',
-  showLabel = true,
-}: BookmarkButtonProps) {
+export default function BookmarkButton({ item, size = 'medium', showLabel = true }: BookmarkButtonProps) {
+  const { isBookmarked, addBookmark, removeBookmark, isLoading } = useBookmarkStore();
+  const bookmarked = isBookmarked(item.itemId);
+
   const sizeConfig = {
     small: { iconSize: 18, padding: 8 },
     medium: { iconSize: 24, padding: 12 },
     large: { iconSize: 32, padding: 16 },
   };
-
   const config = sizeConfig[size];
 
-  const backgroundColor = isBookmarked 
-    ? '#fef3c7' // yellow-50
-    : '#f3f4f6'; // gray-100
+  const handleToggle = async () => {
+    if (bookmarked) {
+      await removeBookmark(item.itemId);
+    } else {
+      await addBookmark(item);
+    }
+  };
 
-  const borderColor = isBookmarked
-    ? '#facc15' // yellow-400
-    : '#d1d5db'; // gray-300
-
-  const textColor = isBookmarked
-    ? '#b45309' // yellow-700
-    : '#4b5563'; // gray-600
-
-  const iconColor = isBookmarked
-    ? '#eab308' // yellow-500
-    : '#9ca3af'; // gray-400
+  const backgroundColor = bookmarked ? '#fef3c7' : '#f3f4f6';
+  const borderColor = bookmarked ? '#facc15' : '#d1d5db';
+  const textColor = bookmarked ? '#b45309' : '#4b5563';
 
   return (
     <TouchableOpacity
-      onPress={onToggle}
+      testID="bookmark-button"
+      onPress={handleToggle}
       disabled={isLoading}
       activeOpacity={0.7}
       accessibilityRole="button"
-      accessibilityLabel={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
-      accessibilityHint="Double tap to toggle lesson bookmark status"
-      accessibilityState={{ disabled: isLoading, selected: isBookmarked, busy: isLoading }}
-      style={[
-        styles.button,
-        {
-          backgroundColor,
-          borderColor,
-          borderWidth: 2,
-          padding: config.padding,
-          borderRadius: 24,
-          opacity: isLoading ? 0.5 : 1,
-        },
-      ]}
+      accessibilityLabel={bookmarked ? 'Remove bookmark' : 'Add bookmark'}
+      accessibilityHint="Double tap to toggle bookmark"
+      accessibilityState={{ disabled: isLoading, selected: bookmarked, busy: isLoading }}
+      style={[styles.button, { backgroundColor, borderColor, padding: config.padding, opacity: isLoading ? 0.5 : 1 }]}
     >
       {isLoading ? (
-        <ActivityIndicator color={isBookmarked ? '#F59E0B' : '#19c3e6'} size="small" />
+        <ActivityIndicator color={bookmarked ? '#F59E0B' : '#19c3e6'} size="small" />
       ) : (
         <View style={styles.content}>
-          <Text style={{ fontSize: config.iconSize }}>
-            {isBookmarked ? '⭐' : '☆'}
-          </Text>
+          <Text style={{ fontSize: config.iconSize }}>{bookmarked ? '⭐' : '☆'}</Text>
           {showLabel && (
-            <Text
-              style={[
-                styles.label,
-                { color: textColor, marginLeft: 8 },
-              ]}
-            >
-              {isBookmarked ? 'Bookmarked' : 'Bookmark'}
+            <Text style={[styles.label, { color: textColor }]}>
+              {bookmarked ? 'Bookmarked' : 'Bookmark'}
             </Text>
           )}
         </View>
@@ -97,14 +65,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
+    borderRadius: 24,
   },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  label: {
-    fontWeight: '700',
-    fontSize: 14,
-  },
+  content: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  label: { fontWeight: '700', fontSize: 14, marginLeft: 8 },
 });

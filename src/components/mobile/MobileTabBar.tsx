@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { useSafeArea } from '../../hooks/useSafeArea';
+import { useSafeArea } from '../../hooks';
 import { Home, Compass, PlusCircle, MessageCircle, User } from 'lucide-react-native';
 
 /**

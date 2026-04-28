@@ -1,83 +1,146 @@
-import { useState, useCallback } from 'react';
-import logger from '../utils/logger';
 import * as ImagePicker from 'expo-image-picker';
+import { useCallback, useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 
-interface CameraOptions {
-  aspect?: [number, number];
-  quality?: number;
+interface UseCameraReturn {
+  /** Whether camera permission has been granted */
+  hasPermission: boolean;
+  /** The URI of the captured/selected image */
+  capturedImage: string | null;
+  /** Whether a camera operation is in progress */
+  isLoading: boolean;
+  /** Function to take a picture with the camera */
+  takePicture: () => Promise<string | null>;
+  /** Function to pick an image from the photo library */
+  pickFromLibrary: () => Promise<string | null>;
+  /** Reset the captured image state */
+  resetCapturedImage: () => void;
+  /** Request camera and media library permissions */
+  requestPermissions: () => Promise<boolean>;
 }
 
-export const useCamera = (options: CameraOptions = {}) => {
-  const { aspect = [1, 1], quality = 0.8 } = options;
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+/**
+ * Hook for handling camera and image picker functionality
+ * Manages permissions, captures photos, and selects from gallery
+ */
+export const useCamera = (): UseCameraReturn => {
+  const [hasPermission, setHasPermission] = useState<boolean>(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
+  /**
+   * Request camera and media library permissions
+   * On iOS, both permissions are required; on Android, camera permission suffices
+   */
   const requestPermissions = useCallback(async (): Promise<boolean> => {
-    const { status: cameraStatus } =
-      await ImagePicker.requestCameraPermissionsAsync();
-    const { status: mediaStatus } =
-      await ImagePicker.requestMediaLibraryPermissionsAsync();
-    const granted =
-      cameraStatus === 'granted' && mediaStatus === 'granted';
-    setHasPermission(granted);
-    return granted;
+    try {
+      // Request camera permission
+      const cameraStatus = await ImagePicker.requestCameraPermissionsAsync();
+      // Request media library permission (needed for picking from gallery)
+      const mediaLibraryStatus = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      const granted =
+        cameraStatus.granted && (Platform.OS === 'android' || mediaLibraryStatus.granted);
+
+      setHasPermission(granted);
+      return granted;
+    } catch (error) {
+      console.error('[useCamera] Error requesting permissions:', error);
+      return false;
+    }
   }, []);
 
+  /**
+   * Take a picture using the device camera
+   * Allows editing to crop/scale the image
+   */
   const takePicture = useCallback(async (): Promise<string | null> => {
+    if (!hasPermission) {
+      const permissionGranted = await requestPermissions();
+      if (!permissionGranted) {
+        return null;
+      }
+    }
+
     setIsLoading(true);
     try {
-      if (hasPermission !== true) {
-        const granted = await requestPermissions();
-        if (!granted) return null;
-      }
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
-        aspect,
-        quality,
+        quality: 0.8,
+        aspect: [1, 1], // Square aspect ratio for avatars
       });
-      if (!result.canceled && result.assets.length > 0) {
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
         const uri = result.assets[0].uri;
         setCapturedImage(uri);
         return uri;
       }
+      return null;
     } catch (error) {
-      logger.error('[useCamera] takePicture error:', error);
+      console.error('[useCamera] Error taking picture:', error);
+      return null;
     } finally {
       setIsLoading(false);
     }
-    return null;
-  }, [hasPermission, requestPermissions, aspect, quality]);
+  }, [hasPermission, requestPermissions]);
 
+  /**
+   * Pick an image from the photo library
+   * Allows editing to crop/scale the image
+   */
   const pickFromLibrary = useCallback(async (): Promise<string | null> => {
+    if (!hasPermission) {
+      const permissionGranted = await requestPermissions();
+      if (!permissionGranted) {
+        return null;
+      }
+    }
+
     setIsLoading(true);
     try {
-      if (hasPermission !== true) {
-        const granted = await requestPermissions();
-        if (!granted) return null;
-      }
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
-        aspect,
-        quality,
+        quality: 0.8,
+        aspect: [1, 1], // Square aspect ratio for avatars
       });
-      if (!result.canceled && result.assets.length > 0) {
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
         const uri = result.assets[0].uri;
         setCapturedImage(uri);
         return uri;
       }
+      return null;
     } catch (error) {
-      logger.error('[useCamera] pickFromLibrary error:', error);
+      console.error('[useCamera] Error picking from library:', error);
+      return null;
     } finally {
       setIsLoading(false);
     }
-    return null;
-  }, [hasPermission, requestPermissions, aspect, quality]);
+  }, [hasPermission, requestPermissions]);
 
-  const resetCapturedImage = useCallback(() => {
+  /**
+   * Reset the captured image state
+   * Useful when closing the camera modal or confirming selection
+   */
+  const resetCapturedImage = useCallback((): void => {
     setCapturedImage(null);
+  }, []);
+
+  /**
+   * Check permissions on mount
+   * This ensures the hook reflects the current permission state
+   */
+  useEffect(() => {
+    const checkPermissions = async () => {
+      const cameraStatus = await ImagePicker.getCameraPermissionsAsync();
+      const mediaLibraryStatus = await ImagePicker.getMediaLibraryPermissionsAsync();
+      const granted =
+        cameraStatus.granted && (Platform.OS === 'android' || mediaLibraryStatus.granted);
+      setHasPermission(granted);
+    };
+    checkPermissions();
   }, []);
 
   return {

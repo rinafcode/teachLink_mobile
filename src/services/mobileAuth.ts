@@ -1,4 +1,4 @@
-import * as LocalAuthentication from 'expo-local-authentication';
+
 import apiClient from './api/axios.config';
 import * as secureStorage from './secureStorage';
 import logger from '../utils/logger';
@@ -85,43 +85,8 @@ class MobileAuthService {
       throw new Error('Biometric login is not enabled. Please enable it in settings.');
     }
 
-    const biometricResult = await LocalAuthentication.authenticateAsync({
-      promptMessage: 'Authenticate to sign in',
-      fallbackLabel: 'Use password',
-      disableDeviceFallback: false,
-      cancelLabel: 'Cancel',
-    });
-
-    if (!biometricResult.success) {
-      throw new Error(
-        biometricResult.error === 'user_cancel'
-          ? 'Authentication cancelled'
-          : 'Biometric authentication failed',
-      );
-    }
-
-    // After biometric passes, check if existing session is valid
-    const sessionValid = await secureStorage.isSessionValid();
-    if (sessionValid) {
-      const user = await secureStorage.getUserData<AuthUser>();
-      if (!user) throw new Error('No cached user found. Please log in with your password.');
-
-      const accessToken = await secureStorage.getAccessToken();
-      const refreshToken = await secureStorage.getRefreshToken();
-      const expiresAt = await secureStorage.getSessionExpiresAt();
-
-      return {
-        user,
-        tokens: {
-          accessToken: accessToken!,
-          refreshToken: refreshToken!,
-          expiresAt: expiresAt!,
-        },
-      };
-    }
-
-    // Session expired — use refresh token to get new tokens silently
-    return this.refreshSession();
+    // Mocked biometric login
+    throw new Error('Biometric authentication is not available.');
   }
 
   // ── Token refresh ─────────────────────────────────────────────────────────
@@ -178,23 +143,7 @@ class MobileAuthService {
   // ── Biometric management ──────────────────────────────────────────────────
 
   async enableBiometrics(): Promise<void> {
-    const isAvailable = await this.isBiometricAvailable();
-    if (!isAvailable) {
-      throw new Error('Biometric authentication is not available on this device.');
-    }
-
-    // Confirm intent with a biometric prompt before enabling
-    const result = await LocalAuthentication.authenticateAsync({
-      promptMessage: 'Authenticate to enable biometric login',
-      cancelLabel: 'Cancel',
-    });
-
-    if (!result.success) {
-      throw new Error('Could not verify identity. Biometric login not enabled.');
-    }
-
-    await secureStorage.setBiometricEnabled(true);
-    logger.info('MobileAuth: biometric login enabled');
+    throw new Error('Biometric authentication is not available on this device.');
   }
 
   async disableBiometrics(): Promise<void> {
@@ -203,23 +152,10 @@ class MobileAuthService {
   }
 
   async isBiometricAvailable(): Promise<boolean> {
-    const hasHardware = await LocalAuthentication.hasHardwareAsync();
-    if (!hasHardware) return false;
-    const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-    return isEnrolled;
+    return false;
   }
 
   async getSupportedBiometricType(): Promise<BiometricType> {
-    const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
-    if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
-      return 'face';
-    }
-    if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
-      return 'fingerprint';
-    }
-    if (types.includes(LocalAuthentication.AuthenticationType.IRIS)) {
-      return 'iris';
-    }
     return 'none';
   }
 

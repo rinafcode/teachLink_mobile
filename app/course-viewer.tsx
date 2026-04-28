@@ -1,6 +1,8 @@
-import { lazyScreen } from '@/src/utils/LazyScreen';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
+import { ActivityIndicator, View } from 'react-native';
+
+const MobileCourseViewer = lazy(() => import('@/src/components/mobile/MobileCourseViewer'));
 
 const MobileCourseViewer = lazyScreen(
   () => import('@/src/components/mobile/MobileCourseViewer')
@@ -14,11 +16,13 @@ export default function CourseViewerScreen() {
   const viewMode = initialViewMode as 'lesson' | 'syllabus' | 'notes' | undefined;
 
   return (
-    <MobileCourseViewer
-      course={parsedCourse}
-      initialLessonId={initialLessonId as string}
-      initialViewMode={viewMode}
-      onBack={() => router.back()}
-    />
+    <Suspense fallback={<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator /></View>}>
+      <MobileCourseViewer
+        course={parsedCourse}
+        initialLessonId={initialLessonId as string}
+        initialViewMode={viewMode}
+        onBack={() => router.back()}
+      />
+    </Suspense>
   );
 }
