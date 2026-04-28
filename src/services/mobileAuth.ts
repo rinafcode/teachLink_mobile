@@ -48,12 +48,29 @@ const ENDPOINTS = {
   ME: '/auth/me',
 } as const;
 
+// ─── Validation ───────────────────────────────────────────────────────────────
+
+/**
+ * Verify secure storage is ready before performing auth operations
+ * Throws error if secure storage is not initialized
+ */
+function validateSecureStorageReady(): void {
+  if (!secureStorage.isSecureStorageReady()) {
+    throw new Error(
+      'Secure storage (Keychain/Keystore) is not initialized. ' +
+      'Cannot perform authentication operations. Please restart the app.'
+    );
+  }
+}
+
+
 // ─── Service ──────────────────────────────────────────────────────────────────
 
 class MobileAuthService {
   // ── Core login ────────────────────────────────────────────────────────────
 
   async login(credentials: LoginCredentials): Promise<AuthResult> {
+    validateSecureStorageReady();
     const { email, password, rememberMe = false } = credentials;
 
     const { data } = await apiClient.post<AuthResult>(ENDPOINTS.LOGIN, {
@@ -92,6 +109,7 @@ class MobileAuthService {
   // ── Token refresh ─────────────────────────────────────────────────────────
 
   async refreshSession(): Promise<AuthResult> {
+    validateSecureStorageReady();
     const refreshToken = await secureStorage.getRefreshToken();
     if (!refreshToken) {
       throw new Error('No refresh token available. Please log in again.');
@@ -113,6 +131,7 @@ class MobileAuthService {
    */
   async restoreSession(): Promise<AuthResult | null> {
     try {
+      validateSecureStorageReady();
       const sessionValid = await secureStorage.isSessionValid();
       if (sessionValid) {
         const user = await secureStorage.getUserData<AuthUser>();

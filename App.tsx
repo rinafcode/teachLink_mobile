@@ -5,6 +5,7 @@ import AppNavigator from './src/navigation/AppNavigator';
 import socketService from './src/services/socket';
 import { ErrorBoundary } from './src/components/common/ErrorBoundary';
 import mobileAuthService from './src/services/mobileAuth';
+import { initializeSecureStorage } from './src/services/secureStorage';
 import "./global.css";
 
 requireEnvVariables();
@@ -42,6 +43,13 @@ export default function App() {
   useEffect(() => {
     // Initialize crash reporting at app startup
     crashReportingService.init();
+
+    // Initialize secure storage (Keychain/Keystore) for encrypted token storage
+    initializeSecureStorage().catch((error) => {
+      logger.error('Failed to initialize secure storage:', error);
+      // Continue app startup even if secure storage init fails
+      // (user will be prompted to re-authenticate if needed)
+    });
 
     // Add global handler for unhandled promise rejections
     const unhandledRejectionHandler = (reason: any) => {
