@@ -1,26 +1,24 @@
 import { Search, SlidersHorizontal } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  FlatList,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
+    FlatList,
+    KeyboardAvoidingView,
+    Platform,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { AppText as Text } from '../common/AppText';
-import { useDynamicFontSize, useMemoryMonitor } from '../../hooks';
-import { Search, SlidersHorizontal } from 'lucide-react-native';
-import { VoiceSearch } from './VoiceSearch';
-import { SearchHistory } from './SearchHistory';
-import { FilterSheet, FilterField, FilterValues } from './FilterSheet';
-import { SearchResultCard, SearchResultItem } from './SearchResultCard';
-import { addToSearchHistory } from '../../utils/searchHistory';
 import { sampleCourse } from '../../data/sampleCourse';
+import { useAnalytics, useDynamicFontSize, useMemoryMonitor } from '../../hooks';
 import { Course } from '../../types/course';
+import { addToSearchHistory } from '../../utils/searchHistory';
 import { AnalyticsEvent } from '../../utils/trackingEvents';
+import { FilterField, FilterSheet, FilterValues } from './FilterSheet';
+import { SearchHistory } from './SearchHistory';
+import { SearchResultCard, SearchResultItem } from './SearchResultCard';
+import { VoiceSearch } from './VoiceSearch';
 
 const DEFAULT_FILTERS: FilterField[] = [
   {
