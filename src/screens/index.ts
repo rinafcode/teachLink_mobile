@@ -8,4 +8,6 @@ export const PaymentHistory = lazyScreen(() =>
   import('../pages/mobile/PaymentHistory').then((m) => ({ default: m.PaymentHistory }))
 );
 
-export { default as SettingsScreen } from '../pages/mobile/Settings';
+export const SettingsScreen = lazyScreen(() =>
+  import('../pages/mobile/Settings')
+);
