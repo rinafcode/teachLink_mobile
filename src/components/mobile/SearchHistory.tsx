@@ -7,7 +7,7 @@ import {
   removeFromSearchHistory,
   SearchHistoryItem,
 } from '../../utils/searchHistory';
-import { useMemoryMonitor } from '../../hooks/useMemoryMonitor';
+import { useMemoryMonitor } from '../../hooks';
 
 export interface SearchHistoryProps {
   onSelectQuery: (query: string) => void;

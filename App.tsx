@@ -1,28 +1,42 @@
-import React, { useEffect, useRef } from 'react';
+import * as Sentry from '@sentry/react-native';
 import { StatusBar } from 'expo-status-bar';
-import { Alert, AppState, AppStateStatus, LogBox } from 'react-native';
+import React, { useEffect } from 'react';
+import { LogBox } from 'react-native';
+import "./global.css";
+import { ErrorBoundary } from './src/components/common/ErrorBoundary';
 import AppNavigator from './src/navigation/AppNavigator';
 import socketService from './src/services/socket';
-import { ErrorBoundary } from './src/components/common/ErrorBoundary';
-import mobileAuthService from './src/services/mobileAuth';
+import { useAppStore } from './src/store';
+import React, { useEffect, useRef } from 'react';
+import { StatusBar } from 'expo-status-bar';
+import React, { useEffect, useRef } from 'react';
+import { Alert, AppState, AppStateStatus, LogBox } from 'react-native';
 import "./global.css";
+import { ErrorBoundary } from './src/components/common/ErrorBoundary';
+import AppNavigator from './src/navigation/AppNavigator';
+import mobileAuthService from './src/services/mobileAuth';
+import socketService from './src/services/socket';
+import { useAppStore } from './src/store';
 
-requireEnvVariables();
+import { apiClient } from './src/services/api';
+import { crashReportingService } from './src/services/cashReporting';
+import { requestQueue } from './src/services/requestQueue';
+import { requireEnvVariables } from './src/utils/env';
+import { logger } from './src/utils/logger';
+
 // Notification imports
-import { AuthProvider } from "./src/hooks";
-import { setupNotificationNavigation } from "./src/navigation/linking";
+import { setupNotificationNavigation } from './src/navigation/linking';
 import {
-  addNotificationReceivedListener,
-  getLastNotificationResponse,
-  registerForPushNotifications,
-  registerTokenWithBackend,
-  removeNotificationListener,
-} from "./src/services/pushNotifications";
-import { useNotificationStore } from "./src/store/notificationStore";
-import { handleNotificationReceived } from "./src/utils/notificationHandlers";
+    addNotificationReceivedListener,
+    getLastNotificationResponse,
+    removeNotificationListener,
+} from './src/services/pushNotifications';
+import { handleNotificationReceived } from './src/utils/notificationHandlers';
 
 // Centralized logging is handled by src/utils/logger.
 // Suppress known non-actionable navigation warnings in all environments.
+requireEnvVariables();
+
 if (__DEV__) {
   logger.debug("Development mode: centralized logger active");
   LogBox.ignoreLogs([
@@ -172,10 +186,8 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <StatusBar style={theme === "dark" ? "light" : "dark"} />
-        <AppNavigator />
-      </AuthProvider>
+      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
+      <AppNavigator />
     </ErrorBoundary>
   );
 }

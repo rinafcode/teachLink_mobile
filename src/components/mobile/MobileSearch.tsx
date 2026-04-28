@@ -1,3 +1,4 @@
+import { Search, SlidersHorizontal } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
@@ -10,8 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import { AppText as Text } from '../common/AppText';
-import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
-import { useMemoryMonitor } from '../../hooks/useMemoryMonitor';
+import { useDynamicFontSize, useMemoryMonitor } from '../../hooks';
 import { Search, SlidersHorizontal } from 'lucide-react-native';
 import { VoiceSearch } from './VoiceSearch';
 import { SearchHistory } from './SearchHistory';
@@ -20,6 +20,7 @@ import { SearchResultCard, SearchResultItem } from './SearchResultCard';
 import { addToSearchHistory } from '../../utils/searchHistory';
 import { sampleCourse } from '../../data/sampleCourse';
 import { Course } from '../../types/course';
+import { AnalyticsEvent } from '../../utils/trackingEvents';
 
 const DEFAULT_FILTERS: FilterField[] = [
   {
@@ -87,10 +88,10 @@ export interface MobileSearchProps {
   placeholder?: string;
 }
 
-export function MobileSearch({
+export const MobileSearch = ({
   onResultPress,
   placeholder = 'Search courses...',
-}: MobileSearchProps) {
+}: MobileSearchProps) => {
   const [query, setQuery] = useState('');
   const [suggestionsVisible, setSuggestionsVisible] = useState(false);
   const [filterSheetVisible, setFilterSheetVisible] = useState(false);
@@ -98,6 +99,7 @@ export function MobileSearch({
   const [results, setResults] = useState<SearchResultItem[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const { scale } = useDynamicFontSize();
+  const { trackEvent } = useAnalytics();
 
   useMemoryMonitor({ componentId: 'MobileSearch', itemCount: results.length });
 
@@ -118,6 +120,7 @@ export function MobileSearch({
         return;
       }
       addToSearchHistory(trimmed);
+      trackEvent(AnalyticsEvent.SEARCH_QUERY, { query: trimmed, filters: filterValues });
       const filtered = filterCourse(sampleCourse, trimmed, filterValues)
         ? [courseToSearchResult(sampleCourse)]
         : [];
@@ -125,7 +128,7 @@ export function MobileSearch({
       setHasSearched(true);
       setSuggestionsVisible(false);
     },
-    [filterValues]
+    [filterValues, trackEvent]
   );
 
   const handleSubmit = useCallback(() => {

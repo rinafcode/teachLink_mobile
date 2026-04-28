@@ -9,7 +9,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
+import { useDynamicFontSize } from '../../hooks';
 
 /**
  * Props for the PrimaryButton component

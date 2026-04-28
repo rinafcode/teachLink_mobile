@@ -3,7 +3,6 @@ import { Camera, Check, ImageIcon, RefreshCw, X } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
-    Image,
     Modal,
     SafeAreaView,
     StyleSheet,
@@ -11,8 +10,9 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import { useCamera } from '../../hooks/useCamera';
+import { useCamera } from '../../hooks';
 import { ErrorBoundary } from '../common/ErrorBoundary';
+import { CachedImage } from '../ui/CachedImage';
 
 /**
  * Props for the AvatarCamera component
@@ -89,11 +89,11 @@ export const AvatarCamera: React.FC<AvatarCameraProps> = ({
           {preview ? (
             /* Preview Mode */
             <View style={styles.previewSection}>
-              <Image
-                source={{ uri: preview }}
+              <CachedImage
+                uri={preview}
                 style={styles.previewImage}
-                accessibilityRole="image"
-                accessibilityLabel="Preview of selected profile photo"
+                alt="Preview of selected profile photo"
+                autoPrefetch={true}
               />
               <Text style={styles.previewLabel}>Looking good!</Text>
               <View style={styles.previewActions}>
@@ -127,11 +127,11 @@ export const AvatarCamera: React.FC<AvatarCameraProps> = ({
             /* Options Mode */
             <View style={styles.optionsSection}>
               {currentAvatar ? (
-                <Image
-                  source={{ uri: currentAvatar }}
+                <CachedImage
+                  uri={currentAvatar}
                   style={styles.currentAvatar}
-                  accessibilityRole="image"
-                  accessibilityLabel="Current profile photo"
+                  alt="Current profile photo"
+                  autoPrefetch={true}
                 />
               ) : (
                 <View style={styles.avatarPlaceholder}>

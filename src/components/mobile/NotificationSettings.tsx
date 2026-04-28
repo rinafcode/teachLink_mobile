@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Switch, ScrollView, TouchableOpacity } from 'react-native';
-import { useNotificationPermission } from '../../hooks/useNotificationPermission';
+import { useNotificationPermission } from '../../hooks';
 import { useNotificationStore } from '../../store/notificationStore';
 import { NotificationPreferences } from '../../types/notifications';
 

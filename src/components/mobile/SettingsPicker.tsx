@@ -8,7 +8,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { useHapticFeedback } from '../../hooks/useHapticFeedback';
+import { useHapticFeedback } from '../../hooks';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 
 export interface PickerOption {

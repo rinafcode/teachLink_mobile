@@ -11,10 +11,15 @@
     "ios": {
       "icon": "./assets/icon.png",
       "supportsTablet": true,
-      "bundleIdentifier": "com.teachlink.mobile",
+      "bundleIdentifier": "com.jaynomyaro.teachlink",
       "infoPlist": {
         "UIBackgroundModes": ["remote-notification"]
-      }
+      },
+      "buildNumber": "1",
+      "appStoreUrl": "https://apps.apple.com/app/teachlink/id1234567890",
+      "privacyPolicy": "https://teachlink.com/privacy",
+      "supportUrl": "https://teachlink.com/support",
+      "marketingUrl": "https://teachlink.com"
     },
     "android": {
       "adaptiveIcon": {
@@ -22,14 +27,19 @@
         "foregroundImage": "./assets/icon.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "package": "com.teachlink.mobile",
+      "package": "com.jaynomyaro.teachlink",
+      "versionCode": 1,
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE",
         "WAKE_LOCK"
-      ]
+      ],
+      "playStoreUrl": "https://play.google.com/store/apps/details?id=com.jaynomyaro.teachlink",
+      "privacyPolicy": "https://teachlink.com/privacy",
+      "supportUrl": "https://teachlink.com/support",
+      "marketingUrl": "https://teachlink.com"
     },
     "web": {
       "output": "static",
@@ -58,7 +68,8 @@
           "sounds": [],
           "mode": "production"
         }
-      ]
+      ],
+      "expo-speech-recognition"
     ],
     "notification": {
       "icon": "./assets/notification-icon.png",

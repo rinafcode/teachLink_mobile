@@ -1,20 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  TextInput,
-  StyleSheet,
-  ScrollView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { Question } from '../../../types/course';
-import { useHapticFeedback } from '../../../hooks/useHapticFeedback';
+import { useHapticFeedback } from '../../../hooks';
 
 interface MobileQuestionCardProps {
+  /** The question data to display */
   question: Question;
+  /** The current question number (1-indexed) */
   questionNumber: number;
+  /** Total number of questions in the quiz */
   totalQuestions: number;
+  /** Currently selected answer(s) for this question */
   selectedAnswer?: string | number | (string | number)[];
+  /** Callback when an answer is selected */
   onAnswerSelect: (questionId: string, answer: string | number, isMultiSelect?: boolean) => void;
 }
 
