@@ -1,14 +1,5 @@
 import * as Sentry from '@sentry/react-native';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect } from 'react';
-import { LogBox } from 'react-native';
-import "./global.css";
-import { ErrorBoundary } from './src/components/common/ErrorBoundary';
-import AppNavigator from './src/navigation/AppNavigator';
-import socketService from './src/services/socket';
-import { useAppStore } from './src/store';
-import React, { useEffect, useRef } from 'react';
-import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef } from 'react';
 import { Alert, AppState, AppStateStatus, LogBox } from 'react-native';
 import "./global.css";
@@ -17,12 +8,12 @@ import AppNavigator from './src/navigation/AppNavigator';
 import mobileAuthService from './src/services/mobileAuth';
 import socketService from './src/services/socket';
 import { useAppStore } from './src/store';
-
 import { apiClient } from './src/services/api';
 import { crashReportingService } from './src/services/cashReporting';
 import { requestQueue } from './src/services/requestQueue';
 import { requireEnvVariables } from './src/utils/env';
-import { logger } from './src/utils/logger';
+import { appLogger } from './src/utils/logger';
+import { initializeLogging } from './src/config/logging';
 
 // Notification imports
 import { setupNotificationNavigation } from './src/navigation/linking';
@@ -33,17 +24,21 @@ import {
 } from './src/services/pushNotifications';
 import { handleNotificationReceived } from './src/utils/notificationHandlers';
 
-// Centralized logging is handled by src/utils/logger.
-// Suppress known non-actionable navigation warnings in all environments.
+// Centralized structured logging initialized on startup
 requireEnvVariables();
 
+// Initialize centralized logging on app start
+initializeLogging().catch((err) => {
+  console.error('[App] Failed to initialize logging:', err);
+});
+
 if (__DEV__) {
-  logger.debug("Development mode: centralized logger active");
+  appLogger.infoSync("Development mode: centralized logger active");
   LogBox.ignoreLogs([
     "Non-serializable values were found in the navigation state",
   ]);
 } else {
-  // Strip all logs except errors in production for performance and security
+  // Strip all logs except errors in production for performance
   console.log = () => {};
   console.info = () => {};
   console.warn = () => {};
@@ -64,7 +59,7 @@ export default function App() {
     const unhandledRejectionHandler = (reason: any) => {
       const error =
         reason instanceof Error ? reason : new Error(String(reason));
-      logger.error("Unhandled Promise Rejection:", error);
+      appLogger.errorSync("Unhandled Promise Rejection", error);
       crashReportingService.reportError(error, "UnhandledPromiseRejection");
     };
 
@@ -101,7 +96,7 @@ export default function App() {
     // Check if app was launched from a notification
     getLastNotificationResponse().then((response) => {
       if (response) {
-        console.log("App launched from notification:", response);
+        appLogger.infoSync("App launched from notification", { response });
       }
     });
 
@@ -154,7 +149,11 @@ export default function App() {
             refreshedSession.tokens.expiresAt,
           );
           setSessionExpiringSoon(false);
-        } catch {
+        } catch (error) {
+          appLogger.errorSync(
+            'Failed to refresh session on app foreground',
+            error as Error
+          );
           logout();
           Alert.alert(
             'Session expired',

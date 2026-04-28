@@ -6,6 +6,7 @@ import React, {
   useState,
 } from "react";
 import mobileAuth, { AuthUser } from "../services/mobileAuth";
+import { appLogger } from "../utils/logger";
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -58,7 +59,7 @@ export function AuthProvider({
         });
       }
     } catch (error) {
-      console.warn("Session restore failed:", error);
+      appLogger.warnSync("Session restore failed", { error });
       setState({
         isAuthenticated: false,
         isLoading: false,

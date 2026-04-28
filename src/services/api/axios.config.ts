@@ -28,7 +28,7 @@
 
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { getEnv } from "../../config";
-import logger from "../../utils/logger";
+import { appLogger } from "../../utils/logger";
 import { getAccessToken, getRefreshToken, saveTokens } from "../secureStorage";
 import { requestQueue } from "./requestQueue";
 
@@ -103,9 +103,14 @@ apiClient.interceptors.response.use(
 
     // ── Log non-network errors ────────────────────────────────────────────
     if (error.code === "ERR_NETWORK" || error.message === "Network Error") {
-      logger.warn("API not available (running in offline mode)");
+      appLogger.warnSync("API not available (running in offline mode)");
     } else if (error.response?.status !== 401) {
-      logger.error("API Error:", error.response?.data || error.message);
+      appLogger.errorSync("API Error", error as Error, {
+        status: error.response?.status,
+        data: error.response?.data,
+        endpoint: originalRequest.url,
+        method: originalRequest.method,
+      });
     }
 
     // ── Queue network errors for retry ───────────────────────────────────
@@ -169,7 +174,10 @@ apiClient.interceptors.response.use(
     // ─── 403: Forbidden ────────────────────────────────────────────────────
 
     if (status === 403) {
-      console.warn("403 Forbidden - access denied");
+      appLogger.warnSync("403 Forbidden - access denied", {
+        endpoint: originalRequest.url,
+        method: originalRequest.method,
+      });
 
       return Promise.reject({
         message: "You are not allowed to perform this action",
@@ -188,8 +196,14 @@ apiClient.interceptors.response.use(
         const delayTime = RATE_LIMIT_DELAYS[delayIndex] || RATE_LIMIT_DELAYS[RATE_LIMIT_DELAYS.length - 1];
 
         // User feedback: Log retry attempt with countdown
-        logger.warn(
-          `[RATE_LIMIT] Retry ${originalRequest._retryCount}/${MAX_RATE_LIMIT_RETRIES} in ${delayTime / 1000}s: ${originalRequest.method?.toUpperCase()} ${originalRequest.url}`
+        appLogger.warnSync(
+          `API Rate Limit: Retry ${originalRequest._retryCount}/${MAX_RATE_LIMIT_RETRIES}`,
+          {
+            endpoint: originalRequest.url,
+            method: originalRequest.method,
+            delayMs: delayTime,
+            retryCount: originalRequest._retryCount,
+          }
         );
 
         await delay(delayTime);
@@ -198,8 +212,14 @@ apiClient.interceptors.response.use(
       }
 
       // Max retries exceeded - user-facing error
-      logger.error(
-        `[RATE_LIMIT] Max retries exceeded (${MAX_RATE_LIMIT_RETRIES} attempts) for ${originalRequest.method?.toUpperCase()} ${originalRequest.url}`
+      appLogger.errorSync(
+        `API Rate Limit: Max retries exceeded`,
+        undefined,
+        {
+          endpoint: originalRequest.url,
+          method: originalRequest.method,
+          maxRetries: MAX_RATE_LIMIT_RETRIES,
+        }
       );
 
       return Promise.reject({

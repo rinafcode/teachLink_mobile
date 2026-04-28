@@ -14,7 +14,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import * as IAP from 'react-native-iap';
-import log from '../utils/logger';
+import { appLogger } from '../utils/logger';
 import { apiService } from './api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -188,12 +188,12 @@ class MobilePaymentsService {
       });
 
       IAP.purchaseErrorListener((error) => {
-        console.error('[Payments] Purchase error:', error);
+        appLogger.errorSync('[Payments] Purchase error', error instanceof Error ? error : new Error(String(error)));
       });
 
       this.isInitialized = true;
     } catch (error) {
-      log.error('[Payments] initialize error:', error);
+      appLogger.errorSync('[Payments] Initialize error', error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }

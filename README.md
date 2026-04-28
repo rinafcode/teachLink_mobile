@@ -42,7 +42,112 @@ npm run test:coverage          # Run with coverage report
 npx jest src/__tests__/path/to/file.test.ts
 ```
 
-## Environment Variables
+## Logging
+
+TeachLink uses a centralized, production-grade logging system with structured JSON output, context propagation, and remote integration.
+
+### Quick Start
+
+```typescript
+import { appLogger } from '@/utils/logger';
+
+// Simple logging
+appLogger.infoSync('User logged in');
+appLogger.errorSync('API request failed', error);
+
+// Context-aware logging
+appLogger.setContext({ userId: 'user123', component: 'Auth' });
+appLogger.infoSync('Processing user request');
+appLogger.clearContext();
+
+// Request-scoped logging
+appLogger.pushContext({ requestId: 'req-abc' });
+try {
+  await apiCall();
+  appLogger.infoSync('API success', { duration: 125 });
+} finally {
+  appLogger.popContext();
+}
+```
+
+### Log Levels
+
+| Level | Usage | Prod Logged |
+|-------|-------|------------|
+| `ERROR` | Exceptions, failures, critical issues | ✓ Always |
+| `WARN` | Recoverable issues, deprecations | ✓ Always |
+| `INFO` | Important events, state changes | ✓ Always |
+| `DEBUG` | Diagnostic info, flow tracking | Dev only |
+| `TRACE` | Verbose flow, parameter values | Dev only |
+
+### Output Formats
+
+- **Development**: Pretty-printed with emojis, component names, context
+- **Production**: Structured JSON for aggregation and remote logging
+- **File**: AsyncStorage-backed rotation (5MB per file, 10 max)
+- **Remote**: Sentry integration for critical errors
+
+### Structured Log Values
+
+Every log entry includes:
+- `timestamp` — ISO 8601 timestamp
+- `level` — ERROR, WARN, INFO, DEBUG, TRACE
+- `app` — 'teachlink_mobile'
+- `version` — App version (from package.json)
+- `environment` — 'development' or 'production'
+- `message` — Log message
+- `userId` — Current authenticated user (if set)
+- `requestId` — Request/transaction identifier (if set)
+- `component` — Component or service name (if set)
+- `meta` — Additional metadata/context
+
+### Advanced Usage
+
+```typescript
+import { appLogger, LogLevel } from '@/utils/logger';
+import { setLogContext, getLogContext, pushLogContext, popLogContext } from '@/config/logging';
+
+// Set log level (default: DEBUG in dev, INFO in prod)
+appLogger.setMinLevel(LogLevel.WARN);
+
+// Context management
+appLogger.setContext({ userId: 'u1' });
+const ctx = appLogger.getContext(); // { userId: 'u1' }
+appLogger.clearContext();
+
+// Request scoping
+appLogger.pushContext({ requestId: 'req1' });
+// Logs include requestId
+appLogger.popContext(); // Back to parent context
+
+// API-specific logging
+await appLogger.logApiRequest('/users', 'GET', { userId: 'u1' });
+await appLogger.logApiResponse('/users', 200, 45, { count: 5 });
+await appLogger.logApiError('/users', error, 500);
+
+// Async methods (file persistence)
+await appLogger.info('Important event');
+await appLogger.error('Critical failure', error, { retry: 2 });
+
+// Sync methods (no file I/O, fast path)
+appLogger.infoSync('Quick log');
+appLogger.errorSync('Error', error);
+```
+
+### Retrieve Logs (Development)
+
+```typescript
+import { retrieveLogFiles, clearLogFiles } from '@/config/logging';
+
+// Get all stored logs
+const logs = await retrieveLogFiles();
+logs.forEach(log => console.log(log));
+
+// Clear log storage
+await clearLogFiles();
+```
+
+
 
 Copy `.env.example` to `.env` and set the following:
 
