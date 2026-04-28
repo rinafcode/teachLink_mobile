@@ -14,8 +14,11 @@ import { setupNotificationNavigation } from "./src/navigation/linking";
 import {
   addNotificationReceivedListener,
   getLastNotificationResponse,
+  registerForPushNotifications,
+  registerTokenWithBackend,
   removeNotificationListener,
 } from "./src/services/pushNotifications";
+import { useNotificationStore } from "./src/store/notificationStore";
 import { handleNotificationReceived } from "./src/utils/notificationHandlers";
 
 // Centralized logging is handled by src/utils/logger.
@@ -59,6 +62,16 @@ export default function App() {
 
     // Connect to socket when app starts
     socketService.connect();
+
+    // Initialize push notifications: request permissions and get device token
+    registerForPushNotifications().then(async (token) => {
+      if (token) {
+        const { setPushToken, setTokenRegistered } = useNotificationStore.getState();
+        setPushToken(token);
+        const registered = await registerTokenWithBackend(token);
+        setTokenRegistered(registered);
+      }
+    });
 
     // Start request queue monitoring
     requestQueue.startMonitoring(apiClient);
