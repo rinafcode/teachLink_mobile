@@ -11,15 +11,22 @@ import { useNotificationStore } from '../../store/notificationStore';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 
 interface NotificationPromptProps {
+  /** Whether the prompt modal is visible */
   visible: boolean;
+  /** Callback when the modal is closed */
   onClose: () => void;
+  /** Callback when notification permission is granted */
   onPermissionGranted?: () => void;
+  /** Callback when notification permission is denied */
   onPermissionDenied?: () => void;
 }
 
 interface NotificationTypeItemProps {
+  /** Emoji icon to display */
   icon: string;
+  /** Title of the notification type */
   title: string;
+  /** Description of the notification type */
   description: string;
 }
 

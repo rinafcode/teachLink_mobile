@@ -18,9 +18,15 @@ import QuizResults from './QuizResults';
 import logger from '../../../utils/logger';
 
 interface MobileQuizManagerProps {
+  /** The quiz data to display and manage */
   quiz: Quiz;
+  /** The ID of the course containing this quiz */
   courseId: string;
+  /** Optional callback for back navigation */
   onBack?: () => void;
+  /** Navigation prop for programmatic navigation to other screens */
+  navigation?: NativeStackNavigationProp<RootStackParamList>;
+  /** Optional course data for navigation after quiz completion */
   /** Optional React Navigation prop used to navigate back to CourseViewer after a passed quiz. */
   navigation?: QuizNavigationProp;
   /** Course data forwarded to the CourseViewer when navigating after quiz completion. */

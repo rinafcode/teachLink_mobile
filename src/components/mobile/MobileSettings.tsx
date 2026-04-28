@@ -1,37 +1,36 @@
+import {
+    BarChart2,
+    Bell,
+    ChevronRight,
+    Download,
+    Eye,
+    Globe,
+    HardDrive,
+    Lock,
+    LogOut,
+    MapPin,
+    Play,
+    Shield,
+    Sun,
+    Trash2,
+    Type,
+    User,
+    Vibrate,
+    Wifi
+} from 'lucide-react-native';
 import React from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
+    Alert,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import {
-  User,
-  Bell,
-  Shield,
-  Download,
-  Sliders,
-  ChevronRight,
-  Lock,
-  Eye,
-  BarChart2,
-  MapPin,
-  Wifi,
-  HardDrive,
-  Trash2,
-  Sun,
-  Globe,
-  Type,
-  Play,
-  Vibrate,
-  LogOut,
-} from 'lucide-react-native';
 import { useAppStore } from '../../store';
-import { useSettingsStore } from '../../store/settingsStore';
 import { useNotificationStore } from '../../store/notificationStore';
+import { useSettingsStore } from '../../store/settingsStore';
 import { NativeToggle } from './NativeToggle';
-import { SettingsPicker, PickerOption } from './SettingsPicker';
+import { PickerOption, SettingsPicker } from './SettingsPicker';
 import { SettingsSection } from './SettingsSection';
 
 import { AppText } from '../common/AppText';
@@ -43,6 +42,19 @@ import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
  * Props for the SettingRow component
  */
 interface SettingRowProps {
+  /** Icon to display on the left side of the row */
+  icon: React.ReactNode;
+  /** Background color class for the icon container */
+  iconBg?: string;
+  /** Primary label text for the setting */
+  label: string;
+  /** Optional secondary description text */
+  description?: string;
+  /** Optional component to render on the right side (e.g., toggle, picker) */
+  right?: React.ReactNode;
+  /** Callback when the row is pressed */
+  onPress?: () => void;
+  /** Whether this is a destructive action (affects styling) */
   /** Icon to display for the setting */
   icon: React.ReactNode;
   /** Background color class for the icon container */

@@ -1,20 +1,24 @@
 import React from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Quiz } from '../../../types/course';
 import PrimaryButton from '../../common/PrimaryButton';
 
 interface QuizResultsProps {
+  /** The quiz data that was completed */
   quiz: Quiz;
+  /** The final score percentage (0-100) */
   score: number;
+  /** Whether the quiz was passed */
   passed: boolean;
+  /** Callback to navigate back to the course */
   onBack: () => void;
+  /** Optional callback to retake the quiz */
   onRetake?: () => void;
 }
 
