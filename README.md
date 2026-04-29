@@ -14,7 +14,7 @@ A cross-platform mobile app built with [Expo](https://expo.dev) and React Native
 ## Installation
 
 ```bash
-git clone https://github.com/rinafcode/teachLink_mobile.git
+git clone https://github.com/shogun444/teachLink_mobile.git
 cd teachLink_mobile
 npm install
 cp .env.example .env
@@ -30,6 +30,13 @@ npx expo start --ios    # Launch directly in iOS Simulator
 npx expo start --android # Launch directly in Android Emulator
 npx expo start --web    # Run in browser (limited functionality)
 ```
+
+## Storybook
+
+- **Start:** `npm run storybook` to start the app in Storybook mode.
+- **Add Story:** Create `*.stories.tsx` files in `src/components`.
+- **View:** Open the app on your device/emulator to interact with components.
+- **Guide:** See [storybook_guide.md](docs/storybook_guide.md) for more details.
 
 ## Running Tests
 
@@ -142,7 +149,7 @@ import { retrieveLogFiles, clearLogFiles } from '@/config/logging';
 
 // Get all stored logs
 const logs = await retrieveLogFiles();
-logs.forEach(log => console.log(log));
+logs.forEach((log) => console.log(log));
 
 // Clear log storage
 await clearLogFiles();
@@ -156,6 +163,8 @@ Copy `.env.example` to `.env` and set the following:
 | `EXPO_PUBLIC_SOCKET_URL`                | Yes      | WebSocket server URL (`wss://...`)                 |
 | `EXPO_PUBLIC_APP_ENV`                   | No       | Runtime environment (`development` / `production`) |
 | `EXPO_PUBLIC_ENABLE_PUSH_NOTIFICATIONS` | No       | Enable push notifications (`true` / `false`)       |
+| `EXPO_PUBLIC_STORYBOOK`                 | No       | Enable Storybook mode (`true` / `false`)           |
+
 
 The app validates `EXPO_PUBLIC_API_BASE_URL` and `EXPO_PUBLIC_SOCKET_URL` at startup and will refuse to launch with invalid or missing values.
 
@@ -208,6 +217,7 @@ Run `eas credentials` to set up or repair iOS/Android signing credentials.
 - Live chat and push notifications
 - Creator monetisation
 - Dark/light mode
+- **Isolated Component Development** via Storybook
 
 ## Resources
 

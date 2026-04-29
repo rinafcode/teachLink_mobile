@@ -2,17 +2,28 @@ import * as Sentry from '@sentry/react-native';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef } from 'react';
 import { Alert, AppState, AppStateStatus, LogBox } from 'react-native';
+
 import './global.css';
+import StorybookUI from './.rnstorybook';
+
 import { ErrorBoundary } from './src/components/common/ErrorBoundary';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Font from 'expo-font';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
+import { AuthProvider } from './src/hooks';
 import AppNavigator from './src/navigation/AppNavigator';
-import mobileAuthService from './src/services/mobileAuth';
+import { setupNotificationNavigation } from './src/navigation/linking';
+import { mobileAuthService } from './src/services/mobileAuth';
+import {
+  addNotificationReceivedListener,
+  getLastNotificationResponse,
+  removeNotificationListener,
+} from './src/services/pushNotifications';
 import socketService from './src/services/socket';
 import { useAppStore } from './src/store';
+import { handleNotificationReceived } from './src/utils/notificationHandlers';
 import { apiClient } from './src/services/api';
 import { crashReportingService } from './src/services/cashReporting';
 import { requestQueue } from './src/services/requestQueue';
@@ -20,14 +31,9 @@ import { requireEnvVariables } from './src/utils/env';
 import { appLogger } from './src/utils/logger';
 import { initializeLogging } from './src/config/logging';
 
-// Notification imports
-import { setupNotificationNavigation } from './src/navigation/linking';
-import {
-  addNotificationReceivedListener,
-  getLastNotificationResponse,
-  removeNotificationListener,
-} from './src/services/pushNotifications';
-import { handleNotificationReceived } from './src/utils/notificationHandlers';
+// SHOW_STORYBOOK flag based on environment variable
+const SHOW_STORYBOOK = process.env.EXPO_PUBLIC_STORYBOOK === 'true';
+
 
 // Centralized structured logging initialized on startup
 requireEnvVariables();
@@ -48,8 +54,9 @@ if (__DEV__) {
   console.debug = () => {};
 }
 
-export default function App() {
-  const theme = useAppStore(state => state.theme);
+const App = () => {
+  const theme = useAppStore((state) => state.theme);
+
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const [appIsReady, setAppIsReady] = React.useState(false);
 
@@ -201,7 +208,7 @@ export default function App() {
     return () => {
       appStateSubscription.remove();
     };
-  }, []);
+  }, [SESSION_REFRESH_WINDOW_MS]);
 
   if (!appIsReady) {
     return null;
@@ -209,8 +216,12 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
-      <AppNavigator />
+      <AuthProvider>
+        <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
+        <AppNavigator />
+      </AuthProvider>
     </ErrorBoundary>
   );
-}
+};
+
+export default SHOW_STORYBOOK ? StorybookUI : App;

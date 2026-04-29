@@ -16,10 +16,7 @@
         "UIBackgroundModes": ["remote-notification"],
         "NSCameraUsageDescription": "TeachLink uses the camera to scan QR codes and open deep links."
       },
-      "associatedDomains": [
-        "applinks:teachlink.com",
-        "applinks:www.teachlink.com"
-      ],
+      "associatedDomains": ["applinks:teachlink.com", "applinks:www.teachlink.com"],
       "buildNumber": "1",
       "appStoreUrl": "https://apps.apple.com/app/teachlink/id1234567890",
       "privacyPolicy": "https://teachlink.com/privacy",
@@ -36,11 +33,7 @@
       "versionCode": 1,
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "permissions": [
-        "RECEIVE_BOOT_COMPLETED",
-        "VIBRATE",
-        "WAKE_LOCK"
-      ],
+      "permissions": ["RECEIVE_BOOT_COMPLETED", "VIBRATE", "WAKE_LOCK"],
       "intentFilters": [
         {
           "action": "VIEW",

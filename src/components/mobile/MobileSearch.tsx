@@ -1,15 +1,15 @@
 import { Search, SlidersHorizontal } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
-    FlatList,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import { AppText as Text } from '../common/AppText';
 import { sampleCourse } from '../../data/sampleCourse';
 import { useAnalytics, useDynamicFontSize, useMemoryMonitor } from '../../hooks';
 import { Course } from '../../types/course';

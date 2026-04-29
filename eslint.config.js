@@ -1,6 +1,7 @@
 // https://docs.expo.dev/guides/using-eslint/
 // Prettier configuration: Managed separately via .prettierrc and runs independently
 // to avoid conflicts. Pre-commit hook ensures both Prettier and ESLint pass.
+
 const { defineConfig } = require('eslint/config');
 const expoConfig = require('eslint-config-expo/flat');
 const jsxA11yPlugin = require('eslint-plugin-jsx-a11y');
@@ -8,7 +9,8 @@ const jsxA11yPlugin = require('eslint-plugin-jsx-a11y');
 module.exports = defineConfig([
   expoConfig,
   {
-    ignores: ['dist/*'],
+    ignores: ['dist/*', '.rnstorybook/storybook.requires.ts'],
+
   },
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
