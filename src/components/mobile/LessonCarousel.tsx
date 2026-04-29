@@ -52,7 +52,7 @@ export default function LessonCarousel({
 
   // Find initial index
   useEffect(() => {
-    const index = lessons.findIndex((lesson) => lesson.id === currentLessonId);
+    const index = lessons.findIndex(lesson => lesson.id === currentLessonId);
     if (index !== -1 && index !== currentIndex) {
       setCurrentIndex(index);
       scrollToIndex(index, false);
@@ -63,7 +63,7 @@ export default function LessonCarousel({
   useEffect(() => {
     if (progress && lessons.length > 0) {
       const completedCount = lessons.filter(
-        (lesson) => progress.lessons[lesson.id]?.completed
+        lesson => progress.lessons[lesson.id]?.completed
       ).length;
       const progressPercent = (completedCount / lessons.length) * 100;
       Animated.spring(progressBarWidth, {
@@ -87,7 +87,7 @@ export default function LessonCarousel({
   const handleScroll = (event: any) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(offsetX / SCREEN_WIDTH);
-    
+
     if (index !== currentIndex && index >= 0 && index < lessons.length) {
       setCurrentIndex(index);
       const lesson = lessons[index];
@@ -98,7 +98,7 @@ export default function LessonCarousel({
   const handleMomentumScrollEnd = (event: any) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(offsetX / SCREEN_WIDTH);
-    
+
     if (index >= 0 && index < lessons.length) {
       setCurrentIndex(index);
       const lesson = lessons[index];
@@ -155,7 +155,7 @@ export default function LessonCarousel({
           {lessons.map((lesson, index) => {
             const isCompleted = progress?.lessons[lesson.id]?.completed;
             const isCurrent = index === currentIndex;
-            
+
             return (
               <View
                 key={lesson.id}
@@ -175,15 +175,11 @@ export default function LessonCarousel({
 
       {/* Lesson Title */}
       <View style={styles.titleContainer}>
-        <Text style={styles.titleText}>
-          {currentLesson.title}
-        </Text>
+        <Text style={styles.titleText}>{currentLesson.title}</Text>
         {lessonProgress?.completed && (
           <View style={styles.completedBadge}>
             <View style={styles.completedDot} />
-            <Text style={styles.completedText}>
-              ✓ Completed
-            </Text>
+            <Text style={styles.completedText}>✓ Completed</Text>
           </View>
         )}
       </View>
@@ -203,10 +199,7 @@ export default function LessonCarousel({
         contentContainerStyle={styles.scrollContent}
       >
         {lessons.map((lesson, index) => (
-          <View
-            key={lesson.id}
-            style={[styles.lessonContainer, { width: SCREEN_WIDTH }]}
-          >
+          <View key={lesson.id} style={[styles.lessonContainer, { width: SCREEN_WIDTH }]}>
             <ScrollView
               style={styles.lessonScrollView}
               contentContainerStyle={styles.lessonContent}
@@ -229,19 +222,13 @@ export default function LessonCarousel({
             currentIndex === 0 && styles.navButtonDisabled,
           ]}
         >
-          <Text style={[
-            styles.navButtonText,
-            currentIndex === 0 && styles.navButtonTextDisabled,
-          ]}>
+          <Text style={[styles.navButtonText, currentIndex === 0 && styles.navButtonTextDisabled]}>
             ← Previous
           </Text>
         </TouchableOpacity>
 
         {currentIndex === lessons.length - 1 ? (
-          <TouchableOpacity
-            onPress={onLastLessonNext}
-            style={styles.navButton}
-          >
+          <TouchableOpacity onPress={onLastLessonNext} style={styles.navButton}>
             <LinearGradient
               colors={['#20afe7', '#2c8aec', '#586ce9']}
               start={{ x: 0, y: 0 }}
@@ -254,19 +241,14 @@ export default function LessonCarousel({
             </LinearGradient>
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity
-            onPress={goToNext}
-            style={styles.navButton}
-          >
+          <TouchableOpacity onPress={goToNext} style={styles.navButton}>
             <LinearGradient
               colors={['#20afe7', '#2c8aec', '#586ce9']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.nextButtonGradient}
             >
-              <Text style={styles.nextButtonText}>
-                Next →
-              </Text>
+              <Text style={styles.nextButtonText}>Next →</Text>
             </LinearGradient>
           </TouchableOpacity>
         )}

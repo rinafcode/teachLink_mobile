@@ -5,6 +5,7 @@ import { Alert, AppState, AppStateStatus, LogBox } from 'react-native';
 
 import './global.css';
 import StorybookUI from './.rnstorybook';
+
 import { ErrorBoundary } from './src/components/common/ErrorBoundary';
 import { AuthProvider } from './src/hooks';
 import AppNavigator from './src/navigation/AppNavigator';
@@ -28,11 +29,12 @@ import { initializeLogging } from './src/config/logging';
 // SHOW_STORYBOOK flag based on environment variable
 const SHOW_STORYBOOK = process.env.EXPO_PUBLIC_STORYBOOK === 'true';
 
+
 // Centralized structured logging initialized on startup
 requireEnvVariables();
 
 // Initialize centralized logging on app start
-initializeLogging().catch((err) => {
+initializeLogging().catch(err => {
   console.error('[App] Failed to initialize logging:', err);
 });
 
@@ -49,6 +51,7 @@ if (__DEV__) {
 
 const App = () => {
   const theme = useAppStore((state) => state.theme);
+
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
 
   const SESSION_REFRESH_WINDOW_MS = 5 * 60 * 1000;
@@ -93,7 +96,7 @@ const App = () => {
     const subscription = addNotificationReceivedListener(handleNotificationReceived);
 
     // Check if app was launched from a notification
-    getLastNotificationResponse().then((response) => {
+    getLastNotificationResponse().then(response => {
       if (response) {
         appLogger.infoSync('App launched from notification', { response });
       }
@@ -160,7 +163,7 @@ const App = () => {
 
     checkSessionOnForeground();
 
-    const appStateSubscription = AppState.addEventListener('change', (nextAppState) => {
+    const appStateSubscription = AppState.addEventListener('change', nextAppState => {
       const wasInBackground = appStateRef.current.match(/inactive|background/);
       const isForegrounded = nextAppState === 'active';
 

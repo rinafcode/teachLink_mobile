@@ -21,7 +21,13 @@ export default function CourseViewerScreen() {
   const viewMode = initialViewMode as 'lesson' | 'syllabus' | 'notes' | undefined;
 
   return (
-    <Suspense fallback={<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator /></View>}>
+    <Suspense
+      fallback={
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator />
+        </View>
+      }
+    >
       <MobileCourseViewer
         course={parsedCourse}
         initialLessonId={initialLessonId as string}

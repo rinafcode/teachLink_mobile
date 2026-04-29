@@ -67,28 +67,40 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
   };
 
   // Simple text-based indicator for now due to JSX configuration issues
-  return React.createElement(TouchableOpacity,
+  return React.createElement(
+    TouchableOpacity,
     {
       onPress: handleRefresh,
       activeOpacity: 0.8,
       style: getPositionStyles(),
     },
-    React.createElement(View, { style: { flex: 1 } },
-      React.createElement(Text, { style: { color: textColor, fontWeight: 'bold' } },
+    React.createElement(
+      View,
+      { style: { flex: 1 } },
+      React.createElement(
+        Text,
+        { style: { color: textColor, fontWeight: 'bold' } },
         isOffline ? 'OFFLINE MODE' : 'ONLINE'
       ),
-      isOffline && React.createElement(Text, { style: { color: textColor, fontSize: 12, marginTop: 4 } },
-        'Tap to refresh connection'
-      )
+      isOffline &&
+        React.createElement(
+          Text,
+          { style: { color: textColor, fontSize: 12, marginTop: 4 } },
+          'Tap to refresh connection'
+        )
     )
   );
 };
 
 // Export simplified versions
 export const OfflineBanner = OfflineIndicator;
-export const OnlineIndicator = (props: any) => 
-  React.createElement(OfflineIndicator, { ...props, showWhenOnline: true, backgroundColor: '#4CAF50' });
-export const ConnectionQualityIndicator = (props: any) => 
+export const OnlineIndicator = (props: any) =>
+  React.createElement(OfflineIndicator, {
+    ...props,
+    showWhenOnline: true,
+    backgroundColor: '#4CAF50',
+  });
+export const ConnectionQualityIndicator = (props: any) =>
   React.createElement(OfflineIndicator, { ...props, position: 'bottom' });
 export const OfflineFAB = (props: any) => null; // Disabled due to configuration issues
 

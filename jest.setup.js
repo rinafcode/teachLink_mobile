@@ -1,6 +1,6 @@
 // Global mock for react-native to support tests
 jest.mock('react-native', () => ({
-  Platform: { OS: 'ios', select: jest.fn((obj) => obj.ios) },
+  Platform: { OS: 'ios', select: jest.fn(obj => obj.ios) },
   Linking: {
     openURL: jest.fn(() => Promise.resolve()),
     openSettings: jest.fn(() => Promise.resolve()),
@@ -16,8 +16,8 @@ jest.mock('react-native', () => ({
   ActivityIndicator: 'ActivityIndicator',
   Image: 'Image',
   StyleSheet: {
-    create: (styles) => styles,
-    flatten: (style) => (style ? (Array.isArray(style) ? Object.assign({}, ...style) : style) : {}),
+    create: styles => styles,
+    flatten: style => (style ? (Array.isArray(style) ? Object.assign({}, ...style) : style) : {}),
     hairlineWidth: 1,
     absoluteFill: {},
     absoluteFillObject: {},
@@ -51,18 +51,18 @@ jest.mock('react-native', () => ({
       stopAnimation: jest.fn(),
     })),
     timing: jest.fn(() => ({
-      start: jest.fn((callback) => callback && callback({ finished: true })),
+      start: jest.fn(callback => callback && callback({ finished: true })),
       stop: jest.fn(),
     })),
     sequence: jest.fn(() => ({
-      start: jest.fn((callback) => callback && callback({ finished: true })),
+      start: jest.fn(callback => callback && callback({ finished: true })),
       stop: jest.fn(),
     })),
     loop: jest.fn(() => ({
-      start: jest.fn((callback) => callback && callback({ finished: true })),
+      start: jest.fn(callback => callback && callback({ finished: true })),
       stop: jest.fn(),
     })),
-    createAnimatedComponent: jest.fn((component) => component),
+    createAnimatedComponent: jest.fn(component => component),
   },
   Alert: { alert: jest.fn() },
   Keyboard: { avoidView: 'KeyboardAvoidingView', dismiss: jest.fn() },
@@ -88,7 +88,7 @@ jest.mock('react-native', () => ({
     addEventListener: jest.fn((event, handler) => ({ remove: jest.fn() })),
     removeEventListener: jest.fn(),
   },
-  InteractionManager: { runAfterInteractions: jest.fn((cb) => cb()) },
+  InteractionManager: { runAfterInteractions: jest.fn(cb => cb()) },
 }));
 
 // Silence console warnings during tests
@@ -135,7 +135,7 @@ jest.mock('expo-constants', () => ({
 
 // Mock expo-linking
 jest.mock('expo-linking', () => ({
-  createURL: jest.fn((path) => `teachlink://${path}`),
+  createURL: jest.fn(path => `teachlink://${path}`),
   addEventListener: jest.fn(() => ({ remove: jest.fn() })),
   getInitialURL: jest.fn(() => Promise.resolve(null)),
 }));
@@ -145,7 +145,9 @@ jest.mock('expo-notifications', () => ({
   setNotificationHandler: jest.fn(),
   getPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'undetermined' })),
   requestPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
-  getExpoPushTokenAsync: jest.fn(() => Promise.resolve({ data: 'ExponentPushToken[test-token-123]' })),
+  getExpoPushTokenAsync: jest.fn(() =>
+    Promise.resolve({ data: 'ExponentPushToken[test-token-123]' })
+  ),
   setNotificationChannelAsync: jest.fn(() => Promise.resolve()),
   scheduleNotificationAsync: jest.fn(() => Promise.resolve('notification-id')),
   cancelScheduledNotificationAsync: jest.fn(() => Promise.resolve()),
@@ -179,7 +181,7 @@ jest.mock('expo-constants', () => ({
 
 // Mock expo-linking
 jest.mock('expo-linking', () => ({
-  createURL: jest.fn((path) => `teachlink://${path}`),
+  createURL: jest.fn(path => `teachlink://${path}`),
   addEventListener: jest.fn(() => ({ remove: jest.fn() })),
   getInitialURL: jest.fn(() => Promise.resolve(null)),
 }));
@@ -189,7 +191,9 @@ jest.mock('expo-notifications', () => ({
   setNotificationHandler: jest.fn(),
   getPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'undetermined' })),
   requestPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
-  getExpoPushTokenAsync: jest.fn(() => Promise.resolve({ data: 'ExponentPushToken[test-token-123]' })),
+  getExpoPushTokenAsync: jest.fn(() =>
+    Promise.resolve({ data: 'ExponentPushToken[test-token-123]' })
+  ),
   setNotificationChannelAsync: jest.fn(() => Promise.resolve()),
   scheduleNotificationAsync: jest.fn(() => Promise.resolve('notification-id')),
   cancelScheduledNotificationAsync: jest.fn(() => Promise.resolve()),

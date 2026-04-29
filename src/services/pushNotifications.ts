@@ -4,6 +4,7 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { NotificationData, NotificationType } from '../types/notifications';
 import logger from '../utils/logger';
+import apiClient from './api/axios.config';
 
 // Configure how notifications are handled when app is in foreground
 Notifications.setNotificationHandler({
@@ -144,7 +145,7 @@ export function getChannelId(type: NotificationType): string {
 export async function registerTokenWithBackend(token: string): Promise<boolean> {
   try {
     // TODO: Replace with actual API endpoint
-    // const response = await axios.post('/api/notifications/register', {
+    // const response = await apiClient.post('/api/notifications/register', {
     //   token,
     //   platform: Platform.OS,
     //   deviceId: Device.deviceName,
@@ -166,7 +167,7 @@ export async function registerTokenWithBackend(token: string): Promise<boolean> 
 export async function unregisterTokenFromBackend(token: string): Promise<boolean> {
   try {
     // TODO: Replace with actual API endpoint
-    // const response = await axios.delete('/api/notifications/unregister', {
+    // const response = await apiClient.delete('/api/notifications/unregister', {
     //   data: { token },
     // });
     // return response.data.success;

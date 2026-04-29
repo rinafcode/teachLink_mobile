@@ -59,14 +59,10 @@ export function NativeToggle({
       disabled={disabled}
       className={`flex-row items-center ${disabled ? 'opacity-50' : ''}`}
     >
-      <View className="flex-1 mr-3">
-        <Text className="text-[15px] font-medium text-gray-900 dark:text-white">
-          {label}
-        </Text>
+      <View className="mr-3 flex-1">
+        <Text className="text-[15px] font-medium text-gray-900 dark:text-white">{label}</Text>
         {description ? (
-          <Text className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-            {description}
-          </Text>
+          <Text className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{description}</Text>
         ) : null}
       </View>
       {switchControl}

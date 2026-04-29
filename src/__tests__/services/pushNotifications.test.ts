@@ -161,8 +161,7 @@ describe('pushNotifications service', () => {
 
     it('should add notification response listener', () => {
       const callback = jest.fn();
-      const mockAddListener =
-        Notifications.addNotificationResponseReceivedListener as jest.Mock;
+      const mockAddListener = Notifications.addNotificationResponseReceivedListener as jest.Mock;
       const mockSubscription = { remove: jest.fn() };
       mockAddListener.mockReturnValue(mockSubscription);
 

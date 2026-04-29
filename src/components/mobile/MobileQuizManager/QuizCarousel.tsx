@@ -1,10 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import {
-    Dimensions,
-    ScrollView,
-    StyleSheet,
-    View,
-} from 'react-native';
+import { Dimensions, ScrollView, StyleSheet, View } from 'react-native';
 import { Question } from '../../../types/course';
 import MobileQuestionCard from './MobileQuestionCard';
 
@@ -47,20 +42,20 @@ export default function QuizCarousel({
   const handleScroll = (event: any) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(offsetX / SCREEN_WIDTH);
-    
+
     // Clear any existing timeout
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current);
     }
-    
+
     // Mark as scrolling
     isScrollingRef.current = true;
-    
+
     // Update index if changed
     if (index !== currentQuestionIndex && index >= 0 && index < questions.length) {
       onQuestionChange(index);
     }
-    
+
     // Reset scrolling flag after scroll ends
     scrollTimeoutRef.current = setTimeout(() => {
       isScrollingRef.current = false;

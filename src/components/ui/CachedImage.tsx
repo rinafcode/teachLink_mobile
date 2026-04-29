@@ -27,17 +27,17 @@ interface CachedImageProps extends Omit<ExpoImageProps, 'source'> {
 
 /**
  * CachedImage Component
- * 
+ *
  * Wraps expo-image's Image component with automatic caching and prefetching.
  * Provides performance optimization for image-heavy screens.
- * 
+ *
  * Features:
  * - Automatic image prefetching via ImageCache
  * - Loading state management
  * - Error handling
  * - Accessibility support
  * - Optional loading indicator
- * 
+ *
  * @example
  * ```tsx
  * <CachedImage
@@ -77,7 +77,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
         .then(() => {
           logger.debug(`✅ Image prefetched: ${uri}`);
         })
-        .catch((e) => {
+        .catch(e => {
           logger.warn(`Failed to prefetch image: ${uri}`, e);
           setError(e instanceof Error ? e : new Error(String(e)));
           onLoadError?.(e instanceof Error ? e : new Error(String(e)));

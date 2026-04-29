@@ -44,19 +44,13 @@ export default function RootLayout() {
           <GestureHandlerRootView style={{ flex: 1 }}>
             <Stack>
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen
-                name="course-viewer"
-                options={{ headerShown: false }}
-              />
-              <Stack.Screen
-                name="profile/[userId]"
-                options={{ headerShown: false }}
-              />
+              <Stack.Screen name="course-viewer" options={{ headerShown: false }} />
+              <Stack.Screen name="profile/[userId]" options={{ headerShown: false }} />
               <Stack.Screen name="search" options={{ headerShown: false }} />
               <Stack.Screen name="settings" options={{ headerShown: false }} />
               <Stack.Screen name="qr-scanner" options={{ headerShown: false }} />
               <Stack.Screen name="quiz" options={{ headerShown: false }} />
-              <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+              <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
             </Stack>
           </GestureHandlerRootView>
         </OfflineIndicatorProvider>

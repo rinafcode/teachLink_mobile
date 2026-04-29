@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Question } from '../../../types/course';
 import { useHapticFeedback } from '../../../hooks';
 
@@ -91,9 +84,7 @@ export default function MobileQuestionCard({
       {/* Question Text */}
       <View style={styles.questionContainer}>
         <Text style={styles.questionText}>{question.question}</Text>
-        {question.multiple && (
-          <Text style={styles.multiSelectHint}>(Select all that apply)</Text>
-        )}
+        {question.multiple && <Text style={styles.multiSelectHint}>(Select all that apply)</Text>}
       </View>
 
       {/* Answer Options */}
@@ -106,10 +97,7 @@ export default function MobileQuestionCard({
                 <TouchableOpacity
                   key={index}
                   onPress={() => handleOptionSelect(index)}
-                  style={[
-                    styles.optionButton,
-                    isSelected && styles.optionButtonSelected,
-                  ]}
+                  style={[styles.optionButton, isSelected && styles.optionButtonSelected]}
                 >
                   <View style={styles.optionContent}>
                     {/* Radio or Checkbox Indicator */}
@@ -122,19 +110,11 @@ export default function MobileQuestionCard({
                     >
                       {isSelected && (
                         <View
-                          style={[
-                            styles.indicatorInner,
-                            question.multiple && styles.checkboxInner,
-                          ]}
+                          style={[styles.indicatorInner, question.multiple && styles.checkboxInner]}
                         />
                       )}
                     </View>
-                    <Text
-                      style={[
-                        styles.optionText,
-                        isSelected && styles.optionTextSelected,
-                      ]}
-                    >
+                    <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
                       {option}
                     </Text>
                   </View>

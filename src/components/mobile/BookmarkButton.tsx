@@ -9,7 +9,11 @@ interface BookmarkButtonProps {
   showLabel?: boolean;
 }
 
-export default function BookmarkButton({ item, size = 'medium', showLabel = true }: BookmarkButtonProps) {
+export default function BookmarkButton({
+  item,
+  size = 'medium',
+  showLabel = true,
+}: BookmarkButtonProps) {
   const { isBookmarked, addBookmark, removeBookmark, isLoading } = useBookmarkStore();
   const bookmarked = isBookmarked(item.itemId);
 
@@ -42,7 +46,10 @@ export default function BookmarkButton({ item, size = 'medium', showLabel = true
       accessibilityLabel={bookmarked ? 'Remove bookmark' : 'Add bookmark'}
       accessibilityHint="Double tap to toggle bookmark"
       accessibilityState={{ disabled: isLoading, selected: bookmarked, busy: isLoading }}
-      style={[styles.button, { backgroundColor, borderColor, padding: config.padding, opacity: isLoading ? 0.5 : 1 }]}
+      style={[
+        styles.button,
+        { backgroundColor, borderColor, padding: config.padding, opacity: isLoading ? 0.5 : 1 },
+      ]}
     >
       {isLoading ? (
         <ActivityIndicator color={bookmarked ? '#F59E0B' : '#19c3e6'} size="small" />

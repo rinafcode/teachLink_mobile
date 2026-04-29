@@ -1,12 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import QuizCarousel from './QuizCarousel';
@@ -41,11 +35,11 @@ export default function MobileQuizManager({
   navigation,
   course,
 }: MobileQuizManagerProps) {
-  const { 
-    startQuiz, 
-    loadQuizProgress, 
-    session, 
-    selectAnswer, 
+  const {
+    startQuiz,
+    loadQuizProgress,
+    session,
+    selectAnswer,
     goToQuestion,
     completeQuiz,
     resetSession,
@@ -71,24 +65,35 @@ export default function MobileQuizManager({
     }
   };
 
-  const handleQuestionChange = useCallback((index: number) => {
-    // Use requestAnimationFrame to ensure smooth updates
-    requestAnimationFrame(() => {
-      goToQuestion(index);
-    });
-  }, [goToQuestion]);
+  const handleQuestionChange = useCallback(
+    (index: number) => {
+      // Use requestAnimationFrame to ensure smooth updates
+      requestAnimationFrame(() => {
+        goToQuestion(index);
+      });
+    },
+    [goToQuestion]
+  );
 
-  const handleAnswerSelect = useCallback((questionId: string, answer: string | number, isMultiSelect?: boolean) => {
-    selectAnswer(questionId, answer, isMultiSelect);
-  }, [selectAnswer]);
+  const handleAnswerSelect = useCallback(
+    (questionId: string, answer: string | number, isMultiSelect?: boolean) => {
+      selectAnswer(questionId, answer, isMultiSelect);
+    },
+    [selectAnswer]
+  );
 
   const handleSubmitQuiz = useCallback(async () => {
     try {
       const results = await completeQuiz(quiz);
       setQuizResults(results);
       setCurrentView('results');
-      trackEvent(AnalyticsEvent.QUIZ_COMPLETED, { quizId: quiz.id, courseId, score: results.score, passed: results.passed });
-      
+      trackEvent(AnalyticsEvent.QUIZ_COMPLETED, {
+        quizId: quiz.id,
+        courseId,
+        score: results.score,
+        passed: results.passed,
+      });
+
       // If passed, navigate back to course with syllabus view
       if (results.passed && navigation && course) {
         // Small delay to show results briefly before navigating
@@ -130,105 +135,101 @@ export default function MobileQuizManager({
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-        {/* Header */}
-        <View style={styles.header}>
-          {onBack && (
-            <TouchableOpacity onPress={onBack} style={styles.backButton}>
-              <Text style={styles.backButtonText}>←</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Welcome Section */}
-        <View style={styles.welcomeSection}>
-          <View style={styles.iconContainer}>
-            <Text style={styles.icon}>📝</Text>
-          </View>
-          <Text style={styles.title}>{quiz.title}</Text>
-          <Text style={styles.subtitle}>
-            Test your knowledge and see how well you&apos;ve mastered this section
-          </Text>
-        </View>
-
-        {/* Quiz Info Cards */}
-        <View style={styles.infoContainer}>
-          <View style={styles.infoCard}>
-            <Text style={styles.infoIcon}>❓</Text>
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Questions</Text>
-              <Text style={styles.infoValue}>{quiz.questions.length}</Text>
-            </View>
+          {/* Header */}
+          <View style={styles.header}>
+            {onBack && (
+              <TouchableOpacity onPress={onBack} style={styles.backButton}>
+                <Text style={styles.backButtonText}>←</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
-          <View style={styles.infoCard}>
-            <Text style={styles.infoIcon}>⏱️</Text>
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Est. Time</Text>
-              <Text style={styles.infoValue}>{estimatedTime} min</Text>
+          {/* Welcome Section */}
+          <View style={styles.welcomeSection}>
+            <View style={styles.iconContainer}>
+              <Text style={styles.icon}>📝</Text>
+            </View>
+            <Text style={styles.title}>{quiz.title}</Text>
+            <Text style={styles.subtitle}>
+              Test your knowledge and see how well you&apos;ve mastered this section
+            </Text>
+          </View>
+
+          {/* Quiz Info Cards */}
+          <View style={styles.infoContainer}>
+            <View style={styles.infoCard}>
+              <Text style={styles.infoIcon}>❓</Text>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Questions</Text>
+                <Text style={styles.infoValue}>{quiz.questions.length}</Text>
+              </View>
+            </View>
+
+            <View style={styles.infoCard}>
+              <Text style={styles.infoIcon}>⏱️</Text>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Est. Time</Text>
+                <Text style={styles.infoValue}>{estimatedTime} min</Text>
+              </View>
+            </View>
+
+            <View style={styles.infoCard}>
+              <Text style={styles.infoIcon}>🎯</Text>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Passing Score</Text>
+                <Text style={styles.infoValue}>{quiz.passingScore || 70}%</Text>
+              </View>
+            </View>
+
+            <View style={styles.infoCard}>
+              <Text style={styles.infoIcon}>⭐</Text>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Total Points</Text>
+                <Text style={styles.infoValue}>{totalPoints}</Text>
+              </View>
             </View>
           </View>
 
-          <View style={styles.infoCard}>
-            <Text style={styles.infoIcon}>🎯</Text>
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Passing Score</Text>
-              <Text style={styles.infoValue}>
-                {quiz.passingScore || 70}%
-              </Text>
+          {/* Instructions */}
+          <View style={styles.instructionsContainer}>
+            <Text style={styles.instructionsTitle}>Instructions</Text>
+            <View style={styles.instructionsList}>
+              <View style={styles.instructionItem}>
+                <Text style={styles.instructionBullet}>•</Text>
+                <Text style={styles.instructionText}>
+                  Read each question carefully before answering
+                </Text>
+              </View>
+              <View style={styles.instructionItem}>
+                <Text style={styles.instructionBullet}>•</Text>
+                <Text style={styles.instructionText}>
+                  Some questions may have multiple correct answers
+                </Text>
+              </View>
+              <View style={styles.instructionItem}>
+                <Text style={styles.instructionBullet}>•</Text>
+                <Text style={styles.instructionText}>
+                  You can review your answers before submitting
+                </Text>
+              </View>
+              <View style={styles.instructionItem}>
+                <Text style={styles.instructionBullet}>•</Text>
+                <Text style={styles.instructionText}>Your progress is saved automatically</Text>
+              </View>
             </View>
           </View>
 
-          <View style={styles.infoCard}>
-            <Text style={styles.infoIcon}>⭐</Text>
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Total Points</Text>
-              <Text style={styles.infoValue}>{totalPoints}</Text>
-            </View>
+          {/* Start Button */}
+          <View style={styles.buttonContainer}>
+            <PrimaryButton
+              onPress={handleStartQuiz}
+              title="Start Quiz"
+              variant="gradient"
+              size="large"
+            />
           </View>
-        </View>
-
-        {/* Instructions */}
-        <View style={styles.instructionsContainer}>
-          <Text style={styles.instructionsTitle}>Instructions</Text>
-          <View style={styles.instructionsList}>
-            <View style={styles.instructionItem}>
-              <Text style={styles.instructionBullet}>•</Text>
-              <Text style={styles.instructionText}>
-                Read each question carefully before answering
-              </Text>
-            </View>
-            <View style={styles.instructionItem}>
-              <Text style={styles.instructionBullet}>•</Text>
-              <Text style={styles.instructionText}>
-                Some questions may have multiple correct answers
-              </Text>
-            </View>
-            <View style={styles.instructionItem}>
-              <Text style={styles.instructionBullet}>•</Text>
-              <Text style={styles.instructionText}>
-                You can review your answers before submitting
-              </Text>
-            </View>
-            <View style={styles.instructionItem}>
-              <Text style={styles.instructionBullet}>•</Text>
-              <Text style={styles.instructionText}>
-                Your progress is saved automatically
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Start Button */}
-        <View style={styles.buttonContainer}>
-          <PrimaryButton
-            onPress={handleStartQuiz}
-            title="Start Quiz"
-            variant="gradient"
-            size="large"
-          />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 

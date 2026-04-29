@@ -19,12 +19,12 @@ export const AppText: React.FC<AppTextProps> = ({ style, fixed = false, ...props
 
   // We flatten the style to easily extract and modify the fontSize
   const flattenedStyle = StyleSheet.flatten(style) || {};
-  
+
   const dynamicStyle = { ...flattenedStyle };
 
   if (!fixed && flattenedStyle.fontSize) {
     dynamicStyle.fontSize = scale(flattenedStyle.fontSize);
-    
+
     // Also scale lineHeight if it exists to maintain proportions
     if (flattenedStyle.lineHeight) {
       dynamicStyle.lineHeight = scale(flattenedStyle.lineHeight);

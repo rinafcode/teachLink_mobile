@@ -16,7 +16,13 @@ export default function QuizScreen() {
   const parsedCourse = course ? JSON.parse(course as string) : null;
 
   return (
-    <Suspense fallback={<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator /></View>}>
+    <Suspense
+      fallback={
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator />
+        </View>
+      }
+    >
       <MobileQuizManager
         quiz={parsedQuiz}
         courseId={courseId as string}

@@ -80,6 +80,11 @@ function processRefreshQueue(token: string | null, error: unknown) {
 
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
+    // Skip adding token for refresh requests
+    if (config.url?.includes("/auth/refresh")) {
+      return config;
+    }
+
     const token = await getAccessToken();
 
     if (token) {
@@ -125,7 +130,7 @@ apiClient.interceptors.response.use(
 
     // ─── 401: Token refresh flow ───────────────────────────────────────────
 
-    if (status === 401 && !originalRequest._retry) {
+    if (status === 401 && !originalRequest._retry && !originalRequest.url?.includes("/auth/refresh")) {
       originalRequest._retry = true;
 
       if (isRefreshing) {
@@ -146,7 +151,7 @@ apiClient.interceptors.response.use(
         const refreshToken = await getRefreshToken();
         if (!refreshToken) throw new Error("No refresh token");
 
-        const { data } = await axios.post(`${baseURL}/auth/refresh`, {
+        const { data } = await apiClient.post("/auth/refresh", {
           refreshToken,
         });
 

@@ -66,7 +66,7 @@ export const GridExporter = ({
     <View style={styles.container}>
       <Download size={14} color="#6B7280" />
       <Text style={styles.label}>Export:</Text>
-      {(['csv', 'json'] as ExportFormat[]).map((format) => {
+      {(['csv', 'json'] as ExportFormat[]).map(format => {
         const isLoading = activeFormat === format;
         const isDisabled = disabled || activeFormat !== null;
 

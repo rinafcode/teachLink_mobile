@@ -10,11 +10,13 @@ export default function SettingsScreen() {
   const isDark = theme === 'dark';
 
   return (
-    <Suspense fallback={
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator />
-      </View>
-    }>
+    <Suspense
+      fallback={
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator />
+        </View>
+      }
+    >
       <MobileSettings />
     </Suspense>
   );
