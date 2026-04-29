@@ -1,3 +1,5 @@
+/* global jest */
+
 // Global mock for react-native to support tests
 jest.mock('react-native', () => ({
   Platform: { OS: 'ios', select: jest.fn(obj => obj.ios) },
@@ -98,6 +100,12 @@ global.console = {
   error: jest.fn(),
 };
 
+// Provide required env vars for modules that read them at import time
+process.env.EXPO_PUBLIC_API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_BASE_URL || 'https://api.example.com';
+process.env.EXPO_PUBLIC_SOCKET_URL =
+  process.env.EXPO_PUBLIC_SOCKET_URL || 'wss://socket.example.com';
+
 // Mock AsyncStorage
 jest.mock('@react-native-async-storage/async-storage', () => ({
   setItem: jest.fn(() => Promise.resolve()),
@@ -138,6 +146,89 @@ jest.mock('expo-linking', () => ({
   createURL: jest.fn(path => `teachlink://${path}`),
   addEventListener: jest.fn(() => ({ remove: jest.fn() })),
   getInitialURL: jest.fn(() => Promise.resolve(null)),
+}));
+
+// Mock expo-network to avoid native module dependency in Jest
+jest.mock('expo-network', () => ({
+  getNetworkStateAsync: jest.fn(() =>
+    Promise.resolve({
+      isConnected: true,
+      isInternetReachable: true,
+      type: 'WIFI',
+    })
+  ),
+  NetworkStateType: {
+    UNKNOWN: 0,
+    NONE: 1,
+    CELLULAR: 2,
+    WIFI: 3,
+  },
+}));
+
+// Mock expo-image-picker to avoid native module dependency in Jest
+jest.mock('expo-image-picker', () => ({
+  requestMediaLibraryPermissionsAsync: jest.fn(() =>
+    Promise.resolve({ status: 'granted', granted: true })
+  ),
+  requestCameraPermissionsAsync: jest.fn(() =>
+    Promise.resolve({ status: 'granted', granted: true })
+  ),
+  launchImageLibraryAsync: jest.fn(() => Promise.resolve({ canceled: true, assets: null })),
+  launchCameraAsync: jest.fn(() => Promise.resolve({ canceled: true, assets: null })),
+  MediaTypeOptions: {
+    All: 'All',
+    Videos: 'Videos',
+    Images: 'Images',
+  },
+}));
+
+// Mock expo-haptics to avoid Expo runtime registration in Jest
+jest.mock('expo-haptics', () => ({
+  impactAsync: jest.fn(() => Promise.resolve()),
+  notificationAsync: jest.fn(() => Promise.resolve()),
+  selectionAsync: jest.fn(() => Promise.resolve()),
+  ImpactFeedbackStyle: {
+    Light: 'Light',
+    Medium: 'Medium',
+    Heavy: 'Heavy',
+    Rigid: 'Rigid',
+    Soft: 'Soft',
+  },
+  NotificationFeedbackType: {
+    Success: 'Success',
+    Warning: 'Warning',
+    Error: 'Error',
+  },
+}));
+
+// Mock react-native-iap (depends on NitroModules in native runtime)
+jest.mock('react-native-iap', () => ({
+  initConnection: jest.fn(() => Promise.resolve(true)),
+  endConnection: jest.fn(),
+  getProducts: jest.fn(() => Promise.resolve([])),
+  getSubscriptions: jest.fn(() => Promise.resolve([])),
+  requestPurchase: jest.fn(() => Promise.resolve({})),
+  requestSubscription: jest.fn(() => Promise.resolve({})),
+  finishTransaction: jest.fn(() => Promise.resolve(true)),
+  purchaseUpdatedListener: jest.fn(() => ({ remove: jest.fn() })),
+  purchaseErrorListener: jest.fn(() => ({ remove: jest.fn() })),
+  getAvailablePurchases: jest.fn(() => Promise.resolve([])),
+}));
+
+// Mock expo-image to avoid native view manager requirement in Jest
+jest.mock('expo-image', () => ({
+  Image: 'ExpoImage',
+  prefetch: jest.fn(() => Promise.resolve(true)),
+  clearMemoryCache: jest.fn(() => Promise.resolve()),
+  clearDiskCache: jest.fn(() => Promise.resolve()),
+}));
+
+// Mock react-native-safe-area-context
+jest.mock('react-native-safe-area-context', () => ({
+  SafeAreaProvider: ({ children }) => children,
+  SafeAreaConsumer: ({ children }) => children({ top: 0, right: 0, bottom: 0, left: 0 }),
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+  useSafeAreaFrame: () => ({ x: 0, y: 0, width: 390, height: 844 }),
 }));
 
 // Mock expo-notifications (override jest-expo's mock to add removed methods)

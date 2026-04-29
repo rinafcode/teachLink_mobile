@@ -1,4 +1,4 @@
-import { getPathFromDeepLink, parseDeepLinkUrl } from '@/src/utils/linkParser';
+import { getPathFromDeepLink, parseDeepLinkUrl } from '@/utils/linkParser';
 
 describe('linkParser', () => {
   it('parses teachlink custom URL scheme for course viewer', () => {

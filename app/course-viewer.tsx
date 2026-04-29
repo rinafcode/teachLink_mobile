@@ -5,19 +5,11 @@ import { ActivityIndicator, View } from 'react-native';
 
 const MobileCourseViewer = lazy(() => import('@/src/components/mobile/MobileCourseViewer'));
 
-const MobileCourseViewer = lazyScreen(
-  () => import('@/src/components/mobile/MobileCourseViewer')
-);
-
 export default function CourseViewerScreen() {
   const router = useRouter();
   const { course, courseId, initialLessonId, initialViewMode } = useLocalSearchParams();
 
-  const parsedCourse = course
-    ? JSON.parse(course as string)
-    : courseId
-    ? sampleCourse
-    : null;
+  const parsedCourse = course ? JSON.parse(course as string) : courseId ? sampleCourse : null;
   const viewMode = initialViewMode as 'lesson' | 'syllabus' | 'notes' | undefined;
 
   return (

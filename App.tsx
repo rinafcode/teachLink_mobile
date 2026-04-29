@@ -5,6 +5,8 @@ import { Alert, AppState, AppStateStatus, LogBox } from 'react-native';
 import StorybookUI from './.rnstorybook';
 import './global.css';
 
+import * as Font from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
 import { ErrorBoundary } from './src/components/common/ErrorBoundary';
 import { initializeLogging } from './src/config/logging';
 import { AuthProvider } from './src/hooks';
@@ -20,10 +22,14 @@ import {
 } from './src/services/pushNotifications';
 import { requestQueue } from './src/services/requestQueue';
 import socketService from './src/services/socket';
+import syncService from './src/services/syncService';
 import { useAppStore } from './src/store';
 import { requireEnvVariables } from './src/utils/env';
 import { appLogger } from './src/utils/logger';
 import { handleNotificationReceived } from './src/utils/notificationHandlers';
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
 
 // SHOW_STORYBOOK flag based on environment variable
 const SHOW_STORYBOOK = process.env.EXPO_PUBLIC_STORYBOOK === 'true';
@@ -52,6 +58,32 @@ const App = () => {
   const theme = useAppStore((state) => state.theme);
 
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+  const [appIsReady, setAppIsReady] = React.useState(false);
+
+  useEffect(() => {
+    async function prepareApp() {
+      try {
+        // 1. Load fonts
+        await Font.loadAsync({
+          // You can add custom fonts here later if needed
+        });
+
+        // 2. Check Auth State / wait for store hydration
+        // Zustand persist automatically hydrates, we can assume it's done or add a small delay
+        // to ensure initial data fetching completes.
+
+        // 3. Initial data fetch (simulate or add real fetch)
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (e) {
+        console.warn('Error during app initialization:', e);
+      } finally {
+        setAppIsReady(true);
+        await SplashScreen.hideAsync();
+      }
+    }
+
+    prepareApp();
+  }, []);
 
   const SESSION_REFRESH_WINDOW_MS = 5 * 60 * 1000;
 
@@ -181,6 +213,10 @@ const App = () => {
       appStateSubscription.remove();
     };
   }, [SESSION_REFRESH_WINDOW_MS]);
+
+  if (!appIsReady) {
+    return null;
+  }
 
   return (
     <ErrorBoundary>

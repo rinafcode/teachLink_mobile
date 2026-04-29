@@ -245,6 +245,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
 }) => {
   const [profile, setProfile] = useState<ProfileData>(MOCK_PROFILE);
   const { scale } = useDynamicFontSize();
+  const { achievements, unlockedCount } = useAchievementStore();
 
   if (isLoading) {
     const bg = isDark ? '#0f172a' : '#f8fafc';
@@ -399,7 +400,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
     },
     {
       icon: <Trophy size={16} color="#586ce9" />,
-      value: profile.stats.achievements,
+      value: unlockedCount,
       label: 'Badges',
     },
     {

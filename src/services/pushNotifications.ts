@@ -260,7 +260,7 @@ export function addNotificationResponseListener(
  * Remove a notification listener
  */
 export function removeNotificationListener(subscription: Notifications.Subscription): void {
-  Notifications.removeNotificationSubscription(subscription);
+  subscription.remove(); // Use the subscription's remove method instead
 }
 
 /**

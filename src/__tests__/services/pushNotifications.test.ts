@@ -1,4 +1,5 @@
 import * as Notifications from 'expo-notifications';
+
 import {
   addNotificationReceivedListener,
   addNotificationResponseListener,
@@ -172,12 +173,13 @@ describe('pushNotifications service', () => {
     });
 
     it('should remove notification listener', () => {
-      const mockRemove = (Notifications as any).removeNotificationSubscription as jest.Mock;
+      const mockRemove = jest.fn();
       const mockSubscription = { remove: jest.fn() } as unknown as Notifications.Subscription;
+      (mockSubscription as { remove: jest.Mock }).remove = mockRemove;
 
       removeNotificationListener(mockSubscription);
 
-      expect(mockRemove).toHaveBeenCalledWith(mockSubscription);
+      expect(mockRemove).toHaveBeenCalledTimes(1);
     });
   });
 });
