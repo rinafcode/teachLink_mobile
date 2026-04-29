@@ -9,8 +9,8 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "format": "prettier --write \"src/**/*.{ts,tsx,json,css,md}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,json,css,md}\"",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
     "lint:staged": "lint-staged",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -112,11 +112,11 @@
   "private": true,
   "lint-staged": {
     "**/*.{js,jsx,ts,tsx}": [
-      "eslint --max-warnings=0",
-      "prettier --check"
+      "prettier --write",
+      "eslint --max-warnings=0"
     ],
     "**/*.{json,md,css}": [
-      "prettier --check"
+      "prettier --write"
     ]
   }
 }
