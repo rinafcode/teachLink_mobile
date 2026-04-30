@@ -91,6 +91,13 @@ const App = () => {
     // Initialize crash reporting at app startup
     crashReportingService.init();
 
+    // Initialize secure storage (Keychain/Keystore) for encrypted token storage
+    initializeSecureStorage().catch((error) => {
+      logger.error('Failed to initialize secure storage:', error);
+      // Continue app startup even if secure storage init fails
+      // (user will be prompted to re-authenticate if needed)
+    });
+
     // Add global handler for unhandled promise rejections
     const unhandledRejectionHandler = (reason: any) => {
       const error = reason instanceof Error ? reason : new Error(String(reason));
