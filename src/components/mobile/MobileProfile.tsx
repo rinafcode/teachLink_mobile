@@ -1,35 +1,35 @@
-import React, { useState } from 'react';
-import {
-  View,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-  SafeAreaView,
-  ActivityIndicator,
-} from 'react-native';
-import { AppText as Text } from '../common/AppText';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Skeleton } from '../ui/Skeleton';
 import {
+  BookOpen,
   Camera,
+  Clock,
   Edit3,
-  Save,
-  X,
-  User,
+  Globe,
   Mail,
   MapPin,
-  BookOpen,
-  Users,
+  Save,
   Trophy,
-  Clock,
-  Globe,
-  UserPlus,
+  User,
   UserCheck,
+  UserPlus,
+  Users,
+  X,
 } from 'lucide-react-native';
+import React, { useState } from 'react';
+import {
+  ActivityIndicator,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { AppText as Text } from '../common/AppText';
+import { CachedImage } from '../ui/CachedImage';
+import { Skeleton } from '../ui/Skeleton';
+import { Achievement, AchievementBadges } from './AchievementBadges';
 import { AvatarCamera } from './AvatarCamera';
 import { MobileFormInput } from './MobileFormInput';
-import { AchievementBadges, Achievement } from './AchievementBadges';
 import { StatisticsDisplay } from './StatisticsDisplay';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -236,7 +236,7 @@ interface MobileProfileProps {
   isLoading?: boolean;
 }
 
-import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
+import { useDynamicFontSize } from '../../hooks';
 
 export const MobileProfile: React.FC<MobileProfileProps> = ({
   userId: _userId,
@@ -245,6 +245,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
 }) => {
   const [profile, setProfile] = useState<ProfileData>(MOCK_PROFILE);
   const { scale } = useDynamicFontSize();
+  const { achievements, unlockedCount } = useAchievementStore();
 
   if (isLoading) {
     const bg = isDark ? '#0f172a' : '#f8fafc';
@@ -257,29 +258,29 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
           <View>
             <Skeleton width="100%" height={120} borderRadius={0} />
             <View style={styles.avatarRow}>
-               <Skeleton width={88} height={88} circle style={styles.avatarGradient} />
-               <Skeleton width={110} height={36} borderRadius={20} style={styles.editButton} />
+              <Skeleton width={88} height={88} circle style={styles.avatarGradient} />
+              <Skeleton width={110} height={36} borderRadius={20} style={styles.editButton} />
             </View>
             <View style={styles.profileInfo}>
-               <Skeleton width="50%" height={24} style={{ marginBottom: 8 }} />
-               <Skeleton width="80%" height={16} style={{ marginBottom: 6 }} />
-               <Skeleton width="40%" height={14} style={{ marginBottom: 12 }} />
+              <Skeleton width="50%" height={24} style={{ marginBottom: 8 }} />
+              <Skeleton width="80%" height={16} style={{ marginBottom: 6 }} />
+              <Skeleton width="40%" height={14} style={{ marginBottom: 12 }} />
             </View>
             <View style={[styles.statsStrip, { backgroundColor: cardBg, borderColor }]}>
-               <Skeleton width="25%" height={48} />
-               <Skeleton width="25%" height={48} />
-               <Skeleton width="25%" height={48} />
-               <Skeleton width="25%" height={48} />
+              <Skeleton width="25%" height={48} />
+              <Skeleton width="25%" height={48} />
+              <Skeleton width="25%" height={48} />
+              <Skeleton width="25%" height={48} />
             </View>
           </View>
           <View style={[styles.tabNav, { backgroundColor: cardBg, borderColor, marginTop: 8 }]}>
-             <Skeleton width="25%" height={40} />
-             <Skeleton width="25%" height={40} />
-             <Skeleton width="25%" height={40} />
-             <Skeleton width="25%" height={40} />
+            <Skeleton width="25%" height={40} />
+            <Skeleton width="25%" height={40} />
+            <Skeleton width="25%" height={40} />
+            <Skeleton width="25%" height={40} />
           </View>
           <View style={{ padding: 16 }}>
-             <Skeleton width="100%" height={180} borderRadius={16} />
+            <Skeleton width="100%" height={180} borderRadius={16} />
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -308,7 +309,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
   const getInitials = (name: string) =>
     name
       .split(' ')
-      .map((n) => n[0])
+      .map(n => n[0])
       .join('')
       .toUpperCase()
       .slice(0, 2);
@@ -327,8 +328,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
     const errors: Record<string, string> = {};
     if (!editName.trim()) errors.name = 'Name is required';
     if (!editEmail.trim()) errors.email = 'Email is required';
-    else if (!/\S+@\S+\.\S+/.test(editEmail))
-      errors.email = 'Enter a valid email address';
+    else if (!/\S+@\S+\.\S+/.test(editEmail)) errors.email = 'Enter a valid email address';
     return errors;
   };
 
@@ -340,8 +340,8 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
     }
     setIsSaving(true);
     // Simulate API call — replace with actual service call
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setProfile((prev) => ({
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setProfile(prev => ({
       ...prev,
       name: editName.trim(),
       bio: editBio.trim(),
@@ -359,14 +359,14 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
   };
 
   const handleAvatarConfirm = (uri: string) => {
-    setProfile((prev) => ({ ...prev, avatar: uri }));
+    setProfile(prev => ({ ...prev, avatar: uri }));
   };
 
   const handleToggleFollow = (connectionId: string) => {
-    setProfile((prev) => ({
+    setProfile(prev => ({
       ...prev,
-      connections: prev.connections.map((c) =>
-        c.id === connectionId ? { ...c, isFollowing: !c.isFollowing } : c,
+      connections: prev.connections.map(c =>
+        c.id === connectionId ? { ...c, isFollowing: !c.isFollowing } : c
       ),
     }));
   };
@@ -400,7 +400,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
     },
     {
       icon: <Trophy size={16} color="#586ce9" />,
-      value: profile.stats.achievements,
+      value: unlockedCount,
       label: 'Badges',
     },
     {
@@ -433,20 +433,15 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
               accessibilityHint="Opens the camera to take a new profile picture"
             >
               {profile.avatar ? (
-                <Image
-                  source={{ uri: profile.avatar }}
+                <CachedImage
+                  uri={profile.avatar}
                   style={styles.avatar}
-                  accessibilityRole="image"
-                  accessibilityLabel={`${profile.name}'s profile photo`}
+                  alt={`${profile.name}'s profile photo`}
+                  autoPrefetch={true}
                 />
               ) : (
-                <LinearGradient
-                  colors={['#20afe7', '#586ce9']}
-                  style={styles.avatarGradient}
-                >
-                  <Text style={styles.avatarInitials}>
-                    {getInitials(profile.name)}
-                  </Text>
+                <LinearGradient colors={['#20afe7', '#586ce9']} style={styles.avatarGradient}>
+                  <Text style={styles.avatarInitials}>{getInitials(profile.name)}</Text>
                 </LinearGradient>
               )}
               <View style={styles.cameraIconBadge}>
@@ -498,15 +493,12 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
           {/* Name, role, bio, meta */}
           <View style={styles.profileInfo}>
             <View style={styles.nameRow}>
-              <Text style={[styles.profileName, { color: textPrimary }]}>
-                {profile.name}
-              </Text>
+              <Text style={[styles.profileName, { color: textPrimary }]}>{profile.name}</Text>
               <View
                 style={[
                   styles.roleBadge,
                   {
-                    backgroundColor:
-                      profile.role === 'teacher' ? '#fef3c7' : '#e0f2fe',
+                    backgroundColor: profile.role === 'teacher' ? '#fef3c7' : '#e0f2fe',
                   },
                 ]}
               >
@@ -514,8 +506,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                   style={[
                     styles.roleText,
                     {
-                      color:
-                        profile.role === 'teacher' ? '#d97706' : '#0369a1',
+                      color: profile.role === 'teacher' ? '#d97706' : '#0369a1',
                     },
                   ]}
                 >
@@ -524,9 +515,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
               </View>
             </View>
 
-            <Text style={[styles.profileBio, { color: textSecondary }]}>
-              {profile.bio}
-            </Text>
+            <Text style={[styles.profileBio, { color: textSecondary }]}>{profile.bio}</Text>
 
             <View style={styles.metaRow}>
               {!!profile.location && (
@@ -540,9 +529,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
               {!!profile.website && (
                 <View style={styles.metaItem}>
                   <Globe size={12} color="#19c3e6" />
-                  <Text style={[styles.metaText, { color: '#19c3e6' }]}>
-                    {profile.website}
-                  </Text>
+                  <Text style={[styles.metaText, { color: '#19c3e6' }]}>{profile.website}</Text>
                 </View>
               )}
             </View>
@@ -553,12 +540,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
           </View>
 
           {/* Quick stats strip */}
-          <View
-            style={[
-              styles.statsStrip,
-              { backgroundColor: cardBg, borderColor },
-            ]}
-          >
+          <View style={[styles.statsStrip, { backgroundColor: cardBg, borderColor }]}>
             {stripItems.map((s, i) => (
               <View
                 key={i}
@@ -571,27 +553,16 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                 ]}
               >
                 {s.icon}
-                <Text style={[styles.statCellValue, { color: textPrimary }]}>
-                  {s.value}
-                </Text>
-                <Text
-                  style={[styles.statCellLabel, { color: textSecondary }]}
-                >
-                  {s.label}
-                </Text>
+                <Text style={[styles.statCellValue, { color: textPrimary }]}>{s.value}</Text>
+                <Text style={[styles.statCellLabel, { color: textSecondary }]}>{s.label}</Text>
               </View>
             ))}
           </View>
         </View>
 
         {/* ── Tab Navigation ─────────────────────────────────────────────── */}
-        <View
-          style={[
-            styles.tabNav,
-            { backgroundColor: cardBg, borderColor },
-          ]}
-        >
-          {TABS.map((tab) => (
+        <View style={[styles.tabNav, { backgroundColor: cardBg, borderColor }]}>
+          {TABS.map(tab => (
             <TouchableOpacity
               key={tab.key}
               style={styles.tabItem}
@@ -604,17 +575,14 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                 style={[
                   styles.tabLabel,
                   {
-                    color:
-                      activeTab === tab.key ? '#19c3e6' : textSecondary,
+                    color: activeTab === tab.key ? '#19c3e6' : textSecondary,
                     fontWeight: activeTab === tab.key ? '700' : '500',
                   },
                 ]}
               >
                 {tab.label}
               </Text>
-              {activeTab === tab.key && (
-                <View style={styles.tabIndicator} />
-              )}
+              {activeTab === tab.key && <View style={styles.tabIndicator} />}
             </TouchableOpacity>
           ))}
         </View>
@@ -626,11 +594,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
             <View style={[styles.card, { backgroundColor: cardBg }]}>
               {isEditing ? (
                 <>
-                  <Text
-                    style={[styles.cardTitle, { color: textPrimary }]}
-                  >
-                    Edit Profile
-                  </Text>
+                  <Text style={[styles.cardTitle, { color: textPrimary }]}>Edit Profile</Text>
                   <MobileFormInput
                     label="Full Name"
                     value={editName}
@@ -682,11 +646,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                 </>
               ) : (
                 <>
-                  <Text
-                    style={[styles.cardTitle, { color: textPrimary }]}
-                  >
-                    About
-                  </Text>
+                  <Text style={[styles.cardTitle, { color: textPrimary }]}>About</Text>
                   {[
                     {
                       icon: <User size={17} color="#19c3e6" />,
@@ -709,31 +669,14 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                       value: profile.website || 'Not set',
                     },
                   ].map((item, i) => (
-                    <View
-                      key={i}
-                      style={[
-                        styles.detailRow,
-                        { borderBottomColor: borderColor },
-                      ]}
-                    >
+                    <View key={i} style={[styles.detailRow, { borderBottomColor: borderColor }]}>
                       <View style={styles.detailIconLabel}>
                         {item.icon}
-                        <Text
-                          style={[
-                            styles.detailLabel,
-                            { color: textSecondary },
-                          ]}
-                        >
+                        <Text style={[styles.detailLabel, { color: textSecondary }]}>
                           {item.label}
                         </Text>
                       </View>
-                      <Text
-                        style={[
-                          styles.detailValue,
-                          { color: textPrimary },
-                        ]}
-                        numberOfLines={1}
-                      >
+                      <Text style={[styles.detailValue, { color: textPrimary }]} numberOfLines={1}>
                         {item.value}
                       </Text>
                     </View>
@@ -755,12 +698,8 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                 >
                   <Text style={styles.streakEmoji}>🔥</Text>
                   <View>
-                    <Text style={styles.streakValue}>
-                      {profile.stats.streak} Day Streak
-                    </Text>
-                    <Text style={styles.streakSub}>
-                      Keep it up! You're on fire.
-                    </Text>
+                    <Text style={styles.streakValue}>{profile.stats.streak} Day Streak</Text>
+                    <Text style={styles.streakSub}>Keep it up! You're on fire.</Text>
                   </View>
                 </LinearGradient>
               </View>
@@ -770,16 +709,8 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
 
           {/* Achievements */}
           {activeTab === 'achievements' && (
-            <View
-              style={[
-                styles.card,
-                { backgroundColor: cardBg, paddingHorizontal: 0 },
-              ]}
-            >
-              <AchievementBadges
-                achievements={profile.achievements}
-                isDark={isDark}
-              />
+            <View style={[styles.card, { backgroundColor: cardBg, paddingHorizontal: 0 }]}>
+              <AchievementBadges achievements={profile.achievements} isDark={isDark} />
             </View>
           )}
 
@@ -796,8 +727,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                     styles.connectionRow,
                     {
                       borderBottomColor: borderColor,
-                      borderBottomWidth:
-                        i < profile.connections.length - 1 ? 1 : 0,
+                      borderBottomWidth: i < profile.connections.length - 1 ? 1 : 0,
                     },
                   ]}
                 >
@@ -815,12 +745,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                   </LinearGradient>
 
                   <View style={styles.connectionInfo}>
-                    <Text
-                      style={[
-                        styles.connectionName,
-                        { color: textPrimary },
-                      ]}
-                    >
+                    <Text style={[styles.connectionName, { color: textPrimary }]}>
                       {connection.name}
                     </Text>
                     <View style={styles.connectionMeta}>
@@ -828,24 +753,14 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                         style={[
                           styles.connectionRole,
                           {
-                            color:
-                              connection.role === 'teacher'
-                                ? '#d97706'
-                                : '#2c8aec',
+                            color: connection.role === 'teacher' ? '#d97706' : '#2c8aec',
                           },
                         ]}
                       >
-                        {connection.role === 'teacher'
-                          ? '🎓 Teacher'
-                          : '📚 Student'}
+                        {connection.role === 'teacher' ? '🎓 Teacher' : '📚 Student'}
                       </Text>
                       {!!connection.mutualConnections && (
-                        <Text
-                          style={[
-                            styles.mutualText,
-                            { color: textSecondary },
-                          ]}
-                        >
+                        <Text style={[styles.mutualText, { color: textSecondary }]}>
                           · {connection.mutualConnections} mutual
                         </Text>
                       )}
@@ -868,23 +783,14 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                     {connection.isFollowing ? (
                       <>
                         <UserCheck size={13} color={textSecondary} />
-                        <Text
-                          style={[
-                            styles.followBtnText,
-                            { color: textSecondary },
-                          ]}
-                        >
+                        <Text style={[styles.followBtnText, { color: textSecondary }]}>
                           Following
                         </Text>
                       </>
                     ) : (
                       <>
                         <UserPlus size={13} color="#fff" />
-                        <Text
-                          style={[styles.followBtnText, { color: '#fff' }]}
-                        >
-                          Follow
-                        </Text>
+                        <Text style={[styles.followBtnText, { color: '#fff' }]}>Follow</Text>
                       </>
                     )}
                   </TouchableOpacity>

@@ -81,7 +81,7 @@ export class ErrorBoundary extends Component<Props, State> {
     logger.error(`[${boundaryName}] Component stack:\n${errorInfo.componentStack}`);
 
     this.props.onError?.(error, errorInfo);
-    
+
     this.setState({
       error,
       errorInfo,
@@ -161,13 +161,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: "bold",
-    color: "#d32f2f",
+    fontWeight: 'bold',
+    color: '#d32f2f',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
-    color: "#666",
+    color: '#666',
   },
   scrollView: {
     flex: 1,
@@ -176,35 +176,35 @@ const styles = StyleSheet.create({
   errorSection: {
     marginBottom: 20,
     padding: 15,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: '#f5f5f5',
     borderRadius: 8,
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
     marginBottom: 8,
     color: '#334155',
   },
   errorText: {
     fontSize: 14,
-    color: "#d32f2f",
-    fontFamily: "monospace",
+    color: '#d32f2f',
+    fontFamily: 'monospace',
   },
   stackText: {
     fontSize: 12,
-    fontFamily: "monospace",
+    fontFamily: 'monospace',
     color: '#b91c1c',
     marginBottom: 16,
   },
   button: {
-    backgroundColor: "#0ea5e9",
+    backgroundColor: '#0ea5e9',
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
-    alignItems: "center",
+    alignItems: 'center',
   },
   buttonText: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },

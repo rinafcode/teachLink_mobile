@@ -1,14 +1,8 @@
 import React, { useState } from 'react';
-import {
-  View,
-  TextInput,
-  TextInputProps,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
+import { View, TextInput, TextInputProps, TouchableOpacity, StyleSheet } from 'react-native';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react-native';
 import { AppText as Text } from '../common/AppText';
-import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
+import { useDynamicFontSize } from '../../hooks';
 
 /**
  * Props for the MobileFormInput component
@@ -52,13 +46,7 @@ export const MobileFormInput: React.FC<MobileFormInputProps> = ({
   const { scale } = useDynamicFontSize();
   const isPassword = secureTextEntry === true;
 
-  const borderColor = error
-    ? '#ef4444'
-    : isFocused
-    ? '#19c3e6'
-    : isDark
-    ? '#334155'
-    : '#e2e8f0';
+  const borderColor = error ? '#ef4444' : isFocused ? '#19c3e6' : isDark ? '#334155' : '#e2e8f0';
 
   const labelColor = error ? '#ef4444' : isDark ? '#94a3b8' : '#64748b';
 
@@ -70,7 +58,9 @@ export const MobileFormInput: React.FC<MobileFormInputProps> = ({
           {required && <Text style={[styles.required, { fontSize: scale(14) }]}> *</Text>}
         </Text>
         {hint && !error && (
-          <Text style={[styles.hint, { color: isDark ? '#475569' : '#94a3b8', fontSize: scale(12) }]}>
+          <Text
+            style={[styles.hint, { color: isDark ? '#475569' : '#94a3b8', fontSize: scale(12) }]}
+          >
             {hint}
           </Text>
         )}
@@ -86,9 +76,7 @@ export const MobileFormInput: React.FC<MobileFormInputProps> = ({
           },
         ]}
       >
-        {leftIcon && (
-          <View style={styles.leftIconWrapper}>{leftIcon}</View>
-        )}
+        {leftIcon && <View style={styles.leftIconWrapper}>{leftIcon}</View>}
 
         <TextInput
           style={[
@@ -114,10 +102,7 @@ export const MobileFormInput: React.FC<MobileFormInputProps> = ({
         />
 
         {isPassword && (
-          <TouchableOpacity
-            onPress={() => setShowPassword(!showPassword)}
-            style={styles.rightIcon}
-          >
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.rightIcon}>
             {showPassword ? (
               <EyeOff size={scale(20)} color={isDark ? '#64748b' : '#94a3b8'} />
             ) : (

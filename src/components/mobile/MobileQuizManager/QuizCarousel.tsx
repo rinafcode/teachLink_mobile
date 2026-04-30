@@ -1,20 +1,20 @@
-import React, { useRef, useEffect, useCallback } from 'react';
-import {
-  View,
-  Dimensions,
-  StyleSheet,
-  ScrollView,
-} from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Dimensions, ScrollView, StyleSheet, View } from 'react-native';
 import { Question } from '../../../types/course';
 import MobileQuestionCard from './MobileQuestionCard';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface QuizCarouselProps {
+  /** Array of quiz questions to display */
   questions: Question[];
+  /** Index of the currently visible question */
   currentQuestionIndex: number;
+  /** Map of question IDs to selected answers */
   selectedAnswers: Record<string, string | number | (string | number)[]>;
+  /** Callback when the current question changes */
   onQuestionChange: (index: number) => void;
+  /** Callback when an answer is selected */
   onAnswerSelect: (questionId: string, answer: string | number, isMultiSelect?: boolean) => void;
 }
 
@@ -42,20 +42,20 @@ export default function QuizCarousel({
   const handleScroll = (event: any) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(offsetX / SCREEN_WIDTH);
-    
+
     // Clear any existing timeout
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current);
     }
-    
+
     // Mark as scrolling
     isScrollingRef.current = true;
-    
+
     // Update index if changed
     if (index !== currentQuestionIndex && index >= 0 && index < questions.length) {
       onQuestionChange(index);
     }
-    
+
     // Reset scrolling flag after scroll ends
     scrollTimeoutRef.current = setTimeout(() => {
       isScrollingRef.current = false;

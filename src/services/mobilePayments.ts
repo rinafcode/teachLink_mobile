@@ -11,11 +11,11 @@
  *   POST /payments/restore   { receipts[], platform }
  */
 
-import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 import * as IAP from 'react-native-iap';
+import { appLogger } from '../utils/logger';
 import { apiService } from './api';
-import log from '../utils/logger';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -188,12 +188,12 @@ class MobilePaymentsService {
       });
 
       IAP.purchaseErrorListener((error) => {
-        console.error('[Payments] Purchase error:', error);
+        appLogger.errorSync('[Payments] Purchase error', error instanceof Error ? error : new Error(String(error)));
       });
 
       this.isInitialized = true;
     } catch (error) {
-      log.error('[Payments] initialize error:', error);
+      appLogger.errorSync('[Payments] Initialize error', error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }
@@ -227,7 +227,7 @@ class MobilePaymentsService {
         };
       });
     } catch (error) {
-      logger.error('[Payments] getProducts error:', error);
+      log.error('[Payments] getProducts error:', error);
       return SUBSCRIPTION_PLANS.filter((p) => productIds.includes(p.productId));
     }
   }
@@ -269,7 +269,7 @@ class MobilePaymentsService {
       await this._setTier(plan.tier);
       return record;
     } catch (error) {
-      logger.error('[Payments] purchaseSubscription error:', error);
+      log.error('[Payments] purchaseSubscription error:', error);
       throw error;
     }
   }
@@ -295,7 +295,7 @@ class MobilePaymentsService {
       await this._savePurchaseRecord(record);
       return record;
     } catch (error) {
-      logger.error('[Payments] purchaseProduct error:', error);
+      log.error('[Payments] purchaseProduct error:', error);
       throw error;
     }
   }
@@ -372,7 +372,7 @@ class MobilePaymentsService {
 
       return validated;
     } catch (error) {
-      logger.error('[Payments] restorePurchases error:', error);
+      log.error('[Payments] restorePurchases error:', error);
       throw error;
     }
   }

@@ -1,0 +1,46 @@
+# Dependencies
+**/node_modules/**
+**/dist/**
+**/build/**
+**/.next/**
+**/coverage/**
+
+# Generated
+*.log
+.DS_Store
+.env*.local
+.nyc_output
+
+# Platform
+ios/build
+android/app/build
+android/build
+.expo
+.eas
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*.sublime-workspace
+
+# Tests
+__tests__/fixtures/**
+**/fixtures/**
+
+# Build outputs
+.turbo
+.cache
+.next
+out/
+
+# Bundler files
+*.bundle.*
+*.jar
+
+# Metro bundler cache
+.metro-health-check*
+
+# ESLint cache
+.eslintcache
