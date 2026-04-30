@@ -1,35 +1,35 @@
-import * as Sentry from '@sentry/react-native';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef } from 'react';
 import { Alert, AppState, AppStateStatus, LogBox } from 'react-native';
 
-import './global.css';
 import StorybookUI from './.rnstorybook';
+import './global.css';
 
-import { ErrorBoundary } from './src/components/common/ErrorBoundary';
-import * as SplashScreen from 'expo-splash-screen';
 import * as Font from 'expo-font';
-
-// Keep the splash screen visible while we fetch resources
-SplashScreen.preventAutoHideAsync();
+import * as SplashScreen from 'expo-splash-screen';
+import { ErrorBoundary } from './src/components/common/ErrorBoundary';
+import { initializeLogging } from './src/config/logging';
 import { AuthProvider } from './src/hooks';
 import AppNavigator from './src/navigation/AppNavigator';
 import { setupNotificationNavigation } from './src/navigation/linking';
+import { apiClient } from './src/services/api';
+import { crashReportingService } from './src/services/cashReporting';
 import { mobileAuthService } from './src/services/mobileAuth';
 import {
   addNotificationReceivedListener,
   getLastNotificationResponse,
   removeNotificationListener,
 } from './src/services/pushNotifications';
-import socketService from './src/services/socket';
-import { useAppStore } from './src/store';
-import { handleNotificationReceived } from './src/utils/notificationHandlers';
-import { apiClient } from './src/services/api';
-import { crashReportingService } from './src/services/cashReporting';
 import { requestQueue } from './src/services/requestQueue';
+import socketService from './src/services/socket';
+import syncService from './src/services/syncService';
+import { useAppStore } from './src/store';
 import { requireEnvVariables } from './src/utils/env';
 import { appLogger } from './src/utils/logger';
-import { initializeLogging } from './src/config/logging';
+import { handleNotificationReceived } from './src/utils/notificationHandlers';
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
 
 // SHOW_STORYBOOK flag based on environment variable
 const SHOW_STORYBOOK = process.env.EXPO_PUBLIC_STORYBOOK === 'true';
@@ -71,7 +71,7 @@ const App = () => {
         // 2. Check Auth State / wait for store hydration
         // Zustand persist automatically hydrates, we can assume it's done or add a small delay
         // to ensure initial data fetching completes.
-        
+
         // 3. Initial data fetch (simulate or add real fetch)
         await new Promise(resolve => setTimeout(resolve, 500));
       } catch (e) {
@@ -120,6 +120,9 @@ const App = () => {
     // Start request queue monitoring
     requestQueue.startMonitoring(apiClient);
 
+    // Initialize and start sync service for background sync
+    syncService.startAutoSync();
+
     // Set up notification navigation handler
     const notificationCleanup = setupNotificationNavigation();
 
@@ -136,6 +139,7 @@ const App = () => {
     // Cleanup on unmount
     return () => {
       socketService.disconnect();
+      syncService.stopAutoSync();
       notificationCleanup();
       removeNotificationListener(subscription);
       // Clean up the unhandled rejection handler

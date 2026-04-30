@@ -1,25 +1,25 @@
 import {
-  BarChart2,
-  Bell,
-  ChevronRight,
-  Download,
-  Eye,
-  Globe,
-  HardDrive,
-  Lock,
-  LogOut,
-  MapPin,
-  Play,
-  Shield,
-  Sun,
-  Trash2,
-  Type,
-  User,
-  Vibrate,
-  Wifi,
+    BarChart2,
+    Bell,
+    ChevronRight,
+    Download,
+    Eye,
+    Globe,
+    HardDrive,
+    Lock,
+    LogOut,
+    MapPin,
+    Play,
+    Shield,
+    Sun,
+    Trash2,
+    Type,
+    User,
+    Vibrate,
+    Wifi
 } from 'lucide-react-native';
 import React from 'react';
-import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, TouchableOpacity, View } from 'react-native';
 import { useAppStore } from '../../store';
 import { useNotificationStore } from '../../store/notificationStore';
 import { useSettingsStore } from '../../store/settingsStore';
@@ -27,8 +27,8 @@ import { NativeToggle } from './NativeToggle';
 import { PickerOption, SettingsPicker } from './SettingsPicker';
 import { SettingsSection } from './SettingsSection';
 
-import { AppText } from '../common/AppText';
 import { useDynamicFontSize } from '../../hooks';
+import { AppText } from '../common/AppText';
 
 // ─── Shared row ────────────────────────────────────────────────────────────────
 
@@ -47,19 +47,6 @@ interface SettingRowProps {
   /** Optional component to render on the right side (e.g., toggle, picker) */
   right?: React.ReactNode;
   /** Callback when the row is pressed */
-  onPress?: () => void;
-  /** Whether this is a destructive action (affects styling) */
-  /** Icon to display for the setting */
-  icon: React.ReactNode;
-  /** Background color class for the icon container */
-  iconBg?: string;
-  /** Label text for the setting */
-  label: string;
-  /** Optional description text */
-  description?: string;
-  /** Optional right-side component */
-  right?: React.ReactNode;
-  /** Optional callback when the row is pressed */
   onPress?: () => void;
   /** Whether the action is destructive (e.g., sign out, delete) */
   destructive?: boolean;
@@ -205,6 +192,28 @@ export function MobileSettings({
           onPress: () => {
             // TODO: implement actual file clearing via download service
             Alert.alert('Done', 'All downloads have been cleared.');
+          },
+        },
+      ]
+    );
+  };
+
+  const handleManualSync = async () => {
+    Alert.alert(
+      'Sync Data',
+      'This will sync all your offline changes with the server. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sync Now',
+          onPress: async () => {
+            try {
+              Alert.alert('Syncing', 'Syncing your data...', [], { cancelable: false });
+              await syncService.manualSync();
+              Alert.alert('Success', 'Your data has been synced successfully.');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to sync data. Please try again.');
+            }
           },
         },
       ]
@@ -473,6 +482,20 @@ export function MobileSettings({
           label="Haptic Feedback"
           description="Vibration on interactions"
           right={<NativeToggle value={hapticFeedback} onValueChange={setHapticFeedback} />}
+        />
+      </SettingsSection>
+
+      {/* ── Data Sync ──────────────────────────────────────────── */}
+      <SettingsSection
+        title="Data Sync"
+        footer="Sync your offline changes with the server to keep your data up to date."
+      >
+        <SettingRow
+          iconBg="bg-blue-100 dark:bg-blue-900/50"
+          icon={<RefreshCw size={18} color="#3b82f6" />}
+          label="Manual Sync"
+          description="Sync all offline changes now"
+          onPress={handleManualSync}
         />
       </SettingsSection>
 
