@@ -17,10 +17,6 @@ module.exports = {
     // Transform all expo-* packages and other native modules
     'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(-.*)?|@expo(-.*)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg)',
   ],
-  collectCoverageFrom: [
-    'src/**/*.{ts,tsx}',
-    '!src/**/*.d.ts',
-    '!src/**/index.ts',
-  ],
+  collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/*.d.ts', '!src/**/index.ts'],
   testPathIgnorePatterns: ['/node_modules/'],
 };

@@ -28,27 +28,27 @@ export function SettingsSection({ title, footer, children }: SettingsSectionProp
   return (
     <View className="mb-6">
       {title ? (
-        <AppText 
+        <AppText
           style={{ fontSize: 12 }}
-          className="px-4 pb-2 font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest"
+          className="px-4 pb-2 font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400"
         >
           {title}
         </AppText>
       ) : null}
 
-      <View className="bg-white dark:bg-gray-800 mx-4 rounded-2xl overflow-hidden">
+      <View className="mx-4 overflow-hidden rounded-2xl bg-white dark:bg-gray-800">
         {childArray.map((child, index) => (
           <View key={index}>
             {child}
             {index < childArray.length - 1 ? (
-              <View className="h-px bg-gray-100 dark:bg-gray-700 ml-4" />
+              <View className="ml-4 h-px bg-gray-100 dark:bg-gray-700" />
             ) : null}
           </View>
         ))}
       </View>
 
       {footer ? (
-        <AppText 
+        <AppText
           style={{ fontSize: 12, lineHeight: 16 }}
           className="px-4 pt-2 text-gray-400 dark:text-gray-500"
         >

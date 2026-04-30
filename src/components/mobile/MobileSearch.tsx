@@ -1,24 +1,25 @@
+import { AlertCircle, Search, SlidersHorizontal } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
-  View,
-  TextInput,
-  TouchableOpacity,
   FlatList,
-  StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { AppText as Text } from '../common/AppText';
-import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
-import { Search, SlidersHorizontal, AlertCircle } from 'lucide-react-native';
-import { VoiceSearch } from './VoiceSearch';
+import { useAnalytics, useDynamicFontSize, useMemoryMonitor } from '../../hooks';
+import { AnalyticsEvent } from '../../utils/trackingEvents';
+import { FilterField, FilterSheet, FilterValues } from './FilterSheet';
 import { SearchHistory } from './SearchHistory';
-import { FilterSheet, FilterField, FilterValues } from './FilterSheet';
 import { SearchResultCard, SearchResultItem } from './SearchResultCard';
 import { addToSearchHistory } from '../../utils/searchHistory';
 import { validateSearchQuery } from '../../utils/validation';
 import { sampleCourse } from '../../data/sampleCourse';
 import { Course } from '../../types/course';
+import { VoiceSearch } from './VoiceSearch';
 
 const DEFAULT_FILTERS: FilterField[] = [
   {
@@ -86,10 +87,10 @@ export interface MobileSearchProps {
   placeholder?: string;
 }
 
-export function MobileSearch({
+export const MobileSearch = ({
   onResultPress,
   placeholder = 'Search courses...',
-}: MobileSearchProps) {
+}: MobileSearchProps) => {
   const [query, setQuery] = useState('');
   const [queryError, setQueryError] = useState<string | null>(null);
   const [suggestionsVisible, setSuggestionsVisible] = useState(false);
@@ -98,12 +99,15 @@ export function MobileSearch({
   const [results, setResults] = useState<SearchResultItem[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const { scale } = useDynamicFontSize();
+  const { trackEvent } = useAnalytics();
+
+  useMemoryMonitor({ componentId: 'MobileSearch', itemCount: results.length });
 
   const suggestions = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return SUGGESTION_KEYWORDS.slice(0, 5);
     return SUGGESTION_KEYWORDS.filter(
-      (s) => s.toLowerCase().includes(q) || q.includes(s.toLowerCase())
+      s => s.toLowerCase().includes(q) || q.includes(s.toLowerCase())
     ).slice(0, 6);
   }, [query]);
 
@@ -119,6 +123,7 @@ export function MobileSearch({
       setQueryError(null);
       const trimmed = searchQuery.trim();
       addToSearchHistory(trimmed);
+      trackEvent(AnalyticsEvent.SEARCH_QUERY, { query: trimmed, filters: filterValues });
       const filtered = filterCourse(sampleCourse, trimmed, filterValues)
         ? [courseToSearchResult(sampleCourse)]
         : [];
@@ -126,7 +131,7 @@ export function MobileSearch({
       setHasSearched(true);
       setSuggestionsVisible(false);
     },
-    [filterValues]
+    [filterValues, trackEvent]
   );
 
   const handleSubmit = useCallback(() => {
@@ -186,18 +191,20 @@ export function MobileSearch({
             onSubmitEditing={handleSubmit}
             returnKeyType="search"
           />
-          <VoiceSearch
-            compact
-            onTranscript={setQuery}
-            onTranscriptFinal={handleVoiceResult}
-          />
+          <VoiceSearch compact onTranscript={setQuery} onTranscriptFinal={handleVoiceResult} />
         </View>
         <View style={styles.actions}>
           <TouchableOpacity
             onPress={() => setFilterSheetVisible(true)}
-            style={[styles.filterBtn, Object.keys(filterValues).length > 0 && styles.filterBtnActive]}
+            style={[
+              styles.filterBtn,
+              Object.keys(filterValues).length > 0 && styles.filterBtnActive,
+            ]}
           >
-            <SlidersHorizontal size={scale(20)} color={Object.keys(filterValues).length > 0 ? '#fff' : '#6B7280'} />
+            <SlidersHorizontal
+              size={scale(20)}
+              color={Object.keys(filterValues).length > 0 ? '#fff' : '#6B7280'}
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -218,7 +225,7 @@ export function MobileSearch({
       {showSuggestions && query.length > 0 && suggestions.length > 0 && !showResults && (
         <View style={styles.suggestSection}>
           <Text style={styles.suggestLabel}>Suggestions</Text>
-          {suggestions.map((s) => (
+          {suggestions.map(s => (
             <TouchableOpacity
               key={s}
               style={styles.suggestItem}
@@ -234,16 +241,15 @@ export function MobileSearch({
       {showResults && (
         <View style={styles.resultsSection}>
           <Text style={styles.resultsLabel}>
-            {results.length === 0 ? 'No results' : `${results.length} result${results.length === 1 ? '' : 's'}`}
+            {results.length === 0
+              ? 'No results'
+              : `${results.length} result${results.length === 1 ? '' : 's'}`}
           </Text>
           <FlatList
             data={results}
-            keyExtractor={(item) => item.id}
+            keyExtractor={item => item.id}
             renderItem={({ item }) => (
-              <SearchResultCard
-                item={item}
-                onPress={() => onResultPress?.(item)}
-              />
+              <SearchResultCard item={item} onPress={() => onResultPress?.(item)} />
             )}
             contentContainerStyle={styles.resultsList}
             ListEmptyComponent={
@@ -263,7 +269,7 @@ export function MobileSearch({
       />
     </KeyboardAvoidingView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {

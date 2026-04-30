@@ -1,30 +1,22 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Quiz } from '../../../types/course';
 import PrimaryButton from '../../common/PrimaryButton';
 
 interface QuizResultsProps {
+  /** The quiz data that was completed */
   quiz: Quiz;
+  /** The final score percentage (0-100) */
   score: number;
+  /** Whether the quiz was passed */
   passed: boolean;
+  /** Callback to navigate back to the course */
   onBack: () => void;
+  /** Optional callback to retake the quiz */
   onRetake?: () => void;
 }
 
-export default function QuizResults({
-  quiz,
-  score,
-  passed,
-  onBack,
-  onRetake,
-}: QuizResultsProps) {
+export default function QuizResults({ quiz, score, passed, onBack, onRetake }: QuizResultsProps) {
   const passingScore = quiz.passingScore || 70;
 
   return (
@@ -48,9 +40,7 @@ export default function QuizResults({
 
       {/* Pass/Fail Message */}
       <View style={styles.messageContainer}>
-        <Text style={styles.messageTitle}>
-          {passed ? 'Congratulations!' : 'Keep Learning!'}
-        </Text>
+        <Text style={styles.messageTitle}>{passed ? 'Congratulations!' : 'Keep Learning!'}</Text>
         <Text style={styles.messageText}>
           {passed
             ? `You passed with ${score}%! You've mastered this section.`
@@ -60,10 +50,7 @@ export default function QuizResults({
 
       {/* Action Buttons */}
       <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          onPress={onBack}
-          style={styles.backButton}
-        >
+        <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <Text style={styles.backButtonText}>Back to Course</Text>
         </TouchableOpacity>
         {!passed && onRetake && (

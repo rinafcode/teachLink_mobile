@@ -1,41 +1,34 @@
-import React from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
-import {
-  User,
-  Bell,
-  Shield,
-  Download,
-  Sliders,
-  ChevronRight,
-  Lock,
-  Eye,
-  BarChart2,
-  MapPin,
-  Wifi,
-  HardDrive,
-  Trash2,
-  Sun,
-  Globe,
-  Type,
-  Play,
-  Vibrate,
-  LogOut,
+    BarChart2,
+    Bell,
+    ChevronRight,
+    Download,
+    Eye,
+    Globe,
+    HardDrive,
+    Lock,
+    LogOut,
+    MapPin,
+    Play,
+    Shield,
+    Sun,
+    Trash2,
+    Type,
+    User,
+    Vibrate,
+    Wifi
 } from 'lucide-react-native';
+import React from 'react';
+import { Alert, ScrollView, TouchableOpacity, View } from 'react-native';
 import { useAppStore } from '../../store';
-import { useSettingsStore } from '../../store/settingsStore';
 import { useNotificationStore } from '../../store/notificationStore';
+import { useSettingsStore } from '../../store/settingsStore';
 import { NativeToggle } from './NativeToggle';
-import { SettingsPicker, PickerOption } from './SettingsPicker';
+import { PickerOption, SettingsPicker } from './SettingsPicker';
 import { SettingsSection } from './SettingsSection';
 
+import { useDynamicFontSize } from '../../hooks';
 import { AppText } from '../common/AppText';
-import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
 
 // ─── Shared row ────────────────────────────────────────────────────────────────
 
@@ -43,17 +36,17 @@ import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
  * Props for the SettingRow component
  */
 interface SettingRowProps {
-  /** Icon to display for the setting */
+  /** Icon to display on the left side of the row */
   icon: React.ReactNode;
   /** Background color class for the icon container */
   iconBg?: string;
-  /** Label text for the setting */
+  /** Primary label text for the setting */
   label: string;
-  /** Optional description text */
+  /** Optional secondary description text */
   description?: string;
-  /** Optional right-side component */
+  /** Optional component to render on the right side (e.g., toggle, picker) */
   right?: React.ReactNode;
-  /** Optional callback when the row is pressed */
+  /** Callback when the row is pressed */
   onPress?: () => void;
   /** Whether the action is destructive (e.g., sign out, delete) */
   destructive?: boolean;
@@ -72,12 +65,8 @@ function SettingRow({
   const { scale } = useDynamicFontSize();
 
   return (
-    <Row
-      activeOpacity={0.7}
-      onPress={onPress}
-      className="flex-row items-center px-4 py-3.5"
-    >
-      <View className={`w-9 h-9 rounded-xl items-center justify-center mr-3 ${iconBg}`}>
+    <Row activeOpacity={0.7} onPress={onPress} className="flex-row items-center px-4 py-3.5">
+      <View className={`mr-3 h-9 w-9 items-center justify-center rounded-xl ${iconBg}`}>
         {icon}
       </View>
       <View className="flex-1">
@@ -90,10 +79,7 @@ function SettingRow({
           {label}
         </AppText>
         {description ? (
-          <AppText 
-            style={{ fontSize: 12 }}
-            className="text-gray-500 dark:text-gray-400 mt-0.5"
-          >
+          <AppText style={{ fontSize: 12 }} className="mt-0.5 text-gray-500 dark:text-gray-400">
             {description}
           </AppText>
         ) : null}
@@ -164,25 +150,35 @@ export function MobileSettings({
   const { theme, setTheme } = useAppStore();
 
   const {
-    profileVisibility, setProfileVisibility,
-    twoFactorEnabled, setTwoFactorEnabled,
-    dataSharing, setDataSharing,
-    analyticsEnabled, setAnalyticsEnabled,
-    locationServices, setLocationServices,
-    downloadOverWifiOnly, setDownloadOverWifiOnly,
-    autoDownload, setAutoDownload,
-    downloadQuality, setDownloadQuality,
-    storageLimit, setStorageLimit,
-    language, setLanguage,
-    fontSize, setFontSize,
-    autoplay, setAutoplay,
-    hapticFeedback, setHapticFeedback,
+    profileVisibility,
+    setProfileVisibility,
+    twoFactorEnabled,
+    setTwoFactorEnabled,
+    dataSharing,
+    setDataSharing,
+    analyticsEnabled,
+    setAnalyticsEnabled,
+    locationServices,
+    setLocationServices,
+    downloadOverWifiOnly,
+    setDownloadOverWifiOnly,
+    autoDownload,
+    setAutoDownload,
+    downloadQuality,
+    setDownloadQuality,
+    storageLimit,
+    setStorageLimit,
+    language,
+    setLanguage,
+    fontSize,
+    setFontSize,
+    autoplay,
+    setAutoplay,
+    hapticFeedback,
+    setHapticFeedback,
   } = useSettingsStore();
 
-  const {
-    preferences,
-    setPreference,
-  } = useNotificationStore();
+  const { preferences, setPreference } = useNotificationStore();
 
   const handleClearDownloads = () => {
     Alert.alert(
@@ -196,6 +192,28 @@ export function MobileSettings({
           onPress: () => {
             // TODO: implement actual file clearing via download service
             Alert.alert('Done', 'All downloads have been cleared.');
+          },
+        },
+      ]
+    );
+  };
+
+  const handleManualSync = async () => {
+    Alert.alert(
+      'Sync Data',
+      'This will sync all your offline changes with the server. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sync Now',
+          onPress: async () => {
+            try {
+              Alert.alert('Syncing', 'Syncing your data...', [], { cancelable: false });
+              await syncService.manualSync();
+              Alert.alert('Success', 'Your data has been synced successfully.');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to sync data. Please try again.');
+            }
           },
         },
       ]
@@ -233,7 +251,7 @@ export function MobileSettings({
               label="Profile Visibility"
               value={profileVisibility}
               options={VISIBILITY_OPTIONS}
-              onValueChange={(v) => setProfileVisibility(v as any)}
+              onValueChange={v => setProfileVisibility(v as any)}
             />
           }
         />
@@ -242,12 +260,7 @@ export function MobileSettings({
           icon={<Lock size={18} color="#10b981" />}
           label="Two-Factor Authentication"
           description={twoFactorEnabled ? 'Enabled' : 'Disabled'}
-          right={
-            <NativeToggle
-              value={twoFactorEnabled}
-              onValueChange={setTwoFactorEnabled}
-            />
-          }
+          right={<NativeToggle value={twoFactorEnabled} onValueChange={setTwoFactorEnabled} />}
         />
         <SettingRow
           iconBg="bg-blue-100 dark:bg-blue-900/50"
@@ -276,7 +289,7 @@ export function MobileSettings({
           right={
             <NativeToggle
               value={preferences.courseUpdates}
-              onValueChange={(v) => setPreference('courseUpdates', v)}
+              onValueChange={v => setPreference('courseUpdates', v)}
             />
           }
         />
@@ -288,7 +301,7 @@ export function MobileSettings({
           right={
             <NativeToggle
               value={preferences.messages}
-              onValueChange={(v) => setPreference('messages', v)}
+              onValueChange={v => setPreference('messages', v)}
             />
           }
         />
@@ -300,7 +313,7 @@ export function MobileSettings({
           right={
             <NativeToggle
               value={preferences.learningReminders}
-              onValueChange={(v) => setPreference('learningReminders', v)}
+              onValueChange={v => setPreference('learningReminders', v)}
             />
           }
         />
@@ -312,7 +325,7 @@ export function MobileSettings({
           right={
             <NativeToggle
               value={preferences.achievementUnlocks}
-              onValueChange={(v) => setPreference('achievementUnlocks', v)}
+              onValueChange={v => setPreference('achievementUnlocks', v)}
             />
           }
         />
@@ -324,7 +337,7 @@ export function MobileSettings({
           right={
             <NativeToggle
               value={preferences.communityActivity}
-              onValueChange={(v) => setPreference('communityActivity', v)}
+              onValueChange={v => setPreference('communityActivity', v)}
             />
           }
         />
@@ -340,36 +353,21 @@ export function MobileSettings({
           icon={<BarChart2 size={18} color="#14b8a6" />}
           label="Data Sharing"
           description="Share anonymised usage data"
-          right={
-            <NativeToggle
-              value={dataSharing}
-              onValueChange={setDataSharing}
-            />
-          }
+          right={<NativeToggle value={dataSharing} onValueChange={setDataSharing} />}
         />
         <SettingRow
           iconBg="bg-violet-100 dark:bg-violet-900/50"
           icon={<BarChart2 size={18} color="#7c3aed" />}
           label="Analytics"
           description="Help improve app performance"
-          right={
-            <NativeToggle
-              value={analyticsEnabled}
-              onValueChange={setAnalyticsEnabled}
-            />
-          }
+          right={<NativeToggle value={analyticsEnabled} onValueChange={setAnalyticsEnabled} />}
         />
         <SettingRow
           iconBg="bg-rose-100 dark:bg-rose-900/50"
           icon={<MapPin size={18} color="#f43f5e" />}
           label="Location Services"
           description="Used for regional content recommendations"
-          right={
-            <NativeToggle
-              value={locationServices}
-              onValueChange={setLocationServices}
-            />
-          }
+          right={<NativeToggle value={locationServices} onValueChange={setLocationServices} />}
         />
       </SettingsSection>
 
@@ -384,10 +382,7 @@ export function MobileSettings({
           label="Download over Wi-Fi Only"
           description="Avoid mobile data charges"
           right={
-            <NativeToggle
-              value={downloadOverWifiOnly}
-              onValueChange={setDownloadOverWifiOnly}
-            />
+            <NativeToggle value={downloadOverWifiOnly} onValueChange={setDownloadOverWifiOnly} />
           }
         />
         <SettingRow
@@ -395,12 +390,7 @@ export function MobileSettings({
           icon={<Download size={18} color="#22c55e" />}
           label="Auto-Download"
           description="Download enrolled courses automatically"
-          right={
-            <NativeToggle
-              value={autoDownload}
-              onValueChange={setAutoDownload}
-            />
-          }
+          right={<NativeToggle value={autoDownload} onValueChange={setAutoDownload} />}
         />
         <SettingRow
           iconBg="bg-indigo-100 dark:bg-indigo-900/50"
@@ -411,7 +401,7 @@ export function MobileSettings({
               label="Download Quality"
               value={downloadQuality}
               options={QUALITY_OPTIONS}
-              onValueChange={(v) => setDownloadQuality(v as any)}
+              onValueChange={v => setDownloadQuality(v as any)}
             />
           }
         />
@@ -424,7 +414,7 @@ export function MobileSettings({
               label="Storage Limit"
               value={storageLimit}
               options={STORAGE_OPTIONS}
-              onValueChange={(v) => setStorageLimit(v as any)}
+              onValueChange={v => setStorageLimit(v as any)}
             />
           }
         />
@@ -449,7 +439,7 @@ export function MobileSettings({
               label="Theme"
               value={theme}
               options={THEME_OPTIONS}
-              onValueChange={(v) => setTheme(v as 'light' | 'dark')}
+              onValueChange={v => setTheme(v as 'light' | 'dark')}
             />
           }
         />
@@ -462,7 +452,7 @@ export function MobileSettings({
               label="Language"
               value={language}
               options={LANGUAGE_OPTIONS}
-              onValueChange={(v) => setLanguage(v as any)}
+              onValueChange={v => setLanguage(v as any)}
             />
           }
         />
@@ -475,7 +465,7 @@ export function MobileSettings({
               label="Font Size"
               value={fontSize}
               options={FONT_SIZE_OPTIONS}
-              onValueChange={(v) => setFontSize(v as any)}
+              onValueChange={v => setFontSize(v as any)}
             />
           }
         />
@@ -484,21 +474,28 @@ export function MobileSettings({
           icon={<Play size={18} color="#06b6d4" />}
           label="Autoplay Videos"
           description="Start next lesson automatically"
-          right={
-            <NativeToggle value={autoplay} onValueChange={setAutoplay} />
-          }
+          right={<NativeToggle value={autoplay} onValueChange={setAutoplay} />}
         />
         <SettingRow
           iconBg="bg-emerald-100 dark:bg-emerald-900/50"
           icon={<Vibrate size={18} color="#10b981" />}
           label="Haptic Feedback"
           description="Vibration on interactions"
-          right={
-            <NativeToggle
-              value={hapticFeedback}
-              onValueChange={setHapticFeedback}
-            />
-          }
+          right={<NativeToggle value={hapticFeedback} onValueChange={setHapticFeedback} />}
+        />
+      </SettingsSection>
+
+      {/* ── Data Sync ──────────────────────────────────────────── */}
+      <SettingsSection
+        title="Data Sync"
+        footer="Sync your offline changes with the server to keep your data up to date."
+      >
+        <SettingRow
+          iconBg="bg-blue-100 dark:bg-blue-900/50"
+          icon={<RefreshCw size={18} color="#3b82f6" />}
+          label="Manual Sync"
+          description="Sync all offline changes now"
+          onPress={handleManualSync}
         />
       </SettingsSection>
 

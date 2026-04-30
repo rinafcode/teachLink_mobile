@@ -1,7 +1,7 @@
 import { StyleSheet, Text, type TextProps } from 'react-native';
 
 import { useThemeColor } from '@/hooks/use-theme-color';
-import { useDynamicFontSize } from '@/src/hooks/useDynamicFontSize';
+import { useDynamicFontSize } from '@/src/hooks';
 
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
@@ -21,11 +21,16 @@ export function ThemedText({
 
   const getVariantStyle = () => {
     switch (type) {
-      case 'title': return styles.title;
-      case 'subtitle': return styles.subtitle;
-      case 'defaultSemiBold': return styles.defaultSemiBold;
-      case 'link': return styles.link;
-      default: return styles.default;
+      case 'title':
+        return styles.title;
+      case 'subtitle':
+        return styles.subtitle;
+      case 'defaultSemiBold':
+        return styles.defaultSemiBold;
+      case 'link':
+        return styles.link;
+      default:
+        return styles.default;
     }
   };
 
@@ -36,17 +41,7 @@ export function ThemedText({
     lineHeight: variantStyle.lineHeight ? scale(variantStyle.lineHeight) : undefined,
   };
 
-  return (
-    <Text
-      style={[
-        { color },
-        scaledStyle,
-        style,
-      ]}
-      allowFontScaling={false}
-      {...rest}
-    />
-  );
+  return <Text style={[{ color }, scaledStyle, style]} allowFontScaling={false} {...rest} />;
 }
 
 const styles = StyleSheet.create({

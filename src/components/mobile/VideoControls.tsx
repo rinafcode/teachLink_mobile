@@ -91,7 +91,7 @@ const VideoControls = ({
   );
 
   const qualityLabel = useMemo(() => {
-    const selected = qualityOptions.find((option) => option.id === selectedQualityId);
+    const selected = qualityOptions.find(option => option.id === selectedQualityId);
     return selected?.label ?? 'Auto';
   }, [qualityOptions, selectedQualityId]);
 
@@ -138,15 +138,14 @@ const VideoControls = ({
   };
 
   return (
-    <Animated.View
-      pointerEvents={visible ? 'auto' : 'none'}
-      style={[styles.overlay, { opacity }]}
-    >
+    <Animated.View pointerEvents={visible ? 'auto' : 'none'} style={[styles.overlay, { opacity }]}>
       <View style={styles.topRow}>
         <View style={styles.topSpacer} />
         {isPiPSupported ? (
           <Pressable
-            accessibilityLabel={isPiPActive ? 'Exit picture in picture' : 'Enter picture in picture'}
+            accessibilityLabel={
+              isPiPActive ? 'Exit picture in picture' : 'Enter picture in picture'
+            }
             onPress={onTogglePiP}
             style={styles.controlButton}
           >
@@ -203,21 +202,23 @@ const VideoControls = ({
         <View style={styles.controlsRow}>
           <Pressable
             accessibilityLabel="Playback speed"
-            onPress={() => setIsSpeedMenuOpen((prev) => !prev)}
+            onPress={() => setIsSpeedMenuOpen(prev => !prev)}
             style={styles.controlButton}
           >
             <Text style={styles.controlText}>{formatRate(playbackRate)}</Text>
           </Pressable>
           <Pressable
             accessibilityLabel="Quality"
-            onPress={() => setIsQualityMenuOpen((prev) => !prev)}
+            onPress={() => setIsQualityMenuOpen(prev => !prev)}
             style={styles.controlButton}
           >
             <Text style={styles.controlText}>{qualityLabel}</Text>
           </Pressable>
           {isPiPSupported ? (
             <Pressable
-              accessibilityLabel={isPiPActive ? 'Exit picture in picture' : 'Enter picture in picture'}
+              accessibilityLabel={
+                isPiPActive ? 'Exit picture in picture' : 'Enter picture in picture'
+              }
               onPress={onTogglePiP}
               style={styles.controlButton}
             >
@@ -237,7 +238,7 @@ const VideoControls = ({
           <View style={styles.menuBackdrop}>
             {isSpeedMenuOpen ? (
               <View style={styles.menu}>
-                {rateOptions.map((rate) => (
+                {rateOptions.map(rate => (
                   <Pressable
                     key={rate}
                     accessibilityLabel={`Set playback speed ${formatRate(rate)}`}
@@ -262,7 +263,7 @@ const VideoControls = ({
 
             {isQualityMenuOpen ? (
               <View style={styles.menu}>
-                {qualityOptions.map((option) => (
+                {qualityOptions.map(option => (
                   <Pressable
                     key={option.id}
                     accessibilityLabel={`Set quality ${option.label}`}
