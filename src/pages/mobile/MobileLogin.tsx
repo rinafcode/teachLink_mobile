@@ -29,6 +29,7 @@ import { useBiometricAuth, useDynamicFontSize } from '../../hooks';
 import { BiometricInlineButton, BiometricPrompt } from '../../components/mobile/BiometricPrompt';
 import mobileAuthService, { AuthResult } from '../../services/mobileAuth';
 import * as secureStorage from '../../services/secureStorage';
+import { validateEmail, validateRequired } from '../../utils/validation';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -111,12 +112,14 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
 
   // ── Password login ───────────────────────────────────────────────────────
   const handlePasswordLogin = async () => {
-    if (!email.trim()) {
-      setError('Please enter your email address.');
+    const emailCheck = validateEmail(email);
+    if (!emailCheck.valid) {
+      setError(emailCheck.message ?? 'Invalid email.');
       return;
     }
-    if (!password) {
-      setError('Please enter your password.');
+    const passwordCheck = validateRequired(password, 'Password');
+    if (!passwordCheck.valid) {
+      setError(passwordCheck.message ?? 'Password is required.');
       return;
     }
 

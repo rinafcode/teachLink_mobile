@@ -1,4 +1,4 @@
-import { Search, SlidersHorizontal } from 'lucide-react-native';
+import { AlertCircle, Search, SlidersHorizontal } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   FlatList,
@@ -10,14 +10,15 @@ import {
   View,
 } from 'react-native';
 import { AppText as Text } from '../common/AppText';
-import { sampleCourse } from '../../data/sampleCourse';
 import { useAnalytics, useDynamicFontSize, useMemoryMonitor } from '../../hooks';
-import { Course } from '../../types/course';
-import { addToSearchHistory } from '../../utils/searchHistory';
 import { AnalyticsEvent } from '../../utils/trackingEvents';
 import { FilterField, FilterSheet, FilterValues } from './FilterSheet';
 import { SearchHistory } from './SearchHistory';
 import { SearchResultCard, SearchResultItem } from './SearchResultCard';
+import { addToSearchHistory } from '../../utils/searchHistory';
+import { validateSearchQuery } from '../../utils/validation';
+import { sampleCourse } from '../../data/sampleCourse';
+import { Course } from '../../types/course';
 import { VoiceSearch } from './VoiceSearch';
 
 const DEFAULT_FILTERS: FilterField[] = [
@@ -91,6 +92,7 @@ export const MobileSearch = ({
   placeholder = 'Search courses...',
 }: MobileSearchProps) => {
   const [query, setQuery] = useState('');
+  const [queryError, setQueryError] = useState<string | null>(null);
   const [suggestionsVisible, setSuggestionsVisible] = useState(false);
   const [filterSheetVisible, setFilterSheetVisible] = useState(false);
   const [filterValues, setFilterValues] = useState<FilterValues>({});
@@ -111,12 +113,15 @@ export const MobileSearch = ({
 
   const performSearch = useCallback(
     (searchQuery: string) => {
-      const trimmed = searchQuery.trim();
-      if (!trimmed) {
+      const validation = validateSearchQuery(searchQuery);
+      if (!validation.valid) {
+        setQueryError(validation.message ?? 'Invalid search query.');
         setResults([]);
-        setHasSearched(true);
+        setHasSearched(false);
         return;
       }
+      setQueryError(null);
+      const trimmed = searchQuery.trim();
       addToSearchHistory(trimmed);
       trackEvent(AnalyticsEvent.SEARCH_QUERY, { query: trimmed, filters: filterValues });
       const filtered = filterCourse(sampleCourse, trimmed, filterValues)
@@ -180,7 +185,7 @@ export const MobileSearch = ({
             placeholder={placeholder}
             placeholderTextColor="#9CA3AF"
             value={query}
-            onChangeText={setQuery}
+            onChangeText={(text) => { setQuery(text); setQueryError(null); }}
             onFocus={() => setSuggestionsVisible(true)}
             onBlur={() => setTimeout(() => setSuggestionsVisible(false), 180)}
             onSubmitEditing={handleSubmit}
@@ -203,6 +208,13 @@ export const MobileSearch = ({
           </TouchableOpacity>
         </View>
       </View>
+
+      {queryError && (
+        <View style={styles.queryErrorRow}>
+          <AlertCircle size={scale(14)} color="#ef4444" />
+          <Text style={[styles.queryErrorText, { fontSize: scale(13) }]}>{queryError}</Text>
+        </View>
+      )}
 
       {showHistory && (
         <View style={styles.suggestSection}>
@@ -349,5 +361,20 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     paddingHorizontal: 16,
     paddingTop: 8,
+  },
+  queryErrorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#fee2e2',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#fca5a5',
+  },
+  queryErrorText: {
+    color: '#dc2626',
+    flex: 1,
+    fontWeight: '500',
   },
 });
