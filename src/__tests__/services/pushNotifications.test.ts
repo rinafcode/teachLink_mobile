@@ -1,4 +1,5 @@
 import * as Notifications from 'expo-notifications';
+
 import {
   addNotificationReceivedListener,
   addNotificationResponseListener,
@@ -79,7 +80,10 @@ describe('pushNotifications service', () => {
         type: NotificationType.LEARNING_REMINDER,
       };
 
-      const trigger = { seconds: 60 } as unknown as Notifications.NotificationTriggerInput;
+      const trigger: Notifications.TimeIntervalTriggerInput = {
+        type: 'timeInterval' as unknown as Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 60,
+      };
 
       await scheduleLocalNotification(
         'Time to Learn',
@@ -158,8 +162,7 @@ describe('pushNotifications service', () => {
 
     it('should add notification response listener', () => {
       const callback = jest.fn();
-      const mockAddListener =
-        Notifications.addNotificationResponseReceivedListener as jest.Mock;
+      const mockAddListener = Notifications.addNotificationResponseReceivedListener as jest.Mock;
       const mockSubscription = { remove: jest.fn() };
       mockAddListener.mockReturnValue(mockSubscription);
 
@@ -170,12 +173,13 @@ describe('pushNotifications service', () => {
     });
 
     it('should remove notification listener', () => {
-      const mockRemove = Notifications.removeNotificationSubscription as jest.Mock;
+      const mockRemove = jest.fn();
       const mockSubscription = { remove: jest.fn() } as unknown as Notifications.Subscription;
+      (mockSubscription as { remove: jest.Mock }).remove = mockRemove;
 
       removeNotificationListener(mockSubscription);
 
-      expect(mockRemove).toHaveBeenCalledWith(mockSubscription);
+      expect(mockRemove).toHaveBeenCalledTimes(1);
     });
   });
 });

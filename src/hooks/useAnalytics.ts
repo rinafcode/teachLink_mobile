@@ -4,7 +4,7 @@ import { AnalyticsEvent, EventProperties, PerformanceMetric } from '../utils/tra
 
 /**
  * Custom hook to access analytics tracking capabilities from functional components.
- * 
+ *
  * @example
  * const { trackEvent, trackScreen } = useAnalytics();
  * trackEvent(AnalyticsEvent.UI_CLICK, { button: 'search' });
@@ -52,11 +52,49 @@ export const useAnalytics = () => {
     [service]
   );
 
+  /**
+   * Track button clicks
+   */
+  const trackButtonClick = useCallback(
+    (buttonName: string, properties?: EventProperties) => {
+      service.trackEvent(AnalyticsEvent.UI_CLICK, { button: buttonName, ...properties });
+    },
+    [service]
+  );
+
+  /**
+   * Track form submissions
+   */
+  const trackFormSubmit = useCallback(
+    (formName: string, properties?: EventProperties) => {
+      service.trackEvent(AnalyticsEvent.FORM_SUBMIT, { form: formName, ...properties });
+    },
+    [service]
+  );
+
+  /**
+   * Track errors
+   */
+  const trackError = useCallback(
+    (error: Error | string, isFatal: boolean = false, properties?: EventProperties) => {
+      const errorMessage = error instanceof Error ? error.message : error;
+      service.trackEvent(isFatal ? AnalyticsEvent.CRASH_REPORT : AnalyticsEvent.API_ERROR, {
+        error: errorMessage,
+        isFatal,
+        ...properties,
+      });
+    },
+    [service]
+  );
+
   return {
     trackEvent,
     trackScreen,
     trackTiming,
     identify,
+    trackButtonClick,
+    trackFormSubmit,
+    trackError,
     service, // Direct access if needed
   };
 };

@@ -1,18 +1,21 @@
 import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Mic, Square } from 'lucide-react-native';
-import { useVoiceRecognition } from '../../hooks/useVoiceRecognition';
+import { useVoiceRecognition } from '../../hooks';
 
 export interface VoiceSearchProps {
   onTranscript: (text: string) => void;
   onTranscriptFinal?: (text: string) => void;
   disabled?: boolean;
+  /** Renders a compact mic-only button for inline use inside a search input */
+  compact?: boolean;
 }
 
 export function VoiceSearch({
   onTranscript,
   onTranscriptFinal,
   disabled = false,
+  compact = false,
 }: VoiceSearchProps) {
   const {
     isListening,
@@ -51,6 +54,25 @@ export function VoiceSearch({
     }
   };
 
+  if (compact) {
+    if (!isAvailable && !error) return null;
+    return (
+      <TouchableOpacity
+        onPress={handlePress}
+        disabled={disabled}
+        style={[styles.micBtn, disabled && styles.buttonDisabled]}
+        accessibilityLabel={isListening ? 'Stop voice search' : 'Start voice search'}
+        activeOpacity={0.8}
+      >
+        {isListening ? (
+          <Square size={18} color="#19c3e6" fill="#19c3e6" />
+        ) : (
+          <Mic size={20} color="#9CA3AF" />
+        )}
+      </TouchableOpacity>
+    );
+  }
+
   return (
     <View style={styles.wrapper}>
       {error ? (
@@ -61,7 +83,11 @@ export function VoiceSearch({
       <TouchableOpacity
         onPress={handlePress}
         disabled={disabled}
-        style={[styles.button, isListening && styles.buttonActive, disabled && styles.buttonDisabled]}
+        style={[
+          styles.button,
+          isListening && styles.buttonActive,
+          disabled && styles.buttonDisabled,
+        ]}
         activeOpacity={0.8}
       >
         {isListening ? (
@@ -72,9 +98,7 @@ export function VoiceSearch({
         ) : (
           <>
             <Mic size={22} color={isAvailable ? '#19c3e6' : '#9CA3AF'} />
-            <Text style={[styles.buttonLabel, !isAvailable && styles.buttonLabelMuted]}>
-              Voice
-            </Text>
+            <Text style={[styles.buttonLabel, !isAvailable && styles.buttonLabelMuted]}>Voice</Text>
           </>
         )}
       </TouchableOpacity>
@@ -141,5 +165,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#0369A1',
     flex: 1,
+  },
+  micBtn: {
+    padding: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

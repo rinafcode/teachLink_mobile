@@ -5,7 +5,7 @@ import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { ErrorBoundary } from '@/src/components/common/ErrorBoundary';
+import { ErrorBoundary } from '@/src/components';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -17,7 +17,8 @@ export default function TabLayout() {
           tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
           headerShown: false,
           tabBarButton: HapticTab,
-        }}>
+        }}
+      >
         <Tabs.Screen
           name="index"
           options={{
@@ -27,19 +28,21 @@ export default function TabLayout() {
         />
         <Tabs.Screen
           name="search"
-        options={{
-          title: 'Search',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="magnifyingglass" color={color} />,
-          href: '/search'
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
+          options={{
+            title: 'Search',
+            tabBarIcon: ({ color }) => (
+              <IconSymbol size={28} name="magnifyingglass" color={color} />
+            ),
+            href: '/search',
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
           options={{
             title: 'Profile',
             tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
-            href: '/profile/123'
-        }}
+            href: '/profile/123',
+          }}
         />
       </Tabs>
     </ErrorBoundary>

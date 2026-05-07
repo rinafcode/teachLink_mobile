@@ -10,25 +10,26 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
+import { AppText as Text } from '../../components/common/AppText';
+import { useDynamicFontSize, useInAppPurchase } from '../../hooks';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
-  ArrowLeft,
-  RefreshCw,
-  CreditCard,
-  CheckCircle,
-  XCircle,
-  Clock,
-  RotateCcw,
-  Receipt,
-  TrendingUp,
-  Calendar,
+    ArrowLeft,
+    Calendar,
+    CheckCircle,
+    Clock,
+    CreditCard,
+    Receipt,
+    RefreshCw,
+    RotateCcw,
+    TrendingUp,
+    XCircle,
 } from 'lucide-react-native';
-import { useInAppPurchase } from '../../hooks/useInAppPurchase';
 import {
-  PurchaseRecord,
-  PurchaseStatus,
-  PurchaseType,
-  mobilePaymentsService,
+    PurchaseRecord,
+    PurchaseStatus,
+    PurchaseType,
+    mobilePaymentsService,
 } from '../../services/mobilePayments';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -73,10 +74,15 @@ const STATUS_CONFIG: Record<
   },
 };
 
+// ... inside component, use scale(14) for these icons if needed, but since they are constants,
+// we'll handle them inside the render.
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 interface PaymentHistoryProps {
+  /** Whether to use dark theme styling */
   isDark?: boolean;
+  /** Optional callback for back navigation */
   onBack?: () => void;
 }
 
@@ -84,6 +90,7 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
   isDark = false,
   onBack,
 }) => {
+  const { scale } = useDynamicFontSize();
   const {
     purchaseHistory,
     currentTier,
@@ -299,6 +306,7 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
 
   const renderTransaction = (record: PurchaseRecord) => {
     const statusCfg = STATUS_CONFIG[record.status];
+    const statusIcon = React.cloneElement(statusCfg.icon as React.ReactElement, { size: scale(14) });
 
     return (
       <View
@@ -356,7 +364,7 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
             {mobilePaymentsService.formatPrice(record.amount, record.currency)}
           </Text>
           <View style={[styles.statusBadge, { backgroundColor: statusCfg.bg }]}>
-            {statusCfg.icon}
+            {statusIcon}
             <Text style={[styles.statusText, { color: statusCfg.color }]}>
               {statusCfg.label}
             </Text>
@@ -392,10 +400,10 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
       <View style={[styles.header, { borderBottomColor: borderColor }]}>
         {onBack && (
           <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-            <ArrowLeft size={22} color={textPrimary} />
+            <ArrowLeft size={scale(22)} color={textPrimary} />
           </TouchableOpacity>
         )}
-        <Text style={[styles.headerTitle, { color: textPrimary }]}>
+        <Text style={[styles.headerTitle, { color: textPrimary, fontSize: scale(18) }]}>
           Payment History
         </Text>
         <TouchableOpacity
@@ -406,7 +414,7 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
           {isRestoring ? (
             <ActivityIndicator size="small" color="#19c3e6" />
           ) : (
-            <RefreshCw size={18} color="#19c3e6" />
+            <RefreshCw size={scale(18)} color="#19c3e6" />
           )}
         </TouchableOpacity>
       </View>

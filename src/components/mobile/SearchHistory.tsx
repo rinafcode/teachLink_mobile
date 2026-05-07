@@ -1,5 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  FlatList,
+  ActivityIndicator,
+  StyleSheet,
+} from 'react-native';
 import { Clock, Trash2 } from 'lucide-react-native';
 import {
   getSearchHistory,
@@ -7,6 +14,7 @@ import {
   removeFromSearchHistory,
   SearchHistoryItem,
 } from '../../utils/searchHistory';
+import { useMemoryMonitor } from '../../hooks';
 
 export interface SearchHistoryProps {
   onSelectQuery: (query: string) => void;
@@ -16,6 +24,8 @@ export interface SearchHistoryProps {
 export function SearchHistory({ onSelectQuery, maxItems = 10 }: SearchHistoryProps) {
   const [items, setItems] = useState<SearchHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useMemoryMonitor({ componentId: 'SearchHistory', itemCount: items.length });
 
   const loadHistory = useCallback(async () => {
     setLoading(true);
@@ -35,7 +45,7 @@ export function SearchHistory({ onSelectQuery, maxItems = 10 }: SearchHistoryPro
 
   const handleRemove = useCallback(async (query: string) => {
     await removeFromSearchHistory(query);
-    setItems((prev) => prev.filter((item) => item.query !== query));
+    setItems(prev => prev.filter(item => item.query !== query));
   }, []);
 
   const handleSelect = useCallback(
@@ -74,7 +84,7 @@ export function SearchHistory({ onSelectQuery, maxItems = 10 }: SearchHistoryPro
       </View>
       <FlatList
         data={items}
-        keyExtractor={(item) => `${item.query}-${item.timestamp}`}
+        keyExtractor={item => `${item.query}-${item.timestamp}`}
         scrollEnabled={false}
         renderItem={({ item }) => (
           <View style={styles.row}>

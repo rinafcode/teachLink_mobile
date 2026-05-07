@@ -1,13 +1,8 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TextInputProps,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
+import { View, TextInput, TextInputProps, TouchableOpacity, StyleSheet } from 'react-native';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react-native';
+import { AppText as Text } from '../common/AppText';
+import { useDynamicFontSize } from '../../hooks';
 
 /**
  * Props for the MobileFormInput component
@@ -48,27 +43,24 @@ export const MobileFormInput: React.FC<MobileFormInputProps> = ({
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const { scale } = useDynamicFontSize();
   const isPassword = secureTextEntry === true;
 
-  const borderColor = error
-    ? '#ef4444'
-    : isFocused
-    ? '#19c3e6'
-    : isDark
-    ? '#334155'
-    : '#e2e8f0';
+  const borderColor = error ? '#ef4444' : isFocused ? '#19c3e6' : isDark ? '#334155' : '#e2e8f0';
 
   const labelColor = error ? '#ef4444' : isDark ? '#94a3b8' : '#64748b';
 
   return (
     <View style={styles.container}>
       <View style={styles.labelRow}>
-        <Text style={[styles.label, { color: labelColor }]}>
+        <Text style={[styles.label, { color: labelColor, fontSize: scale(14) }]}>
           {label}
-          {required && <Text style={styles.required}> *</Text>}
+          {required && <Text style={[styles.required, { fontSize: scale(14) }]}> *</Text>}
         </Text>
         {hint && !error && (
-          <Text style={[styles.hint, { color: isDark ? '#475569' : '#94a3b8' }]}>
+          <Text
+            style={[styles.hint, { color: isDark ? '#475569' : '#94a3b8', fontSize: scale(12) }]}
+          >
             {hint}
           </Text>
         )}
@@ -80,22 +72,21 @@ export const MobileFormInput: React.FC<MobileFormInputProps> = ({
           {
             borderColor,
             backgroundColor: isDark ? '#1e293b' : '#fff',
-            minHeight: multiline ? 100 : 52,
+            minHeight: multiline ? scale(100) : scale(52),
           },
         ]}
       >
-        {leftIcon && (
-          <View style={styles.leftIconWrapper}>{leftIcon}</View>
-        )}
+        {leftIcon && <View style={styles.leftIconWrapper}>{leftIcon}</View>}
 
         <TextInput
           style={[
             styles.input,
             {
               color: isDark ? '#f1f5f9' : '#1e293b',
-              paddingLeft: leftIcon ? 0 : 16,
+              paddingLeft: leftIcon ? 0 : scale(16),
               textAlignVertical: multiline ? 'top' : 'center',
-              paddingTop: multiline ? 14 : 0,
+              paddingTop: multiline ? scale(14) : 0,
+              fontSize: scale(15),
             },
           ]}
           placeholder={placeholder}
@@ -111,14 +102,11 @@ export const MobileFormInput: React.FC<MobileFormInputProps> = ({
         />
 
         {isPassword && (
-          <TouchableOpacity
-            onPress={() => setShowPassword(!showPassword)}
-            style={styles.rightIcon}
-          >
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.rightIcon}>
             {showPassword ? (
-              <EyeOff size={20} color={isDark ? '#64748b' : '#94a3b8'} />
+              <EyeOff size={scale(20)} color={isDark ? '#64748b' : '#94a3b8'} />
             ) : (
-              <Eye size={20} color={isDark ? '#64748b' : '#94a3b8'} />
+              <Eye size={scale(20)} color={isDark ? '#64748b' : '#94a3b8'} />
             )}
           </TouchableOpacity>
         )}
@@ -126,8 +114,8 @@ export const MobileFormInput: React.FC<MobileFormInputProps> = ({
 
       {error && (
         <View style={styles.errorRow}>
-          <AlertCircle size={14} color="#ef4444" />
-          <Text style={styles.errorText}>{error}</Text>
+          <AlertCircle size={scale(14)} color="#ef4444" />
+          <Text style={[styles.errorText, { fontSize: scale(12) }]}>{error}</Text>
         </View>
       )}
     </View>

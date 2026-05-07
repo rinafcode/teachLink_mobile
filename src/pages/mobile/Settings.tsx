@@ -1,9 +1,10 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StatusBar } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Settings as SettingsIcon } from 'lucide-react-native';
+import React from 'react';
+import { StatusBar, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppText, MobileSettings } from '../../components';
+import { useDynamicFontSize } from '../../hooks';
 import { useAppStore } from '../../store';
-import { MobileSettings } from '../../components/mobile/MobileSettings';
 
 interface SettingsPageProps {
   /** Callback for the back-navigation button in the header. */
@@ -29,6 +30,7 @@ export default function SettingsPage({
 }: SettingsPageProps) {
   const { theme } = useAppStore();
   const isDark = theme === 'dark';
+  const { scale } = useDynamicFontSize();
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
@@ -47,21 +49,27 @@ export default function SettingsPage({
             className="w-9 h-9 items-center justify-center rounded-full bg-white dark:bg-gray-800 mr-3"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <ArrowLeft size={20} color={isDark ? '#e5e7eb' : '#374151'} />
+            <ArrowLeft size={scale(20)} color={isDark ? '#e5e7eb' : '#374151'} />
           </TouchableOpacity>
         ) : (
           <View className="w-9 h-9 items-center justify-center rounded-full bg-white dark:bg-gray-800 mr-3">
-            <SettingsIcon size={20} color={isDark ? '#19c3e6' : '#19c3e6'} />
+            <SettingsIcon size={scale(20)} color={isDark ? '#19c3e6' : '#19c3e6'} />
           </View>
         )}
 
         <View className="flex-1">
-          <Text className="text-xl font-bold text-gray-900 dark:text-white">
+          <AppText
+            style={{ fontSize: 20 }}
+            className="font-bold text-gray-900 dark:text-white"
+          >
             Settings
-          </Text>
-          <Text className="text-xs text-gray-500 dark:text-gray-400">
+          </AppText>
+          <AppText
+            style={{ fontSize: 12 }}
+            className="text-gray-500 dark:text-gray-400"
+          >
             Manage your account &amp; preferences
-          </Text>
+          </AppText>
         </View>
       </View>
 

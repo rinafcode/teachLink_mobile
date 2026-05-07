@@ -1,9 +1,12 @@
+import React, { lazy, Suspense } from 'react';
 import { useRouter } from 'expo-router';
-import React from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MobileSettings } from '@/src/components/mobile/MobileSettings';
+import { ActivityIndicator, View } from 'react-native';
+
 import { useAppStore } from '@/src/store';
 import mobileAuthService from '@/src/services/mobileAuth';
+
+const MobileSettings = lazy(() => import('@/src/components/mobile/MobileSettings'));
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -17,7 +20,15 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-      <MobileSettings onSignOut={handleSignOut} />
+      <Suspense
+        fallback={
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <ActivityIndicator />
+          </View>
+        }
+      >
+        <MobileSettings onSignOut={handleSignOut} />
+      </Suspense>
     </SafeAreaView>
   );
 }
