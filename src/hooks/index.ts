@@ -22,3 +22,4 @@ export * from './useSwipe';
 export * from './useVideoGestures';
 export * from './useVoiceRecognition';
 export * from './useDebounce';
+export * from './useSearchIndex';

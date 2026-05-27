@@ -9,17 +9,23 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { AppText as Text } from '../common/AppText';
-import { useAnalytics, useDebounce, useDynamicFontSize, useMemoryMonitor } from '../../hooks';
-import { AnalyticsEvent } from '../../utils/trackingEvents';
+
 import { FilterField, FilterSheet, FilterValues } from './FilterSheet';
 import { SearchHistory } from './SearchHistory';
 import { SearchResultCard, SearchResultItem } from './SearchResultCard';
-import { addToSearchHistory } from '../../utils/searchHistory';
-import { validateSearchQuery } from '../../utils/validation';
-import { sampleCourse } from '../../data/sampleCourse';
-import { Course } from '../../types/course';
 import { VoiceSearch } from './VoiceSearch';
+import {
+  useAnalytics,
+  useDebounce,
+  useDynamicFontSize,
+  useMemoryMonitor,
+  useSearchIndex,
+} from '../../hooks';
+import { SearchHit } from '../../services/searchIndex';
+import { addToSearchHistory } from '../../utils/searchHistory';
+import { AnalyticsEvent } from '../../utils/trackingEvents';
+import { validateSearchQuery } from '../../utils/validation';
+import { AppText as Text } from '../common/AppText';
 
 const DEFAULT_FILTERS: FilterField[] = [
   {
@@ -52,29 +58,18 @@ const SUGGESTION_KEYWORDS = [
   'beginner',
 ];
 
-function courseToSearchResult(course: Course): SearchResultItem {
-  return {
-    id: course.id,
-    title: course.title,
-    description: course.description,
-    category: course.category,
-    level: course.level,
-    duration: course.totalDuration,
+function hitToSearchResult(hit: SearchHit): SearchResultItem {
+  const payload = (hit.doc.payload ?? {}) as {
+    totalDuration?: number;
   };
-}
-
-function filterCourse(course: Course, query: string, filters: FilterValues): boolean {
-  const q = query.trim().toLowerCase();
-  if (q) {
-    const match =
-      course.title.toLowerCase().includes(q) ||
-      course.description.toLowerCase().includes(q) ||
-      course.category.toLowerCase().includes(q);
-    if (!match) return false;
-  }
-  if (filters.category && course.category !== filters.category) return false;
-  if (filters.level && course.level !== filters.level) return false;
-  return true;
+  return {
+    id: hit.id,
+    title: hit.doc.fields.title,
+    description: hit.doc.fields.body ?? '',
+    category: hit.doc.fields.category ?? '',
+    level: (hit.doc.fields.level as SearchResultItem['level']) ?? 'beginner',
+    duration: payload.totalDuration ?? 0,
+  };
 }
 
 /**
@@ -100,6 +95,7 @@ export const MobileSearch = ({
   const [hasSearched, setHasSearched] = useState(false);
   const { scale } = useDynamicFontSize();
   const { trackEvent } = useAnalytics();
+  const { search: indexSearch } = useSearchIndex();
 
   useMemoryMonitor({ componentId: 'MobileSearch', itemCount: results.length });
 
@@ -126,14 +122,19 @@ export const MobileSearch = ({
       const trimmed = searchQuery.trim();
       addToSearchHistory(trimmed);
       trackEvent(AnalyticsEvent.SEARCH_QUERY, { query: trimmed, filters: filterValues });
-      const filtered = filterCourse(sampleCourse, trimmed, filterValues)
-        ? [courseToSearchResult(sampleCourse)]
-        : [];
-      setResults(filtered);
+      const hits = indexSearch(trimmed, {
+        filters: {
+          category: filterValues.category,
+          level: filterValues.level,
+          type: 'course',
+        },
+        limit: 50,
+      });
+      setResults(hits.map(hitToSearchResult));
       setHasSearched(true);
       setSuggestionsVisible(false);
     },
-    [filterValues, trackEvent]
+    [filterValues, trackEvent, indexSearch]
   );
 
   React.useEffect(() => {
@@ -145,7 +146,6 @@ export const MobileSearch = ({
       setHasSearched(false);
     }
   }, [debouncedQuery, performSearch]);
-
 
   const handleSubmit = useCallback(() => {
     performSearch(query);
@@ -198,7 +198,10 @@ export const MobileSearch = ({
             placeholder={placeholder}
             placeholderTextColor="#9CA3AF"
             value={query}
-            onChangeText={(text) => { setQuery(text); setQueryError(null); }}
+            onChangeText={text => {
+              setQuery(text);
+              setQueryError(null);
+            }}
             onFocus={() => setSuggestionsVisible(true)}
             onBlur={() => setTimeout(() => setSuggestionsVisible(false), 180)}
             onSubmitEditing={handleSubmit}

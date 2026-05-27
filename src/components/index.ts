@@ -12,3 +12,6 @@ export { CourseCardSkeleton } from './mobile/CourseCardSkeleton';
 export { default as MobileCourseViewer } from './mobile/MobileCourseViewer';
 export { MobileHeader } from './mobile/MobileHeader';
 export { default as MobileQuizManager } from './mobile/MobileQuizManager';
+
+export { SearchIndexProvider } from './SearchIndexProvider';
+export type { SearchIndexContextValue } from './SearchIndexProvider';
