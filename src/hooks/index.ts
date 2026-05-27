@@ -1,3 +1,4 @@
+export * from './useAdaptiveTheme';
 export * from './useAnalytics';
 export { AuthProvider, useAuth } from './useAuth';
 export * from './useBiometricAuth';
