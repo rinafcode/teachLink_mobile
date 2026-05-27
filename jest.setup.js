@@ -12,6 +12,7 @@ jest.mock('react-native', () => ({
   TouchableOpacity: 'TouchableOpacity',
   Modal: 'Modal',
   SafeAreaView: 'SafeAreaView',
+  KeyboardAvoidingView: 'KeyboardAvoidingView',
   ScrollView: 'ScrollView',
   Switch: 'Switch',
   TextInput: 'TextInput',
@@ -298,3 +299,75 @@ jest.mock('expo-notifications', () => ({
   AndroidImportance: { HIGH: 4, DEFAULT: 3 },
   PermissionStatus: { GRANTED: 'granted', DENIED: 'denied', UNDETERMINED: 'undetermined' },
 }));
+
+// Mock @sentry/react-native globally to support offline/logger testing
+jest.mock('@sentry/react-native', () => ({
+  init: jest.fn(),
+  captureException: jest.fn(),
+  captureMessage: jest.fn(),
+  ReactNavigationInstrumentation: jest.fn(),
+  ReactNativeTracing: jest.fn(),
+}));
+
+// Mock react-native-safe-area-context to prevent css-interop Safe Area Provider errors in tests
+jest.mock('react-native-safe-area-context', () => {
+  const RN = require('react-native');
+  return {
+    SafeAreaProvider: RN.View,
+    SafeAreaView: RN.View,
+    useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+    useSafeAreaFrame: () => ({ x: 0, y: 0, width: 390, height: 844 }),
+  };
+});
+
+// Mock react-native-reanimated with a stable custom lightweight implementation globally
+jest.mock('react-native-reanimated', () => {
+  const RN = require('react-native');
+  return {
+    default: RN.Animated,
+    View: RN.View,
+    Text: RN.Text,
+    ScrollView: RN.ScrollView,
+    Image: RN.Image,
+    useSharedValue: val => ({ value: val }),
+    useAnimatedStyle: fn => fn(),
+    withSpring: val => val,
+    withTiming: (val, config, callback) => {
+      if (callback) {
+        callback(true);
+      }
+      return val;
+    },
+    runOnJS: fn => fn,
+  };
+});
+
+// Mock react-native-gesture-handler globally
+jest.mock('react-native-gesture-handler', () => {
+  const RN = require('react-native');
+  return {
+    Gesture: {
+      Pan: () => ({
+        activeOffsetX: jest.fn().mockReturnThis(),
+        failOffsetY: jest.fn().mockReturnThis(),
+        onStart: jest.fn().mockReturnThis(),
+        onUpdate: jest.fn().mockReturnThis(),
+        onEnd: jest.fn().mockReturnThis(),
+      }),
+    },
+    GestureDetector: RN.View,
+    Swipeable: RN.View,
+  };
+});
+
+// Mock react-native-svg globally to resolve SvgTouchableMixin errors
+jest.mock('react-native-svg', () => {
+  const RN = require('react-native');
+  return {
+    default: RN.View,
+    Svg: RN.View,
+    Path: RN.View,
+    Rect: RN.View,
+    Circle: RN.View,
+  };
+});

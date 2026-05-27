@@ -16,3 +16,5 @@ export * from './SettingsPicker';
 export * from './SettingsSection';
 export * from './StatisticsDisplay';
 export * from './VoiceSearch';
+export * from './SwipeableRow';
+export * from './SwipeableCoordinator';
