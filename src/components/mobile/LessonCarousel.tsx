@@ -3,6 +3,7 @@ import {
   View,
   Text,
   ScrollView,
+  FlatList,
   Dimensions,
   StyleSheet,
   TouchableOpacity,
@@ -47,7 +48,7 @@ export default function LessonCarousel({
   onLastLessonNext,
   isLastLessonInSection = false,
 }: LessonCarouselProps) {
-  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollViewRef = useRef<FlatList>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const progressBarWidth = useRef(new Animated.Value(0)).current;
 
@@ -78,8 +79,8 @@ export default function LessonCarousel({
 
   const scrollToIndex = (index: number, animated = true) => {
     if (scrollViewRef.current) {
-      scrollViewRef.current.scrollTo({
-        x: index * SCREEN_WIDTH,
+      scrollViewRef.current.scrollToOffset({
+        offset: index * SCREEN_WIDTH,
         animated,
       });
     }
@@ -194,8 +195,10 @@ export default function LessonCarousel({
       </View>
 
       {/* Swipeable Content */}
-      <ScrollView
+      <FlatList
         ref={scrollViewRef}
+        data={lessons}
+        keyExtractor={item => item.id}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
@@ -206,9 +209,13 @@ export default function LessonCarousel({
         snapToInterval={SCREEN_WIDTH}
         snapToAlignment="center"
         contentContainerStyle={styles.scrollContent}
-      >
-        {lessons.map((lesson, index) => (
-          <View key={lesson.id} style={[styles.lessonContainer, { width: SCREEN_WIDTH }]}>
+        getItemLayout={(_, index) => ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * index, index })}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        initialNumToRender={2}
+        removeClippedSubviews={true}
+        renderItem={({ item: lesson }) => (
+          <View style={[styles.lessonContainer, { width: SCREEN_WIDTH }]}>
             <ScrollView
               style={styles.lessonScrollView}
               contentContainerStyle={styles.lessonContent}
@@ -217,8 +224,8 @@ export default function LessonCarousel({
               {renderLessonContent(lesson)}
             </ScrollView>
           </View>
-        ))}
-      </ScrollView>
+        )}
+      />
 
       {/* Navigation Buttons */}
       <View style={styles.navigationContainer}>

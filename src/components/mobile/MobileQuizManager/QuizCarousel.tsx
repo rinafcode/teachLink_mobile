@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Dimensions, ScrollView, StyleSheet, View } from 'react-native';
+import { Dimensions, ScrollView, FlatList, StyleSheet, View } from 'react-native';
 import { Question } from '../../../types/course';
 import MobileQuestionCard from './MobileQuestionCard';
 
@@ -25,15 +25,15 @@ export default function QuizCarousel({
   onQuestionChange,
   onAnswerSelect,
 }: QuizCarouselProps) {
-  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollViewRef = useRef<FlatList>(null);
   const isScrollingRef = useRef(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Only scroll if not currently being scrolled by user
     if (scrollViewRef.current && !isScrollingRef.current) {
-      scrollViewRef.current.scrollTo({
-        x: currentQuestionIndex * SCREEN_WIDTH,
+      scrollViewRef.current.scrollToOffset({
+        offset: currentQuestionIndex * SCREEN_WIDTH,
         animated: true,
       });
     }
@@ -84,8 +84,10 @@ export default function QuizCarousel({
 
   return (
     <View style={styles.container}>
-      <ScrollView
+      <FlatList
         ref={scrollViewRef}
+        data={questions}
+        keyExtractor={question => question.id}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
@@ -99,9 +101,13 @@ export default function QuizCarousel({
         snapToAlignment="center"
         contentContainerStyle={styles.scrollContent}
         bounces={false}
-      >
-        {questions.map((question, index) => (
-          <View key={question.id} style={[styles.cardContainer, { width: SCREEN_WIDTH }]}>
+        getItemLayout={(_, index) => ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * index, index })}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        initialNumToRender={2}
+        removeClippedSubviews={true}
+        renderItem={({ item: question, index }) => (
+          <View style={[styles.cardContainer, { width: SCREEN_WIDTH }]}>
             <MobileQuestionCard
               question={question}
               questionNumber={index + 1}
@@ -110,8 +116,8 @@ export default function QuizCarousel({
               onAnswerSelect={onAnswerSelect}
             />
           </View>
-        ))}
-      </ScrollView>
+        )}
+      />
     </View>
   );
 }

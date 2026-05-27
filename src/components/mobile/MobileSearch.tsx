@@ -268,6 +268,11 @@ export const MobileSearch = ({
             ListEmptyComponent={
               <Text style={styles.emptyText}>Try a different query or adjust filters.</Text>
             }
+            getItemLayout={(_, index) => ({ length: 120, offset: 120 * index, index })}
+            maxToRenderPerBatch={15}
+            windowSize={5}
+            initialNumToRender={10}
+            removeClippedSubviews={true}
           />
         </View>
       )}

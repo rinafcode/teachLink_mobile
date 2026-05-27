@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Platform,
-  ScrollView,
+  FlatList,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -80,27 +80,31 @@ export default function MobileSyllabus({
   };
 
   return (
-    <ScrollView
+    <FlatList
+      data={sections}
+      keyExtractor={section => section.id}
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
-    >
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>📚 Course Syllabus</Text>
-        <Text style={styles.headerSubtitle}>
-          {sections.length} sections • {sections.reduce((acc, s) => acc + s.lessons.length, 0)}{' '}
-          lessons
-        </Text>
-      </View>
-
-      {/* Sections */}
-      {sections.map(section => {
+      maxToRenderPerBatch={10}
+      windowSize={5}
+      initialNumToRender={10}
+      removeClippedSubviews={true}
+      ListHeaderComponent={
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>📚 Course Syllabus</Text>
+          <Text style={styles.headerSubtitle}>
+            {sections.length} sections • {sections.reduce((acc, s) => acc + s.lessons.length, 0)}{' '}
+            lessons
+          </Text>
+        </View>
+      }
+      renderItem={({ item: section }) => {
         const isExpanded = expandedSections.has(section.id);
         const sectionProgress = getSectionProgress(section);
 
         return (
-          <View key={section.id} style={styles.sectionCard}>
+          <View style={styles.sectionCard}>
             {/* Section Header */}
             <TouchableOpacity
               onPress={() => toggleSection(section.id)}
@@ -207,8 +211,8 @@ export default function MobileSyllabus({
             )}
           </View>
         );
-      })}
-    </ScrollView>
+      }}
+    />
   );
 }
 
