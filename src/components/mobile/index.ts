@@ -24,3 +24,4 @@ export * from './SubscriptionSkeleton';
 export * from './VoiceSearch';
 export * from './SwipeableRow';
 export * from './SwipeableCoordinator';
+export * from './MetricsDashboard';

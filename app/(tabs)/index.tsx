@@ -1,18 +1,24 @@
+import { useScrollToTop } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 import { CourseCardSkeleton, Skeleton, AppText as Text } from '@/src/components';
 import { sampleCourse } from '@/src/data/sampleCourse';
 import { useDynamicFontSize, useAnalytics } from '@/src/hooks';
-import { useAppStore } from '@/src/store';
+import { useUser } from '@/src/store';
 import { AnalyticsEvent, ScreenName } from '@/src/utils/trackingEvents';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { isLoading, setLoading } = useAppStore();
+  const [isLoading, setLoading] = useState(false);
   const { scale } = useDynamicFontSize();
   const { trackEvent, trackScreen } = useAnalytics();
+  const user = useUser();
+  const scrollRef = useRef<ScrollView>(null);
+  useScrollToTop(scrollRef);
+
+  const isDashboardUser = user?.role === 'admin' || user?.role === 'instructor';
 
   useEffect(() => {
     trackScreen(ScreenName.HOME);
@@ -68,6 +74,7 @@ export default function HomeScreen() {
 
   return (
     <ScrollView
+      ref={scrollRef}
       className="flex-1 bg-gray-50 dark:bg-slate-800"
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
@@ -163,6 +170,29 @@ export default function HomeScreen() {
             <Text style={styles.arrow}>{'>'}</Text>
           </View>
         </TouchableOpacity>
+
+        {/* Team Dashboard — visible to admins and instructors */}
+        {isDashboardUser && (
+          <TouchableOpacity
+            style={[styles.secondaryButton, styles.dashboardButton]}
+            onPress={() => {
+              trackEvent(AnalyticsEvent.BUTTON_CLICK, { button: 'team_dashboard', screen: 'home' });
+              router.push('../dashboard');
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Team Dashboard"
+            accessibilityHint="View app health and performance metrics"
+          >
+            <View style={styles.secondaryButtonContent}>
+              <Text style={styles.secondaryIcon}>? </Text>
+              <View style={styles.secondaryTextContainer}>
+                <Text style={styles.secondaryTitle}>Team Dashboard</Text>
+                <Text style={styles.secondarySubtitle}>App health &amp; metrics</Text>
+              </View>
+              <Text style={styles.arrow}>{'>'}</Text>
+            </View>
+          </TouchableOpacity>
+        )}
       </View>
     </ScrollView>
   );
@@ -258,6 +288,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
+  },
+  dashboardButton: {
+    borderColor: '#a5f3fc',
+    backgroundColor: '#f0fdff',
   },
   secondaryButtonContent: {
     flexDirection: 'row',
