@@ -1,6 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import logger from "../../utils/logger";
 import { getEnv } from "../../config";
+import { decodeBinaryMessage, encodeBinaryMessage } from "./binaryProtocol";
 
 // ─── Reconnection config ──────────────────────────────────────────────────────
 
@@ -70,19 +71,22 @@ class SocketService {
       // ── Real-time event handlers ──────────────────────────────────────
 
       this.socket.on("notification_created", (notification: any) => {
-        logger.info("New notification received:", notification);
+        const parsed = notification instanceof ArrayBuffer || notification instanceof Uint8Array ? decodeBinaryMessage(notification).payload : notification;
+        logger.info("New notification received:", parsed);
         // TODO: Handle notification display/storage
         // This could trigger a notification banner, update notification count, etc.
       });
 
       this.socket.on("course_updated", (courseData: any) => {
-        logger.info("Course updated:", courseData);
+        const parsed = courseData instanceof ArrayBuffer || courseData instanceof Uint8Array ? decodeBinaryMessage(courseData).payload : courseData;
+        logger.info("Course updated:", parsed);
         // TODO: Handle course data refresh
         // This could update cached course data, refresh UI components, etc.
       });
 
       this.socket.on("message_received", (message: any) => {
-        logger.info("New message received:", message);
+        const parsed = message instanceof ArrayBuffer || message instanceof Uint8Array ? decodeBinaryMessage(message).payload : message;
+        logger.info("New message received:", parsed);
         // TODO: Handle new message
         // This could update chat UI, show message notification, etc.
       });
@@ -98,15 +102,23 @@ class SocketService {
     }
   }
 
-  emit(event: string, data: any) {
+  emit(event: string, data: Record<string, any>) {
     if (this.socket) {
-      this.socket.emit(event, data);
+      const encoded = encodeBinaryMessage(event, data);
+      this.socket.emit(event, encoded);
     }
   }
 
   on(event: string, callback: (data: any) => void) {
     if (this.socket) {
-      this.socket.on(event, callback);
+      this.socket.on(event, (data: any) => {
+        if (data instanceof ArrayBuffer || data instanceof Uint8Array) {
+          const decoded = decodeBinaryMessage(data);
+          callback(decoded.payload);
+          return;
+        }
+        callback(data);
+      });
     }
   }
 

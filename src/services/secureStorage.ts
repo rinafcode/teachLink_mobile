@@ -1,6 +1,9 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
-import logger from '../utils/logger';
+
+import { appLogger } from '../utils/logger';
+
+const logger = appLogger;
 
 // ─── Security Documentation ───────────────────────────────────────────────────
 /**
@@ -37,11 +40,7 @@ const KEYS = {
 } as const;
 
 // ─── Sensitive Keys (enforce Keychain/Keystore) ────────────────────────────────
-const SENSITIVE_KEYS = new Set([
-  KEYS.ACCESS_TOKEN,
-  KEYS.REFRESH_TOKEN,
-  KEYS.USER_DATA,
-]);
+const SENSITIVE_KEYS = new Set([KEYS.ACCESS_TOKEN, KEYS.REFRESH_TOKEN, KEYS.USER_DATA]);
 
 // ─── Options ──────────────────────────────────────────────────────────────────
 /**
@@ -64,21 +63,21 @@ async function verifySecureStorageAvailable(): Promise<void> {
   try {
     const testKey = '__secure_storage_verification_test__';
     const testValue = `test_${Date.now()}`;
-    
+
     // Test write
     await SecureStore.setItemAsync(testKey, testValue, SECURE_OPTIONS);
-    
+
     // Test read
     const retrieved = await SecureStore.getItemAsync(testKey, SECURE_OPTIONS);
-    
+
     // Verify integrity
     if (retrieved !== testValue) {
       throw new Error('Verification value mismatch - secure storage not functioning correctly');
     }
-    
+
     // Clean up
     await SecureStore.deleteItemAsync(testKey, SECURE_OPTIONS);
-    
+
     logger.info(`✅ SecureStorage verification passed on ${Platform.OS}`);
   } catch (error) {
     const errorMsg = `❌ CRITICAL: SecureStorage verification failed on ${Platform.OS}: ${error instanceof Error ? error.message : String(error)}`;
@@ -114,11 +113,13 @@ async function setItem(key: string, value: string, isSensitive: boolean = true):
     if (isSensitive) {
       logger.info(`Setting sensitive data in Keychain/Keystore: ${key}`);
     }
-    
+
     await SecureStore.setItemAsync(key, value, SECURE_OPTIONS);
-    
+
     if (isSensitive) {
-      logger.info(`✅ Sensitive data stored securely: ${key} (${Platform.OS}/${Platform.OS === 'ios' ? 'Keychain' : 'Keystore'})`);
+      logger.info(
+        `✅ Sensitive data stored securely: ${key} (${Platform.OS}/${Platform.OS === 'ios' ? 'Keychain' : 'Keystore'})`
+      );
     }
   } catch (error) {
     const errorMsg = `❌ CRITICAL: SecureStorage.set failed for key "${key}": ${error instanceof Error ? error.message : String(error)}`;
@@ -134,21 +135,21 @@ async function setItem(key: string, value: string, isSensitive: boolean = true):
 async function getItem(key: string, isSensitive: boolean = true): Promise<string | null> {
   try {
     const value = await SecureStore.getItemAsync(key, SECURE_OPTIONS);
-    
+
     if (!value && isSensitive) {
       logger.warn(`Sensitive data not found in secure storage: ${key}`);
     }
-    
+
     return value;
   } catch (error) {
     const errorMsg = `❌ CRITICAL: SecureStorage.get failed for key "${key}": ${error instanceof Error ? error.message : String(error)}`;
     logger.error(errorMsg, { key, platform: Platform.OS });
-    
+
     // For sensitive data, throw error instead of returning null
     if (isSensitive) {
       throw error;
     }
-    
+
     return null;
   }
 }
@@ -203,7 +204,7 @@ export function isSecureStorageReady(): boolean {
 export async function saveTokens(
   accessToken: string,
   refreshToken: string,
-  expiresAt: number,
+  expiresAt: number
 ): Promise<void> {
   if (!isSecureStorageReady()) {
     throw new Error('SecureStorage not initialized - cannot save tokens');
@@ -365,13 +366,10 @@ export async function clearAllAuthData(): Promise<void> {
  * Check if the user session is valid based on stored expiration time
  */
 export async function isSessionValid(): Promise<boolean> {
-  const [token, expiresAt] = await Promise.all([
-    getAccessToken(),
-    getSessionExpiresAt(),
-  ]);
+  const [token, expiresAt] = await Promise.all([getAccessToken(), getSessionExpiresAt()]);
 
   if (!token || !expiresAt) return false;
-  
+
   // Consider session expired 30s early to allow refresh
   return expiresAt > Date.now() + 30_000;
 }
@@ -380,3 +378,8 @@ export async function isSessionValid(): Promise<boolean> {
 
 export const STORAGE_KEYS = KEYS;
 export const STORAGE_SENSITIVE_KEYS = SENSITIVE_KEYS;
+
+// ─── Test Helpers ─────────────────────────────────────────────────────────────
+export function __resetSecureStorageVerification__(): void {
+  isSecureStorageVerified = false;
+}

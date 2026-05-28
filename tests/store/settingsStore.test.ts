@@ -16,6 +16,7 @@ const INITIAL_STATE = {
   fontSize: 'medium' as const,
   autoplay: true,
   hapticFeedback: true,
+  adaptiveThemeEnabled: false,
 };
 
 describe('useSettingsStore', () => {
@@ -188,6 +189,19 @@ describe('useSettingsStore', () => {
     });
   });
 
+  describe('setAdaptiveThemeEnabled', () => {
+    it('enables adaptive theme', () => {
+      useSettingsStore.getState().setAdaptiveThemeEnabled(true);
+      expect(useSettingsStore.getState().adaptiveThemeEnabled).toBe(true);
+    });
+
+    it('disables adaptive theme', () => {
+      useSettingsStore.setState({ adaptiveThemeEnabled: true });
+      useSettingsStore.getState().setAdaptiveThemeEnabled(false);
+      expect(useSettingsStore.getState().adaptiveThemeEnabled).toBe(false);
+    });
+  });
+
   // ── resetSettings ─────────────────────────────────────────────────────────
 
   describe('resetSettings', () => {
@@ -207,6 +221,7 @@ describe('useSettingsStore', () => {
         fontSize: 'large',
         autoplay: false,
         hapticFeedback: false,
+        adaptiveThemeEnabled: true,
       });
 
       useSettingsStore.getState().resetSettings();
@@ -225,6 +240,7 @@ describe('useSettingsStore', () => {
       expect(state.fontSize).toBe('medium');
       expect(state.autoplay).toBe(true);
       expect(state.hapticFeedback).toBe(true);
+      expect(state.adaptiveThemeEnabled).toBe(false);
     });
 
     it('is idempotent — calling reset twice yields defaults', () => {
@@ -245,6 +261,7 @@ describe('useSettingsStore', () => {
       expect(state.fontSize).toBe('medium');
       expect(state.downloadQuality).toBe('medium');
       expect(state.hapticFeedback).toBe(true);
+      expect(state.adaptiveThemeEnabled).toBe(false);
     });
   });
 });

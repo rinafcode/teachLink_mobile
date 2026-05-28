@@ -1,9 +1,8 @@
 import { useAppStore } from '@/src/store';
 import { useLocalSearchParams } from 'expo-router';
-import React, { lazy, Suspense, useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import React, { Suspense, useEffect, useState } from 'react';
 
-const MobileProfile = lazy(() =>
+const MobileProfile = React.lazy(() =>
   import('@/src/components/mobile/MobileProfile').then(m => ({ default: m.MobileProfile }))
 );
 
@@ -18,13 +17,7 @@ export default function ProfileScreen() {
   }, []);
 
   return (
-    <Suspense
-      fallback={
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator />
-        </View>
-      }
-    >
+    <Suspense fallback={null}>
       <MobileProfile userId={userId as string} isDark={theme === 'dark'} isLoading={isLoading} />
     </Suspense>
   );

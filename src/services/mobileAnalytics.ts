@@ -1,6 +1,4 @@
-import { NoiseType, PrivacyConfig, sanitizeEventProperties } from '../utils/differentialPrivacy';
-import { appLogger as logger } from '../utils/logger';
-import { PrivacyBudgetManager } from '../utils/privacyBudgetManager';
+import { appLogger } from '../utils/logger';
 import { AnalyticsEvent, EventProperties } from '../utils/trackingEvents';
 
 // ─── Privacy defaults ─────────────────────────────────────────────────────────
@@ -28,11 +26,20 @@ class MobileAnalyticsService {
   private currentSessionId: string | null = null;
   private currentScreen: string | null = null;
 
-  private privacyConfig: PrivacyConfig = DEFAULT_PRIVACY_CONFIG;
-  private noiseType: NoiseType = DEFAULT_NOISE_TYPE;
-  private budgetManager: PrivacyBudgetManager = new PrivacyBudgetManager(10);
-
-  // ─── Initialisation ─────────────────────────────────────────────────────────
+  // Critical events that must always be sent (100% volume)
+  private readonly CRITICAL_EVENTS: Set<AnalyticsEvent> = new Set([
+    AnalyticsEvent.APP_LAUNCH,
+    AnalyticsEvent.SESSION_START,
+    AnalyticsEvent.SESSION_END,
+    AnalyticsEvent.AUTH_LOGIN,
+    AnalyticsEvent.AUTH_LOGOUT,
+    AnalyticsEvent.COURSE_STARTED,
+    AnalyticsEvent.COURSE_COMPLETED,
+    AnalyticsEvent.QUIZ_STARTED,
+    AnalyticsEvent.QUIZ_COMPLETED,
+    AnalyticsEvent.API_ERROR,
+    AnalyticsEvent.CRASH_REPORT,
+  ]);
 
   /**
    * Initialize the analytics SDK.
@@ -51,9 +58,9 @@ class MobileAnalyticsService {
 
       this.isInitialized = true;
       this.startSession();
-      logger.infoSync('MobileAnalytics: Initialized successfully');
+      appLogger.info('MobileAnalytics: Initialized successfully');
     } catch (error) {
-      logger.errorSync('MobileAnalytics: Failed to initialize', error as Error);
+      appLogger.error('MobileAnalytics: Failed to initialize', error);
     }
   }
 
@@ -73,14 +80,13 @@ class MobileAnalyticsService {
   public startSession(): void {
     const timestamp = Date.now();
     this.currentSessionId = `sess_${timestamp}_${Math.random().toString(36).substr(2, 9)}`;
-    this.budgetManager.reset();
 
     this.trackEvent(AnalyticsEvent.SESSION_START, {
       sessionId: this.currentSessionId,
       timestamp,
     });
 
-    logger.infoSync(`MobileAnalytics: Session started [${this.currentSessionId}]`);
+    appLogger.debug(`MobileAnalytics: Session started [${this.currentSessionId}]`);
   }
 
   public endSession(): void {
@@ -92,7 +98,7 @@ class MobileAnalyticsService {
     });
 
     this.currentSessionId = null;
-    logger.infoSync('MobileAnalytics: Session ended');
+    appLogger.debug('MobileAnalytics: Session ended');
   }
 
   // ─── Core tracking ───────────────────────────────────────────────────────────
@@ -104,14 +110,13 @@ class MobileAnalyticsService {
    * noise. If the privacy budget is exhausted the event is suppressed.
    */
   public trackEvent(event: AnalyticsEvent, properties?: EventProperties): void {
-    if (!this.budgetManager.consume(this.privacyConfig.epsilon)) {
-      logger.infoSync(`MobileAnalytics: event suppressed (budget exhausted) [${event}]`);
-      return;
+    // Implement sampling for non-critical events (10% rate)
+    if (!this.CRITICAL_EVENTS.has(event)) {
+      if (Math.random() > 0.1) {
+        appLogger.debug(`📊 [Analytics] Event: ${event} skipped due to sampling`);
+        return;
+      }
     }
-
-    const sanitized = properties
-      ? sanitizeEventProperties(properties, this.privacyConfig, this.noiseType)
-      : {};
 
     const payload = {
       ...sanitized,
@@ -121,7 +126,8 @@ class MobileAnalyticsService {
       timestamp: new Date().toISOString(),
     };
 
-    logger.infoSync(`📊 [Analytics] Event: ${event}`);
+    // Log to console/Metro for development visibility
+    appLogger.info(`📊 [Analytics] Event: ${event}`, JSON.stringify(payload, null, 2));
 
     // Real SDK call:
     // analytics().logEvent(event, payload);
@@ -138,8 +144,15 @@ class MobileAnalyticsService {
       timestamp: new Date().toISOString(),
     };
 
-    logger.infoSync(`📱 [Analytics] Screen View: ${screenName}`);
+    appLogger.info(`📱 [Analytics] Screen View: ${screenName}`, payload);
 
+    // Real SDK implementation:
+    // analytics().logScreenView({
+    //   screen_name: screenName,
+    //   screen_class: screenName,
+    // });
+
+    // Also track as a generic event for providers that don't have logScreenView
     this.trackEvent(AnalyticsEvent.SCREEN_VIEW, {
       screen: screenName,
       ...payload,
@@ -153,19 +166,20 @@ class MobileAnalyticsService {
       ...properties,
     };
 
-    logger.infoSync(`⏱️ [Analytics] Performance: ${name} = ${value}ms`);
+    appLogger.info(`⏱️ [Analytics] Performance: ${name} = ${value}ms`, payload);
 
     this.trackEvent(AnalyticsEvent.PERFORMANCE_METRIC, payload);
   }
 
   public async identifyUser(userId: string, userProperties?: EventProperties): Promise<void> {
-    logger.infoSync(`👤 [Analytics] Identify User: ${userId}`);
-    void userProperties;
+    appLogger.info(`👤 [Analytics] Identify User: ${userId}`, userProperties);
+
+    // Real SDK implementation:
     // await analytics().setUserId(userId);
   }
 
   public async resetUser(): Promise<void> {
-    logger.infoSync('👤 [Analytics] Reset User identity');
+    appLogger.info('👤 [Analytics] Reset User identity');
     // await analytics().setUserId(null);
   }
 

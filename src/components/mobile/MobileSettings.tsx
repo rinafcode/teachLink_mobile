@@ -174,6 +174,8 @@ export function MobileSettings({
     setAutoplay,
     hapticFeedback,
     setHapticFeedback,
+    adaptiveThemeEnabled,
+    setAdaptiveThemeEnabled,
   } = useSettingsStore();
 
   const {
@@ -330,7 +332,22 @@ export function MobileSettings({
               label="Theme"
               value={theme}
               options={THEME_OPTIONS}
-              onValueChange={setTheme}
+              onValueChange={(value) => {
+                setTheme(value as 'light' | 'dark');
+                setAdaptiveThemeEnabled(false);
+              }}
+            />
+          }
+        />
+
+        <SettingRow
+          icon={<Sun size={18} color="#f59e0b" />}
+          label="Adaptive Theme"
+          description="Switch light/dark based on ambient light"
+          right={
+            <NativeToggle
+              value={adaptiveThemeEnabled}
+              onValueChange={setAdaptiveThemeEnabled}
             />
           }
         />
