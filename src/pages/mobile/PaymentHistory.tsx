@@ -11,26 +11,25 @@ import {
   RefreshControl,
 } from 'react-native';
 import { AppText as Text } from '../../components/common/AppText';
-import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
+import { useDynamicFontSize, useInAppPurchase } from '../../hooks';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
-  ArrowLeft,
-  RefreshCw,
-  CreditCard,
-  CheckCircle,
-  XCircle,
-  Clock,
-  RotateCcw,
-  Receipt,
-  TrendingUp,
-  Calendar,
+    ArrowLeft,
+    Calendar,
+    CheckCircle,
+    Clock,
+    CreditCard,
+    Receipt,
+    RefreshCw,
+    RotateCcw,
+    TrendingUp,
+    XCircle,
 } from 'lucide-react-native';
-import { useInAppPurchase } from '../../hooks/useInAppPurchase';
 import {
-  PurchaseRecord,
-  PurchaseStatus,
-  PurchaseType,
-  mobilePaymentsService,
+    PurchaseRecord,
+    PurchaseStatus,
+    PurchaseType,
+    mobilePaymentsService,
 } from '../../services/mobilePayments';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -81,7 +80,9 @@ const STATUS_CONFIG: Record<
 // ─── Component ────────────────────────────────────────────────────────────────
 
 interface PaymentHistoryProps {
+  /** Whether to use dark theme styling */
   isDark?: boolean;
+  /** Optional callback for back navigation */
   onBack?: () => void;
 }
 

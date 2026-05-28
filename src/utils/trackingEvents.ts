@@ -18,10 +18,21 @@ export enum AnalyticsEvent {
   AUTH_LOGOUT = 'auth_logout',
   SEARCH_QUERY = 'search_query',
 
+  // Course Events
+  COURSE_STARTED = 'course_started',
+  COURSE_COMPLETED = 'course_completed',
+
+  // Quiz Events
+  QUIZ_STARTED = 'quiz_started',
+  QUIZ_COMPLETED = 'quiz_completed',
+
   // Content Interaction
   CONTENT_VIEW = 'content_view',
   CONTENT_SHARE = 'content_share',
   CONTENT_LIKE = 'content_like',
+
+  // Button Clicks
+  BUTTON_CLICK = 'button_click',
 
   // Performance & Infrastructure
   PERFORMANCE_METRIC = 'performance_metric',
@@ -48,6 +59,9 @@ export enum ScreenName {
   CONTENT_DETAIL = 'content_detail',
   LOGIN = 'login',
   SIGNUP = 'signup',
+  COURSE_VIEWER = 'course_viewer',
+  QUIZ = 'quiz',
+  SEARCH = 'search',
 }
 
 /**

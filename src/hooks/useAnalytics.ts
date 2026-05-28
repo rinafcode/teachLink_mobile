@@ -4,7 +4,7 @@ import { AnalyticsEvent, EventProperties, PerformanceMetric } from '../utils/tra
 
 /**
  * Custom hook to access analytics tracking capabilities from functional components.
- * 
+ *
  * @example
  * const { trackEvent, trackScreen } = useAnalytics();
  * trackEvent(AnalyticsEvent.UI_CLICK, { button: 'search' });

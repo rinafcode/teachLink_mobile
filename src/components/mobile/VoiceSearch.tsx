@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Mic, Square } from 'lucide-react-native';
-import { useVoiceRecognition } from '../../hooks/useVoiceRecognition';
+import { useVoiceRecognition } from '../../hooks';
 
 export interface VoiceSearchProps {
   onTranscript: (text: string) => void;
@@ -64,9 +64,11 @@ export function VoiceSearch({
         accessibilityLabel={isListening ? 'Stop voice search' : 'Start voice search'}
         activeOpacity={0.8}
       >
-        {isListening
-          ? <Square size={18} color="#19c3e6" fill="#19c3e6" />
-          : <Mic size={20} color="#9CA3AF" />}
+        {isListening ? (
+          <Square size={18} color="#19c3e6" fill="#19c3e6" />
+        ) : (
+          <Mic size={20} color="#9CA3AF" />
+        )}
       </TouchableOpacity>
     );
   }
@@ -81,7 +83,11 @@ export function VoiceSearch({
       <TouchableOpacity
         onPress={handlePress}
         disabled={disabled}
-        style={[styles.button, isListening && styles.buttonActive, disabled && styles.buttonDisabled]}
+        style={[
+          styles.button,
+          isListening && styles.buttonActive,
+          disabled && styles.buttonDisabled,
+        ]}
         activeOpacity={0.8}
       >
         {isListening ? (
@@ -92,9 +98,7 @@ export function VoiceSearch({
         ) : (
           <>
             <Mic size={22} color={isAvailable ? '#19c3e6' : '#9CA3AF'} />
-            <Text style={[styles.buttonLabel, !isAvailable && styles.buttonLabelMuted]}>
-              Voice
-            </Text>
+            <Text style={[styles.buttonLabel, !isAvailable && styles.buttonLabelMuted]}>Voice</Text>
           </>
         )}
       </TouchableOpacity>

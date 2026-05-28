@@ -49,9 +49,7 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({ children }
 
   return (
     <AnalyticsContext.Provider value={{ service: mobileAnalyticsService }}>
-      <ErrorBoundary boundaryName="AnalyticsProvider">
-        {children}
-      </ErrorBoundary>
+      <ErrorBoundary boundaryName="AnalyticsProvider">{children}</ErrorBoundary>
     </AnalyticsContext.Provider>
   );
 };

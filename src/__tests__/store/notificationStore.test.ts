@@ -1,8 +1,5 @@
 import { useNotificationStore } from '../../store/notificationStore';
-import {
-  NotificationType,
-  DEFAULT_NOTIFICATION_PREFERENCES,
-} from '../../types/notifications';
+import { NotificationType, DEFAULT_NOTIFICATION_PREFERENCES } from '../../types/notifications';
 
 // Helper to get fresh store state
 const getStore = () => useNotificationStore.getState();
@@ -151,7 +148,7 @@ describe('notificationStore', () => {
       getStore().markAllAsRead();
 
       expect(getStore().unreadCount).toBe(0);
-      expect(getStore().notifications.every((n) => n.read)).toBe(true);
+      expect(getStore().notifications.every(n => n.read)).toBe(true);
     });
 
     it('should remove notification', () => {

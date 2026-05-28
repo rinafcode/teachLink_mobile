@@ -1,6 +1,13 @@
 import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ListRenderItemInfo } from 'react-native';
-import { useMemoryMonitor } from '../../hooks/useMemoryMonitor';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  ListRenderItemInfo,
+} from 'react-native';
+import { useMemoryMonitor } from '../../hooks';
 
 interface Connection {
   id: string;
@@ -31,7 +38,10 @@ export const ConnectionManager: React.FC<ConnectionManagerProps> = ({
         <Text style={styles.connectionName}>{item.name}</Text>
       </View>
       {onRemoveConnection && (
-        <TouchableOpacity style={[styles.button, styles.removeButton]} onPress={() => onRemoveConnection(item.id)}>
+        <TouchableOpacity
+          style={[styles.button, styles.removeButton]}
+          onPress={() => onRemoveConnection(item.id)}
+        >
           <Text style={styles.buttonText}>Remove</Text>
         </TouchableOpacity>
       )}
@@ -52,7 +62,7 @@ export const ConnectionManager: React.FC<ConnectionManagerProps> = ({
         <FlatList
           data={connections}
           renderItem={renderConnectionItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={item => item.id}
           style={styles.list}
         />
       ) : (

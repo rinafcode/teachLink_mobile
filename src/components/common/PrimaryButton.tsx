@@ -9,7 +9,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
+import { useDynamicFontSize } from '../../hooks';
 
 /**
  * Props for the PrimaryButton component
@@ -55,23 +55,23 @@ export default function PrimaryButton({
   const buttonLabel = accessibilityLabel ?? title;
 
   const sizeConfig = {
-    small: { 
-      paddingHorizontal: scale(12), 
-      paddingVertical: scale(8), 
-      borderRadius: 8, 
-      fontSize: scale(14) 
+    small: {
+      paddingHorizontal: scale(12),
+      paddingVertical: scale(8),
+      borderRadius: 8,
+      fontSize: scale(14),
     },
-    medium: { 
-      paddingHorizontal: scale(24), 
-      paddingVertical: scale(12), 
-      borderRadius: 12, 
-      fontSize: scale(16) 
+    medium: {
+      paddingHorizontal: scale(24),
+      paddingVertical: scale(12),
+      borderRadius: 12,
+      fontSize: scale(16),
     },
-    large: { 
-      paddingHorizontal: scale(32), 
-      paddingVertical: scale(16), 
-      borderRadius: 12, 
-      fontSize: scale(18) 
+    large: {
+      paddingHorizontal: scale(32),
+      paddingVertical: scale(16),
+      borderRadius: 12,
+      fontSize: scale(18),
     },
   };
 
@@ -199,11 +199,7 @@ export default function PrimaryButton({
           {icon}
           <Text
             allowFontScaling={false}
-            style={[
-              styles.buttonText,
-              { fontSize: config.fontSize, color: '#19c3e6' },
-              textStyle,
-            ]}
+            style={[styles.buttonText, { fontSize: config.fontSize, color: '#19c3e6' }, textStyle]}
           >
             {title}
           </Text>

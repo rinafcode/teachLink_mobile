@@ -1,11 +1,6 @@
-import React, {
-  createContext,
-  ReactNode,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-import mobileAuth, { AuthUser } from "../services/mobileAuth";
+import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import mobileAuth, { AuthUser } from '../services/mobileAuth';
+import { appLogger } from '../utils/logger';
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -14,11 +9,7 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-  login: (credentials: {
-    email: string;
-    password: string;
-    rememberMe?: boolean;
-  }) => Promise<void>;
+  login: (credentials: { email: string; password: string; rememberMe?: boolean }) => Promise<void>;
   loginWithBiometrics: () => Promise<void>;
   logout: () => Promise<void>;
   restoreSession: () => Promise<void>;
@@ -30,9 +21,7 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-export function AuthProvider({
-  children,
-}: AuthProviderProps): React.ReactElement {
+export function AuthProvider({ children }: AuthProviderProps): React.ReactElement {
   const [state, setState] = useState<AuthState>({
     isAuthenticated: false,
     isLoading: true,
@@ -41,7 +30,7 @@ export function AuthProvider({
 
   const restoreSession = async () => {
     try {
-      setState((prev) => ({ ...prev, isLoading: true }));
+      setState(prev => ({ ...prev, isLoading: true }));
       const result = await mobileAuth.restoreSession();
 
       if (result) {
@@ -58,7 +47,7 @@ export function AuthProvider({
         });
       }
     } catch (error) {
-      console.warn("Session restore failed:", error);
+      appLogger.warnSync('Session restore failed', { error });
       setState({
         isAuthenticated: false,
         isLoading: false,
@@ -67,13 +56,9 @@ export function AuthProvider({
     }
   };
 
-  const login = async (credentials: {
-    email: string;
-    password: string;
-    rememberMe?: boolean;
-  }) => {
+  const login = async (credentials: { email: string; password: string; rememberMe?: boolean }) => {
     try {
-      setState((prev) => ({ ...prev, isLoading: true }));
+      setState(prev => ({ ...prev, isLoading: true }));
       const result = await mobileAuth.login(credentials);
       setState({
         isAuthenticated: true,
@@ -81,14 +66,14 @@ export function AuthProvider({
         user: result.user,
       });
     } catch (error) {
-      setState((prev) => ({ ...prev, isLoading: false }));
+      setState(prev => ({ ...prev, isLoading: false }));
       throw error;
     }
   };
 
   const loginWithBiometrics = async () => {
     try {
-      setState((prev) => ({ ...prev, isLoading: true }));
+      setState(prev => ({ ...prev, isLoading: true }));
       const result = await mobileAuth.loginWithBiometrics();
       setState({
         isAuthenticated: true,
@@ -96,14 +81,14 @@ export function AuthProvider({
         user: result.user,
       });
     } catch (error) {
-      setState((prev) => ({ ...prev, isLoading: false }));
+      setState(prev => ({ ...prev, isLoading: false }));
       throw error;
     }
   };
 
   const logout = async () => {
     try {
-      setState((prev) => ({ ...prev, isLoading: true }));
+      setState(prev => ({ ...prev, isLoading: true }));
       await mobileAuth.logout();
       setState({
         isAuthenticated: false,
@@ -111,7 +96,7 @@ export function AuthProvider({
         user: null,
       });
     } catch (error) {
-      setState((prev) => ({ ...prev, isLoading: false }));
+      setState(prev => ({ ...prev, isLoading: false }));
       throw error;
     }
   };
@@ -139,7 +124,7 @@ export function AuthProvider({
 export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 }

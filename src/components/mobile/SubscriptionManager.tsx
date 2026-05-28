@@ -10,17 +10,9 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import {
-  Crown,
-  Zap,
-  Check,
-  RefreshCw,
-  ChevronRight,
-  Star,
-  Shield,
-} from 'lucide-react-native';
+import { Crown, Zap, Check, RefreshCw, ChevronRight, Star, Shield } from 'lucide-react-native';
 import { PurchaseButton } from './PurchaseButton';
-import { useInAppPurchase } from '../../hooks/useInAppPurchase';
+import { useInAppPurchase } from '../../hooks';
 import {
   SUBSCRIPTION_PLANS,
   SubscriptionPlan,
@@ -82,9 +74,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
     clearError,
   } = useInAppPurchase();
 
-  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>(
-    'monthly',
-  );
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
   const [activatingId, setActivatingId] = useState<string | null>(null);
 
   const bg = isDark ? '#0f172a' : '#f8fafc';
@@ -99,14 +89,12 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
 
   useEffect(() => {
     if (error) {
-      Alert.alert('Payment Error', error, [
-        { text: 'OK', onPress: clearError },
-      ]);
+      Alert.alert('Payment Error', error, [{ text: 'OK', onPress: clearError }]);
     }
   }, [error, clearError]);
 
   // Filter plans by billing period
-  const visiblePlans = plans.filter((p) => p.period === billingPeriod);
+  const visiblePlans = plans.filter(p => p.period === billingPeriod);
 
   const handlePurchase = async (plan: SubscriptionPlan) => {
     setActivatingId(plan.productId);
@@ -116,10 +104,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
 
   const handleRestore = async () => {
     const result = await restorePurchases();
-    Alert.alert(
-      result.count > 0 ? 'Purchases Restored' : 'Nothing to Restore',
-      result.message,
-    );
+    Alert.alert(result.count > 0 ? 'Purchases Restored' : 'Nothing to Restore', result.message);
   };
 
   const currentMeta = TIER_META[currentTier];
@@ -128,9 +113,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
 
   const renderCurrentPlan = () => (
     <View style={styles.section}>
-      <Text style={[styles.sectionLabel, { color: textSecondary }]}>
-        Current Plan
-      </Text>
+      <Text style={[styles.sectionLabel, { color: textSecondary }]}>Current Plan</Text>
       <LinearGradient
         colors={currentMeta.colors}
         start={{ x: 0, y: 0 }}
@@ -138,15 +121,11 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
         style={styles.currentPlanCard}
       >
         <View style={styles.currentPlanLeft}>
-          <View style={styles.currentPlanIconBadge}>
-            {currentMeta.icon}
-          </View>
+          <View style={styles.currentPlanIconBadge}>{currentMeta.icon}</View>
           <View>
             <Text style={styles.currentPlanTier}>{currentMeta.label}</Text>
             <Text style={styles.currentPlanSub}>
-              {currentTier === 'free'
-                ? 'Upgrade to unlock everything'
-                : 'Your plan is active'}
+              {currentTier === 'free' ? 'Upgrade to unlock everything' : 'Your plan is active'}
             </Text>
           </View>
         </View>
@@ -159,21 +138,17 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
 
   const renderBillingToggle = () => (
     <View style={[styles.toggleRow, { backgroundColor: cardBg, borderColor }]}>
-      {(['monthly', 'annual'] as const).map((period) => (
+      {(['monthly', 'annual'] as const).map(period => (
         <TouchableOpacity
           key={period}
-          style={[
-            styles.toggleOption,
-            billingPeriod === period && styles.toggleOptionActive,
-          ]}
+          style={[styles.toggleOption, billingPeriod === period && styles.toggleOptionActive]}
           onPress={() => setBillingPeriod(period)}
         >
           <Text
             style={[
               styles.toggleText,
               {
-                color:
-                  billingPeriod === period ? '#fff' : textSecondary,
+                color: billingPeriod === period ? '#fff' : textSecondary,
                 fontWeight: billingPeriod === period ? '700' : '500',
               },
             ]}
@@ -222,12 +197,8 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
             <Text style={styles.planName}>{plan.name}</Text>
           </View>
           <View style={styles.planPricing}>
-            <Text style={styles.planPrice}>
-              ${plan.price}
-            </Text>
-            <Text style={styles.planPeriod}>
-              /{plan.period === 'monthly' ? 'mo' : 'yr'}
-            </Text>
+            <Text style={styles.planPrice}>${plan.price}</Text>
+            <Text style={styles.planPeriod}>/{plan.period === 'monthly' ? 'mo' : 'yr'}</Text>
           </View>
         </LinearGradient>
 
@@ -235,17 +206,10 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
         <View style={styles.featuresList}>
           {plan.features.map((feature, i) => (
             <View key={i} style={styles.featureRow}>
-              <View
-                style={[
-                  styles.featureCheck,
-                  { backgroundColor: `${meta.colors[0]}20` },
-                ]}
-              >
+              <View style={[styles.featureCheck, { backgroundColor: `${meta.colors[0]}20` }]}>
                 <Check size={12} color={meta.colors[0]} />
               </View>
-              <Text style={[styles.featureText, { color: textPrimary }]}>
-                {feature}
-              </Text>
+              <Text style={[styles.featureText, { color: textPrimary }]}>{feature}</Text>
             </View>
           ))}
         </View>
@@ -261,20 +225,14 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
             </View>
           ) : (
             <PurchaseButton
-              label={
-                isCurrentPlan
-                  ? `Current Plan`
-                  : `Get ${plan.name}`
-              }
+              label={isCurrentPlan ? `Current Plan` : `Get ${plan.name}`}
               price={
                 plan.trialDays && !isCurrentPlan
                   ? `${plan.trialDays}-day free trial, then $${plan.price}/${plan.period === 'monthly' ? 'mo' : 'yr'}`
                   : undefined
               }
               trialBadge={
-                plan.trialDays && !isCurrentPlan
-                  ? `${plan.trialDays}-day free trial`
-                  : undefined
+                plan.trialDays && !isCurrentPlan ? `${plan.trialDays}-day free trial` : undefined
               }
               savingsBadge={plan.savings && !isCurrentPlan ? plan.savings : undefined}
               isLoading={isActivating}
@@ -298,8 +256,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
         styles.planCard,
         {
           backgroundColor: cardBg,
-          borderColor:
-            currentTier === 'free' ? TIER_META.free.colors[0] : borderColor,
+          borderColor: currentTier === 'free' ? TIER_META.free.colors[0] : borderColor,
           borderWidth: currentTier === 'free' ? 2 : 1,
         },
       ]}
@@ -323,17 +280,10 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
       <View style={styles.featuresList}>
         {FREE_FEATURES.map((feature, i) => (
           <View key={i} style={styles.featureRow}>
-            <View
-              style={[
-                styles.featureCheck,
-                { backgroundColor: '#64748b20' },
-              ]}
-            >
+            <View style={[styles.featureCheck, { backgroundColor: '#64748b20' }]}>
               <Check size={12} color="#64748b" />
             </View>
-            <Text style={[styles.featureText, { color: textPrimary }]}>
-              {feature}
-            </Text>
+            <Text style={[styles.featureText, { color: textPrimary }]}>{feature}</Text>
           </View>
         ))}
       </View>
@@ -357,9 +307,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
       <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#19c3e6" />
-          <Text style={[styles.loadingText, { color: textSecondary }]}>
-            Loading plans…
-          </Text>
+          <Text style={[styles.loadingText, { color: textSecondary }]}>Loading plans…</Text>
         </View>
       </SafeAreaView>
     );
@@ -372,42 +320,31 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: borderColor }]}>
         <View>
-          <Text style={[styles.headerTitle, { color: textPrimary }]}>
-            Choose Your Plan
-          </Text>
+          <Text style={[styles.headerTitle, { color: textPrimary }]}>Choose Your Plan</Text>
           <Text style={[styles.headerSub, { color: textSecondary }]}>
             Cancel anytime · Secure payment
           </Text>
         </View>
         {onClose && (
           <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-            <Text style={[styles.closeBtnText, { color: '#19c3e6' }]}>
-              Close
-            </Text>
+            <Text style={[styles.closeBtnText, { color: '#19c3e6' }]}>Close</Text>
           </TouchableOpacity>
         )}
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scroll}
-      >
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {/* Current plan */}
         {renderCurrentPlan()}
 
         {/* Billing toggle */}
         <View style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: textSecondary }]}>
-            Billing Period
-          </Text>
+          <Text style={[styles.sectionLabel, { color: textSecondary }]}>Billing Period</Text>
           {renderBillingToggle()}
         </View>
 
         {/* Plans */}
         <View style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: textSecondary }]}>
-            Available Plans
-          </Text>
+          <Text style={[styles.sectionLabel, { color: textSecondary }]}>Available Plans</Text>
           {currentTier === 'free' && renderFreeCard()}
           {visiblePlans.map(renderPlanCard)}
         </View>
@@ -430,9 +367,8 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
           </TouchableOpacity>
 
           <Text style={[styles.legalText, { color: textSecondary }]}>
-            Subscriptions automatically renew unless cancelled at least 24 hours
-            before the end of the current period. Manage or cancel in your
-            device Settings → Subscriptions.
+            Subscriptions automatically renew unless cancelled at least 24 hours before the end of
+            the current period. Manage or cancel in your device Settings → Subscriptions.
           </Text>
 
           <View style={styles.legalLinks}>

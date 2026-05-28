@@ -1,25 +1,25 @@
+import { AlertCircle, Search, SlidersHorizontal } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
   FlatList,
-  StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { AppText as Text } from '../common/AppText';
-import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
-import { useMemoryMonitor } from '../../hooks/useMemoryMonitor';
-import { Search, SlidersHorizontal } from 'lucide-react-native';
-import { VoiceSearch } from './VoiceSearch';
+import { useAnalytics, useDebounce, useDynamicFontSize, useMemoryMonitor } from '../../hooks';
+import { AnalyticsEvent } from '../../utils/trackingEvents';
+import { FilterField, FilterSheet, FilterValues } from './FilterSheet';
 import { SearchHistory } from './SearchHistory';
-import { FilterSheet, FilterField, FilterValues } from './FilterSheet';
 import { SearchResultCard, SearchResultItem } from './SearchResultCard';
 import { addToSearchHistory } from '../../utils/searchHistory';
+import { validateSearchQuery } from '../../utils/validation';
 import { sampleCourse } from '../../data/sampleCourse';
 import { Course } from '../../types/course';
+import { VoiceSearch } from './VoiceSearch';
 
 const DEFAULT_FILTERS: FilterField[] = [
   {
@@ -87,37 +87,45 @@ export interface MobileSearchProps {
   placeholder?: string;
 }
 
-export function MobileSearch({
+export const MobileSearch = ({
   onResultPress,
   placeholder = 'Search courses...',
-}: MobileSearchProps) {
+}: MobileSearchProps) => {
   const [query, setQuery] = useState('');
+  const [queryError, setQueryError] = useState<string | null>(null);
   const [suggestionsVisible, setSuggestionsVisible] = useState(false);
   const [filterSheetVisible, setFilterSheetVisible] = useState(false);
   const [filterValues, setFilterValues] = useState<FilterValues>({});
   const [results, setResults] = useState<SearchResultItem[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const { scale } = useDynamicFontSize();
+  const { trackEvent } = useAnalytics();
 
   useMemoryMonitor({ componentId: 'MobileSearch', itemCount: results.length });
 
+  const debouncedQuery = useDebounce(query, 300);
+
   const suggestions = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = debouncedQuery.trim().toLowerCase();
     if (!q) return SUGGESTION_KEYWORDS.slice(0, 5);
     return SUGGESTION_KEYWORDS.filter(
-      (s) => s.toLowerCase().includes(q) || q.includes(s.toLowerCase())
+      s => s.toLowerCase().includes(q) || q.includes(s.toLowerCase())
     ).slice(0, 6);
-  }, [query]);
+  }, [debouncedQuery]);
 
   const performSearch = useCallback(
     (searchQuery: string) => {
-      const trimmed = searchQuery.trim();
-      if (!trimmed) {
+      const validation = validateSearchQuery(searchQuery);
+      if (!validation.valid) {
+        setQueryError(validation.message ?? 'Invalid search query.');
         setResults([]);
-        setHasSearched(true);
+        setHasSearched(false);
         return;
       }
+      setQueryError(null);
+      const trimmed = searchQuery.trim();
       addToSearchHistory(trimmed);
+      trackEvent(AnalyticsEvent.SEARCH_QUERY, { query: trimmed, filters: filterValues });
       const filtered = filterCourse(sampleCourse, trimmed, filterValues)
         ? [courseToSearchResult(sampleCourse)]
         : [];
@@ -125,8 +133,19 @@ export function MobileSearch({
       setHasSearched(true);
       setSuggestionsVisible(false);
     },
-    [filterValues]
+    [filterValues, trackEvent]
   );
+
+  React.useEffect(() => {
+    const trimmed = debouncedQuery.trim();
+    if (trimmed) {
+      performSearch(trimmed);
+    } else {
+      setResults([]);
+      setHasSearched(false);
+    }
+  }, [debouncedQuery, performSearch]);
+
 
   const handleSubmit = useCallback(() => {
     performSearch(query);
@@ -179,27 +198,36 @@ export function MobileSearch({
             placeholder={placeholder}
             placeholderTextColor="#9CA3AF"
             value={query}
-            onChangeText={setQuery}
+            onChangeText={(text) => { setQuery(text); setQueryError(null); }}
             onFocus={() => setSuggestionsVisible(true)}
             onBlur={() => setTimeout(() => setSuggestionsVisible(false), 180)}
             onSubmitEditing={handleSubmit}
             returnKeyType="search"
           />
-          <VoiceSearch
-            compact
-            onTranscript={setQuery}
-            onTranscriptFinal={handleVoiceResult}
-          />
+          <VoiceSearch compact onTranscript={setQuery} onTranscriptFinal={handleVoiceResult} />
         </View>
         <View style={styles.actions}>
           <TouchableOpacity
             onPress={() => setFilterSheetVisible(true)}
-            style={[styles.filterBtn, Object.keys(filterValues).length > 0 && styles.filterBtnActive]}
+            style={[
+              styles.filterBtn,
+              Object.keys(filterValues).length > 0 && styles.filterBtnActive,
+            ]}
           >
-            <SlidersHorizontal size={scale(20)} color={Object.keys(filterValues).length > 0 ? '#fff' : '#6B7280'} />
+            <SlidersHorizontal
+              size={scale(20)}
+              color={Object.keys(filterValues).length > 0 ? '#fff' : '#6B7280'}
+            />
           </TouchableOpacity>
         </View>
       </View>
+
+      {queryError && (
+        <View style={styles.queryErrorRow}>
+          <AlertCircle size={scale(14)} color="#ef4444" />
+          <Text style={[styles.queryErrorText, { fontSize: scale(13) }]}>{queryError}</Text>
+        </View>
+      )}
 
       {showHistory && (
         <View style={styles.suggestSection}>
@@ -210,7 +238,7 @@ export function MobileSearch({
       {showSuggestions && query.length > 0 && suggestions.length > 0 && !showResults && (
         <View style={styles.suggestSection}>
           <Text style={styles.suggestLabel}>Suggestions</Text>
-          {suggestions.map((s) => (
+          {suggestions.map(s => (
             <TouchableOpacity
               key={s}
               style={styles.suggestItem}
@@ -226,16 +254,15 @@ export function MobileSearch({
       {showResults && (
         <View style={styles.resultsSection}>
           <Text style={styles.resultsLabel}>
-            {results.length === 0 ? 'No results' : `${results.length} result${results.length === 1 ? '' : 's'}`}
+            {results.length === 0
+              ? 'No results'
+              : `${results.length} result${results.length === 1 ? '' : 's'}`}
           </Text>
           <FlatList
             data={results}
-            keyExtractor={(item) => item.id}
+            keyExtractor={item => item.id}
             renderItem={({ item }) => (
-              <SearchResultCard
-                item={item}
-                onPress={() => onResultPress?.(item)}
-              />
+              <SearchResultCard item={item} onPress={() => onResultPress?.(item)} />
             )}
             contentContainerStyle={styles.resultsList}
             ListEmptyComponent={
@@ -255,7 +282,7 @@ export function MobileSearch({
       />
     </KeyboardAvoidingView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -347,5 +374,20 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     paddingHorizontal: 16,
     paddingTop: 8,
+  },
+  queryErrorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#fee2e2',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#fca5a5',
+  },
+  queryErrorText: {
+    color: '#dc2626',
+    flex: 1,
+    fontWeight: '500',
   },
 });

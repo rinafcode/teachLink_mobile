@@ -1,12 +1,17 @@
 import React from 'react';
 import { View, Text, Switch, TouchableOpacity } from 'react-native';
-import { useHapticFeedback } from '../../hooks/useHapticFeedback';
+import { useHapticFeedback } from '../../hooks';
 
 interface NativeToggleProps {
+  /** Current toggle state */
   value: boolean;
+  /** Callback when toggle value changes */
   onValueChange: (value: boolean) => void;
+  /** Optional label text to display */
   label?: string;
+  /** Optional description text to display below the label */
   description?: string;
+  /** Whether the toggle is disabled */
   disabled?: boolean;
   /** Hex colour for the active track. Defaults to the project's primary cyan. */
   activeTrackColor?: string;
@@ -54,14 +59,10 @@ export function NativeToggle({
       disabled={disabled}
       className={`flex-row items-center ${disabled ? 'opacity-50' : ''}`}
     >
-      <View className="flex-1 mr-3">
-        <Text className="text-[15px] font-medium text-gray-900 dark:text-white">
-          {label}
-        </Text>
+      <View className="mr-3 flex-1">
+        <Text className="text-[15px] font-medium text-gray-900 dark:text-white">{label}</Text>
         {description ? (
-          <Text className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-            {description}
-          </Text>
+          <Text className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{description}</Text>
         ) : null}
       </View>
       {switchControl}

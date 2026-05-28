@@ -4,6 +4,10 @@ import { ActivityIndicator, View } from 'react-native';
 
 const MobileQuizManager = lazy(() => import('@/src/components/mobile/MobileQuizManager'));
 
+const MobileQuizManager = lazyScreen(
+  () => import('@/src/components/mobile/MobileQuizManager')
+);
+
 export default function QuizScreen() {
   const router = useRouter();
   const { quiz, courseId, course } = useLocalSearchParams();
@@ -12,7 +16,13 @@ export default function QuizScreen() {
   const parsedCourse = course ? JSON.parse(course as string) : null;
 
   return (
-    <Suspense fallback={<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator /></View>}>
+    <Suspense
+      fallback={
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator />
+        </View>
+      }
+    >
       <MobileQuizManager
         quiz={parsedQuiz}
         courseId={courseId as string}

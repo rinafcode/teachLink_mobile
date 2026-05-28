@@ -1,20 +1,20 @@
 import { Check, X } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-    Dimensions,
-    Modal,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import Animated, {
-    runOnJS,
-    useAnimatedStyle,
-    useSharedValue,
-    withTiming,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ErrorBoundary } from '../common/ErrorBoundary';
@@ -90,7 +90,7 @@ export function FilterSheet({
 
   const close = useCallback(() => {
     translateY.value = withTiming(SHEET_HEIGHT, { duration: 220 });
-    overlayOpacity.value = withTiming(0, { duration: 220 }, (finished) => {
+    overlayOpacity.value = withTiming(0, { duration: 220 }, finished => {
       if (finished) runOnJS(onClose)();
     });
   }, [translateY, overlayOpacity, onClose]);
@@ -103,7 +103,7 @@ export function FilterSheet({
   }, [visible, values, open]);
 
   const handleSelect = useCallback((key: string, value: string) => {
-    setLocalValues((prev) => ({ ...prev, [key]: value }));
+    setLocalValues(prev => ({ ...prev, [key]: value }));
   }, []);
 
   const handleApply = useCallback(() => {
@@ -155,13 +155,13 @@ export function FilterSheet({
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            {filters.map((field) => (
+            {filters.map(field => (
               <FilterSection
                 key={field.key}
                 label={field.label}
                 options={field.options}
                 selectedValue={localValues[field.key]}
-                onSelect={(value) => handleSelect(field.key, value)}
+                onSelect={value => handleSelect(field.key, value)}
               />
             ))}
           </ScrollView>
@@ -201,7 +201,7 @@ function FilterSection({ label, options, selectedValue, onSelect }: FilterSectio
     <View style={styles.section}>
       <Text style={styles.sectionLabel}>{label}</Text>
       <View style={styles.chips}>
-        {options.map((opt) => {
+        {options.map(opt => {
           const selected = selectedValue === opt.value;
           return (
             <TouchableOpacity

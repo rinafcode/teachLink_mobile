@@ -1,15 +1,14 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 interface QuizProgressProps {
+  /** Current question number (1-indexed) */
   currentQuestion: number;
+  /** Total number of questions in the quiz */
   totalQuestions: number;
 }
 
-export default function QuizProgress({
-  currentQuestion,
-  totalQuestions,
-}: QuizProgressProps) {
+export default function QuizProgress({ currentQuestion, totalQuestions }: QuizProgressProps) {
   const progress = (currentQuestion / totalQuestions) * 100;
 
   return (

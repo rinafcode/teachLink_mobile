@@ -1,9 +1,9 @@
 name: Test Suite
 on:
   push:
-    branches: [ main, fix-issue-49-testing-suite ]
+    branches: [main, fix-issue-49-testing-suite]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   test:

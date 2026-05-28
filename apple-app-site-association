@@ -1,0 +1,23 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAMID.com.jaynomyaro.teachlink",
+        "paths": [
+          "/",
+          "/course/*",
+          "/courses",
+          "/messages/*",
+          "/learn",
+          "/achievements/*",
+          "/community/*",
+          "/profile/*",
+          "/search",
+          "/settings*",
+          "/qr-scanner"
+        ]
+      }
+    ]
+  }
+}

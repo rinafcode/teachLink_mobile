@@ -17,7 +17,8 @@ export default function TabLayout() {
           tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
           headerShown: false,
           tabBarButton: HapticTab,
-        }}>
+        }}
+      >
         <Tabs.Screen
           name="index"
           options={{
@@ -29,8 +30,10 @@ export default function TabLayout() {
           name="search"
           options={{
             title: 'Search',
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="magnifyingglass" color={color} />,
-            href: '/search'
+            tabBarIcon: ({ color }) => (
+              <IconSymbol size={28} name="magnifyingglass" color={color} />
+            ),
+            href: '/search',
           }}
         />
         <Tabs.Screen
@@ -38,7 +41,7 @@ export default function TabLayout() {
           options={{
             title: 'Profile',
             tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
-            href: '/profile/123'
+            href: '/profile/123',
           }}
         />
       </Tabs>

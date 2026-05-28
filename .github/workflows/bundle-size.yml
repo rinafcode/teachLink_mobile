@@ -1,0 +1,175 @@
+name: Bundle Size Tracking
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  bundle-size:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Android bundle
+        run: |
+          npx expo export --platform android --output-dir ./bundle-android
+        env:
+          EXPO_NO_DOTENV: 1
+
+      - name: Build iOS bundle
+        run: |
+          npx expo export --platform ios --output-dir ./bundle-ios
+        env:
+          EXPO_NO_DOTENV: 1
+
+      - name: Calculate bundle sizes
+        id: bundle_sizes
+        run: |
+          # Calculate Android bundle size
+          ANDROID_SIZE=$(du -sb ./bundle-android | cut -f1)
+          ANDROID_SIZE_MB=$(echo "scale=2; $ANDROID_SIZE / 1048576" | bc)
+          
+          # Calculate iOS bundle size
+          IOS_SIZE=$(du -sb ./bundle-ios | cut -f1)
+          IOS_SIZE_MB=$(echo "scale=2; $IOS_SIZE / 1048576" | bc)
+          
+          # Total size
+          TOTAL_SIZE=$((ANDROID_SIZE + IOS_SIZE))
+          TOTAL_SIZE_MB=$(echo "scale=2; $TOTAL_SIZE / 1048576" | bc)
+          
+          echo "android_size=$ANDROID_SIZE" >> $GITHUB_OUTPUT
+          echo "android_size_mb=$ANDROID_SIZE_MB" >> $GITHUB_OUTPUT
+          echo "ios_size=$IOS_SIZE" >> $GITHUB_OUTPUT
+          echo "ios_size_mb=$IOS_SIZE_MB" >> $GITHUB_OUTPUT
+          echo "total_size=$TOTAL_SIZE" >> $GITHUB_OUTPUT
+          echo "total_size_mb=$TOTAL_SIZE_MB" >> $GITHUB_OUTPUT
+          
+          echo "### 📦 Bundle Size Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Platform | Size (MB) | Size (bytes) |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-----------|--------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Android | ${ANDROID_SIZE_MB} | ${ANDROID_SIZE} |" >> $GITHUB_STEP_SUMMARY
+          echo "| iOS | ${IOS_SIZE_MB} | ${IOS_SIZE} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Total** | **${TOTAL_SIZE_MB}** | **${TOTAL_SIZE}** |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Download previous bundle size
+        uses: actions/cache@v4
+        with:
+          path: ./previous-bundle-size
+          key: bundle-size-${{ github.sha }}
+          restore-keys: |
+            bundle-size-
+
+      - name: Compare with previous bundle size
+        id: compare
+        run: |
+          CURRENT_TOTAL=${{ steps.bundle_sizes.outputs.total_size }}
+          
+          if [ -f "./previous-bundle-size/total_size.txt" ]; then
+            PREVIOUS_TOTAL=$(cat ./previous-bundle-size/total_size.txt)
+            DIFF=$((CURRENT_TOTAL - PREVIOUS_TOTAL))
+            DIFF_PERCENT=$(echo "scale=2; ($DIFF * 100) / $PREVIOUS_TOTAL" | bc)
+            
+            echo "previous_size=$PREVIOUS_TOTAL" >> $GITHUB_OUTPUT
+            echo "diff=$DIFF" >> $GITHUB_OUTPUT
+            echo "diff_percent=$DIFF_PERCENT" >> $GITHUB_OUTPUT
+            
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 📊 Comparison with Previous Build" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **Previous Total**: $(echo "scale=2; $PREVIOUS_TOTAL / 1048576" | bc) MB" >> $GITHUB_STEP_SUMMARY
+            echo "- **Difference**: $(echo "scale=2; $DIFF / 1048576" | bc) MB ($DIFF_PERCENT%)" >> $GITHUB_STEP_SUMMARY
+            
+            # Alert if size increased by more than 10%
+            if (( $(echo "$DIFF_PERCENT > 10" | bc -l) )); then
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "⚠️ **WARNING**: Bundle size increased by more than 10%!" >> $GITHUB_STEP_SUMMARY
+              echo "::warning::Bundle size increased by ${DIFF_PERCENT}% (from $(echo "scale=2; $PREVIOUS_TOTAL / 1048576" | bc) MB to $(echo "scale=2; $CURRENT_TOTAL / 1048576" | bc) MB)"
+            fi
+            
+            # Alert if size increased by more than 5MB
+            DIFF_MB=$(echo "scale=2; $DIFF / 1048576" | bc)
+            if (( $(echo "$DIFF_MB > 5" | bc -l) )); then
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "⚠️ **WARNING**: Bundle size increased by more than 5 MB!" >> $GITHUB_STEP_SUMMARY
+              echo "::warning::Bundle size increased by ${DIFF_MB} MB"
+            fi
+          else
+            echo "No previous bundle size found. This is the first measurement." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Save current bundle size
+        run: |
+          mkdir -p ./previous-bundle-size
+          echo "${{ steps.bundle_sizes.outputs.total_size }}" > ./previous-bundle-size/total_size.txt
+          echo "${{ steps.bundle_sizes.outputs.android_size }}" > ./previous-bundle-size/android_size.txt
+          echo "${{ steps.bundle_sizes.outputs.ios_size }}" > ./previous-bundle-size/ios_size.txt
+          echo "${{ github.sha }}" > ./previous-bundle-size/sha.txt
+
+      - name: Check bundle size limits
+        run: |
+          TOTAL_SIZE_MB=${{ steps.bundle_sizes.outputs.total_size_mb }}
+          
+          # Alert if total bundle size exceeds 50MB
+          if (( $(echo "$TOTAL_SIZE_MB > 50" | bc -l) )); then
+            echo "::warning::Total bundle size (${TOTAL_SIZE_MB} MB) exceeds 50 MB limit"
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ **WARNING**: Total bundle size (${TOTAL_SIZE_MB} MB) exceeds 50 MB limit!" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Alert if total bundle size exceeds 100MB (critical)
+          if (( $(echo "$TOTAL_SIZE_MB > 100" | bc -l) )); then
+            echo "::error::Total bundle size (${TOTAL_SIZE_MB} MB) exceeds 100 MB critical limit!"
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "🚨 **CRITICAL**: Total bundle size (${TOTAL_SIZE_MB} MB) exceeds 100 MB critical limit!" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+      - name: Comment PR with bundle size
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const androidSize = '${{ steps.bundle_sizes.outputs.android_size_mb }}';
+            const iosSize = '${{ steps.bundle_sizes.outputs.ios_size_mb }}';
+            const totalSize = '${{ steps.bundle_sizes.outputs.total_size_mb }}';
+            const previousSize = '${{ steps.compare.outputs.previous_size }}';
+            const diff = '${{ steps.compare.outputs.diff }}';
+            const diffPercent = '${{ steps.compare.outputs.diff_percent }}';
+            
+            let body = `## 📦 Bundle Size Report\n\n`;
+            body += `| Platform | Size (MB) |\n`;
+            body += `|----------|-----------|\n`;
+            body += `| Android | ${androidSize} |\n`;
+            body += `| iOS | ${iosSize} |\n`;
+            body += `| **Total** | **${totalSize}** |\n`;
+            
+            if (previousSize && diff) {
+              const diffMB = (parseFloat(diff) / 1048576).toFixed(2);
+              const diffPercentVal = parseFloat(diffPercent).toFixed(2);
+              const emoji = diff > 0 ? '📈' : '📉';
+              
+              body += `\n### ${emoji} Comparison with Base Branch\n\n`;
+              body += `- **Change**: ${diffMB} MB (${diffPercentVal}%)\n`;
+              
+              if (parseFloat(diffPercent) > 10) {
+                body += `\n⚠️ **Warning**: Bundle size increased by more than 10%!\n`;
+              }
+            }
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
