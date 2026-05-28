@@ -1,8 +1,10 @@
 import React, { createContext, ReactNode, useContext, useEffect, useRef } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
+
 import { crashReportingService } from '../../services/crashReporting';
 import { mobileAnalyticsService } from '../../services/mobileAnalytics';
-import logger from '../../utils/logger';
+import { NoiseType, PrivacyConfig } from '../../utils/differentialPrivacy';
+import { appLogger as logger } from '../../utils/logger';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 
 // ─── Analytics Context ────────────────────────────────────────────────────────
@@ -17,35 +19,41 @@ const AnalyticsContext = createContext<AnalyticsContextValue | undefined>(undefi
 
 interface AnalyticsProviderProps {
   children: ReactNode;
+  /** Override the default differential privacy configuration. */
+  privacyConfig?: Partial<PrivacyConfig>;
+  /** Noise mechanism to use ('laplace' | 'gaussian'). Defaults to 'laplace'. */
+  noiseType?: NoiseType;
 }
 
-export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({ children }) => {
+export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
+  children,
+  privacyConfig,
+  noiseType,
+}) => {
   const appState = useRef(AppState.currentState);
 
   useEffect(() => {
-    // 1. Initialize services on mount
-    logger.info('📱 [AnalyticsProvider] Initializing tracking and crash reporting...');
-    mobileAnalyticsService.init();
+    logger.infoSync('📱 [AnalyticsProvider] Initializing tracking and crash reporting...');
+
+    if (privacyConfig || noiseType) {
+      mobileAnalyticsService.setPrivacyConfig(privacyConfig ?? {}, noiseType);
+    }
+
+    mobileAnalyticsService.init(privacyConfig);
     crashReportingService.init();
 
-    // 2. Manage session lifecycle (Foreground vs. Background)
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-        // App has come to the foreground
         mobileAnalyticsService.startSession();
       } else if (appState.current === 'active' && nextAppState.match(/inactive|background/)) {
-        // App has gone to the background
         mobileAnalyticsService.endSession();
       }
       appState.current = nextAppState;
     };
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
-
-    return () => {
-      subscription.remove();
-    };
-  }, []);
+    return () => subscription.remove();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <AnalyticsContext.Provider value={{ service: mobileAnalyticsService }}>
