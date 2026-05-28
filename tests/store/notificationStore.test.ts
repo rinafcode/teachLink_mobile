@@ -15,6 +15,8 @@ describe('notificationStore', () => {
             preferences: DEFAULT_NOTIFICATION_PREFERENCES,
             notifications: [],
             unreadCount: 0,
+            lastEngagedAt: null,
+            lastNotificationSentAtByType: {},
         });
     });
 

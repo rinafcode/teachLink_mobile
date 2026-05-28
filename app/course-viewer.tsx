@@ -1,9 +1,9 @@
+import { CourseViewerSkeleton } from '@/src/components/mobile/CourseViewerSkeleton';
 import { sampleCourse } from '@/src/data/sampleCourse';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { lazy, Suspense } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import React, { Suspense } from 'react';
 
-const MobileCourseViewer = lazy(() => import('@/src/components/mobile/MobileCourseViewer'));
+const MobileCourseViewer = React.lazy(() => import('@/src/components/mobile/MobileCourseViewer'));
 
 export default function CourseViewerScreen() {
   const router = useRouter();
@@ -13,13 +13,7 @@ export default function CourseViewerScreen() {
   const viewMode = initialViewMode as 'lesson' | 'syllabus' | 'notes' | undefined;
 
   return (
-    <Suspense
-      fallback={
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator />
-        </View>
-      }
-    >
+    <Suspense fallback={<CourseViewerSkeleton />}>
       <MobileCourseViewer
         course={parsedCourse}
         initialLessonId={initialLessonId as string}

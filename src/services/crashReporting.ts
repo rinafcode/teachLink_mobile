@@ -1,6 +1,7 @@
+import { mobileAnalyticsService } from "./mobileAnalytics";
+import { sessionRestorationService } from "./sessionRestoration";
 import logger from "../utils/logger";
 import { AnalyticsEvent } from "../utils/trackingEvents";
-import { mobileAnalyticsService } from "./mobileAnalytics";
 
 /**
  * CrashReportingService manages global error tracking and exception handling.
@@ -91,6 +92,11 @@ class CrashReportingService {
       AnalyticsEvent.CRASH_REPORT,
       errorDetails,
     );
+
+    // Preserve session state so next launch can offer restoration
+    if (isFatal) {
+      sessionRestorationService.captureOnCrash();
+    }
 
     // Alert if threshold is exceeded (production alert)
     if (this.unhandledErrorCount >= this.MAX_ERRORS_THRESHOLD) {

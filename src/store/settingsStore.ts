@@ -29,6 +29,7 @@ interface SettingsState {
   fontSize: FontSize;
   autoplay: boolean;
   hapticFeedback: boolean;
+  adaptiveThemeEnabled: boolean;
 
   // Actions — Account
   setProfileVisibility: (v: ProfileVisibility) => void;
@@ -50,6 +51,7 @@ interface SettingsState {
   setFontSize: (v: FontSize) => void;
   setAutoplay: (v: boolean) => void;
   setHapticFeedback: (v: boolean) => void;
+  setAdaptiveThemeEnabled: (v: boolean) => void;
 
   // Misc
   resetSettings: () => void;
@@ -69,6 +71,7 @@ const DEFAULT_SETTINGS: Omit<SettingsState, keyof Omit<SettingsState, ProfileVis
   fontSize: 'medium' as FontSize,
   autoplay: true,
   hapticFeedback: true,
+  adaptiveThemeEnabled: false,
 };
 
 const INITIAL_STATE = {
@@ -85,6 +88,7 @@ const INITIAL_STATE = {
   fontSize: 'medium' as FontSize,
   autoplay: true,
   hapticFeedback: true,
+  adaptiveThemeEnabled: false,
 };
 
 export const useSettingsStore = create<SettingsState>()(
@@ -112,6 +116,7 @@ export const useSettingsStore = create<SettingsState>()(
       setFontSize: (v) => set({ fontSize: v }),
       setAutoplay: (v) => set({ autoplay: v }),
       setHapticFeedback: (v) => set({ hapticFeedback: v }),
+      setAdaptiveThemeEnabled: (v) => set({ adaptiveThemeEnabled: v }),
 
       resetSettings: () => set(INITIAL_STATE),
     }),

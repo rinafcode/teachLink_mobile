@@ -9,7 +9,7 @@ import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { ErrorBoundary } from './src/components/common/ErrorBoundary';
 import { initializeLogging } from './src/config/logging';
-import { AuthProvider } from './src/hooks';
+import { AuthProvider, useAdaptiveTheme } from './src/hooks';
 import AppNavigator from './src/navigation/AppNavigator';
 import { setupNotificationNavigation } from './src/navigation/linking';
 import { apiClient } from './src/services/api';
@@ -56,6 +56,7 @@ if (__DEV__) {
 
 const App = () => {
   const theme = useAppStore((state) => state.theme);
+  useAdaptiveTheme();
 
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const [appIsReady, setAppIsReady] = React.useState(false);

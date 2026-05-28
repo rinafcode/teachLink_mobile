@@ -219,6 +219,16 @@ Run `eas credentials` to set up or repair iOS/Android signing credentials.
 - Dark/light mode
 - **Isolated Component Development** via Storybook
 
+## Adaptive Notification Throttling
+
+Notification delivery now adapts to recent engagement to reduce fatigue and battery usage:
+
+- **Active users** (engaged within 24 hours): ~5 minute minimum gap per notification type.
+- **Recently inactive users** (24-72 hours): ~30 minute minimum gap per notification type.
+- **Inactive users** (72+ hours or no engagement history): ~180 minute minimum gap per notification type.
+
+Engagement is currently recorded when users open notifications. Throttling is enforced per notification type before storing foreground notifications.
+
 ## Resources
 
 - [Figma Design](https://www.figma.com/design/0RX6a19AbtemWmq8GLX1Y4/TeachLink-Project?node-id=0-1&t=gfrhW9c55Pxnfrl1-0)
@@ -286,3 +296,27 @@ EXPO_PUBLIC_ENABLE_PUSH_NOTIFICATIONS=true
 > ⚠️ Never commit your `.env` file. It is listed in `.gitignore`.
 
 See [DEPLOY.md](./DEPLOY.md) for platform-specific setup (Google Play & App Store), build profiles, troubleshooting, and security notes.
+## Analytics event throttling
+
+High-frequency analytics events (for example, carousel scroll telemetry) are tagged with:
+
+- `event_category: 'high_frequency'`
+- `event_name: '<stable_event_key>'`
+
+The mobile analytics service throttles those tagged events to **10 events/second per `event_name`**.
+This keeps behavioral trends useful while reducing analytics event volume and downstream ingestion cost.
+## WebSocket Binary Protocol
+
+Real-time socket payloads now use a protobuf-style binary envelope for `notification_created`, `course_updated`, and `message_received` events.
+
+- Outbound messages are serialized through `encodeBinaryMessage` in `src/services/socket/binaryProtocol.ts`.
+- Inbound binary messages are deserialized through `decodeBinaryMessage` with JSON fallback for unknown event types.
+- Payload reduction can be measured with `estimatePayloadReduction(event, payload)` for regression and bandwidth reporting.
+
+Protocol shape:
+- `field 1` (varint): protocol version
+- `field 2` (varint): event type id for known events
+- known event payload fields start at `field 10`
+- unknown events fallback:
+  - `field 3` (string): event name
+  - `field 4` (string): JSON payload
