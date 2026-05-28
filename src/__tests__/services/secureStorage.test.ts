@@ -5,6 +5,7 @@ import { Platform } from 'react-native';
 import * as secureStorage from '../../services/secureStorage';
 import { appLogger } from '../../utils/logger';
 
+
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
 jest.mock('expo-secure-store');
@@ -22,21 +23,30 @@ const mockAsyncStorage = AsyncStorage as jest.Mocked<typeof AsyncStorage>;
 const mockLogger = logger as jest.Mocked<typeof logger>;
 
 describe('SecureStorage - Keychain/Keystore Verification #140', () => {
-  let storedValue = '';
+  let mockStorage: Record<string, string> = {};
+
   beforeEach(async () => {
     jest.clearAllMocks();
-    storedValue = '';
-    mockSecureStore.setItemAsync.mockImplementation((key, val) => {
-      storedValue = val;
-      return Promise.resolve();
-    });
-    mockSecureStore.getItemAsync.mockImplementation(key => {
-      if (key === '__secure_storage_verification_test__') return Promise.resolve(storedValue);
-      return Promise.resolve('test_value');
-    });
-    mockSecureStore.deleteItemAsync.mockResolvedValue(undefined);
+    mockStorage = {};
     // Reset secure storage verification state
     secureStorage.__resetSecureStorageVerification__();
+
+    // Set up dynamic mock store that remembers written keys for verification cycle
+    mockSecureStore.setItemAsync.mockImplementation(async (key, val) => {
+      mockStorage[key] = val;
+      return undefined;
+    });
+    mockSecureStore.getItemAsync.mockImplementation(async key => {
+      if (key === '__secure_storage_verification_test__') {
+        return mockStorage[key] !== undefined ? mockStorage[key] : null;
+      }
+      return mockStorage[key] !== undefined ? mockStorage[key] : 'test_value';
+    });
+    mockSecureStore.deleteItemAsync.mockImplementation(async key => {
+      delete mockStorage[key];
+      return undefined;
+    });
+
     await secureStorage.initializeSecureStorage();
   });
 
@@ -156,6 +166,7 @@ describe('SecureStorage - Keychain/Keystore Verification #140', () => {
       mockSecureStore.setItemAsync.mockImplementationOnce(() =>
         Promise.reject(new Error('Keychain error'))
       );
+
 
       await expect(secureStorage.saveTokens('token', 'refresh', Date.now())).rejects.toThrow();
 
@@ -372,9 +383,7 @@ describe('SecureStorage - Keychain/Keystore Verification #140', () => {
 
   describe('✅ Error Handling & Security Logging', () => {
     it('should log critical errors for failed token operations', async () => {
-      mockSecureStore.setItemAsync.mockImplementationOnce(() =>
-        Promise.reject(new Error('Keychain blocked by system'))
-      );
+      mockSecureStore.setItemAsync.mockRejectedValueOnce(new Error('Keychain blocked by system'));
 
       try {
         await secureStorage.saveTokens('token', 'refresh', Date.now());
@@ -407,7 +416,10 @@ describe('SecureStorage - Keychain/Keystore Verification #140', () => {
 
       await secureStorage.saveTokens('token', 'refresh', Date.now());
 
-      expect(mockLogger.info).toHaveBeenCalledWith(expect.stringContaining('✅'));
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        expect.stringContaining('✅'),
+        expect.any(Object)
+      );
     });
   });
 

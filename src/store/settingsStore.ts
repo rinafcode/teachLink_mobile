@@ -122,7 +122,24 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'settings-storage',
+      version: 1,
       storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        profileVisibility: state.profileVisibility,
+        twoFactorEnabled: state.twoFactorEnabled,
+        dataSharing: state.dataSharing,
+        analyticsEnabled: state.analyticsEnabled,
+        locationServices: state.locationServices,
+        downloadOverWifiOnly: state.downloadOverWifiOnly,
+        autoDownload: state.autoDownload,
+        downloadQuality: state.downloadQuality,
+        storageLimit: state.storageLimit,
+        language: state.language,
+        fontSize: state.fontSize,
+        autoplay: state.autoplay,
+        hapticFeedback: state.hapticFeedback,
+      }),
+      migrate: (persistedState) => (persistedState ?? {}) as Partial<SettingsState>,
     }
   )
 );

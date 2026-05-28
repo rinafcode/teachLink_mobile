@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { Dimensions, ScrollView, StyleSheet, View } from 'react-native';
+import { useAnalytics } from '../../../hooks/useAnalytics';
 import { Question } from '../../../types/course';
+import { AnalyticsEvent } from '../../../utils/trackingEvents';
 import MobileQuestionCard from './MobileQuestionCard';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -25,6 +27,7 @@ export default function QuizCarousel({
   onQuestionChange,
   onAnswerSelect,
 }: QuizCarouselProps) {
+  const { trackEvent } = useAnalytics();
   const scrollViewRef = useRef<ScrollView>(null);
   const isScrollingRef = useRef(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -42,6 +45,13 @@ export default function QuizCarousel({
   const handleScroll = (event: any) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(offsetX / SCREEN_WIDTH);
+
+    trackEvent(AnalyticsEvent.PERFORMANCE_METRIC, {
+      event_category: 'high_frequency',
+      event_name: 'quiz_carousel_scroll',
+      offsetX: Math.round(offsetX),
+      index,
+    });
 
     // Clear any existing timeout
     if (scrollTimeoutRef.current) {

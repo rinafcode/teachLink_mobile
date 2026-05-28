@@ -7,9 +7,13 @@ import { AnalyticsEvent, EventProperties } from '../utils/trackingEvents';
  * (e.g., Firebase, Segment, Mixpanel) to allow for easy swaps in the future.
  */
 class MobileAnalyticsService {
+  private static readonly HIGH_FREQUENCY_EVENT_MAX_PER_SECOND = 10;
+  private static readonly HIGH_FREQUENCY_EVENT_INTERVAL_MS =
+    1000 / MobileAnalyticsService.HIGH_FREQUENCY_EVENT_MAX_PER_SECOND;
   private isInitialized: boolean = false;
   private currentSessionId: string | null = null;
   private currentScreen: string | null = null;
+  private readonly throttledEventLastSentAt = new Map<string, number>();
 
   // Critical events that must always be sent (100% volume)
   private readonly CRITICAL_EVENTS: Set<AnalyticsEvent> = new Set([
@@ -81,6 +85,9 @@ class MobileAnalyticsService {
    * @param properties Optional metadata to attach to the event.
    */
   public trackEvent(event: AnalyticsEvent, properties?: EventProperties): void {
+    if (this.shouldThrottleHighFrequencyEvent(event, properties)) {
+      return;
+    }
     // Implement sampling for non-critical events (10% rate)
     if (!this.CRITICAL_EVENTS.has(event)) {
       if (Math.random() > 0.1) {
@@ -102,6 +109,33 @@ class MobileAnalyticsService {
 
     // Here you would call the real SDK:
     // analytics().logEvent(event, payload);
+  }
+
+  private shouldThrottleHighFrequencyEvent(
+    event: AnalyticsEvent,
+    properties?: EventProperties
+  ): boolean {
+    const eventCategory = properties?.event_category;
+    if (eventCategory !== 'high_frequency') {
+      return false;
+    }
+
+    const eventName =
+      typeof properties?.event_name === 'string' && properties.event_name.trim().length > 0
+        ? properties.event_name
+        : event;
+    const now = Date.now();
+    const lastSentAt = this.throttledEventLastSentAt.get(eventName);
+
+    if (
+      typeof lastSentAt === 'number' &&
+      now - lastSentAt < MobileAnalyticsService.HIGH_FREQUENCY_EVENT_INTERVAL_MS
+    ) {
+      return true;
+    }
+
+    this.throttledEventLastSentAt.set(eventName, now);
+    return false;
   }
 
   /**

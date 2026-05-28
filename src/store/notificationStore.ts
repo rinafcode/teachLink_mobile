@@ -24,6 +24,8 @@ interface NotificationState {
   // Received notifications
   notifications: StoredNotification[];
   unreadCount: number;
+  lastEngagedAt: string | null;
+  lastNotificationSentAtByType: Partial<Record<NotificationType, string>>;
 
   // Actions - Push token
   setPushToken: (token: string | null) => void;
@@ -45,6 +47,9 @@ interface NotificationState {
   markAllAsRead: () => void;
   removeNotification: (notificationId: string) => void;
   clearAllNotifications: () => void;
+  recordEngagement: () => void;
+  shouldThrottleNotification: (type: NotificationType, now?: Date) => boolean;
+  getNotificationThrottleMinutes: (now?: Date) => number;
 
   // Helpers
   isNotificationTypeEnabled: (type: NotificationType) => boolean;
@@ -62,6 +67,8 @@ export const useNotificationStore = create<NotificationState>()(
       preferences: DEFAULT_NOTIFICATION_PREFERENCES,
       notifications: [],
       unreadCount: 0,
+      lastEngagedAt: null,
+      lastNotificationSentAtByType: {},
 
       // Push token actions
       setPushToken: (token) =>
@@ -154,6 +161,47 @@ export const useNotificationStore = create<NotificationState>()(
           unreadCount: 0,
         }),
 
+      recordEngagement: () =>
+        set({
+          lastEngagedAt: new Date().toISOString(),
+        }),
+
+      shouldThrottleNotification: (type, now = new Date()) => {
+        const state = get();
+        const thresholdMinutes = state.getNotificationThrottleMinutes(now);
+        const lastSentAt = state.lastNotificationSentAtByType[type];
+
+        if (lastSentAt) {
+          const elapsedMinutes =
+            (now.getTime() - new Date(lastSentAt).getTime()) / (1000 * 60);
+          if (elapsedMinutes < thresholdMinutes) {
+            return true;
+          }
+        }
+
+        set({
+          lastNotificationSentAtByType: {
+            ...state.lastNotificationSentAtByType,
+            [type]: now.toISOString(),
+          },
+        });
+        return false;
+      },
+
+      getNotificationThrottleMinutes: (now = new Date()) => {
+        const { lastEngagedAt } = get();
+        if (!lastEngagedAt) {
+          return 180;
+        }
+
+        const inactiveHours =
+          (now.getTime() - new Date(lastEngagedAt).getTime()) / (1000 * 60 * 60);
+
+        if (inactiveHours < 24) return 5;
+        if (inactiveHours < 72) return 30;
+        return 180;
+      },
+
       // Helpers
       isNotificationTypeEnabled: (type) => {
         const { preferences } = get();
@@ -186,6 +234,8 @@ export const useNotificationStore = create<NotificationState>()(
         preferences: state.preferences,
         notifications: state.notifications,
         unreadCount: state.unreadCount,
+        lastEngagedAt: state.lastEngagedAt,
+        lastNotificationSentAtByType: state.lastNotificationSentAtByType,
       }),
     }
   )
