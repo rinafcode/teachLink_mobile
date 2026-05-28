@@ -1,7 +1,8 @@
-import React from 'react';
 import { render, fireEvent, act } from '@testing-library/react-native';
-import { MobileSearch } from '../../src/components/mobile/MobileSearch';
+import React from 'react';
+
 import LessonCarousel from '../../src/components/mobile/LessonCarousel';
+import { MobileSearch } from '../../src/components/mobile/MobileSearch';
 
 // ── Mocks ──────────────────────────────────────────────────────────────────
 
@@ -11,18 +12,35 @@ jest.mock('lucide-react-native', () => ({
   SlidersHorizontal: () => null,
 }));
 
+const mockTrackEvent = jest.fn();
+
 // Mock only necessary hooks, require actual useDebounce / useDebounceCallback
 jest.mock('../../src/hooks', () => {
   const actual = jest.requireActual('../../src/hooks/useDebounce');
   return {
     ...actual,
     useAnalytics: () => ({
-      trackEvent: jest.fn(),
+      trackEvent: mockTrackEvent,
     }),
     useDynamicFontSize: () => ({
       scale: (x: number) => x,
     }),
-    useMemoryMonitor: jest.fn(),
+    useMemoryMonitor: () => ({
+      isHighMemory: false,
+      isCriticalMemory: false,
+    }),
+  };
+});
+
+jest.mock('../../src/hooks/useAnalytics', () => {
+  return {
+    __esModule: true,
+    default: () => ({
+      trackEvent: mockTrackEvent,
+    }),
+    useAnalytics: () => ({
+      trackEvent: mockTrackEvent,
+    }),
   };
 });
 

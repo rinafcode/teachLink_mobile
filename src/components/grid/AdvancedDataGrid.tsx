@@ -1,7 +1,6 @@
 import { ArrowDown, ArrowUp, ArrowUpDown, Filter, FilterX } from 'lucide-react-native';
 import React, { useCallback, useMemo } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   ListRenderItemInfo,
   ScrollView,
@@ -17,6 +16,7 @@ import { InlineEditing } from './InlineEditing';
 import { useDataGrid, UseDataGridOptions } from '../../hooks/useDataGrid';
 import { ColumnDef, ExportFormat, GridRow, SortConfig, SortDirection } from '../../utils/gridUtils';
 import { ErrorBoundary } from '../common/ErrorBoundary';
+import { Skeleton } from '../ui/Skeleton';
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
@@ -166,7 +166,28 @@ export const AdvancedDataGrid = <T extends GridRow = GridRow>({
             {/* Data rows */}
             {loading ? (
               <View style={styles.loadingOverlay}>
-                <ActivityIndicator size="large" color="#19c3e6" />
+                {Array.from({ length: 6 }, (_, i) => (
+                  <View
+                    key={i}
+                    style={{
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      paddingVertical: 10,
+                      paddingHorizontal: 12,
+                      backgroundColor: '#fff',
+                      borderBottomWidth: 1,
+                      borderBottomColor: '#F3F4F6',
+                    }}
+                  >
+                    {columnWidths.map((_cw, j) => (
+                      <Skeleton
+                        key={j}
+                        width={j === 0 ? 80 : j % 3 === 0 ? 100 : 70}
+                        height={14}
+                      />
+                    ))}
+                  </View>
+                ))}
               </View>
             ) : paginatedRows.length === 0 ? (
               <View style={styles.emptyState}>

@@ -10,7 +10,9 @@ import {
   Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useAnalytics } from '../../hooks/useAnalytics';
 import { Lesson, CourseProgress } from '../../types/course';
+import { AnalyticsEvent } from '../../utils/trackingEvents';
 import { useDebounceCallback } from '../../hooks';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -47,6 +49,7 @@ export default function LessonCarousel({
   onLastLessonNext,
   isLastLessonInSection = false,
 }: LessonCarouselProps) {
+  const { trackEvent } = useAnalytics();
   const scrollViewRef = useRef<ScrollView>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const progressBarWidth = useRef(new Animated.Value(0)).current;
@@ -101,6 +104,11 @@ export default function LessonCarousel({
 
   const handleScroll = (event: any) => {
     const offsetX = event.nativeEvent.contentOffset.x;
+    trackEvent(AnalyticsEvent.PERFORMANCE_METRIC, {
+      event_category: 'high_frequency',
+      event_name: 'lesson_carousel_scroll',
+      offsetX: Math.round(offsetX),
+    });
     debouncedScroll(offsetX);
   };
 

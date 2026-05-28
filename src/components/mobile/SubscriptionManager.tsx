@@ -12,6 +12,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Crown, Zap, Check, RefreshCw, ChevronRight, Star, Shield } from 'lucide-react-native';
 import { PurchaseButton } from './PurchaseButton';
+import { SubscriptionSkeleton } from './SubscriptionSkeleton';
 import { useInAppPurchase } from '../../hooks';
 import {
   SUBSCRIPTION_PLANS,
@@ -303,14 +304,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
   // ── Loading skeleton ────────────────────────────────────────────────────
 
   if (isLoading) {
-    return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#19c3e6" />
-          <Text style={[styles.loadingText, { color: textSecondary }]}>Loading plans…</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <SubscriptionSkeleton />;
   }
 
   // ── Main render ─────────────────────────────────────────────────────────

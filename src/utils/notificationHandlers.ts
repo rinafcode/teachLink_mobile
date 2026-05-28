@@ -58,6 +58,8 @@ export function handleNotificationResponse(
     return;
   }
 
+  useNotificationStore.getState().recordEngagement();
+
   // Route to appropriate handler
   switch (data.type) {
     case NotificationType.COURSE_UPDATE:
@@ -178,9 +180,17 @@ export function handleNotificationReceived(
 
   // Check if this notification type is enabled
   if (notificationData?.type) {
-    const { isNotificationTypeEnabled, addNotification } = useNotificationStore.getState();
+    const { isNotificationTypeEnabled, addNotification, shouldThrottleNotification } =
+      useNotificationStore.getState();
 
     if (!isNotificationTypeEnabled(notificationData.type)) {
+      return;
+    }
+
+    if (shouldThrottleNotification(notificationData.type)) {
+      logger.info('Notification throttled based on engagement', {
+        type: notificationData.type,
+      });
       return;
     }
 

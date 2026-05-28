@@ -1,7 +1,6 @@
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Modal,
   ScrollView,
@@ -22,6 +21,7 @@ import { useAnalytics } from "../../hooks/useAnalytics";
 import { Course, Lesson, Note } from "../../types/course";
 import { AnalyticsEvent, ScreenName } from "../../utils/trackingEvents";
 import { ErrorBoundary } from "../common/ErrorBoundary";
+import { CourseViewerSkeleton } from "./CourseViewerSkeleton";
 
 /**
  * Props for the MobileCourseViewer component
@@ -345,12 +345,7 @@ export default function MobileCourseViewer({
   );
 
   if (isLoading) {
-    return (
-      <SafeAreaView style={[styles.container, styles.centerContent]}>
-        <ActivityIndicator size="large" color="#19c3e6" />
-        <Text style={styles.loadingText}>Loading course...</Text>
-      </SafeAreaView>
-    );
+    return <CourseViewerSkeleton />;
   }
 
   const overallProgress = calculateOverallProgress();
@@ -590,16 +585,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f0f1f5',
-  },
-  centerContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingText: {
-    marginTop: 16,
-    color: '#6b7280',
-    fontSize: 16,
-    fontWeight: '500',
   },
   header: {
     paddingHorizontal: 16,
