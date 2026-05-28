@@ -9,6 +9,7 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -30,3 +31,16 @@ jobs:
 
       - name: Test
         run: npm test -- --passWithNoTests
+
+      # ==============================
+      # 🚀 PERFORMANCE BUDGET CHECKS
+      # ==============================
+
+      - name: Build App (required for bundle check)
+        run: npm run build
+
+      - name: Check Bundle Size
+        run: node scripts/checkBundleSize.js
+
+      - name: Check API Performance
+        run: node scripts/checkApiPerf.js

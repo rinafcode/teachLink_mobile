@@ -9,17 +9,19 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { AppText as Text } from '../common/AppText';
-import { useAnalytics, useDynamicFontSize, useMemoryMonitor } from '../../hooks';
-import { AnalyticsEvent } from '../../utils/trackingEvents';
+
 import { FilterField, FilterSheet, FilterValues } from './FilterSheet';
 import { SearchHistory } from './SearchHistory';
 import { SearchResultCard, SearchResultItem } from './SearchResultCard';
-import { addToSearchHistory } from '../../utils/searchHistory';
-import { validateSearchQuery } from '../../utils/validation';
-import { sampleCourse } from '../../data/sampleCourse';
-import { Course } from '../../types/course';
 import { VoiceSearch } from './VoiceSearch';
+import { sampleCourse } from '../../data/sampleCourse';
+import { useAnalytics, useDebounce, useDynamicFontSize, useMemoryMonitor } from '../../hooks';
+import { Course } from '../../types/course';
+import { addToSearchHistory } from '../../utils/searchHistory';
+import { AnalyticsEvent } from '../../utils/trackingEvents';
+import { buildTrie, Trie } from '../../utils/trie';
+import { validateSearchQuery } from '../../utils/validation';
+import { AppText as Text } from '../common/AppText';
 
 const DEFAULT_FILTERS: FilterField[] = [
   {
@@ -44,13 +46,30 @@ const DEFAULT_FILTERS: FilterField[] = [
   },
 ];
 
+/**
+ * Seed keywords for the suggestion Trie.
+ * In production these would be populated from course titles, categories, etc.
+ */
 const SUGGESTION_KEYWORDS = [
   'React Native',
   'Mobile Development',
   'Expo',
   'JavaScript',
   'beginner',
+  'Web Development',
+  'Design',
+  'intermediate',
+  'advanced',
+  'TypeScript',
+  'CSS',
+  'HTML',
+  'Node.js',
+  'Python',
+  'Machine Learning',
 ];
+
+/** Module-level Trie built once from the seed keywords (O(k) per word). */
+const suggestionTrie: Trie = buildTrie(SUGGESTION_KEYWORDS);
 
 function courseToSearchResult(course: Course): SearchResultItem {
   return {
@@ -103,13 +122,17 @@ export const MobileSearch = ({
 
   useMemoryMonitor({ componentId: 'MobileSearch', itemCount: results.length });
 
+  const debouncedQuery = useDebounce(query, 300);
+
+  /**
+   * Trie-based autocomplete — O(k + n), typically <1 ms for 10 000+ items.
+   * Falls back to top-5 suggestions when the query is empty.
+   */
   const suggestions = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return SUGGESTION_KEYWORDS.slice(0, 5);
-    return SUGGESTION_KEYWORDS.filter(
-      s => s.toLowerCase().includes(q) || q.includes(s.toLowerCase())
-    ).slice(0, 6);
-  }, [query]);
+    const q = debouncedQuery.trim();
+    if (!q) return suggestionTrie.autocomplete('', 5);
+    return suggestionTrie.autocomplete(q, 6);
+  }, [debouncedQuery]);
 
   const performSearch = useCallback(
     (searchQuery: string) => {
@@ -133,6 +156,16 @@ export const MobileSearch = ({
     },
     [filterValues, trackEvent]
   );
+
+  React.useEffect(() => {
+    const trimmed = debouncedQuery.trim();
+    if (trimmed) {
+      performSearch(trimmed);
+    } else {
+      setResults([]);
+      setHasSearched(false);
+    }
+  }, [debouncedQuery, performSearch]);
 
   const handleSubmit = useCallback(() => {
     performSearch(query);
@@ -185,7 +218,10 @@ export const MobileSearch = ({
             placeholder={placeholder}
             placeholderTextColor="#9CA3AF"
             value={query}
-            onChangeText={(text) => { setQuery(text); setQueryError(null); }}
+            onChangeText={text => {
+              setQuery(text);
+              setQueryError(null);
+            }}
             onFocus={() => setSuggestionsVisible(true)}
             onBlur={() => setTimeout(() => setSuggestionsVisible(false), 180)}
             onSubmitEditing={handleSubmit}

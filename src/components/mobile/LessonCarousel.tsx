@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Lesson, CourseProgress } from '../../types/course';
+import { useDebounceCallback } from '../../hooks';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -84,15 +85,23 @@ export default function LessonCarousel({
     }
   };
 
+  const debouncedScroll = useDebounceCallback((offsetX: number) => {
+    const index = Math.round(offsetX / SCREEN_WIDTH);
+    if (index >= 0 && index < lessons.length) {
+      setCurrentIndex((prevIndex) => {
+        if (index !== prevIndex) {
+          const lesson = lessons[index];
+          onLessonChange(lesson.id, index);
+          return index;
+        }
+        return prevIndex;
+      });
+    }
+  }, 100);
+
   const handleScroll = (event: any) => {
     const offsetX = event.nativeEvent.contentOffset.x;
-    const index = Math.round(offsetX / SCREEN_WIDTH);
-
-    if (index !== currentIndex && index >= 0 && index < lessons.length) {
-      setCurrentIndex(index);
-      const lesson = lessons[index];
-      onLessonChange(lesson.id, index);
-    }
+    debouncedScroll(offsetX);
   };
 
   const handleMomentumScrollEnd = (event: any) => {
@@ -136,7 +145,7 @@ export default function LessonCarousel({
   const lessonProgress = progress?.lessons[currentLesson.id];
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} testID="LessonCarousel">
       {/* Progress Bar */}
       <View style={styles.progressBarContainer}>
         <Animated.View style={{ width: progressBarWidth, height: '100%' }}>

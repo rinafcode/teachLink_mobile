@@ -286,3 +286,18 @@ EXPO_PUBLIC_ENABLE_PUSH_NOTIFICATIONS=true
 > ⚠️ Never commit your `.env` file. It is listed in `.gitignore`.
 
 See [DEPLOY.md](./DEPLOY.md) for platform-specific setup (Google Play & App Store), build profiles, troubleshooting, and security notes.
+## WebSocket Binary Protocol
+
+Real-time socket payloads now use a protobuf-style binary envelope for `notification_created`, `course_updated`, and `message_received` events.
+
+- Outbound messages are serialized through `encodeBinaryMessage` in `src/services/socket/binaryProtocol.ts`.
+- Inbound binary messages are deserialized through `decodeBinaryMessage` with JSON fallback for unknown event types.
+- Payload reduction can be measured with `estimatePayloadReduction(event, payload)` for regression and bandwidth reporting.
+
+Protocol shape:
+- `field 1` (varint): protocol version
+- `field 2` (varint): event type id for known events
+- known event payload fields start at `field 10`
+- unknown events fallback:
+  - `field 3` (string): event name
+  - `field 4` (string): JSON payload

@@ -1,4 +1,4 @@
-import logger from '../utils/logger';
+import { appLogger } from '../utils/logger';
 import { AnalyticsEvent, EventProperties } from '../utils/trackingEvents';
 
 /**
@@ -11,6 +11,21 @@ class MobileAnalyticsService {
   private currentSessionId: string | null = null;
   private currentScreen: string | null = null;
 
+  // Critical events that must always be sent (100% volume)
+  private readonly CRITICAL_EVENTS: Set<AnalyticsEvent> = new Set([
+    AnalyticsEvent.APP_LAUNCH,
+    AnalyticsEvent.SESSION_START,
+    AnalyticsEvent.SESSION_END,
+    AnalyticsEvent.AUTH_LOGIN,
+    AnalyticsEvent.AUTH_LOGOUT,
+    AnalyticsEvent.COURSE_STARTED,
+    AnalyticsEvent.COURSE_COMPLETED,
+    AnalyticsEvent.QUIZ_STARTED,
+    AnalyticsEvent.QUIZ_COMPLETED,
+    AnalyticsEvent.API_ERROR,
+    AnalyticsEvent.CRASH_REPORT,
+  ]);
+
   /**
    * Initialize the analytics SDK.
    * This is where you would call Firebase.initializeApp() or similar.
@@ -21,12 +36,12 @@ class MobileAnalyticsService {
     try {
       // In a real implementation:
       // await analytics().setAnalyticsCollectionEnabled(true);
-      
+
       this.isInitialized = true;
       this.startSession();
-      logger.info('MobileAnalytics: Initialized successfully');
+      appLogger.info('MobileAnalytics: Initialized successfully');
     } catch (error) {
-      logger.error('MobileAnalytics: Failed to initialize', error);
+      appLogger.error('MobileAnalytics: Failed to initialize', error);
     }
   }
 
@@ -36,13 +51,13 @@ class MobileAnalyticsService {
   public startSession(): void {
     const timestamp = Date.now();
     this.currentSessionId = `sess_${timestamp}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     this.trackEvent(AnalyticsEvent.SESSION_START, {
       sessionId: this.currentSessionId,
       timestamp,
     });
-    
-    logger.debug(`MobileAnalytics: Session started [${this.currentSessionId}]`);
+
+    appLogger.debug(`MobileAnalytics: Session started [${this.currentSessionId}]`);
   }
 
   /**
@@ -57,7 +72,7 @@ class MobileAnalyticsService {
     });
 
     this.currentSessionId = null;
-    logger.debug('MobileAnalytics: Session ended');
+    appLogger.debug('MobileAnalytics: Session ended');
   }
 
   /**
@@ -66,6 +81,14 @@ class MobileAnalyticsService {
    * @param properties Optional metadata to attach to the event.
    */
   public trackEvent(event: AnalyticsEvent, properties?: EventProperties): void {
+    // Implement sampling for non-critical events (10% rate)
+    if (!this.CRITICAL_EVENTS.has(event)) {
+      if (Math.random() > 0.1) {
+        appLogger.debug(`📊 [Analytics] Event: ${event} skipped due to sampling`);
+        return;
+      }
+    }
+
     const payload = {
       ...properties,
       screen: this.currentScreen,
@@ -75,7 +98,7 @@ class MobileAnalyticsService {
     };
 
     // Log to console/Metro for development visibility
-    logger.info(`📊 [Analytics] Event: ${event}`, JSON.stringify(payload, null, 2));
+    appLogger.info(`📊 [Analytics] Event: ${event}`, JSON.stringify(payload, null, 2));
 
     // Here you would call the real SDK:
     // analytics().logEvent(event, payload);
@@ -96,14 +119,14 @@ class MobileAnalyticsService {
       timestamp: new Date().toISOString(),
     };
 
-    logger.info(`📱 [Analytics] Screen View: ${screenName}`, payload);
+    appLogger.info(`📱 [Analytics] Screen View: ${screenName}`, payload);
 
     // Real SDK implementation:
     // analytics().logScreenView({
     //   screen_name: screenName,
     //   screen_class: screenName,
     // });
-    
+
     // Also track as a generic event for providers that don't have logScreenView
     this.trackEvent(AnalyticsEvent.SCREEN_VIEW, {
       screen: screenName,
@@ -123,7 +146,7 @@ class MobileAnalyticsService {
       ...properties,
     };
 
-    logger.info(`⏱️ [Analytics] Performance: ${name} = ${value}ms`, payload);
+    appLogger.info(`⏱️ [Analytics] Performance: ${name} = ${value}ms`, payload);
 
     this.trackEvent(AnalyticsEvent.PERFORMANCE_METRIC, payload);
   }
@@ -134,8 +157,8 @@ class MobileAnalyticsService {
    * @param userProperties Key-value pairs of user traits.
    */
   public async identifyUser(userId: string, userProperties?: EventProperties): Promise<void> {
-    logger.info(`👤 [Analytics] Identify User: ${userId}`, userProperties);
-    
+    appLogger.info(`👤 [Analytics] Identify User: ${userId}`, userProperties);
+
     // Real SDK implementation:
     // await analytics().setUserId(userId);
     // if (userProperties) await analytics().setUserProperties(userProperties);
@@ -145,7 +168,7 @@ class MobileAnalyticsService {
    * Clear user identity (on logout).
    */
   public async resetUser(): Promise<void> {
-    logger.info('👤 [Analytics] Reset User identity');
+    appLogger.info('👤 [Analytics] Reset User identity');
     // await analytics().setUserId(null);
   }
 }
