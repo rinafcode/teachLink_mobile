@@ -117,6 +117,7 @@ For quarterly planning guide, see [PERFORMANCE_AUDIT_QUARTERLY.md](./PERFORMANCE
 - Full documentation: [src/audit/README.md](./src/audit/README.md)
 - Quarterly process guide: [PERFORMANCE_AUDIT_QUARTERLY.md](./PERFORMANCE_AUDIT_QUARTERLY.md)
 - Detailed analyzer docs in `src/audit/analyzers/`
+- Batch import/export processing: [docs/batch-processing.md](./docs/batch-processing.md)
 
 ## Logging
 

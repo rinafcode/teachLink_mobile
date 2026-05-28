@@ -22,5 +22,7 @@ export * from './SettingsSkeleton';
 export * from './StatisticsDisplay';
 export * from './SubscriptionSkeleton';
 export * from './VoiceSearch';
+export * from './VirtualList';
+export * from './InfiniteVirtualList';
 export * from './SwipeableRow';
 export * from './SwipeableCoordinator';

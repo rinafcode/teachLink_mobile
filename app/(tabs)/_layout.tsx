@@ -13,6 +13,8 @@ export default function TabLayout() {
   return (
     <ErrorBoundary boundaryName="TabsLayout">
       <Tabs
+        // Keep all tab screens mounted so state and scroll positions survive tab switches
+        detachInactiveScreens={false}
         screenOptions={{
           tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
           headerShown: false,
@@ -33,7 +35,6 @@ export default function TabLayout() {
             tabBarIcon: ({ color }) => (
               <IconSymbol size={28} name="magnifyingglass" color={color} />
             ),
-            href: '/search',
           }}
         />
         <Tabs.Screen
@@ -41,7 +42,6 @@ export default function TabLayout() {
           options={{
             title: 'Profile',
             tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
-            href: '/profile/123',
           }}
         />
       </Tabs>
