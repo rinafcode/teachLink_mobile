@@ -1,4 +1,5 @@
 export * from './AchievementBadges';
+export * from './CommentSection';
 export * from './AvatarCamera';
 export * from './CourseCardSkeleton';
 export * from './CourseViewerSkeleton';
@@ -22,5 +23,3 @@ export * from './SettingsSkeleton';
 export * from './StatisticsDisplay';
 export * from './SubscriptionSkeleton';
 export * from './VoiceSearch';
-export * from './SwipeableRow';
-export * from './SwipeableCoordinator';
