@@ -617,10 +617,10 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
           </View>
 
           {/* Quick stats strip */}
-          <View style={[styles.statsStrip, { backgroundColor: cardBg, borderColor }]}>
+          <View style={styles.statsStrip, { backgroundColor: cardBg, borderColor }]}>
             {stripItems.map((s, i) => (
               <View
-                key={i}
+                key={`stat-${i}-${s.label}`}
                 style={[
                   styles.statCell,
                   i < stripItems.length - 1 && {
@@ -783,7 +783,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                       value: profile.website || 'Not set',
                     },
                   ].map((item, i) => (
-                    <View key={i} style={[styles.detailRow, { borderBottomColor: borderColor }]}>
+                    <View key={`detail-${i}-${item.label}`} style={[styles.detailRow, { borderBottomColor: borderColor }]}>
                       <View style={styles.detailIconLabel}>
                         {item.icon}
                         <Text style={[styles.detailLabel, { color: textSecondary }]}>

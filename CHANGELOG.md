@@ -1,3 +1,23 @@
+# [1.4.0](https://github.com/rinafcode/teachLink_mobile/compare/v1.3.0...v1.4.0) (2026-05-29)
+
+
+### Bug Fixes
+
+* **#261:** wire isSlowConnection to video quality adaptation ([59d4958](https://github.com/rinafcode/teachLink_mobile/commit/59d49580e92497052d50ef0d32973745ca1c240d)), closes [#261](https://github.com/rinafcode/teachLink_mobile/issues/261)
+
+
+### Features
+
+* add useFormValidation hook with 300ms debounce ([#351](https://github.com/rinafcode/teachLink_mobile/issues/351)) ([d4f3e64](https://github.com/rinafcode/teachLink_mobile/commit/d4f3e64e44c990245b61f34f66f09f52f4337ac8))
+* added smart preloading of next likely screens ([dad22cb](https://github.com/rinafcode/teachLink_mobile/commit/dad22cbdc7ffe961b5707472f25be9bd935a0390))
+* **components:** error boundary with automatic retry and exponential backoff ([8ced93b](https://github.com/rinafcode/teachLink_mobile/commit/8ced93bd4dc1ceb284b2283e54a52f15e553987f)), closes [#376](https://github.com/rinafcode/teachLink_mobile/issues/376)
+* **devtools:** add in-app memory profiling overlay for development ([4be8119](https://github.com/rinafcode/teachLink_mobile/commit/4be81194401f7f77004cfa409b4f2b9a53f8c82d)), closes [#378](https://github.com/rinafcode/teachLink_mobile/issues/378)
+
+
+### Performance Improvements
+
+* lazy routes with Suspense and error boundaries ([574494e](https://github.com/rinafcode/teachLink_mobile/commit/574494ecbb096ba23ff171d09e3bd55d1d8224fb)), closes [#377](https://github.com/rinafcode/teachLink_mobile/issues/377)
+
 # [1.3.0](https://github.com/rinafcode/teachLink_mobile/compare/v1.2.0...v1.3.0) (2026-05-29)
 
 

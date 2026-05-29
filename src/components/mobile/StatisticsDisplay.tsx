@@ -17,7 +17,7 @@ export const StatisticsDisplay: React.FC<StatisticsDisplayProps> = ({ statistics
       {statistics && statistics.length > 0 ? (
         <View style={styles.statsGrid}>
           {statistics.map((stat, index) => (
-            <View key={index} style={styles.statItem}>
+            <View key={`stat-${index}-${stat.label}`} style={styles.statItem}>
               <Text style={styles.statValue}>{stat.value}</Text>
               <Text style={styles.statLabel}>{stat.label}</Text>
             </View>

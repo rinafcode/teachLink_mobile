@@ -1,7 +1,7 @@
 {
   "name": "teachlink_mobile",
   "main": "expo-router/entry",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
@@ -29,6 +29,8 @@
     "deploy:both": "bash ./scripts/deploy-both.sh",
     "deploy:preview": "bash ./scripts/deploy-preview.sh",
     "prepare": "husky",
+    "fonts:subset": "node ./scripts/subset-fonts.js",
+    "fonts:analyze": "node ./scripts/analyze-fonts.js",
     "audit": "npm audit --audit-level=high",
     "depcheck": "depcheck",
     "audit:performance": "tsx src/audit/cli.ts",
