@@ -1,17 +1,22 @@
 import React from 'react';
 import {
   TouchableOpacity,
-  TouchableOpacityProps,
   StyleSheet,
   ViewStyle,
   StyleProp,
+  GestureResponderEvent,
 } from 'react-native';
 import { getAccessibilityProps } from '../../utils/accessibility';
 
 /**
- * Props for the AccessibleButton component
+ * Explicit props for the AccessibleButton component.
+ *
+ * NOTE: Do NOT reintroduce `{...rest}` or generic prop spreading here.
+ * If you need an additional TouchableOpacity prop, add it explicitly to this
+ * interface and thread it through to <TouchableOpacity> below.
+ * See docs/prop-patterns.md.
  */
-interface AccessibleButtonProps extends TouchableOpacityProps {
+interface AccessibleButtonProps {
   /** Accessibility label for screen readers */
   label: string;
   /** Additional accessibility hint for screen readers */
@@ -20,6 +25,20 @@ interface AccessibleButtonProps extends TouchableOpacityProps {
   role?: 'button' | 'link';
   /** Optional custom styles for the button container */
   containerStyle?: StyleProp<ViewStyle>;
+  /** Style applied to the TouchableOpacity */
+  style?: StyleProp<ViewStyle>;
+  /** Button content */
+  children?: React.ReactNode;
+  /** Whether the button is disabled */
+  disabled?: boolean;
+  /** Opacity when pressed. Defaults to 0.7 */
+  activeOpacity?: number;
+  /** Press handler */
+  onPress?: (event: GestureResponderEvent) => void;
+  /** Long-press handler */
+  onLongPress?: (event: GestureResponderEvent) => void;
+  /** Test identifier for automated tests */
+  testID?: string;
 }
 
 /**
@@ -35,19 +54,23 @@ export const AccessibleButton: React.FC<AccessibleButtonProps> = ({
   containerStyle,
   disabled,
   activeOpacity = 0.7,
-  ...rest
-}: AccessibleButtonProps) => {
+  onPress,
+  onLongPress,
+  testID,
+}) => {
   const accessibilityProps = getAccessibilityProps(label, role as 'button' | 'link', hint, {
     disabled: !!disabled,
   });
 
   return (
     <TouchableOpacity
-      {...rest}
-      {...accessibilityProps}
+      onPress={onPress}
+      onLongPress={onLongPress}
       disabled={disabled}
       activeOpacity={activeOpacity}
+      testID={testID}
       style={[styles.base, containerStyle, style]}
+      {...accessibilityProps}
     >
       {children}
     </TouchableOpacity>

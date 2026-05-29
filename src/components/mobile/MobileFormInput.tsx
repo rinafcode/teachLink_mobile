@@ -1,19 +1,36 @@
 import React, { useState } from 'react';
-import { View, TextInput, TextInputProps, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  View,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  KeyboardTypeOptions,
+  ReturnKeyTypeOptions,
+  AutoCapitalize,
+  NativeSyntheticEvent,
+  TextInputSubmitEditingEventData,
+} from 'react-native';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react-native';
 import { AppText as Text } from '../common/AppText';
 import { useDynamicFontSize } from '../../hooks';
 
 /**
- * Props for the MobileFormInput component
+ * Explicit props for the MobileFormInput component.
+ *
+ * NOTE: Do NOT reintroduce `{...rest}` or generic prop spreading here.
+ * If you need an additional TextInput prop, add it explicitly to this interface
+ * and thread it through to <TextInput> below.
+ * See docs/prop-patterns.md.
  */
-interface MobileFormInputProps extends TextInputProps {
+interface MobileFormInputProps {
   /** Label text for the input field */
   label: string;
   /** Current value of the input */
   value: string;
   /** Callback when the input value changes */
   onChangeText: (text: string) => void;
+  /** Placeholder text shown when input is empty */
+  placeholder?: string;
   /** Error message to display */
   error?: string;
   /** Hint text to display next to the label */
@@ -24,6 +41,32 @@ interface MobileFormInputProps extends TextInputProps {
   required?: boolean;
   /** Whether to use dark mode styling */
   isDark?: boolean;
+  /** Show as a password field with visibility toggle */
+  secureTextEntry?: boolean;
+  /** Allow multiple lines of text */
+  multiline?: boolean;
+  /** Keyboard type for the input */
+  keyboardType?: KeyboardTypeOptions;
+  /** Auto-capitalisation behaviour */
+  autoCapitalize?: AutoCapitalize;
+  /** Whether auto-correction is enabled */
+  autoCorrect?: boolean;
+  /** Auto-complete type hint for the OS */
+  autoComplete?: React.ComponentProps<typeof TextInput>['autoComplete'];
+  /** Return key label on the software keyboard */
+  returnKeyType?: ReturnKeyTypeOptions;
+  /** Callback when the user presses the return key */
+  onSubmitEditing?: (
+    event: NativeSyntheticEvent<TextInputSubmitEditingEventData>
+  ) => void;
+  /** Maximum character length */
+  maxLength?: number;
+  /** Whether the input is editable */
+  editable?: boolean;
+  /** Test identifier for automated tests */
+  testID?: string;
+  /** Accessibility label for screen readers */
+  accessibilityLabel?: string;
 }
 
 export const MobileFormInput: React.FC<MobileFormInputProps> = ({
@@ -39,7 +82,15 @@ export const MobileFormInput: React.FC<MobileFormInputProps> = ({
   secureTextEntry,
   multiline = false,
   keyboardType = 'default',
-  ...rest
+  autoCapitalize,
+  autoCorrect,
+  autoComplete,
+  returnKeyType,
+  onSubmitEditing,
+  maxLength,
+  editable,
+  testID,
+  accessibilityLabel,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -98,7 +149,15 @@ export const MobileFormInput: React.FC<MobileFormInputProps> = ({
           secureTextEntry={isPassword && !showPassword}
           multiline={multiline}
           keyboardType={keyboardType}
-          {...rest}
+          autoCapitalize={autoCapitalize}
+          autoCorrect={autoCorrect}
+          autoComplete={autoComplete}
+          returnKeyType={returnKeyType}
+          onSubmitEditing={onSubmitEditing}
+          maxLength={maxLength}
+          editable={editable}
+          testID={testID}
+          accessibilityLabel={accessibilityLabel}
         />
 
         {isPassword && (
