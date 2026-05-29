@@ -27,6 +27,17 @@ export enum AnalyticsEvent {
   PERFORMANCE_METRIC = 'performance_metric',
   API_ERROR = 'api_error',
   CRASH_REPORT = 'crash_report',
+
+  // OTA Update Events
+  UPDATE_CHECK_STARTED = 'update_check_started',
+  UPDATE_AVAILABLE = 'update_available',
+  UPDATE_NOT_AVAILABLE = 'update_not_available',
+  UPDATE_DOWNLOAD_STARTED = 'update_download_started',
+  UPDATE_DOWNLOAD_COMPLETE = 'update_download_complete',
+  UPDATE_DOWNLOAD_FAILED = 'update_download_failed',
+  UPDATE_APPLIED = 'update_applied',
+  UPDATE_DISMISSED = 'update_dismissed',
+  UPDATE_CHECK_FAILED = 'update_check_failed',
 }
 
 /**

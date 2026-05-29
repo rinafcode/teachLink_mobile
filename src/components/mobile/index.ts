@@ -15,5 +15,6 @@ export * from "./SearchResultCard";
 export * from "./SettingsPicker";
 export * from "./SettingsSection";
 export * from "./StatisticsDisplay";
+export * from "./UpdatePrompt";
+export * from "./UpdateProvider";
 export * from "./VoiceSearch";
-

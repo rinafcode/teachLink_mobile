@@ -115,6 +115,15 @@ async function setupAndroidNotificationChannels(): Promise<void> {
     vibrationPattern: [0, 250],
     lightColor: '#EC4899',
   });
+
+  // App updates channel
+  await Notifications.setNotificationChannelAsync('app-updates', {
+    name: 'App Updates',
+    description: 'Notifications about new app versions and updates',
+    importance: Notifications.AndroidImportance.HIGH,
+    vibrationPattern: [0, 250, 250, 250],
+    lightColor: '#19c3e6',
+  });
 }
 
 /**
