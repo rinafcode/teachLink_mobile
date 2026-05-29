@@ -8,6 +8,7 @@ import './global.css';
 import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { ErrorBoundary } from './src/components/common/ErrorBoundary';
+import { requireEnvVariables } from './src/config';
 import { initializeLogging } from './src/config/logging';
 import { AuthProvider, useAdaptiveTheme } from './src/hooks';
 import AppNavigator from './src/navigation/AppNavigator';
@@ -16,18 +17,18 @@ import { apiClient } from './src/services/api';
 import { crashReportingService } from './src/services/cashReporting';
 import { mobileAuthService } from './src/services/mobileAuth';
 import {
-  addNotificationReceivedListener,
-  getLastNotificationResponse,
-  removeNotificationListener,
+    addNotificationReceivedListener,
+    getLastNotificationResponse,
+    removeNotificationListener,
 } from './src/services/pushNotifications';
 import { requestQueue } from './src/services/requestQueue';
 import socketService from './src/services/socket';
 import syncService from './src/services/syncService';
 import { useAppStore } from './src/store';
 import { handleCacheVersionUpdate } from './src/utils/cacheVersioning';
-import { requireEnvVariables } from './src/utils/env';
 import { appLogger } from './src/utils/logger';
 import { handleNotificationReceived } from './src/utils/notificationHandlers';
+import { prefetchExternalResources } from './src/utils/resourceHints';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -38,6 +39,9 @@ const SHOW_STORYBOOK = process.env.EXPO_PUBLIC_STORYBOOK === 'true';
 
 // Centralized structured logging initialized on startup
 requireEnvVariables();
+
+// Preconnect to API hosts and external resources
+prefetchExternalResources();
 
 // Initialize centralized logging on app start
 initializeLogging().catch(err => {
