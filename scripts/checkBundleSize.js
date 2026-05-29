@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 
-
 const budget = require('../performance-budget.json');
 
 const possibleBuilds = ['dist', 'build', '.next'];

@@ -5,11 +5,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import type {
-    ExecutiveSummary,
-    PerformanceAuditReport,
-    Recommendation,
-} from './types';
+import type { ExecutiveSummary, PerformanceAuditReport, Recommendation } from './types';
 
 export class ReportGenerator {
   /**
@@ -522,7 +518,12 @@ export class ReportGenerator {
     const medium = recommendations.filter(r => r.severity === 'MEDIUM');
     const low = recommendations.filter(r => r.severity === 'LOW');
 
-    for (const [severity, recs] of [['CRITICAL', critical], ['HIGH', high], ['MEDIUM', medium], ['LOW', low]]) {
+    for (const [severity, recs] of [
+      ['CRITICAL', critical],
+      ['HIGH', high],
+      ['MEDIUM', medium],
+      ['LOW', low],
+    ]) {
       if ((recs as any[]).length === 0) continue;
 
       md += `### ${severity} Priority (${(recs as any[]).length})\n\n`;
@@ -560,17 +561,24 @@ export class ReportGenerator {
                     <div class="metric-value">${(bundleAnalysis.gzipSize / 1000).toFixed(0)}KB</div>
                 </div>
             </div>
-            ${bundleAnalysis.largeFiles.length > 0 ? `
+            ${
+              bundleAnalysis.largeFiles.length > 0
+                ? `
             <h3>Largest Files</h3>
             <table>
                 <thead><tr><th>File</th><th>Size</th></tr></thead>
                 <tbody>
-                    ${bundleAnalysis.largeFiles.slice(0, 10).map(f =>
-                    `<tr><td>${f.path}</td><td>${(f.size / 1000).toFixed(0)}KB</td></tr>`
-                  ).join('')}
+                    ${bundleAnalysis.largeFiles
+                      .slice(0, 10)
+                      .map(
+                        f => `<tr><td>${f.path}</td><td>${(f.size / 1000).toFixed(0)}KB</td></tr>`
+                      )
+                      .join('')}
                 </tbody>
             </table>
-            ` : ''}
+            `
+                : ''
+            }
         </div>`;
   }
 
@@ -663,18 +671,29 @@ export class ReportGenerator {
             <p>Total recommendations: <strong>${recommendations.length}</strong></p>
             
             <div class="score-card">
-                ${critical > 0 ? `<div class="card critical">
+                ${
+                  critical > 0
+                    ? `<div class="card critical">
                     <h3>Critical</h3>
                     <div class="value">${critical}</div>
-                </div>` : ''}
-                ${high > 0 ? `<div class="card high">
+                </div>`
+                    : ''
+                }
+                ${
+                  high > 0
+                    ? `<div class="card high">
                     <h3>High</h3>
                     <div class="value">${high}</div>
-                </div>` : ''}
+                </div>`
+                    : ''
+                }
             </div>
             
             <div class="recommendations">
-                ${recommendations.slice(0, 15).map(rec => `
+                ${recommendations
+                  .slice(0, 15)
+                  .map(
+                    rec => `
                 <div class="recommendation-item">
                     <h4>${rec.title}</h4>
                     <p>${rec.description}</p>
@@ -682,7 +701,9 @@ export class ReportGenerator {
                     <span class="severity-badge" style="background: #9b59b6; color: white;">Effort: ${rec.effort}</span>
                     <div class="effort">Impact: ${rec.impact}</div>
                 </div>
-                `).join('')}
+                `
+                  )
+                  .join('')}
             </div>
         </div>`;
   }

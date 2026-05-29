@@ -2,7 +2,7 @@
 
 This directory contains deployment scripts for the TeachLink mobile app using Expo Application Services (EAS).
 
-> For the full deployment guide, see [DEPLOY.md](./DEPLOY.md)  
+> For the full deployment guide, see [DEPLOY.md](./DEPLOY.md)
 
 ## Available Scripts
 

@@ -61,6 +61,7 @@
     "expo-av": "^16.0.8",
     "expo-barcode-scanner": "~12.0.0",
     "expo-battery": "^55.0.13",
+    "expo-build-properties": "^56.0.16",
     "expo-constants": "~18.0.13",
     "expo-device": "~8.0.10",
     "expo-font": "~14.0.11",
@@ -101,6 +102,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
+    "@jest/globals": "^29.7.0",
     "@lhci/cli": "^0.15.1",
     "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^13.3.3",
@@ -108,7 +110,6 @@
     "@types/babel__generator": "^7.27.0",
     "@types/babel__template": "^7.4.4",
     "@types/babel__traverse": "^7.28.0",
-    "@jest/globals": "^29.7.0",
     "@types/jest": "29.5.14",
     "@types/node": "^25.0.10",
     "@types/react": "~19.1.0",

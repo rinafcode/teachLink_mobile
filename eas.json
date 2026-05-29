@@ -20,7 +20,11 @@
         "autoIncrement": true
       },
       "android": {
-        "autoIncrement": true
+        "autoIncrement": true,
+        "buildType": "apk"
+      },
+      "env": {
+        "NODE_ENV": "production"
       },
       "channel": "production"
     }

@@ -72,10 +72,7 @@ function analyzeRouteChunkSizes(graph) {
     if (modulePath.includes('node_modules')) continue;
     if (!/\.(tsx?|jsx?)$/.test(modulePath)) continue;
 
-    const { bytes, moduleCount } = computeRouteSyncChunkSize(
-      modulePath,
-      graph.dependencies,
-    );
+    const { bytes, moduleCount } = computeRouteSyncChunkSize(modulePath, graph.dependencies);
 
     const route = path.relative(projectRoot, modulePath);
     const exceeds = bytes > ROUTE_SIZE_THRESHOLD;
@@ -87,7 +84,7 @@ function analyzeRouteChunkSizes(graph) {
         `\n⚠️   [auto-split] Route chunk exceeds 100 KB threshold\n` +
           `    Route     : ${route}\n` +
           `    Sync size : ${kb} KB  (${moduleCount} modules)\n` +
-          `    Fix       : use React.lazy() for heavy component imports\n`,
+          `    Fix       : use React.lazy() for heavy component imports\n`
       );
     }
   }
@@ -104,8 +101,8 @@ function analyzeRouteChunkSizes(graph) {
           routes: results,
         },
         null,
-        2,
-      ),
+        2
+      )
     );
   } catch {
     // Non-fatal: report write failure must not break the build
@@ -121,12 +118,7 @@ function analyzeRouteChunkSizes(graph) {
  * @returns {Function}
  */
 function wrapWithRouteSizeAnalyzer(existingSerializer) {
-  return async function routeSizeAnalyzerSerializer(
-    entryPoint,
-    preModules,
-    graph,
-    options,
-  ) {
+  return async function routeSizeAnalyzerSerializer(entryPoint, preModules, graph, options) {
     try {
       analyzeRouteChunkSizes(graph);
     } catch (err) {
@@ -142,10 +134,10 @@ function wrapWithRouteSizeAnalyzer(existingSerializer) {
     // No upstream serializer — call Metro's built-in bundler directly.
     // These module paths are stable across Metro 0.76–0.82 (Expo SDK 50–54).
     const { default: baseJSBundle } = require('metro/src/DeltaBundler/Serializers/baseJSBundle');
-    const { default: bundleToString } = require('metro/src/DeltaBundler/Serializers/bundleToString');
-    const { code } = bundleToString(
-      baseJSBundle(entryPoint, preModules, graph, options),
-    );
+    const {
+      default: bundleToString,
+    } = require('metro/src/DeltaBundler/Serializers/bundleToString');
+    const { code } = bundleToString(baseJSBundle(entryPoint, preModules, graph, options));
     return code;
   };
 }
@@ -218,7 +210,7 @@ const nativewindConfig = withNativeWind(config, { input: './global.css' });
 // Inject the route size analysis observer into the serializer chain.
 nativewindConfig.serializer ??= {};
 nativewindConfig.serializer.customSerializer = wrapWithRouteSizeAnalyzer(
-  nativewindConfig.serializer.customSerializer,
+  nativewindConfig.serializer.customSerializer
 );
 
 module.exports = nativewindConfig;

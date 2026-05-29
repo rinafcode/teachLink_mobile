@@ -190,11 +190,7 @@ export const AdvancedDataGrid = <T extends GridRow = GridRow>({
                     }}
                   >
                     {columnWidths.map((_cw, j) => (
-                      <Skeleton
-                        key={j}
-                        width={j === 0 ? 80 : j % 3 === 0 ? 100 : 70}
-                        height={14}
-                      />
+                      <Skeleton key={j} width={j === 0 ? 80 : j % 3 === 0 ? 100 : 70} height={14} />
                     ))}
                   </View>
                 ))}

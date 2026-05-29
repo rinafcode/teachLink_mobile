@@ -9,7 +9,7 @@ const meta = {
   title: 'Example/Button',
   component: Button,
   decorators: [
-    (Story) => (
+    Story => (
       <View style={{ flex: 1, alignItems: 'flex-start' }}>
         <Story />
       </View>

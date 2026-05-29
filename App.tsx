@@ -35,7 +35,6 @@ SplashScreen.preventAutoHideAsync();
 // SHOW_STORYBOOK flag based on environment variable
 const SHOW_STORYBOOK = process.env.EXPO_PUBLIC_STORYBOOK === 'true';
 
-
 // Centralized structured logging initialized on startup
 requireEnvVariables();
 
@@ -56,7 +55,7 @@ if (__DEV__) {
 }
 
 const App = () => {
-  const theme = useAppStore((state) => state.theme);
+  const theme = useAppStore(state => state.theme);
   useAdaptiveTheme();
 
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
@@ -98,7 +97,7 @@ const App = () => {
     crashReportingService.init();
 
     // Initialize secure storage (Keychain/Keystore) for encrypted token storage
-    initializeSecureStorage().catch((error) => {
+    initializeSecureStorage().catch(error => {
       logger.error('Failed to initialize secure storage:', error);
       // Continue app startup even if secure storage init fails
       // (user will be prompted to re-authenticate if needed)
@@ -121,7 +120,7 @@ const App = () => {
     socketService.connect();
 
     // Initialize push notifications: request permissions and get device token
-    registerForPushNotifications().then(async (token) => {
+    registerForPushNotifications().then(async token => {
       if (token) {
         const { setPushToken, setTokenRegistered } = useNotificationStore.getState();
         setPushToken(token);
