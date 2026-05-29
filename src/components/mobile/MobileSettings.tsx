@@ -38,8 +38,9 @@ import {
 import { useTheme, useAppStore } from '../../store';
 import { useNotificationStore } from '../../store/notificationStore';
 import { useSettingsStore, ProfileVisibility, DownloadQuality } from '../../store/settingsStore';
-import { useBiometricAuth } from '../../hooks/useBiometricAuth';
 import { useDynamicFontSize } from '../../hooks';
+import { useBiometricAuth } from '../../hooks/useBiometricAuth';
+import { useFormCache } from '../../hooks/useFormCache';
 
 import { NativeToggle } from './NativeToggle';
 import { PickerOption, SettingsPicker } from './SettingsPicker';
@@ -233,6 +234,25 @@ export function MobileSettings({
   } = useBiometricAuth();
 
   const { scale } = useDynamicFontSize();
+  const { clearCache: clearStoredFormFields } = useFormCache([]);
+
+  const handleClearFormCache = () => {
+    Alert.alert(
+      'Clear Cached Form Data',
+      'Remove saved names, emails, and addresses from this device?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear',
+          style: 'destructive',
+          onPress: async () => {
+            await clearStoredFormFields();
+            Alert.alert('Cleared', 'Cached form data has been removed.');
+          },
+        },
+      ]
+    );
+  };
 
   const handleBiometricToggle = async (value: boolean) => {
     if (value) {
@@ -357,6 +377,14 @@ export function MobileSettings({
               icon={<BarChart2 size={18} />}
               label="Analytics"
               right={<NativeToggle value={analyticsEnabled} onValueChange={setAnalyticsEnabled} />}
+            />
+
+            <SettingRow
+              icon={<Trash2 size={18} color="red" />}
+              label="Clear Cached Form Data"
+              description="Remove saved autofill values from this device"
+              onPress={handleClearFormCache}
+              destructive
             />
           </SettingsSection>
 

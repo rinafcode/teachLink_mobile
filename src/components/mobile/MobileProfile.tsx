@@ -17,7 +17,7 @@ import {
   Users,
   X,
 } from 'lucide-react-native';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -30,18 +30,20 @@ import {
   UIManager,
   View,
 } from 'react-native';
+import { useFormCache } from '../../hooks/useFormCache';
+import { PROFILE_FORM_CACHE_KEYS } from '../../services/formCache';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
-import { AppText as Text } from '../common/AppText';
-import { CachedImage } from '../ui/CachedImage';
-import { Skeleton } from '../ui/Skeleton';
 import { Achievement, AchievementBadges } from './AchievementBadges';
 import { AvatarCamera } from './AvatarCamera';
 import { MobileFormInput } from './MobileFormInput';
 import { StatisticsDisplay } from './StatisticsDisplay';
+import { AppText as Text } from '../common/AppText';
+import { CachedImage } from '../ui/CachedImage';
+import { Skeleton } from '../ui/Skeleton';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -247,16 +249,61 @@ interface MobileProfileProps {
   isLoading?: boolean;
 }
 
-import { useDynamicFontSize } from '../../hooks';
-
 export const MobileProfile: React.FC<MobileProfileProps> = ({
   userId: _userId,
   isDark = false,
   isLoading = false,
 }) => {
   const [profile, setProfile] = useState<ProfileData>(MOCK_PROFILE);
-  const { scale } = useDynamicFontSize();
-  const { achievements, unlockedCount } = useAchievementStore();
+  const {
+    applyPrefillToFields,
+    persistFields,
+    prefillValues,
+    isLoading: formCacheLoading,
+  } = useFormCache(PROFILE_FORM_CACHE_KEYS);
+  const unlockedCount = profile.achievements.filter(a => !a.isLocked).length;
+  const [activeTab, setActiveTab] = useState<ProfileTab>('overview');
+  const [isEditing, setIsEditing] = useState(false);
+  const [isCameraVisible, setIsCameraVisible] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Edit form state
+  const [editName, setEditName] = useState('');
+  const [editBio, setEditBio] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editLocation, setEditLocation] = useState('');
+  const [editWebsite, setEditWebsite] = useState('');
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!isEditing || formCacheLoading) return;
+    applyPrefillToFields(
+      {
+        fullName: editName,
+        email: editEmail,
+        bio: editBio,
+        location: editLocation,
+        website: editWebsite,
+      },
+      {
+        fullName: setEditName,
+        email: setEditEmail,
+        bio: setEditBio,
+        location: setEditLocation,
+        website: setEditWebsite,
+      }
+    );
+  }, [
+    applyPrefillToFields,
+    editBio,
+    editEmail,
+    editLocation,
+    editName,
+    editWebsite,
+    formCacheLoading,
+    isEditing,
+    prefillValues,
+  ]);
 
   if (isLoading) {
     const bg = isDark ? '#0f172a' : '#f8fafc';
@@ -297,20 +344,8 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
       </SafeAreaView>
     );
   }
-  const [activeTab, setActiveTab] = useState<ProfileTab>('overview');
-  const [isEditing, setIsEditing] = useState(false);
-  const [isCameraVisible, setIsCameraVisible] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   // Progressive disclosure: advanced profile fields collapsed by default
   const [showAdvancedFields, setShowAdvancedFields] = useState(false);
-
-  // Edit form state
-  const [editName, setEditName] = useState('');
-  const [editBio, setEditBio] = useState('');
-  const [editEmail, setEditEmail] = useState('');
-  const [editLocation, setEditLocation] = useState('');
-  const [editWebsite, setEditWebsite] = useState('');
-  const [formErrors, setFormErrors] = useState<Record<string, string>>();
 
   // Theme tokens
   const bg = isDark ? '#0f172a' : '#f8fafc';
@@ -333,6 +368,22 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
     setEditEmail(profile.email);
     setEditLocation(profile.location);
     setEditWebsite(profile.website);
+    applyPrefillToFields(
+      {
+        fullName: profile.name,
+        email: profile.email,
+        bio: profile.bio,
+        location: profile.location,
+        website: profile.website,
+      },
+      {
+        fullName: setEditName,
+        email: setEditEmail,
+        bio: setEditBio,
+        location: setEditLocation,
+        website: setEditWebsite,
+      }
+    );
     setFormErrors({});
     setShowAdvancedFields(false); // reset disclosure state on each edit session
     setIsEditing(true);
@@ -368,6 +419,13 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
       location: editLocation.trim(),
       website: editWebsite.trim(),
     }));
+    await persistFields({
+      fullName: editName.trim(),
+      email: editEmail.trim(),
+      bio: editBio.trim(),
+      location: editLocation.trim(),
+      website: editWebsite.trim(),
+    });
     setIsSaving(false);
     setIsEditing(false);
   };
@@ -624,6 +682,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                     required
                     error={formErrors?.name}
                     isDark={isDark}
+                    cacheKey="fullName"
                     leftIcon={<User size={18} color="#94a3b8" />}
                   />
                   <MobileFormInput
@@ -636,6 +695,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                     required
                     error={formErrors?.email}
                     isDark={isDark}
+                    cacheKey="email"
                     leftIcon={<Mail size={18} color="#94a3b8" />}
                   />
                   <MobileFormInput
@@ -645,6 +705,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                     placeholder="Tell us about yourself..."
                     multiline
                     isDark={isDark}
+                    cacheKey="bio"
                   />
 
                   {/* ── Progressive Disclosure: Advanced Details ── */}
@@ -676,6 +737,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                         onChangeText={setEditLocation}
                         placeholder="City, Country"
                         isDark={isDark}
+                        cacheKey="location"
                         leftIcon={<MapPin size={18} color="#94a3b8" />}
                       />
                       <MobileFormInput
@@ -686,6 +748,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                         keyboardType="url"
                         autoCapitalize="none"
                         isDark={isDark}
+                        cacheKey="website"
                         leftIcon={<Globe size={18} color="#94a3b8" />}
                       />
                     </View>
@@ -746,7 +809,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                   <Text style={styles.streakEmoji}>🔥</Text>
                   <View>
                     <Text style={styles.streakValue}>{profile.stats.streak} Day Streak</Text>
-                    <Text style={styles.streakSub}>Keep it up! You're on fire.</Text>
+                    <Text style={styles.streakSub}>Keep it up! You&apos;re on fire.</Text>
                   </View>
                 </LinearGradient>
               </View>

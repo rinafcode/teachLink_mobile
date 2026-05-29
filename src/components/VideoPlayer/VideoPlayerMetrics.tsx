@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import type { VideoMetrics } from '@/hooks/useVideoMetrics';
+import type { VideoMetrics } from '../../hooks/useVideoMetrics';
 
 interface VideoPlayerMetricsProps {
   metrics: VideoMetrics;

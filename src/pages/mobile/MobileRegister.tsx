@@ -1,4 +1,6 @@
-import React, { useRef, useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
+import { AlertCircle, BookOpen, Lock, Mail, User } from 'lucide-react-native';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -11,9 +13,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { AlertCircle, BookOpen, Lock, Mail, User } from 'lucide-react-native';
+
+import { MobileFormInput } from '../../components/mobile/MobileFormInput';
 import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
+import { useFormCache } from '../../hooks/useFormCache';
+import { cacheFormValues } from '../../services/formCache';
 import {
   getPasswordStrength,
   validateConfirmPassword,
@@ -47,13 +51,18 @@ export const MobileRegister: React.FC<MobileRegisterProps> = ({
   const [errors, setErrors] = useState<FieldErrors>({});
   const [isLoading, setIsLoading] = useState(false);
 
+  const nameRef = useRef<TextInput>(null);
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
   const confirmRef = useRef<TextInput>(null);
 
   const { scale } = useDynamicFontSize();
+  const {
+    applyPrefillToFields,
+    isLoading: formCacheLoading,
+    prefillValues,
+  } = useFormCache(['fullName', 'email']);
   const styles = createStyles(scale);
-
   const bg = isDark ? '#0f172a' : '#f8fafc';
   const cardBg = isDark ? '#1e293b' : '#fff';
   const textPrimary = isDark ? '#f1f5f9' : '#1e293b';
@@ -64,8 +73,13 @@ export const MobileRegister: React.FC<MobileRegisterProps> = ({
 
   const passwordStrength = getPasswordStrength(password);
 
+  useEffect(() => {
+    if (formCacheLoading) return;
+    applyPrefillToFields({ fullName: name, email }, { fullName: setName, email: setEmail });
+  }, [applyPrefillToFields, email, formCacheLoading, name, prefillValues]);
+
   function clearFieldError(field: keyof FieldErrors) {
-    setErrors((prev) => ({ ...prev, [field]: undefined }));
+    setErrors(prev => ({ ...prev, [field]: undefined }));
   }
 
   function validate(): boolean {
@@ -89,15 +103,15 @@ export const MobileRegister: React.FC<MobileRegisterProps> = ({
     setIsLoading(true);
     try {
       // Registration API call would go here
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      await cacheFormValues({ fullName: name.trim(), email: email.trim().toLowerCase() });
       onRegisterSuccess?.();
     } finally {
       setIsLoading(false);
     }
   };
 
-  const fieldBorder = (field: keyof FieldErrors) =>
-    errors[field] ? '#ef4444' : borderColor;
+  const fieldBorder = (field: keyof FieldErrors) => (errors[field] ? '#ef4444' : borderColor);
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
@@ -128,67 +142,65 @@ export const MobileRegister: React.FC<MobileRegisterProps> = ({
           </View>
 
           <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
-            {/* Name */}
-            <View style={styles.fieldWrap}>
-              <Text allowFontScaling={false} style={[styles.label, { color: textSecondary }]}>
-                Full Name <Text style={styles.required}>*</Text>
-              </Text>
-              <View style={[styles.inputRow, { borderColor: fieldBorder('name'), backgroundColor: inputBg }]}>
-                <User size={scale(18)} color={textSecondary} />
-                <TextInput
-                  allowFontScaling={false}
-                  style={[styles.input, { color: textPrimary }]}
-                  value={name}
-                  onChangeText={(v) => { setName(v); clearFieldError('name'); }}
-                  placeholder="Your full name"
-                  placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
-                  autoCapitalize="words"
-                  autoComplete="name"
-                  returnKeyType="next"
-                  onSubmitEditing={() => emailRef.current?.focus()}
-                />
-              </View>
-              {errors.name && <FieldError message={errors.name} scale={scale} />}
-            </View>
+            <MobileFormInput
+              inputRef={nameRef}
+              label="Full Name"
+              value={name}
+              onChangeText={v => {
+                setName(v);
+                clearFieldError('name');
+              }}
+              placeholder="Your full name"
+              required
+              error={errors.name}
+              isDark={isDark}
+              cacheKey="fullName"
+              keyboardType="default"
+              autoCapitalize="words"
+              leftIcon={<User size={18} color={textSecondary} />}
+              onSubmitEditing={() => emailRef.current?.focus()}
+            />
 
-            {/* Email */}
-            <View style={styles.fieldWrap}>
-              <Text allowFontScaling={false} style={[styles.label, { color: textSecondary }]}>
-                Email <Text style={styles.required}>*</Text>
-              </Text>
-              <View style={[styles.inputRow, { borderColor: fieldBorder('email'), backgroundColor: inputBg }]}>
-                <Mail size={scale(18)} color={textSecondary} />
-                <TextInput
-                  allowFontScaling={false}
-                  ref={emailRef}
-                  style={[styles.input, { color: textPrimary }]}
-                  value={email}
-                  onChangeText={(v) => { setEmail(v); clearFieldError('email'); }}
-                  placeholder="you@example.com"
-                  placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  autoComplete="email"
-                  returnKeyType="next"
-                  onSubmitEditing={() => passwordRef.current?.focus()}
-                />
-              </View>
-              {errors.email && <FieldError message={errors.email} scale={scale} />}
-            </View>
+            <MobileFormInput
+              inputRef={emailRef}
+              label="Email"
+              value={email}
+              onChangeText={v => {
+                setEmail(v);
+                clearFieldError('email');
+              }}
+              placeholder="you@example.com"
+              required
+              error={errors.email}
+              isDark={isDark}
+              cacheKey="email"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              leftIcon={<Mail size={18} color={textSecondary} />}
+              onSubmitEditing={() => passwordRef.current?.focus()}
+            />
 
             {/* Password */}
             <View style={styles.fieldWrap}>
               <Text allowFontScaling={false} style={[styles.label, { color: textSecondary }]}>
                 Password <Text style={styles.required}>*</Text>
               </Text>
-              <View style={[styles.inputRow, { borderColor: fieldBorder('password'), backgroundColor: inputBg }]}>
+              <View
+                style={[
+                  styles.inputRow,
+                  { borderColor: fieldBorder('password'), backgroundColor: inputBg },
+                ]}
+              >
                 <Lock size={scale(18)} color={textSecondary} />
                 <TextInput
                   allowFontScaling={false}
                   ref={passwordRef}
                   style={[styles.input, { color: textPrimary }]}
                   value={password}
-                  onChangeText={(v) => { setPassword(v); clearFieldError('password'); }}
+                  onChangeText={v => {
+                    setPassword(v);
+                    clearFieldError('password');
+                  }}
                   placeholder="Min 8 chars, 1 uppercase, 1 number"
                   placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
                   secureTextEntry
@@ -208,14 +220,22 @@ export const MobileRegister: React.FC<MobileRegisterProps> = ({
               <Text allowFontScaling={false} style={[styles.label, { color: textSecondary }]}>
                 Confirm Password <Text style={styles.required}>*</Text>
               </Text>
-              <View style={[styles.inputRow, { borderColor: fieldBorder('confirmPassword'), backgroundColor: inputBg }]}>
+              <View
+                style={[
+                  styles.inputRow,
+                  { borderColor: fieldBorder('confirmPassword'), backgroundColor: inputBg },
+                ]}
+              >
                 <Lock size={scale(18)} color={textSecondary} />
                 <TextInput
                   allowFontScaling={false}
                   ref={confirmRef}
                   style={[styles.input, { color: textPrimary }]}
                   value={confirmPassword}
-                  onChangeText={(v) => { setConfirmPassword(v); clearFieldError('confirmPassword'); }}
+                  onChangeText={v => {
+                    setConfirmPassword(v);
+                    clearFieldError('confirmPassword');
+                  }}
                   placeholder="Repeat your password"
                   placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
                   secureTextEntry
@@ -259,7 +279,8 @@ export const MobileRegister: React.FC<MobileRegisterProps> = ({
               </Text>
               <TouchableOpacity onPress={onLogin}>
                 <Text allowFontScaling={false} style={[styles.loginLink, { color: accentColor }]}>
-                  {' '}Sign in
+                  {' '}
+                  Sign in
                 </Text>
               </TouchableOpacity>
             </View>
@@ -270,7 +291,7 @@ export const MobileRegister: React.FC<MobileRegisterProps> = ({
   );
 };
 
-function FieldError({ message, scale }: { message: string; scale: (n: number) => number }) {
+const FieldError = ({ message, scale }: { message: string; scale: (n: number) => number }) => {
   return (
     <View style={fieldErrorStyles.row}>
       <AlertCircle size={scale(13)} color="#ef4444" />
@@ -279,7 +300,7 @@ function FieldError({ message, scale }: { message: string; scale: (n: number) =>
       </Text>
     </View>
   );
-}
+};
 
 const fieldErrorStyles = StyleSheet.create({
   row: {
@@ -295,17 +316,17 @@ const fieldErrorStyles = StyleSheet.create({
   },
 });
 
-function PasswordStrengthBar({
+const PasswordStrengthBar = ({
   strength,
   scale,
 }: {
   strength: ReturnType<typeof getPasswordStrength>;
   scale: (n: number) => number;
-}) {
+}) => {
   return (
     <View style={strengthStyles.wrap}>
       <View style={strengthStyles.bars}>
-        {([0, 1, 2, 3] as const).map((i) => (
+        {([0, 1, 2, 3] as const).map(i => (
           <View
             key={i}
             style={[
@@ -323,7 +344,7 @@ function PasswordStrengthBar({
       </Text>
     </View>
   );
-}
+};
 
 const strengthStyles = StyleSheet.create({
   wrap: {

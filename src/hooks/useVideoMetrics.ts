@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { appLogger } from '@/utils/logger';
+import { appLogger } from '../utils/logger';
 
 export interface VideoMetrics {
   loadTime: number;
