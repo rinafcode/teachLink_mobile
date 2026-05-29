@@ -24,13 +24,16 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { AppText as Text } from '../common/AppText';
-import { CachedImage } from '../ui/CachedImage';
-import { Skeleton } from '../ui/Skeleton';
+
 import { Achievement, AchievementBadges } from './AchievementBadges';
 import { AvatarCamera } from './AvatarCamera';
 import { MobileFormInput } from './MobileFormInput';
 import { StatisticsDisplay } from './StatisticsDisplay';
+import { useDynamicFontSize } from '../../hooks';
+import { useAchievementStore } from '../../store/achievementStore';
+import { AppText as Text } from '../common/AppText';
+import { CachedImage } from '../ui/CachedImage';
+import { Skeleton } from '../ui/Skeleton';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -235,8 +238,6 @@ interface MobileProfileProps {
   /** Whether the profile data is loading */
   isLoading?: boolean;
 }
-
-import { useDynamicFontSize } from '../../hooks';
 
 export const MobileProfile: React.FC<MobileProfileProps> = ({
   userId: _userId,

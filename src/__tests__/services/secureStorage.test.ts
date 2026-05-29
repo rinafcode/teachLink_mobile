@@ -394,7 +394,10 @@ describe('SecureStorage - Keychain/Keystore Verification #140', () => {
       await secureStorage.saveTokens('secret_access_token_12345', 'secret_refresh', Date.now());
 
       // Check that the actual token values are never logged
-      const allLogCalls = mockLogger.info.mock.calls.concat(mockLogger.error.mock.calls);
+      const allLogCalls: unknown[][] = [
+        ...mockLogger.info.mock.calls,
+        ...mockLogger.error.mock.calls,
+      ];
       allLogCalls.forEach(call => {
         const logContent = JSON.stringify(call);
         expect(logContent).not.toContain('secret_access_token_12345');

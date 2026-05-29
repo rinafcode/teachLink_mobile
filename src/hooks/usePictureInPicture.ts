@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { RefObject } from 'react';
 import { AppState, Platform } from 'react-native';
+
 import type { Video } from 'expo-av';
+import type { RefObject } from 'react';
 
 type UsePictureInPictureParams = {
-  videoRef: RefObject<Video>;
+  videoRef: RefObject<Video | null>;
   isPlaying: boolean;
 };
 

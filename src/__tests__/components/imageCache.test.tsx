@@ -106,8 +106,8 @@ describe('Image Cache Integration - Issue #143', () => {
 
       // Simulate load complete
       const image = getByTestId('cached-image');
-      if (image.props.onLoadingComplete) {
-        image.props.onLoadingComplete();
+      if (image.props.onLoad) {
+        image.props.onLoad();
       }
 
       await waitFor(() => {

@@ -2,16 +2,17 @@ import { Stack, useRouter, usePathname, useSegments } from "expo-router";
 import React, { useCallback, useEffect, useRef } from "react";
 import { Alert } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+
 import "react-native-reanimated";
 import "../global.css"; // NativeWind CSS
 import { AnalyticsProvider, ErrorBoundary, OfflineIndicatorProvider } from "../src/components";
 import { useAnalytics } from '../src/hooks';
 import { useDeepLink } from '../src/hooks/useDeepLink';
 import { sessionRestorationService } from '../src/services/sessionRestoration';
-import { getPathFromDeepLink } from '../src/utils/linkParser';
+import { getPathFromDeepLink, type ParsedDeepLink } from '../src/utils/linkParser';
 
 // Component to handle auto screen tracking and session state persistence
-function ScreenTracker() {
+const ScreenTracker = () => {
   const pathname = usePathname();
   const segments = useSegments();
   const { trackScreen } = useAnalytics();
@@ -34,7 +35,7 @@ function ScreenTracker() {
 export default function RootLayout() {
   const router = useRouter();
 
-  const handleDeepLink = useCallback((deepLink) => {
+  const handleDeepLink = useCallback((deepLink: ParsedDeepLink) => {
     const path = getPathFromDeepLink(deepLink);
     if (path) {
       router.replace(path);

@@ -1,8 +1,9 @@
 import { LinkingOptions } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
 import * as Notifications from 'expo-notifications';
-import { NotificationData, NotificationType } from '../types/notifications';
+
 import { RootStackParamList } from './types';
+import { NotificationData, NotificationType } from '../types/notifications';
 import logger from '../utils/logger';
 
 const prefix = Linking.createURL('/');
@@ -45,7 +46,7 @@ export const linking: LinkingOptions<RootStackParamList> = {
     const response = await Notifications.getLastNotificationResponseAsync();
 
     if (response) {
-      const data = response.notification.request.content.data as NotificationData | undefined;
+      const data = response.notification.request.content.data as unknown as NotificationData | undefined;
       if (data) {
         return buildNotificationDeepLink(data);
       }
@@ -68,7 +69,7 @@ export const linking: LinkingOptions<RootStackParamList> = {
     // Listen for notification responses (user tapping notification)
     const notificationSubscription = Notifications.addNotificationResponseReceivedListener(
       (response) => {
-        const data = response.notification.request.content.data as NotificationData | undefined;
+        const data = response.notification.request.content.data as unknown as NotificationData | undefined;
         if (data) {
           const url = buildNotificationDeepLink(data);
           if (url) {

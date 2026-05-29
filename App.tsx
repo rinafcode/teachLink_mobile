@@ -2,38 +2,38 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef } from 'react';
 import { Alert, AppState, AppStateStatus, LogBox } from 'react-native';
 
-import StorybookUI from './.rnstorybook';
 import './global.css';
 
 import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
+
 import { ErrorBoundary } from './src/components/common/ErrorBoundary';
+import { requireEnvVariables } from './src/config/env';
 import { initializeLogging } from './src/config/logging';
 import { AuthProvider, useAdaptiveTheme } from './src/hooks';
 import AppNavigator from './src/navigation/AppNavigator';
 import { setupNotificationNavigation } from './src/navigation/linking';
-import { apiClient } from './src/services/api';
-import { crashReportingService } from './src/services/cashReporting';
+import apiClient from './src/services/api';
+import { requestQueue } from './src/services/api/requestQueue';
+import { crashReportingService } from './src/services/crashReporting';
 import { mobileAuthService } from './src/services/mobileAuth';
 import {
   addNotificationReceivedListener,
   getLastNotificationResponse,
+  registerForPushNotifications,
+  registerTokenWithBackend,
   removeNotificationListener,
 } from './src/services/pushNotifications';
-import { requestQueue } from './src/services/requestQueue';
+import { initializeSecureStorage } from './src/services/secureStorage';
 import socketService from './src/services/socket';
 import syncService from './src/services/syncService';
 import { useAppStore } from './src/store';
-import { requireEnvVariables } from './src/utils/env';
+import { useNotificationStore } from './src/store/notificationStore';
 import { appLogger } from './src/utils/logger';
 import { handleNotificationReceived } from './src/utils/notificationHandlers';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
-
-// SHOW_STORYBOOK flag based on environment variable
-const SHOW_STORYBOOK = process.env.EXPO_PUBLIC_STORYBOOK === 'true';
-
 
 // Centralized structured logging initialized on startup
 requireEnvVariables();
@@ -93,8 +93,9 @@ const App = () => {
     crashReportingService.init();
 
     // Initialize secure storage (Keychain/Keystore) for encrypted token storage
-    initializeSecureStorage().catch((error) => {
-      logger.error('Failed to initialize secure storage:', error);
+    initializeSecureStorage().catch((error: unknown) => {
+      const err = error instanceof Error ? error : new Error(String(error));
+      appLogger.errorSync('Failed to initialize secure storage', err);
       // Continue app startup even if secure storage init fails
       // (user will be prompted to re-authenticate if needed)
     });
@@ -116,7 +117,7 @@ const App = () => {
     socketService.connect();
 
     // Initialize push notifications: request permissions and get device token
-    registerForPushNotifications().then(async (token) => {
+    registerForPushNotifications().then(async (token: string | null) => {
       if (token) {
         const { setPushToken, setTokenRegistered } = useNotificationStore.getState();
         setPushToken(token);
@@ -236,4 +237,4 @@ const App = () => {
   );
 };
 
-export default SHOW_STORYBOOK ? StorybookUI : App;
+export default App;

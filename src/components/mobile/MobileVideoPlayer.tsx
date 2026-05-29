@@ -1,4 +1,12 @@
-import { Audio, AVPlaybackStatus, AVPlaybackStatusToSet, ResizeMode, Video } from 'expo-av';
+import {
+  Audio,
+  AVPlaybackStatus,
+  AVPlaybackStatusToSet,
+  InterruptionModeAndroid,
+  InterruptionModeIOS,
+  ResizeMode,
+  Video,
+} from 'expo-av';
 import * as Network from 'expo-network';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -12,6 +20,7 @@ import {
   ViewStyle,
 } from 'react-native';
 
+import VideoControls from './VideoControls';
 import { usePictureInPicture, useVideoGestures } from '../../hooks';
 import {
   AUTO_QUALITY_ID,
@@ -24,7 +33,6 @@ import {
   type VideoSource,
 } from '../../services/videoQuality';
 import { ErrorBoundary } from '../common/ErrorBoundary';
-import VideoControls from './VideoControls';
 
 const AUTO_HIDE_MS = 3000;
 const DEFAULT_ASPECT_RATIO = 16 / 9;
@@ -45,17 +53,6 @@ export type MobileVideoPlayerProps = {
   /** Available playback rate options */
   rateOptions?: number[];
   /** Initial quality ID to use for playback */
-  initialQualityId?: string;
-  /** Optional style for the video container */
-  /** URI of the poster image to display before playback */
-  posterUri?: string;
-  /** Whether to start playback automatically */
-  autoPlay?: boolean;
-  /** Initial playback rate */
-  initialRate?: number;
-  /** Available playback rate options */
-  rateOptions?: number[];
-  /** ID of the initial quality to use */
   initialQualityId?: string;
   /** Custom style for the video container */
   style?: StyleProp<ViewStyle>;
@@ -335,15 +332,12 @@ const MobileVideoPlayer = ({
     if (!enableBackgroundAudio) {
       return;
     }
-    let previousMode: Awaited<ReturnType<typeof Audio.getAudioModeAsync>> | null = null;
     const configure = async () => {
       try {
-        previousMode = await Audio.getAudioModeAsync();
         await Audio.setAudioModeAsync({
-          ...previousMode,
           allowsRecordingIOS: false,
-          interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_DUCK_OTHERS,
-          interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DUCK_OTHERS,
+          interruptionModeIOS: InterruptionModeIOS.DuckOthers,
+          interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
           playsInSilentModeIOS: false,
           staysActiveInBackground: true,
           shouldDuckAndroid: true,
@@ -354,11 +348,6 @@ const MobileVideoPlayer = ({
       }
     };
     configure();
-    return () => {
-      if (previousMode) {
-        Audio.setAudioModeAsync(previousMode).catch(() => {});
-      }
-    };
   }, [enableBackgroundAudio]);
 
   useEffect(() => {

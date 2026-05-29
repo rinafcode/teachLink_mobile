@@ -1,17 +1,3 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  Alert,
-  ActivityIndicator,
-  RefreshControl,
-} from 'react-native';
-import { AppText as Text } from '../../components/common/AppText';
-import { useDynamicFontSize, useInAppPurchase } from '../../hooks';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
     ArrowLeft,
@@ -25,6 +11,20 @@ import {
     TrendingUp,
     XCircle,
 } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  Alert,
+  ActivityIndicator,
+  RefreshControl,
+} from 'react-native';
+
+import { AppText as Text } from '../../components/common/AppText';
+import { useDynamicFontSize, useInAppPurchase } from '../../hooks';
 import {
     PurchaseRecord,
     PurchaseStatus,
@@ -306,7 +306,10 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
 
   const renderTransaction = (record: PurchaseRecord) => {
     const statusCfg = STATUS_CONFIG[record.status];
-    const statusIcon = React.cloneElement(statusCfg.icon as React.ReactElement, { size: scale(14) });
+    const statusIcon = React.cloneElement(
+      statusCfg.icon as React.ReactElement<{ size?: number }>,
+      { size: scale(14) },
+    );
 
     return (
       <View

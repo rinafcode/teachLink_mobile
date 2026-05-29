@@ -9,19 +9,20 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { AppText as Text } from '../common/AppText';
-import { useCourseProgress, useDynamicFontSize } from '../../hooks';
 import { SafeAreaView } from "react-native-safe-area-context";
-import logger from "../../utils/logger";
-import PrimaryButton from "../common/PrimaryButton";
+
 import BookmarkButton from "./BookmarkButton";
+import { CourseViewerSkeleton } from "./CourseViewerSkeleton";
 import LessonCarousel from "./LessonCarousel";
 import MobileSyllabus from "./MobileSyllabus";
+import { useCourseProgress, useDynamicFontSize } from '../../hooks';
 import { useAnalytics } from "../../hooks/useAnalytics";
 import { Course, Lesson, Note } from "../../types/course";
+import { logger } from "../../utils/logger";
 import { AnalyticsEvent, ScreenName } from "../../utils/trackingEvents";
+import { AppText as Text } from '../common/AppText';
 import { ErrorBoundary } from "../common/ErrorBoundary";
-import { CourseViewerSkeleton } from "./CourseViewerSkeleton";
+import PrimaryButton from "../common/PrimaryButton";
 
 /**
  * Props for the MobileCourseViewer component
@@ -62,7 +63,7 @@ export default function MobileCourseViewer({
   const [showQuizPromptModal, setShowQuizPromptModal] = useState(false);
 
   const {
-    progress,
+    fullProgress: progress,
     isLoading,
     updateLessonProgress,
     markLessonComplete,
@@ -367,8 +368,12 @@ export default function MobileCourseViewer({
             <Text style={styles.subtitle}>{overallProgress}% complete</Text>
           </View>
           <BookmarkButton
-            isBookmarked={isBookmarked}
-            onToggle={handleBookmarkToggle}
+            item={{
+              itemId: currentLessonId,
+              itemType: 'lesson',
+              title: currentLesson?.title ?? '',
+              url: `/course/${course.id}/lesson/${currentLessonId}`,
+            }}
             size="small"
             showLabel={false}
           />

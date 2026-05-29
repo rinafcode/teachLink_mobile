@@ -52,7 +52,7 @@ class CrashReportingService {
           this.captureCrash(error, false);
 
           if (originalRejectionHandler) {
-            originalRejectionHandler(reason);
+            (originalRejectionHandler as (reason: unknown) => unknown)(reason);
           }
         };
       }

@@ -1,7 +1,8 @@
-import React from 'react';
 import { render, fireEvent, act } from '@testing-library/react-native';
-import { MobileSearch } from '../../src/components/mobile/MobileSearch';
+import React from 'react';
+
 import LessonCarousel from '../../src/components/mobile/LessonCarousel';
+import { MobileSearch } from '../../src/components/mobile/MobileSearch';
 
 // ── Mocks ──────────────────────────────────────────────────────────────────
 
@@ -95,9 +96,9 @@ describe('Debouncing Rapid User Input & Scroll Events', () => {
 
   describe('LessonCarousel scroll debouncing', () => {
     const mockLessons = [
-      { id: '1', title: 'Lesson 1', duration: 10 },
-      { id: '2', title: 'Lesson 2', duration: 15 },
-      { id: '3', title: 'Lesson 3', duration: 20 },
+      { id: '1', title: 'Lesson 1', duration: 10, content: '', order: 1 },
+      { id: '2', title: 'Lesson 2', duration: 15, content: '', order: 2 },
+      { id: '3', title: 'Lesson 3', duration: 20, content: '', order: 3 },
     ];
 
     it('debounces rapid scroll drag events to prevent state update spam', () => {

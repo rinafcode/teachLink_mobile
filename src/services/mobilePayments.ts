@@ -14,8 +14,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import * as IAP from 'react-native-iap';
-import { appLogger } from '../utils/logger';
+
 import { apiService } from './api';
+import { appLogger } from '../utils/logger';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -175,7 +176,7 @@ class MobilePaymentsService {
       await IAP.initConnection();
 
       IAP.purchaseUpdatedListener(async (purchase) => {
-        const receipt = purchase.transactionReceipt;
+        const receipt = purchase.purchaseToken ?? null;
         if (receipt) {
           const result = await this.validateReceipt(
             receipt,
@@ -210,24 +211,31 @@ class MobilePaymentsService {
    */
   async getProducts(productIds: string[]): Promise<SubscriptionPlan[]> {
     try {
-      const storeProducts = await IAP.getSubscriptions({ skus: productIds });
-      return storeProducts.map((sp) => {
-        const plan = SUBSCRIPTION_PLANS.find((p) => p.productId === sp.productId);
+      const storeProducts = await IAP.fetchProducts({ skus: productIds, type: 'subs' });
+      const products = (storeProducts ?? []) as {
+        id: string;
+        title: string;
+        price?: number | null;
+        displayPrice: string;
+        currency: string;
+      }[];
+      return products.map((sp) => {
+        const plan = SUBSCRIPTION_PLANS.find((p) => p.productId === sp.id);
         return {
-          id: plan?.id ?? sp.productId,
-          productId: sp.productId,
+          id: plan?.id ?? sp.id,
+          productId: sp.id,
           name: sp.title.replace(/^.*?-\s*/, '').trim(),
           tier: plan?.tier ?? 'pro',
-          price: parseFloat(sp.localizedPrice?.replace(/[^0-9.]/g, '') || '9.99'),
-          currency: 'USD',
-          period: sp.productId.includes('.annual') ? 'annual' : 'monthly',
+          price: sp.price ?? parseFloat(sp.displayPrice.replace(/[^0-9.]/g, '') || '9.99'),
+          currency: sp.currency || 'USD',
+          period: sp.id.includes('.annual') ? 'annual' : 'monthly',
           trialDays: plan?.trialDays,
           savings: plan?.savings,
           features: plan?.features ?? [],
         };
       });
     } catch (error) {
-      log.error('[Payments] getProducts error:', error);
+      appLogger.errorSync('[Payments] getProducts error', error instanceof Error ? error : new Error(String(error)));
       return SUBSCRIPTION_PLANS.filter((p) => productIds.includes(p.productId));
     }
   }
@@ -241,7 +249,13 @@ class MobilePaymentsService {
     if (!plan) throw new Error(`Unknown product: ${productId}`);
 
     try {
-      await IAP.requestSubscription({ sku: productId });
+      await IAP.requestPurchase({
+        type: 'subs',
+        request: {
+          ios: { sku: productId },
+          android: { skus: [productId] },
+        },
+      });
 
       // The actual purchase completion is handled by purchaseUpdatedListener.
       // For the hook, we await a Promise that resolves when the listener fires.
@@ -269,7 +283,7 @@ class MobilePaymentsService {
       await this._setTier(plan.tier);
       return record;
     } catch (error) {
-      log.error('[Payments] purchaseSubscription error:', error);
+      appLogger.errorSync('[Payments] purchaseSubscription error', error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }
@@ -277,7 +291,13 @@ class MobilePaymentsService {
   /** Triggers a one-time consumable / non-consumable purchase. */
   async purchaseProduct(productId: string): Promise<PurchaseRecord> {
     try {
-      await IAP.requestPurchase({ sku: productId });
+      await IAP.requestPurchase({
+        type: 'in-app',
+        request: {
+          ios: { sku: productId },
+          android: { skus: [productId] },
+        },
+      });
 
       // ── Fallback mock for development ──
       const record: PurchaseRecord = {
@@ -295,7 +315,7 @@ class MobilePaymentsService {
       await this._savePurchaseRecord(record);
       return record;
     } catch (error) {
-      log.error('[Payments] purchaseProduct error:', error);
+      appLogger.errorSync('[Payments] purchaseProduct error', error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }
@@ -310,7 +330,7 @@ class MobilePaymentsService {
       const validated: PurchaseRecord[] = [];
 
       for (const purchase of available) {
-        const receipt = purchase.transactionReceipt;
+        const receipt = purchase.purchaseToken ?? null;
         if (receipt) {
           const result = await this.validateReceipt(
             receipt,
@@ -318,12 +338,14 @@ class MobilePaymentsService {
             purchase.productId,
           );
           if (result.valid) {
+            const txnId = purchase.transactionId ?? purchase.id;
+            const plan = SUBSCRIPTION_PLANS.find((p) => p.productId === purchase.productId);
             validated.push({
-              id: purchase.transactionId,
+              id: txnId,
               productId: purchase.productId,
-              transactionId: purchase.transactionId,
-              amount: parseFloat(purchase.priceAmountMicros ? String(purchase.priceAmountMicros / 1000000) : '0'),
-              currency: purchase.priceCurrencyCode ?? 'USD',
+              transactionId: txnId,
+              amount: plan?.price ?? 0,
+              currency: plan?.currency ?? 'USD',
               type: purchase.productId.includes('subscription')
                 ? 'subscription'
                 : 'one_time',
@@ -372,7 +394,7 @@ class MobilePaymentsService {
 
       return validated;
     } catch (error) {
-      log.error('[Payments] restorePurchases error:', error);
+      appLogger.errorSync('[Payments] restorePurchases error', error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }

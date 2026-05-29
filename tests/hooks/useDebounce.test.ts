@@ -1,4 +1,5 @@
 import { renderHook, act } from '@testing-library/react-native';
+
 import { useDebounce, useDebounceCallback } from '../../src/hooks/useDebounce';
 
 describe('useDebounce and useDebounceCallback hooks', () => {
@@ -20,7 +21,7 @@ describe('useDebounce and useDebounceCallback hooks', () => {
 
     it('updates the debounced value only after the delay has passed', () => {
       const { result, rerender } = renderHook(
-        ({ value }) => useDebounce(value, 300),
+        ({ value }: { value: string }) => useDebounce(value, 300),
         { initialProps: { value: 'initial' } }
       );
 
@@ -41,7 +42,7 @@ describe('useDebounce and useDebounceCallback hooks', () => {
 
     it('resets the timer and debounces rapid successive changes', () => {
       const { result, rerender } = renderHook(
-        ({ value }) => useDebounce(value, 300),
+        ({ value }: { value: string }) => useDebounce(value, 300),
         { initialProps: { value: 'init' } }
       );
 
