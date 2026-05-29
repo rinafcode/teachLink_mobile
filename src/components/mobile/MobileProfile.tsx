@@ -717,15 +717,19 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                     onPress={handleToggleAdvancedFields}
                     activeOpacity={0.7}
                     accessibilityRole="button"
-                    accessibilityLabel={showAdvancedFields ? 'Hide advanced details' : 'Show advanced details'}
+                    accessibilityLabel={
+                      showAdvancedFields ? 'Hide advanced details' : 'Show advanced details'
+                    }
                     accessibilityState={{ expanded: showAdvancedFields }}
                   >
                     <Text style={[styles.disclosureToggleText, { color: '#19c3e6' }]}>
                       {showAdvancedFields ? 'Hide Advanced Details' : 'Advanced Details'}
                     </Text>
-                    {showAdvancedFields
-                      ? <ChevronUp size={16} color="#19c3e6" />
-                      : <ChevronDown size={16} color="#19c3e6" />}
+                    {showAdvancedFields ? (
+                      <ChevronUp size={16} color="#19c3e6" />
+                    ) : (
+                      <ChevronDown size={16} color="#19c3e6" />
+                    )}
                   </TouchableOpacity>
 
                   {/* ── Advanced Fields (expandable) ── */}

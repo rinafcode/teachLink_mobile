@@ -53,17 +53,20 @@ export function useCourseProgress({
 
   const storageKey = `${PROGRESS_STORAGE_KEY}_${courseId}`;
 
-  const buildInitialProgress = useCallback((): CourseProgress => ({
-    courseId,
-    currentLessonId: course?.sections[0]?.lessons[0]?.id ?? '',
-    currentSectionId: course?.sections[0]?.id ?? '',
-    lessons: {},
-    quizzes: {},
-    overallProgress: 0,
-    lastAccessed: new Date().toISOString(),
-    bookmarks: [],
-    notes: {},
-  }), [courseId, course]);
+  const buildInitialProgress = useCallback(
+    (): CourseProgress => ({
+      courseId,
+      currentLessonId: course?.sections[0]?.lessons[0]?.id ?? '',
+      currentSectionId: course?.sections[0]?.id ?? '',
+      lessons: {},
+      quizzes: {},
+      overallProgress: 0,
+      lastAccessed: new Date().toISOString(),
+      bookmarks: [],
+      notes: {},
+    }),
+    [courseId, course]
+  );
 
   // ── Load from AsyncStorage on init ────────────────────────────────────────
 
@@ -71,9 +74,7 @@ export function useCourseProgress({
     try {
       setIsLoading(true);
       const stored = await AsyncStorage.getItem(storageKey);
-      const parsed: CourseProgress = stored
-        ? JSON.parse(stored)
-        : buildInitialProgress();
+      const parsed: CourseProgress = stored ? JSON.parse(stored) : buildInitialProgress();
 
       if (!stored) {
         await AsyncStorage.setItem(storageKey, JSON.stringify(parsed));
@@ -93,36 +94,45 @@ export function useCourseProgress({
 
   // ── Persist to AsyncStorage + update store ────────────────────────────────
 
-  const saveProgress = useCallback(async (updated: CourseProgress) => {
-    try {
-      await AsyncStorage.setItem(storageKey, JSON.stringify(updated));
-      setFullProgress(updated);
-      setCourseProgress(courseId, updated);
-    } catch (error) {
-      logger.error('useCourseProgress: saveProgress error', error);
-    }
-  }, [storageKey, courseId, setCourseProgress]);
+  const saveProgress = useCallback(
+    async (updated: CourseProgress) => {
+      try {
+        await AsyncStorage.setItem(storageKey, JSON.stringify(updated));
+        setFullProgress(updated);
+        setCourseProgress(courseId, updated);
+      } catch (error) {
+        logger.error('useCourseProgress: saveProgress error', error);
+      }
+    },
+    [storageKey, courseId, setCourseProgress]
+  );
 
   // ── Debounced server sync (PATCH /api/progress/:courseId) ─────────────────
 
-  const syncProgress = useCallback(async (progressToSync?: CourseProgress) => {
-    const data = progressToSync ?? fullProgress;
-    if (!data) return;
-    try {
-      await apiClient.patch(`/api/progress/${courseId}`, data);
-    } catch (error: any) {
-      if (error.code !== 'ERR_NETWORK' && error.message !== 'Network Error') {
-        logger.error('useCourseProgress: syncProgress error', error);
+  const syncProgress = useCallback(
+    async (progressToSync?: CourseProgress) => {
+      const data = progressToSync ?? fullProgress;
+      if (!data) return;
+      try {
+        await apiClient.patch(`/api/progress/${courseId}`, data);
+      } catch (error: any) {
+        if (error.code !== 'ERR_NETWORK' && error.message !== 'Network Error') {
+          logger.error('useCourseProgress: syncProgress error', error);
+        }
       }
-    }
-  }, [courseId, fullProgress]);
+    },
+    [courseId, fullProgress]
+  );
 
-  const scheduleSyncDebounced = useCallback((data: CourseProgress) => {
-    if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
-    syncTimerRef.current = setTimeout(() => {
-      syncProgress(data);
-    }, SYNC_DEBOUNCE_MS);
-  }, [syncProgress]);
+  const scheduleSyncDebounced = useCallback(
+    (data: CourseProgress) => {
+      if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+      syncTimerRef.current = setTimeout(() => {
+        syncProgress(data);
+      }, SYNC_DEBOUNCE_MS);
+    },
+    [syncProgress]
+  );
 
   // ── calculateOverallProgress ──────────────────────────────────────────────
 
@@ -130,7 +140,7 @@ export function useCourseProgress({
     if (!course || !fullProgress) return 0;
     const total = course.totalLessons;
     if (total === 0) return 0;
-    const completed = Object.values(fullProgress.lessons).filter((l) => l.completed).length;
+    const completed = Object.values(fullProgress.lessons).filter(l => l.completed).length;
     return Math.round((completed / total) * 100);
   }, [course, fullProgress]);
 
@@ -160,7 +170,7 @@ export function useCourseProgress({
       await saveProgress(updated);
       scheduleSyncDebounced(updated);
     },
-    [fullProgress, saveProgress, calculateOverallProgress, scheduleSyncDebounced],
+    [fullProgress, saveProgress, calculateOverallProgress, scheduleSyncDebounced]
   );
 
   // ── Simplified updateProgress (issue #152 requirement) ───────────────────
@@ -169,7 +179,7 @@ export function useCourseProgress({
     (lessonId: string, position: number) => {
       updateLessonProgress(lessonId, { lastPosition: position });
     },
-    [updateLessonProgress],
+    [updateLessonProgress]
   );
 
   // ── markLessonComplete ────────────────────────────────────────────────────
@@ -181,7 +191,7 @@ export function useCourseProgress({
         completedAt: new Date().toISOString(),
       });
     },
-    [updateLessonProgress],
+    [updateLessonProgress]
   );
 
   // ── setCurrentLesson ──────────────────────────────────────────────────────
@@ -198,7 +208,7 @@ export function useCourseProgress({
       await saveProgress(updated);
       scheduleSyncDebounced(updated);
     },
-    [fullProgress, saveProgress, scheduleSyncDebounced],
+    [fullProgress, saveProgress, scheduleSyncDebounced]
   );
 
   // ── updateLastPosition ────────────────────────────────────────────────────
@@ -211,7 +221,7 @@ export function useCourseProgress({
         timeSpent: (existing?.timeSpent ?? 0) + 1,
       });
     },
-    [fullProgress, updateLessonProgress],
+    [fullProgress, updateLessonProgress]
   );
 
   // ── addBookmark ───────────────────────────────────────────────────────────
@@ -226,7 +236,7 @@ export function useCourseProgress({
       await saveProgress(updated);
       scheduleSyncDebounced(updated);
     },
-    [fullProgress, saveProgress, scheduleSyncDebounced],
+    [fullProgress, saveProgress, scheduleSyncDebounced]
   );
 
   // ── removeBookmark ────────────────────────────────────────────────────────
@@ -236,12 +246,12 @@ export function useCourseProgress({
       if (!fullProgress) return;
       const updated: CourseProgress = {
         ...fullProgress,
-        bookmarks: fullProgress.bookmarks.filter((id) => id !== lessonId),
+        bookmarks: fullProgress.bookmarks.filter(id => id !== lessonId),
       };
       await saveProgress(updated);
       scheduleSyncDebounced(updated);
     },
-    [fullProgress, saveProgress, scheduleSyncDebounced],
+    [fullProgress, saveProgress, scheduleSyncDebounced]
   );
 
   // ── addNote ───────────────────────────────────────────────────────────────
@@ -268,7 +278,7 @@ export function useCourseProgress({
       scheduleSyncDebounced(updated);
       return note;
     },
-    [fullProgress, saveProgress, scheduleSyncDebounced],
+    [fullProgress, saveProgress, scheduleSyncDebounced]
   );
 
   // ── updateNote ────────────────────────────────────────────────────────────
@@ -280,15 +290,15 @@ export function useCourseProgress({
         ...fullProgress,
         notes: {
           ...fullProgress.notes,
-          [lessonId]: (fullProgress.notes[lessonId] ?? []).map((n) =>
-            n.id === noteId ? { ...n, content, updatedAt: new Date().toISOString() } : n,
+          [lessonId]: (fullProgress.notes[lessonId] ?? []).map(n =>
+            n.id === noteId ? { ...n, content, updatedAt: new Date().toISOString() } : n
           ),
         },
       };
       await saveProgress(updated);
       scheduleSyncDebounced(updated);
     },
-    [fullProgress, saveProgress, scheduleSyncDebounced],
+    [fullProgress, saveProgress, scheduleSyncDebounced]
   );
 
   // ── deleteNote ────────────────────────────────────────────────────────────
@@ -300,13 +310,13 @@ export function useCourseProgress({
         ...fullProgress,
         notes: {
           ...fullProgress.notes,
-          [lessonId]: (fullProgress.notes[lessonId] ?? []).filter((n) => n.id !== noteId),
+          [lessonId]: (fullProgress.notes[lessonId] ?? []).filter(n => n.id !== noteId),
         },
       };
       await saveProgress(updated);
       scheduleSyncDebounced(updated);
     },
-    [fullProgress, saveProgress, scheduleSyncDebounced],
+    [fullProgress, saveProgress, scheduleSyncDebounced]
   );
 
   // ── Effects ───────────────────────────────────────────────────────────────

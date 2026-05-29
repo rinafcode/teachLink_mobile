@@ -1,6 +1,6 @@
-import { User } from "../../store";
-import apiClient from "./axios.config";
-import { fetchWithSWR, invalidateCache } from "./cache";
+import { User } from '../../store';
+import apiClient from './axios.config';
+import { fetchWithSWR, invalidateCache } from './cache';
 
 const userKey = (id: string) => `users:${id}`;
 
@@ -12,9 +12,9 @@ export const userApi = {
   getUser(id: string): Promise<User> {
     return fetchWithSWR(
       userKey(id),
-      () => apiClient.get<User>(`/users/${id}`).then((r) => r.data),
+      () => apiClient.get<User>(`/users/${id}`).then(r => r.data),
       TTL,
-      STALE_TTL,
+      STALE_TTL
     );
   },
 

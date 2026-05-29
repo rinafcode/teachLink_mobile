@@ -38,7 +38,7 @@ describe('VirtualList Performance Tests', () => {
         <VirtualList
           data={data}
           renderItem={({ item }) => <Text>{item.title}</Text>}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={item => item.id.toString()}
           itemHeight={50}
         />
       );
@@ -59,13 +59,17 @@ describe('VirtualList Performance Tests', () => {
         <VirtualList
           data={data}
           renderItem={({ item }) => <Text>{item.title}</Text>}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={item => item.id.toString()}
           itemHeight={50}
         />
       );
     }, 3);
 
-    const regression = detectRegression(metrics, baselineMetrics, performanceBudget.regressionThreshold);
+    const regression = detectRegression(
+      metrics,
+      baselineMetrics,
+      performanceBudget.regressionThreshold
+    );
     expect(regression.isRegression).toBe(false);
     console.log(`Render time: ${metrics.renderTime.toFixed(2)}ms (${regression.message})`);
   });
@@ -78,7 +82,7 @@ describe('VirtualList Performance Tests', () => {
         <VirtualList
           data={data}
           renderItem={({ item }) => <Text>{item.title}</Text>}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={item => item.id.toString()}
           itemHeight={50}
         />
       );
@@ -95,7 +99,7 @@ describe('VirtualList Performance Tests', () => {
         <VirtualList
           data={data}
           renderItem={({ item }) => <Text>{item.title}</Text>}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={item => item.id.toString()}
           itemHeight={50}
         />
       );
@@ -112,7 +116,7 @@ describe('VirtualList Performance Tests', () => {
         <VirtualList
           data={data}
           renderItem={({ item }) => <Text>{item.title}</Text>}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={item => item.id.toString()}
           itemHeight={50}
         />
       );

@@ -1,6 +1,5 @@
 import { AccessibilityInfo, Platform } from 'react-native';
 
-
 export const combineAriaLabels = (...labels: (string | undefined | null)[]): string => {
   return labels.filter(Boolean).join(', ');
 };

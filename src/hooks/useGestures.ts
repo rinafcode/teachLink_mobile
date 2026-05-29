@@ -74,10 +74,10 @@ export function useGestures(options: UseGesturesOptions = {}): GestureCoordinato
       // If you need pre-emption, add an explicit "candidate" state.
       return false;
     },
-    [disabled],
+    [disabled]
   );
 
-  const release = React.useCallback<GestureCoordinator['release']>((id) => {
+  const release = React.useCallback<GestureCoordinator['release']>(id => {
     if (activeIdRef.current === id) {
       activeIdRef.current = null;
     }
@@ -96,7 +96,7 @@ export function useGestures(options: UseGesturesOptions = {}): GestureCoordinato
       isActive,
       getActiveId,
     }),
-    [tryClaim, release, hasActiveGesture, isActive, getActiveId],
+    [tryClaim, release, hasActiveGesture, isActive, getActiveId]
   );
 }
 
@@ -152,10 +152,10 @@ export function useDoubleTap(options: UseDoubleTapOptions) {
 
   React.useEffect(() => {
     let mounted = true;
-    AccessibilityInfo.isScreenReaderEnabled().then((enabled) => {
+    AccessibilityInfo.isScreenReaderEnabled().then(enabled => {
       if (mounted) setScreenReaderEnabled(enabled);
     });
-    const sub = AccessibilityInfo.addEventListener?.('screenReaderChanged', (enabled) => {
+    const sub = AccessibilityInfo.addEventListener?.('screenReaderChanged', enabled => {
       setScreenReaderEnabled(Boolean(enabled));
     });
     return () => {
@@ -188,10 +188,10 @@ export function useDoubleTap(options: UseDoubleTapOptions) {
     const disabled = disableWhenScreenReaderEnabled && screenReaderEnabled;
 
     return {
-      onStartShouldSetResponder: (e) => !disabled && e.nativeEvent.touches.length === 1,
-      onMoveShouldSetResponder: (e) => !disabled && e.nativeEvent.touches.length === 1,
+      onStartShouldSetResponder: e => !disabled && e.nativeEvent.touches.length === 1,
+      onMoveShouldSetResponder: e => !disabled && e.nativeEvent.touches.length === 1,
       onResponderTerminationRequest: () => true,
-      onResponderGrant: (e) => {
+      onResponderGrant: e => {
         if (disabled) return;
         const { pageX: x, pageY: y } = e.nativeEvent;
         startRef.current = { x, y };
@@ -205,7 +205,7 @@ export function useDoubleTap(options: UseDoubleTapOptions) {
         const maxSq = maxMoveDistance * maxMoveDistance;
         if (distanceSq(pageX, pageY, s.x, s.y) > maxSq) movedTooFarRef.current = true;
       },
-      onResponderRelease: (e) => {
+      onResponderRelease: e => {
         if (disabled) return;
         const { pageX: x, pageY: y } = e.nativeEvent;
         const now = Date.now();
@@ -249,4 +249,3 @@ export function useDoubleTap(options: UseDoubleTapOptions) {
 
   return { doubleTapHandlers: handlers, resetDoubleTap: reset };
 }
-

@@ -9,7 +9,7 @@ const SkeletonMeta: Meta<typeof Skeleton> = {
   title: 'Components/UI/Skeleton',
   component: Skeleton,
   decorators: [
-    (Story) => (
+    Story => (
       <View style={{ padding: 16, flex: 1, justifyContent: 'center' }}>
         <Story />
       </View>

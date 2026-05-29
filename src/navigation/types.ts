@@ -65,10 +65,7 @@ export type CourseViewerNavigationProp = NativeStackNavigationProp<
 >;
 
 /** Narrowed navigation prop for the Quiz screen. */
-export type QuizNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  'Quiz'
->;
+export type QuizNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Quiz'>;
 
 // ── Convenience route-prop aliases ──────────────────────────────────────────
 

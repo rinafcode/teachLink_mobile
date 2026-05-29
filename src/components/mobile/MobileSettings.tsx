@@ -183,11 +183,7 @@ function AdvancedToggle({ expanded, onToggle }: AdvancedToggleProps) {
 // Component
 // ─────────────────────────────────────────────────────────────
 
-export function MobileSettings({
-  onSignOut,
-  onChangePassword,
-  onLinkedAccounts,
-}: any) {
+export function MobileSettings({ onSignOut, onChangePassword, onLinkedAccounts }: any) {
   const theme = useTheme();
   const setTheme = useAppStore(state => state.setTheme);
   const { preferences, setPreference } = useNotificationStore();
@@ -304,7 +300,6 @@ export function MobileSettings({
 
   return (
     <ScrollView className="flex-1 bg-gray-50 dark:bg-gray-900">
-
       {/* ── ESSENTIAL: ACCOUNT ─────────────────────────────── */}
       <SettingsSection title="Account">
         <SettingRow

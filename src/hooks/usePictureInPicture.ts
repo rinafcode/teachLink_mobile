@@ -16,7 +16,8 @@ export function usePictureInPicture({ videoRef, isPlaying }: UsePictureInPicture
     if (Platform.OS !== 'ios') {
       return false;
     }
-    const version = typeof Platform.Version === 'string' ? parseInt(Platform.Version, 10) : Platform.Version;
+    const version =
+      typeof Platform.Version === 'string' ? parseInt(Platform.Version, 10) : Platform.Version;
     return Number.isFinite(version) ? version >= 14 : false;
   }, []);
 
@@ -52,7 +53,7 @@ export function usePictureInPicture({ videoRef, isPlaying }: UsePictureInPicture
   }, [isPiPSupported, videoRef]);
 
   useEffect(() => {
-    const subscription = AppState.addEventListener('change', (nextState) => {
+    const subscription = AppState.addEventListener('change', nextState => {
       if (nextState === 'active') {
         if (!isPiPRequested) {
           setIsPiPActive(false);

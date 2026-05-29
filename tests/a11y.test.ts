@@ -19,8 +19,7 @@ function relativeLuminance(hex: string): number {
   const r = parseInt(clean.slice(0, 2), 16) / 255;
   const g = parseInt(clean.slice(2, 4), 16) / 255;
   const b = parseInt(clean.slice(4, 6), 16) / 255;
-  const linearize = (c: number) =>
-    c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  const linearize = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
   return 0.2126 * linearize(r) + 0.7152 * linearize(g) + 0.0722 * linearize(b);
 }
 
@@ -84,9 +83,7 @@ describe('Image accessible labels (alt text)', () => {
   ];
 
   /** Decorative images should be hidden from screen readers */
-  const decorativeImages = [
-    { src: 'divider.png', accessibilityLabel: '', accessible: false },
-  ];
+  const decorativeImages = [{ src: 'divider.png', accessibilityLabel: '', accessible: false }];
 
   it('every informative image has a non-empty accessibilityLabel', () => {
     images.forEach(({ src, accessibilityLabel }) => {
@@ -117,16 +114,16 @@ describe('Color contrast (WCAG AA)', () => {
   const pairs: Array<{ name: string; fg: string; bg: string; isLargeText: boolean }> = [
     // Light theme
     { name: 'light – body text on background', fg: '#11181C', bg: '#ffffff', isLargeText: false },
-    { name: 'light – tint on background',      fg: '#0a7ea4', bg: '#ffffff', isLargeText: false },
-    { name: 'light – icon on background',      fg: '#687076', bg: '#ffffff', isLargeText: true },
+    { name: 'light – tint on background', fg: '#0a7ea4', bg: '#ffffff', isLargeText: false },
+    { name: 'light – icon on background', fg: '#687076', bg: '#ffffff', isLargeText: true },
     // Dark theme
-    { name: 'dark – body text on background',  fg: '#ECEDEE', bg: '#151718', isLargeText: false },
-    { name: 'dark – tint on background',       fg: '#ffffff', bg: '#151718', isLargeText: false },
-    { name: 'dark – icon on background',       fg: '#9BA1A6', bg: '#151718', isLargeText: true },
+    { name: 'dark – body text on background', fg: '#ECEDEE', bg: '#151718', isLargeText: false },
+    { name: 'dark – tint on background', fg: '#ffffff', bg: '#151718', isLargeText: false },
+    { name: 'dark – icon on background', fg: '#9BA1A6', bg: '#151718', isLargeText: true },
   ];
 
   const WCAG_AA_NORMAL = 4.5;
-  const WCAG_AA_LARGE  = 3.0;
+  const WCAG_AA_LARGE = 3.0;
 
   pairs.forEach(({ name, fg, bg, isLargeText }) => {
     it(`"${name}" meets WCAG AA contrast`, () => {
@@ -148,12 +145,12 @@ describe('Keyboard navigation', () => {
    * here we validate the ordering rules directly.
    */
   const focusableElements = [
-    { id: 'header-logo',    tabIndex: 0, role: 'image'  },
-    { id: 'nav-home',       tabIndex: 1, role: 'button' },
-    { id: 'nav-search',     tabIndex: 2, role: 'button' },
-    { id: 'main-content',   tabIndex: 3, role: 'text'   },
-    { id: 'cta-button',     tabIndex: 4, role: 'button' },
-    { id: 'footer-link',    tabIndex: 5, role: 'button' },
+    { id: 'header-logo', tabIndex: 0, role: 'image' },
+    { id: 'nav-home', tabIndex: 1, role: 'button' },
+    { id: 'nav-search', tabIndex: 2, role: 'button' },
+    { id: 'main-content', tabIndex: 3, role: 'text' },
+    { id: 'cta-button', tabIndex: 4, role: 'button' },
+    { id: 'footer-link', tabIndex: 5, role: 'button' },
   ];
 
   it('all interactive elements are focusable (tabIndex >= 0)', () => {

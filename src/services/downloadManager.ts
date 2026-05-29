@@ -63,13 +63,13 @@ class DownloadManager {
     if (this.tasks.has(id)) return;
 
     const settings = useSettingsStore.getState();
-    
+
     // Check Storage Limit
     const currentSize = await this.getTotalDownloadedSize();
     const limitStr = settings.storageLimit; // e.g., "1GB"
     const limitBytes = this.parseStorageLimit(limitStr);
-    
-    if (size && limitBytes !== Infinity && (currentSize + size) > limitBytes) {
+
+    if (size && limitBytes !== Infinity && currentSize + size > limitBytes) {
       throw new Error('Storage limit exceeded. Please clear space.');
     }
 
@@ -103,7 +103,7 @@ class DownloadManager {
     // Check WiFi Constraints
     const settings = useSettingsStore.getState();
     const netState = await Network.getNetworkStateAsync();
-    
+
     if (settings.downloadOverWifiOnly && netState.type !== Network.NetworkStateType.WIFI) {
       logger.info('DownloadManager: Postponing download, WiFi required');
       this.isProcessing = false;
@@ -130,7 +130,8 @@ class DownloadManager {
         if (!currentTask || currentTask.status !== 'downloading') break;
 
         currentTask.progress = i / 10;
-        currentTask.downloadedSize = (currentTask.totalSize || 1024 * 1024 * 10) * currentTask.progress;
+        currentTask.downloadedSize =
+          (currentTask.totalSize || 1024 * 1024 * 10) * currentTask.progress;
         this.notify();
         await new Promise(resolve => setTimeout(resolve, 500));
       }
@@ -170,8 +171,7 @@ class DownloadManager {
   }
 
   public async getTotalDownloadedSize(): Promise<number> {
-    return Array.from(this.tasks.values())
-      .reduce((acc, task) => acc + task.downloadedSize, 0);
+    return Array.from(this.tasks.values()).reduce((acc, task) => acc + task.downloadedSize, 0);
   }
 
   private parseStorageLimit(limit: string): number {

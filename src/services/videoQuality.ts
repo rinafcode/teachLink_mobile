@@ -50,10 +50,10 @@ export function normalizeSources(sources: VideoSource[]): NormalizedVideoSource[
       (source.height
         ? `${source.height}p`
         : source.bitrateKbps
-        ? `${Math.round(source.bitrateKbps)}kbps`
-        : isAdaptive
-        ? 'Adaptive'
-        : `Quality ${index + 1}`);
+          ? `${Math.round(source.bitrateKbps)}kbps`
+          : isAdaptive
+            ? 'Adaptive'
+            : `Quality ${index + 1}`);
     const baseId = source.id ?? label;
     let id = normalizeId(baseId);
     if (!id) {
@@ -83,7 +83,7 @@ export function getQualityOptions(sources: NormalizedVideoSource[]): QualityOpti
   const sorted = [...sources].sort((a, b) => scoreQuality(a) - scoreQuality(b));
   return [
     { id: AUTO_QUALITY_ID, label: 'Auto', isAdaptive: true },
-    ...sorted.map((source) => ({
+    ...sorted.map(source => ({
       id: source.id,
       label: source.label,
       isAdaptive: source.isAdaptive,
@@ -99,7 +99,7 @@ export function selectSourceById(
   if (qualityId === AUTO_QUALITY_ID) {
     return selectAutoSource(sources, networkType);
   }
-  const match = sources.find((source) => source.id === qualityId);
+  const match = sources.find(source => source.id === qualityId);
   return match ?? selectAutoSource(sources, networkType);
 }
 
@@ -110,7 +110,7 @@ export function selectAutoSource(
   if (!sources.length) {
     return null;
   }
-  const adaptive = sources.find((source) => source.isAdaptive);
+  const adaptive = sources.find(source => source.isAdaptive);
   if (adaptive) {
     return adaptive;
   }
@@ -133,7 +133,7 @@ function pickWithinBitrate(
   maxKbps: number
 ): NormalizedVideoSource | null {
   const candidates = sources.filter(
-    (source) => typeof source.bitrateKbps === 'number' && source.bitrateKbps <= maxKbps
+    source => typeof source.bitrateKbps === 'number' && source.bitrateKbps <= maxKbps
   );
   if (!candidates.length) {
     return null;

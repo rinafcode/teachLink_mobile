@@ -25,23 +25,25 @@ export interface UsePinchZoomOptions {
   id?: string;
 }
 
-export interface PinchHandlers
-  extends Pick<
-    ViewProps,
-    | 'onStartShouldSetResponder'
-    | 'onMoveShouldSetResponder'
-    | 'onResponderGrant'
-    | 'onResponderMove'
-    | 'onResponderRelease'
-    | 'onResponderTerminate'
-    | 'onResponderTerminationRequest'
-  > {}
+export interface PinchHandlers extends Pick<
+  ViewProps,
+  | 'onStartShouldSetResponder'
+  | 'onMoveShouldSetResponder'
+  | 'onResponderGrant'
+  | 'onResponderMove'
+  | 'onResponderRelease'
+  | 'onResponderTerminate'
+  | 'onResponderTerminationRequest'
+> {}
 
 function clamp(v: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, v));
 }
 
-function distance(a: { pageX: number; pageY: number }, b: { pageX: number; pageY: number }): number {
+function distance(
+  a: { pageX: number; pageY: number },
+  b: { pageX: number; pageY: number }
+): number {
   const dx = a.pageX - b.pageX;
   const dy = a.pageY - b.pageY;
   return Math.hypot(dx, dy);
@@ -78,7 +80,7 @@ export function usePinchZoom(options: UsePinchZoomOptions = {}) {
       baseScaleRef.current = clamp(next, minScale, maxScale);
       scale.setValue(baseScaleRef.current);
     },
-    [maxScale, minScale, scale],
+    [maxScale, minScale, scale]
   );
 
   const animateTo = React.useCallback(
@@ -94,7 +96,7 @@ export function usePinchZoom(options: UsePinchZoomOptions = {}) {
         if (finished) onPinchEnd?.(clamped);
       });
     },
-    [maxScale, minScale, onPinchEnd, scale],
+    [maxScale, minScale, onPinchEnd, scale]
   );
 
   const resetPinch = React.useCallback(() => {
@@ -120,14 +122,14 @@ export function usePinchZoom(options: UsePinchZoomOptions = {}) {
 
   const handlers = React.useMemo<PinchHandlers>(() => {
     return {
-      onStartShouldSetResponder: (e) => e.nativeEvent.touches.length === 2,
-      onMoveShouldSetResponder: (e) => {
+      onStartShouldSetResponder: e => e.nativeEvent.touches.length === 2,
+      onMoveShouldSetResponder: e => {
         if (e.nativeEvent.touches.length !== 2) return false;
         if (coordinator?.hasActiveGesture() && !coordinator.isActive(id)) return false;
         return true;
       },
       onResponderTerminationRequest: () => true,
-      onResponderGrant: (e) => {
+      onResponderGrant: e => {
         if (e.nativeEvent.touches.length !== 2) return;
 
         // Pinch should generally win conflicts over swipe.
@@ -182,4 +184,3 @@ export function usePinchZoom(options: UsePinchZoomOptions = {}) {
     resetPinch,
   };
 }
-

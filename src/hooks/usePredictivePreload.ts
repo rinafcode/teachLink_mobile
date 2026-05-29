@@ -4,7 +4,7 @@ import { preloadService } from '../services/preloadService';
 
 /**
  * Custom hook to interact with the predictive background preloading system.
- * It automatically binds the router instance from Expo Router so components 
+ * It automatically binds the router instance from Expo Router so components
  * do not need to manage router instances manually.
  */
 export function usePredictivePreload() {

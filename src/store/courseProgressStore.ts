@@ -17,17 +17,17 @@ export const useCourseProgressStore = create<CourseProgressState>()(
       progressMap: {},
 
       setCourseProgress: (courseId, progress) =>
-        set((s) => ({ progressMap: { ...s.progressMap, [courseId]: progress } })),
+        set(s => ({ progressMap: { ...s.progressMap, [courseId]: progress } })),
 
-      getCourseProgress: (courseId) => get().progressMap[courseId] ?? null,
+      getCourseProgress: courseId => get().progressMap[courseId] ?? null,
     }),
     {
       name: 'course-progress-storage',
       version: 1,
       storage: asyncStorageJSONStorage,
-      partialize: (state) => ({
+      partialize: state => ({
         progressMap: state.progressMap,
       }),
-    },
-  ),
+    }
+  )
 );

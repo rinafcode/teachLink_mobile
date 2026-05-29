@@ -11,7 +11,7 @@ export const useScreenReader = () => {
     let isMounted = true;
 
     // Check initial state
-    AccessibilityInfo.isScreenReaderEnabled().then((status) => {
+    AccessibilityInfo.isScreenReaderEnabled().then(status => {
       if (isMounted) {
         setIsEnabled(status);
       }

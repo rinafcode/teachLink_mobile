@@ -1,4 +1,3 @@
-
 import apiClient from './api/axios.config';
 import * as secureStorage from './secureStorage';
 import logger from '../utils/logger';
@@ -58,11 +57,10 @@ function validateSecureStorageReady(): void {
   if (!secureStorage.isSecureStorageReady()) {
     throw new Error(
       'Secure storage (Keychain/Keystore) is not initialized. ' +
-      'Cannot perform authentication operations. Please restart the app.'
+        'Cannot perform authentication operations. Please restart the app.'
     );
   }
 }
-
 
 // ─── Service ──────────────────────────────────────────────────────────────────
 
@@ -185,11 +183,9 @@ class MobileAuthService {
       // Notify backend
       const accessToken = await secureStorage.getAccessToken();
       if (accessToken) {
-        await apiClient
-          .post(ENDPOINTS.LOGOUT)
-          .catch(() => {
-            // Ignore network errors during logout
-          });
+        await apiClient.post(ENDPOINTS.LOGOUT).catch(() => {
+          // Ignore network errors during logout
+        });
       }
     } finally {
       await this._clearSession();
@@ -210,13 +206,13 @@ class MobileAuthService {
   private async _persistSession(
     result: AuthResult,
     rememberMe: boolean,
-    email?: string,
+    email?: string
   ): Promise<void> {
     await Promise.all([
       secureStorage.saveTokens(
         result.tokens.accessToken,
         result.tokens.refreshToken,
-        result.tokens.expiresAt,
+        result.tokens.expiresAt
       ),
       secureStorage.saveUserData(result.user as unknown as Record<string, unknown>),
       secureStorage.setRememberMe(rememberMe),

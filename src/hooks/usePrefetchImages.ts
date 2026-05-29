@@ -30,26 +30,26 @@ interface UsePrefetchImagesReturn {
 
 /**
  * Hook for prefetching images with the ImageCache utility
- * 
+ *
  * Provides efficient image prefetching for performance optimization.
  * Use this for:
  * - Prefetching images in lists before they're scrolled to
  * - Preloading course thumbnails
  * - Warming up avatar caches
  * - Preparing badge images
- * 
+ *
  * @param urls Array of image URLs to prefetch
  * @param options Configuration options
  * @returns Object with prefetch state and methods
- * 
+ *
  * @example
  * ```tsx
  * // Auto prefetch on mount
- * const { isPrefetching, failedUrls } = usePrefetchImages(imageUrls, { 
+ * const { isPrefetching, failedUrls } = usePrefetchImages(imageUrls, {
  *   auto: true,
- *   delay: 1000 
+ *   delay: 1000
  * });
- * 
+ *
  * // Manual prefetch
  * const { prefetch } = usePrefetchImages([]);
  * const results = await prefetch([newUrl]);
@@ -57,7 +57,7 @@ interface UsePrefetchImagesReturn {
  */
 export function usePrefetchImages(
   urls: (string | null | undefined)[],
-  options: UsePrefetchImagesOptions = {},
+  options: UsePrefetchImagesOptions = {}
 ): UsePrefetchImagesReturn {
   const { auto = true, onComplete, onError, delay = 0 } = options;
 
@@ -74,7 +74,7 @@ export function usePrefetchImages(
         setIsPrefetching(true);
 
         // Filter out null/undefined URLs
-        const validUrls = toFetch.filter((url) => !!url) as string[];
+        const validUrls = toFetch.filter(url => !!url) as string[];
 
         if (validUrls.length === 0) {
           setIsPrefetching(false);
@@ -105,7 +105,7 @@ export function usePrefetchImages(
         setIsPrefetching(false);
       }
     },
-    [onComplete, onError],
+    [onComplete, onError]
   );
 
   // ─── Auto-prefetch on mount or URL change ─────────────────────────────────
@@ -113,7 +113,7 @@ export function usePrefetchImages(
   useEffect(() => {
     if (!auto) return;
 
-    const validUrls = urls.filter((url) => !!url) as string[];
+    const validUrls = urls.filter(url => !!url) as string[];
     if (validUrls.length === 0) return;
 
     // Apply delay if specified

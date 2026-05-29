@@ -6,11 +6,7 @@
  */
 
 import React, { useCallback, useRef } from 'react';
-import {
-  Gesture,
-  GestureDetector,
-  gestureHandlerRootHOC,
-} from 'react-native-gesture-handler';
+import { Gesture, GestureDetector, gestureHandlerRootHOC } from 'react-native-gesture-handler';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -44,9 +40,7 @@ function clamp(value: number, min: number, max: number): number {
  * Optimized Video Gestures Hook using react-native-gesture-handler
  * Provides native-driven pan gestures for video scrubbing with smooth animations
  */
-export function useOptimizedVideoGestures(
-  options: UseOptimizedVideoGesturesOptions,
-) {
+export function useOptimizedVideoGestures(options: UseOptimizedVideoGesturesOptions) {
   const {
     currentPositionMillis,
     durationMillis,
@@ -75,7 +69,7 @@ export function useOptimizedVideoGestures(
 
   // Pan gesture for video scrubbing
   const pan = Gesture.Pan()
-    .onStart((event) => {
+    .onStart(event => {
       // Check if pan starts in valid area
       if (!durationMillis || containerWidth <= 0) return;
 
@@ -84,7 +78,7 @@ export function useOptimizedVideoGestures(
       isScrubbing.value = true;
       runOnJS(onSeekStart?.())();
     })
-    .onUpdate((event) => {
+    .onUpdate(event => {
       if (!durationMillis || containerWidth <= 0) {
         return;
       }
@@ -93,17 +87,13 @@ export function useOptimizedVideoGestures(
       const width = Math.max(containerWidth, 1);
       const deltaRatio = event.translationX / width;
       const deltaMillis = deltaRatio * durationMillis * seekSensitivity;
-      const nextPosition = clamp(
-        startPositionRef.current + deltaMillis,
-        0,
-        durationMillis,
-      );
+      const nextPosition = clamp(startPositionRef.current + deltaMillis, 0, durationMillis);
 
       // Update preview position
       previewPositionMillis.value = nextPosition;
       runOnJS(onSeekPreview?.(nextPosition))();
     })
-    .onEnd((event) => {
+    .onEnd(event => {
       if (previewPositionMillis.value !== null) {
         const finalPosition = previewPositionMillis.value;
         runOnJS(onSeek)(finalPosition);

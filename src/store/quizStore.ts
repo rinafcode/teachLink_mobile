@@ -62,7 +62,7 @@ async function ensureQuizStorageMigrated(): Promise<void> {
 
   const allKeys = await AsyncStorage.getAllKeys();
   const legacyKeys = allKeys.filter(
-    (key) => key === QUIZ_SESSION_KEY || key.startsWith(`${QUIZ_PROGRESS_KEY}_`)
+    key => key === QUIZ_SESSION_KEY || key.startsWith(`${QUIZ_PROGRESS_KEY}_`)
   );
 
   for (const key of legacyKeys) {
@@ -95,12 +95,12 @@ async function ensureQuizStorageMigrated(): Promise<void> {
 function persistQuizSession(session: QuizSession): void {
   void ensureQuizStorageMigrated()
     .then(() => writeVersionedQuizStorage(QUIZ_SESSION_KEY, session))
-    .catch((error) => logger.error('Error saving quiz session:', error));
+    .catch(error => logger.error('Error saving quiz session:', error));
 }
 
 async function saveQuizProgress(
   courseId: string,
-  quizProgress: Record<string, QuizProgress>,
+  quizProgress: Record<string, QuizProgress>
 ): Promise<void> {
   await ensureQuizStorageMigrated();
   await writeVersionedQuizStorage(`${QUIZ_PROGRESS_KEY}_${courseId}`, quizProgress);
@@ -109,10 +109,10 @@ async function saveQuizProgress(
 interface QuizState {
   // Session state (temporary, for active quiz)
   session: QuizSession;
-  
+
   // Progress state (persistent, synced with AsyncStorage)
   quizProgress: Record<string, QuizProgress>; // quizId -> QuizProgress
-  
+
   // Actions
   startQuiz: (quizId: string, sectionId: string, courseId: string) => Promise<void>;
   selectAnswer: (questionId: string, answer: string | number, isMultiSelect?: boolean) => void;
@@ -153,7 +153,7 @@ export const useQuizStore = create<QuizState>((set, get) => ({
 
       // Save session to AsyncStorage
       await writeVersionedQuizStorage(QUIZ_SESSION_KEY, newSession);
-      
+
       logger.info('Quiz started:', { quizId, sectionId, courseId });
     } catch (error) {
       logger.error('Error starting quiz:', error);
@@ -168,16 +168,16 @@ export const useQuizStore = create<QuizState>((set, get) => ({
     if (isMultiSelect) {
       // Multi-select: toggle answer in/out of array
       const currentAnswer = session.selectedAnswers[questionId];
-      const currentArray = Array.isArray(currentAnswer) 
-        ? currentAnswer 
-        : currentAnswer !== undefined 
-          ? [currentAnswer] 
+      const currentArray = Array.isArray(currentAnswer)
+        ? currentAnswer
+        : currentAnswer !== undefined
+          ? [currentAnswer]
           : [];
 
       const answerIndex = currentArray.indexOf(answer);
       if (answerIndex > -1) {
         // Remove answer if already selected
-        updatedAnswer = currentArray.filter((a) => a !== answer);
+        updatedAnswer = currentArray.filter(a => a !== answer);
         // If array becomes empty, remove the key
         if (updatedAnswer.length === 0) {
           const { [questionId]: _, ...rest } = session.selectedAnswers;
@@ -222,14 +222,14 @@ export const useQuizStore = create<QuizState>((set, get) => ({
         currentQuestionIndex: index,
       };
       set({ session: updatedSession });
-      
+
       persistQuizSession(updatedSession);
     }
   },
 
   completeQuiz: async (quiz: Quiz) => {
     const { session, quizProgress } = get();
-    
+
     if (!session.quizId || !session.courseId) {
       throw new Error('No active quiz session');
     }
@@ -240,10 +240,10 @@ export const useQuizStore = create<QuizState>((set, get) => ({
       let totalPoints = 0;
       let earnedPoints = 0;
 
-      quiz.questions.forEach((question) => {
+      quiz.questions.forEach(question => {
         totalPoints += question.points;
         const selectedAnswer = session.selectedAnswers[question.id];
-        
+
         if (selectedAnswer !== undefined) {
           let isCorrect = false;
 
@@ -260,9 +260,7 @@ export const useQuizStore = create<QuizState>((set, get) => ({
             if (correctAnswers.length === selectedAnswers.length) {
               const correctSorted = [...correctAnswers].sort();
               const selectedSorted = [...selectedAnswers].sort();
-              isCorrect = correctSorted.every(
-                (val, idx) => val === selectedSorted[idx]
-              );
+              isCorrect = correctSorted.every((val, idx) => val === selectedSorted[idx]);
             }
           } else {
             // Single-select: direct comparison
@@ -275,13 +273,9 @@ export const useQuizStore = create<QuizState>((set, get) => ({
         }
       });
 
-      const score = totalPoints > 0 
-        ? Math.round((earnedPoints / totalPoints) * 100) 
-        : 0;
+      const score = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
 
-      const passed = quiz.passingScore 
-        ? score >= quiz.passingScore 
-        : score >= 70; // Default passing score
+      const passed = quiz.passingScore ? score >= quiz.passingScore : score >= 70; // Default passing score
 
       // Get existing progress or create new
       const existingProgress = quizProgress[session.quizId];
@@ -334,7 +328,7 @@ export const useQuizStore = create<QuizState>((set, get) => ({
       await ensureQuizStorageMigrated();
       const storageKey = `${QUIZ_PROGRESS_KEY}_${courseId}`;
       const stored = await readQuizStorage<Record<string, QuizProgress>>(storageKey);
-      
+
       if (stored) {
         set({ quizProgress: stored });
       } else {

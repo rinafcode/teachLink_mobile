@@ -46,7 +46,10 @@ export const useCamera = (): UseCameraReturn => {
       setHasPermission(granted);
       return granted;
     } catch (error) {
-      appLogger.errorSync('[useCamera] Error requesting permissions', error instanceof Error ? error : new Error(String(error)));
+      appLogger.errorSync(
+        '[useCamera] Error requesting permissions',
+        error instanceof Error ? error : new Error(String(error))
+      );
       return false;
     }
   }, []);
@@ -79,7 +82,10 @@ export const useCamera = (): UseCameraReturn => {
       }
       return null;
     } catch (error) {
-      appLogger.errorSync('[useCamera] Error taking picture', error instanceof Error ? error : new Error(String(error)));
+      appLogger.errorSync(
+        '[useCamera] Error taking picture',
+        error instanceof Error ? error : new Error(String(error))
+      );
       return null;
     } finally {
       setIsLoading(false);
@@ -114,7 +120,10 @@ export const useCamera = (): UseCameraReturn => {
       }
       return null;
     } catch (error) {
-      appLogger.errorSync('[useCamera] Error picking from library', error instanceof Error ? error : new Error(String(error)));
+      appLogger.errorSync(
+        '[useCamera] Error picking from library',
+        error instanceof Error ? error : new Error(String(error))
+      );
       return null;
     } finally {
       setIsLoading(false);

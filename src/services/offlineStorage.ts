@@ -66,7 +66,7 @@ class OfflineStorage {
     try {
       const itemStr = await AsyncStorage.getItem(key);
       if (!itemStr) return null;
-      
+
       const item: StorageItem<T> = JSON.parse(itemStr);
       return item.data;
     } catch (error) {
@@ -121,14 +121,14 @@ class OfflineStorage {
     try {
       const keys = await AsyncStorage.getAllKeys();
       let totalSize = 0;
-      
+
       for (const key of keys) {
         const value = await AsyncStorage.getItem(key);
         if (value) {
           totalSize += value.length;
         }
       }
-      
+
       return totalSize;
     } catch (error) {
       logger.error('Error getting storage size:', error);
@@ -152,7 +152,7 @@ class OfflineStorage {
     try {
       const keys = await AsyncStorage.getAllKeys();
       const courseKeys = keys.filter(key => key.startsWith(STORAGE_KEYS.COURSE_DATA));
-      
+
       const courses = [];
       for (const key of courseKeys) {
         const course = await this.retrieve(key);
@@ -160,7 +160,7 @@ class OfflineStorage {
           courses.push(course);
         }
       }
-      
+
       return courses;
     } catch (error) {
       logger.error('Error getting all courses:', error);
@@ -211,7 +211,7 @@ class OfflineStorage {
   async addToSyncQueue(operation: SyncOperationInput): Promise<string> {
     try {
       const queue = await this.getSyncQueue();
-      
+
       const syncOp: SyncOperation = {
         id: this.generateOperationId(),
         ...operation,
@@ -221,7 +221,7 @@ class OfflineStorage {
       };
 
       queue.push(syncOp);
-      
+
       // Sort by priority and timestamp
       queue.sort((a, b) => {
         const priorityOrder = { high: 0, medium: 1, low: 2 };
@@ -233,7 +233,7 @@ class OfflineStorage {
 
       await this.store(STORAGE_KEYS.SYNC_QUEUE, queue);
       logger.info(`Added operation to sync queue: ${syncOp.type} ${syncOp.endpoint}`);
-      
+
       return syncOp.id;
     } catch (error) {
       logger.error('Error adding to sync queue:', error);
@@ -261,7 +261,7 @@ class OfflineStorage {
     try {
       const queue = await this.getSyncQueue();
       const operation = queue.find(op => op.id === operationId);
-      
+
       if (operation) {
         operation.retries += 1;
         await this.store(STORAGE_KEYS.SYNC_QUEUE, queue);

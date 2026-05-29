@@ -118,9 +118,7 @@ export function useNotificationPermission(): UseNotificationPermissionReturn {
   };
 }
 
-function mapPermissionStatus(
-  status: Notifications.PermissionStatus
-): PermissionStatus {
+function mapPermissionStatus(status: Notifications.PermissionStatus): PermissionStatus {
   switch (status) {
     case Notifications.PermissionStatus.GRANTED:
       return 'granted';

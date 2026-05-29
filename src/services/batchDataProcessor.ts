@@ -93,7 +93,7 @@ function reportProgress(
  * so we use requestAnimationFrame to allow native rendering frames to pass.
  */
 function waitForNextBatch(): Promise<void> {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     if (Platform.OS === 'web') {
       setTimeout(resolve, 0);
     } else {
@@ -111,13 +111,13 @@ function escapeCsvCell(value: unknown): string {
 }
 
 function serializeChunkToCSV<T extends GridRow>(rows: T[], columns: ColumnDef<T>[]): string[] {
-  return rows.map((row) => columns.map((column) => escapeCsvCell(row[column.key])).join(','));
+  return rows.map(row => columns.map(column => escapeCsvCell(row[column.key])).join(','));
 }
 
 function serializeChunkToJSON<T extends GridRow>(rows: T[], columns: ColumnDef<T>[]) {
-  return rows.map((row) => {
+  return rows.map(row => {
     const entry: Record<string, unknown> = {};
-    columns.forEach((column) => {
+    columns.forEach(column => {
       entry[column.key] = row[column.key] ?? null;
     });
     return entry;
@@ -192,7 +192,7 @@ function splitCSVRows(csv: string): string[] {
     rows.push(current);
   }
 
-  return rows.filter((row) => row.trim().length > 0);
+  return rows.filter(row => row.trim().length > 0);
 }
 
 async function exportInChunks<T extends GridRow>({
@@ -205,7 +205,7 @@ async function exportInChunks<T extends GridRow>({
   reportProgress(onProgress, 0, rows.length, 'queued');
 
   if (format === 'csv') {
-    const lines = [columns.map((column) => escapeCsvCell(column.title)).join(',')];
+    const lines = [columns.map(column => escapeCsvCell(column.title)).join(',')];
 
     for (let start = 0; start < rows.length; start += chunkSize) {
       const chunk = rows.slice(start, start + chunkSize);
@@ -241,7 +241,7 @@ async function importCSVInChunks({
     return [];
   }
 
-  const headers = parseCSVLine(lines[0]).map((header) => header.trim());
+  const headers = parseCSVLine(lines[0]).map(header => header.trim());
   const dataLines = lines.slice(1);
   const rows: GridRow[] = [];
 
@@ -440,7 +440,7 @@ function runWorkerRequest<T>(
       resolve(message.result as T);
     };
 
-    worker.onerror = (event) => {
+    worker.onerror = event => {
       worker.terminate();
       reject(new Error(event.message));
     };
@@ -451,7 +451,7 @@ function runWorkerRequest<T>(
 
 /**
  * Initiates a batch data export operation.
- * It will seamlessly use a Web Worker if requested and available, 
+ * It will seamlessly use a Web Worker if requested and available,
  * otherwise it falls back to native chunked processing with main-thread yielding.
  */
 export function batchExportData<T extends GridRow>(
@@ -478,7 +478,7 @@ export function batchExportData<T extends GridRow>(
 
 /**
  * Initiates a batch CSV data import operation.
- * It will seamlessly use a Web Worker if requested and available, 
+ * It will seamlessly use a Web Worker if requested and available,
  * otherwise it falls back to native chunked processing with main-thread yielding.
  */
 export function batchImportCSV(options: BatchImportOptions): Promise<GridRow[]> {

@@ -71,14 +71,13 @@ export const useNotificationStore = create<NotificationState>()(
       lastNotificationSentAtByType: {},
 
       // Push token actions
-      setPushToken: (token) =>
+      setPushToken: token =>
         set({
           pushToken: token,
           tokenLastUpdated: token ? new Date().toISOString() : null,
         }),
 
-      setTokenRegistered: (registered) =>
-        set({ isTokenRegistered: registered }),
+      setTokenRegistered: registered => set({ isTokenRegistered: registered }),
 
       clearPushToken: () =>
         set({
@@ -88,30 +87,26 @@ export const useNotificationStore = create<NotificationState>()(
         }),
 
       // Permission actions
-      setHasPromptedForPermission: (prompted) =>
-        set({ hasPromptedForPermission: prompted }),
+      setHasPromptedForPermission: prompted => set({ hasPromptedForPermission: prompted }),
 
-      setPermissionDeniedAt: (date) =>
-        set({ permissionDeniedAt: date }),
+      setPermissionDeniedAt: date => set({ permissionDeniedAt: date }),
 
       // Preference actions
       setPreference: (key, value) =>
-        set((state) => ({
+        set(state => ({
           preferences: {
             ...state.preferences,
             [key]: value,
           },
         })),
 
-      setAllPreferences: (preferences) =>
-        set({ preferences }),
+      setAllPreferences: preferences => set({ preferences }),
 
-      resetPreferences: () =>
-        set({ preferences: DEFAULT_NOTIFICATION_PREFERENCES }),
+      resetPreferences: () => set({ preferences: DEFAULT_NOTIFICATION_PREFERENCES }),
 
       // Notification actions
-      addNotification: (notification) =>
-        set((state) => {
+      addNotification: notification =>
+        set(state => {
           const newNotification: StoredNotification = {
             ...notification,
             id: generateId(),
@@ -125,13 +120,13 @@ export const useNotificationStore = create<NotificationState>()(
           };
         }),
 
-      markAsRead: (notificationId) =>
-        set((state) => {
-          const notification = state.notifications.find((n) => n.id === notificationId);
+      markAsRead: notificationId =>
+        set(state => {
+          const notification = state.notifications.find(n => n.id === notificationId);
           if (!notification || notification.read) return state;
 
           return {
-            notifications: state.notifications.map((n) =>
+            notifications: state.notifications.map(n =>
               n.id === notificationId ? { ...n, read: true } : n
             ),
             unreadCount: Math.max(0, state.unreadCount - 1),
@@ -139,18 +134,18 @@ export const useNotificationStore = create<NotificationState>()(
         }),
 
       markAllAsRead: () =>
-        set((state) => ({
-          notifications: state.notifications.map((n) => ({ ...n, read: true })),
+        set(state => ({
+          notifications: state.notifications.map(n => ({ ...n, read: true })),
           unreadCount: 0,
         })),
 
-      removeNotification: (notificationId) =>
-        set((state) => {
-          const notification = state.notifications.find((n) => n.id === notificationId);
+      removeNotification: notificationId =>
+        set(state => {
+          const notification = state.notifications.find(n => n.id === notificationId);
           const wasUnread = notification && !notification.read;
 
           return {
-            notifications: state.notifications.filter((n) => n.id !== notificationId),
+            notifications: state.notifications.filter(n => n.id !== notificationId),
             unreadCount: wasUnread ? Math.max(0, state.unreadCount - 1) : state.unreadCount,
           };
         }),
@@ -172,8 +167,7 @@ export const useNotificationStore = create<NotificationState>()(
         const lastSentAt = state.lastNotificationSentAtByType[type];
 
         if (lastSentAt) {
-          const elapsedMinutes =
-            (now.getTime() - new Date(lastSentAt).getTime()) / (1000 * 60);
+          const elapsedMinutes = (now.getTime() - new Date(lastSentAt).getTime()) / (1000 * 60);
           if (elapsedMinutes < thresholdMinutes) {
             return true;
           }
@@ -203,7 +197,7 @@ export const useNotificationStore = create<NotificationState>()(
       },
 
       // Helpers
-      isNotificationTypeEnabled: (type) => {
+      isNotificationTypeEnabled: type => {
         const { preferences } = get();
         switch (type) {
           case NotificationType.COURSE_UPDATE:
@@ -224,7 +218,7 @@ export const useNotificationStore = create<NotificationState>()(
     {
       name: 'notification-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({
+      partialize: state => ({
         // Only persist these fields
         pushToken: state.pushToken,
         isTokenRegistered: state.isTokenRegistered,

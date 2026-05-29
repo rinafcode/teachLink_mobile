@@ -121,7 +121,7 @@ class SyncService {
 
       // Process operations in batches
       const batches = this.createBatches(queue, this.config.batchSize);
-      
+
       for (const batch of batches) {
         await this.processBatch(batch);
       }
@@ -130,10 +130,10 @@ class SyncService {
       this.emitEvent({ type: 'syncCompleted', timestamp: Date.now() });
     } catch (error) {
       logger.error('Sync failed:', error);
-      this.emitEvent({ 
-        type: 'syncFailed', 
-        error, 
-        timestamp: Date.now() 
+      this.emitEvent({
+        type: 'syncFailed',
+        error,
+        timestamp: Date.now(),
       });
     } finally {
       this.isSyncing = false;
@@ -144,9 +144,9 @@ class SyncService {
    * Process a batch of operations
    */
   private async processBatch(operations: SyncOperation[]): Promise<void> {
-    const promises = operations.slice(0, this.config.maxConcurrentSyncs).map(op => 
-      this.processOperation(op)
-    );
+    const promises = operations
+      .slice(0, this.config.maxConcurrentSyncs)
+      .map(op => this.processOperation(op));
 
     await Promise.all(promises);
   }
@@ -179,28 +179,29 @@ class SyncService {
 
       // Remove successful operation from queue
       await offlineStorage.removeFromSyncQueue(operation.id);
-      
+
       logger.info(`Operation completed: ${operation.id}`);
       this.emitEvent({
         type: 'operationProcessed',
         operationId: operation.id,
         data: result,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
-
     } catch (error: any) {
       logger.error(`Operation failed: ${operation.id}`, error);
 
       // Handle retry logic
       if (operation.retries < operation.maxRetries) {
         await offlineStorage.incrementRetryCount(operation.id);
-        
+
         // Schedule retry with exponential backoff
         setTimeout(() => {
           this.retryOperation(operation.id);
         }, this.calculateRetryDelay(operation.retries));
       } else {
-        logger.error(`Operation failed permanently after ${operation.maxRetries} retries: ${operation.id}`);
+        logger.error(
+          `Operation failed permanently after ${operation.maxRetries} retries: ${operation.id}`
+        );
         // Move to failed operations for manual handling
         this.handlePermanentFailure(operation, error);
       }
@@ -209,7 +210,7 @@ class SyncService {
         type: 'syncFailed',
         operationId: operation.id,
         error,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     }
   }
@@ -220,7 +221,7 @@ class SyncService {
   private async retryOperation(operationId: string): Promise<void> {
     const queue = await offlineStorage.getSyncQueue();
     const operation = queue.find(op => op.id === operationId);
-    
+
     if (operation) {
       await this.processOperation(operation);
     }
@@ -234,7 +235,7 @@ class SyncService {
     logger.error('Permanent sync failure:', {
       operation,
       error: error.message,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     // Could implement notification system here
@@ -313,7 +314,7 @@ class SyncService {
   }> {
     const pendingCount = await offlineStorage.getPendingOperationsCount();
     const failedOperations = await offlineStorage.getFailedOperations();
-    
+
     return {
       pendingCount,
       failedCount: failedOperations.length,
@@ -329,14 +330,14 @@ class SyncService {
     localData: any,
     serverData: any,
     strategy: ConflictResolutionStrategy = 'server-wins',
-    baseData?: any,
+    baseData?: any
   ): Promise<any> {
     const normalizedStrategy = this.normalizeConflictStrategy(strategy);
 
     this.emitEvent({
       type: 'conflictDetected',
       data: { localData, serverData, strategy: normalizedStrategy },
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     if (strategy === 'manual') {
@@ -347,13 +348,13 @@ class SyncService {
       localData,
       serverData,
       normalizedStrategy,
-      baseData,
+      baseData
     );
 
     this.emitEvent({
       type: 'conflictResolved',
       data: result,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     return result.resolved.data;
@@ -365,14 +366,14 @@ class SyncService {
   resolveVersionedConflict<T extends Record<string, unknown>>(
     serverEntity: VersionedEntity<T>,
     strategy: ConflictResolutionStrategy = 'merge',
-    baseEntity?: VersionedEntity<T>,
+    baseEntity?: VersionedEntity<T>
   ) {
     const normalizedStrategy = this.normalizeConflictStrategy(strategy);
     return syncEntityManager.handleServerEntity(serverEntity, normalizedStrategy, baseEntity);
   }
 
   private normalizeConflictStrategy(
-    strategy: ConflictResolutionStrategy,
+    strategy: ConflictResolutionStrategy
   ): VersionedConflictResolutionStrategy {
     switch (strategy) {
       case 'serverWins':

@@ -139,9 +139,7 @@ describe('useAdaptiveTheme', () => {
       await Promise.resolve();
     });
 
-    const listener = mockAddListener.mock.calls[0][0] as (data: {
-      illuminance: number;
-    }) => void;
+    const listener = mockAddListener.mock.calls[0][0] as (data: { illuminance: number }) => void;
 
     act(() => listener({ illuminance: 10 }));
     expect(useAppStore.getState().theme).toBe('light');
@@ -156,9 +154,7 @@ describe('useAdaptiveTheme', () => {
       await Promise.resolve();
     });
 
-    const listener = mockAddListener.mock.calls[0][0] as (data: {
-      illuminance: number;
-    }) => void;
+    const listener = mockAddListener.mock.calls[0][0] as (data: { illuminance: number }) => void;
 
     act(() => listener({ illuminance: 10 }));
     act(() => listener({ illuminance: 10 }));

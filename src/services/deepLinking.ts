@@ -68,9 +68,7 @@ export async function trackDeferredDeepLink(url: string): Promise<void> {
   }
 }
 
-export function subscribeToDeepLinks(
-  listener: (deepLink: ParsedDeepLink) => void
-): () => void {
+export function subscribeToDeepLinks(listener: (deepLink: ParsedDeepLink) => void): () => void {
   const subscription = Linking.addEventListener('url', ({ url }) => {
     const parsed = parseDeepLinkUrl(url);
     if (parsed) {

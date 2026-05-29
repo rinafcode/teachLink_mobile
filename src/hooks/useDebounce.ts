@@ -3,7 +3,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 /**
  * A hook that returns a debounced version of the provided value.
  * Useful for debouncing values that change rapidly, such as search text.
- * 
+ *
  * @param value The value to debounce
  * @param delay The delay in milliseconds
  * @returns The debounced value
@@ -27,7 +27,7 @@ export function useDebounce<T>(value: T, delay: number): T {
 /**
  * A hook that returns a debounced version of the provided callback function.
  * Useful for debouncing rapid event handlers, such as scroll events.
- * 
+ *
  * @param callback The callback function to debounce
  * @param delay The delay in milliseconds
  * @returns A debounced version of the callback

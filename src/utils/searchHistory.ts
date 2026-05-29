@@ -30,7 +30,7 @@ export async function addToSearchHistory(query: string): Promise<void> {
   if (!trimmed) return;
   try {
     let items = await getSearchHistory();
-    items = items.filter((item) => item.query.toLowerCase() !== trimmed.toLowerCase());
+    items = items.filter(item => item.query.toLowerCase() !== trimmed.toLowerCase());
     items.unshift({ query: trimmed, timestamp: Date.now() });
     items = items.slice(0, MAX_HISTORY_ITEMS);
     await AsyncStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(items));
@@ -45,7 +45,7 @@ export async function addToSearchHistory(query: string): Promise<void> {
 export async function removeFromSearchHistory(query: string): Promise<void> {
   try {
     const items = (await getSearchHistory()).filter(
-      (item) => item.query.toLowerCase() !== query.toLowerCase()
+      item => item.query.toLowerCase() !== query.toLowerCase()
     );
     await AsyncStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(items));
   } catch {

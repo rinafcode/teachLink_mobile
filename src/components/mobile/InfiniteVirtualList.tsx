@@ -72,9 +72,9 @@ export function InfiniteVirtualList<T>({
   const optimizations = useMemo(() => {
     if (isLowEndDevice) {
       return {
-        windowSize: 3,                  // Minimum offscreen buffers
-        maxToRenderPerBatch: 5,         // Prevent blocking UI thread
-        initialNumToRender: 5,          // Quick render
+        windowSize: 3, // Minimum offscreen buffers
+        maxToRenderPerBatch: 5, // Prevent blocking UI thread
+        initialNumToRender: 5, // Quick render
         updateCellsBatchingPeriod: 100, // Yield more time back to native main thread
       };
     }

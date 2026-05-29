@@ -10,12 +10,20 @@ export interface NetworkStatus {
 
 export function useNetworkStatus() {
   return {
-    networkStatus: { isConnected: true, isInternetReachable: true, type: 'unknown' as ConnectionType },
+    networkStatus: {
+      isConnected: true,
+      isInternetReachable: true,
+      type: 'unknown' as ConnectionType,
+    },
     isOnline: true,
     isOffline: false,
     isFastConnection: true,
     isChecking: false,
-    refresh: async () => ({ isConnected: true, isInternetReachable: true, type: 'unknown' as ConnectionType }),
+    refresh: async () => ({
+      isConnected: true,
+      isInternetReachable: true,
+      type: 'unknown' as ConnectionType,
+    }),
   };
 }
 

@@ -26,14 +26,11 @@ interface UseOfflineDataOptions {
 /**
  * Hook for managing offline data with automatic synchronization
  */
-export function useOfflineData<T>(
-  dataType: string,
-  options: UseOfflineDataOptions = {}
-) {
+export function useOfflineData<T>(dataType: string, options: UseOfflineDataOptions = {}) {
   const {
     autoSync = true,
     maxSyncAttempts = 3,
-    conflictResolutionStrategy = 'serverWins'
+    conflictResolutionStrategy = 'serverWins',
   } = options;
 
   const [data, setData] = useState<Record<string, OfflineDataItem<T>>>({});
@@ -45,8 +42,9 @@ export function useOfflineData<T>(
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const storedData = await offlineStorage.retrieve<Record<string, OfflineDataItem<T>>>(dataType);
-      
+      const storedData =
+        await offlineStorage.retrieve<Record<string, OfflineDataItem<T>>>(dataType);
+
       if (storedData) {
         setData(storedData);
       } else {
@@ -61,179 +59,200 @@ export function useOfflineData<T>(
   }, [dataType]);
 
   // Save data to offline storage
-  const saveData = useCallback(async (newData: Record<string, OfflineDataItem<T>>) => {
-    try {
-      await offlineStorage.store(dataType, newData);
-      setData(newData);
-    } catch (error) {
-      logger.error(`Error saving ${dataType} data:`, error);
-      throw error;
-    }
-  }, [dataType]);
+  const saveData = useCallback(
+    async (newData: Record<string, OfflineDataItem<T>>) => {
+      try {
+        await offlineStorage.store(dataType, newData);
+        setData(newData);
+      } catch (error) {
+        logger.error(`Error saving ${dataType} data:`, error);
+        throw error;
+      }
+    },
+    [dataType]
+  );
 
   // Add new item
-  const addItem = useCallback(async (id: string, itemData: T): Promise<void> => {
-    try {
-      const newItem: OfflineDataItem<T> = {
-        id,
-        data: itemData,
-        status: 'pending',
-        lastModified: Date.now(),
-        syncAttempts: 0,
-      };
-
-      const updatedData = {
-        ...data,
-        [id]: newItem
-      };
-
-      await saveData(updatedData);
-      
-      // Add to sync queue if online
-      if (isOnline) {
-        await offlineStorage.addToSyncQueue({
-          type: 'CREATE',
-          endpoint: `/${dataType}/${id}`,
+  const addItem = useCallback(
+    async (id: string, itemData: T): Promise<void> => {
+      try {
+        const newItem: OfflineDataItem<T> = {
+          id,
           data: itemData,
-          priority: 'high'
-        });
+          status: 'pending',
+          lastModified: Date.now(),
+          syncAttempts: 0,
+        };
+
+        const updatedData = {
+          ...data,
+          [id]: newItem,
+        };
+
+        await saveData(updatedData);
+
+        // Add to sync queue if online
+        if (isOnline) {
+          await offlineStorage.addToSyncQueue({
+            type: 'CREATE',
+            endpoint: `/${dataType}/${id}`,
+            data: itemData,
+            priority: 'high',
+          });
+        }
+      } catch (error) {
+        logger.error(`Error adding ${dataType} item:`, error);
+        throw error;
       }
-    } catch (error) {
-      logger.error(`Error adding ${dataType} item:`, error);
-      throw error;
-    }
-  }, [data, dataType, isOnline, saveData]);
+    },
+    [data, dataType, isOnline, saveData]
+  );
 
   // Update existing item
-  const updateItem = useCallback(async (id: string, itemData: Partial<T>): Promise<void> => {
-    try {
-      const existingItem = data[id];
-      if (!existingItem) {
-        throw new Error(`Item with id ${id} not found`);
+  const updateItem = useCallback(
+    async (id: string, itemData: Partial<T>): Promise<void> => {
+      try {
+        const existingItem = data[id];
+        if (!existingItem) {
+          throw new Error(`Item with id ${id} not found`);
+        }
+
+        const updatedItem: OfflineDataItem<T> = {
+          ...existingItem,
+          data: { ...existingItem.data, ...itemData },
+          status: 'pending',
+          lastModified: Date.now(),
+          syncAttempts: 0,
+        };
+
+        const updatedData = {
+          ...data,
+          [id]: updatedItem,
+        };
+
+        await saveData(updatedData);
+
+        // Add to sync queue if online
+        if (isOnline) {
+          await offlineStorage.addToSyncQueue({
+            type: 'UPDATE',
+            endpoint: `/${dataType}/${id}`,
+            data: updatedItem.data,
+            priority: 'medium',
+          });
+        }
+      } catch (error) {
+        logger.error(`Error updating ${dataType} item:`, error);
+        throw error;
       }
+    },
+    [data, dataType, isOnline, saveData]
+  );
 
-      const updatedItem: OfflineDataItem<T> = {
-        ...existingItem,
-        data: { ...existingItem.data, ...itemData },
-        status: 'pending',
-        lastModified: Date.now(),
-        syncAttempts: 0,
-      };
+  // Delete item
+  const deleteItem = useCallback(
+    async (id: string): Promise<void> => {
+      try {
+        const updatedData = { ...data };
+        delete updatedData[id];
 
-      const updatedData = {
-        ...data,
-        [id]: updatedItem
-      };
+        await saveData(updatedData);
 
-      await saveData(updatedData);
-      
-      // Add to sync queue if online
-      if (isOnline) {
+        // Add to sync queue if online
+        if (isOnline) {
+          await offlineStorage.addToSyncQueue({
+            type: 'DELETE',
+            endpoint: `/${dataType}/${id}`,
+            priority: 'medium',
+          });
+        }
+      } catch (error) {
+        logger.error(`Error deleting ${dataType} item:`, error);
+        throw error;
+      }
+    },
+    [data, dataType, isOnline, saveData]
+  );
+
+  // Get item by ID
+  const getItem = useCallback(
+    (id: string): T | null => {
+      const item = data[id];
+      return item ? item.data : null;
+    },
+    [data]
+  );
+
+  // Get items with specific status
+  const getItemsByStatus = useCallback(
+    (status: DataSyncStatus): T[] => {
+      return Object.values(data)
+        .filter(item => item.status === status)
+        .map(item => item.data);
+    },
+    [data]
+  );
+
+  // Sync specific item
+  const syncItem = useCallback(
+    async (id: string): Promise<void> => {
+      const item = data[id];
+      if (!item) return;
+
+      try {
+        setIsSyncing(true);
+
+        // Add to sync queue
         await offlineStorage.addToSyncQueue({
           type: 'UPDATE',
           endpoint: `/${dataType}/${id}`,
-          data: updatedItem.data,
-          priority: 'medium'
+          data: item.data,
+          priority: 'high',
         });
+
+        // Update local status
+        const updatedItem: OfflineDataItem<T> = {
+          ...item,
+          status: 'pending',
+          syncAttempts: item.syncAttempts + 1,
+        };
+
+        const updatedData = {
+          ...data,
+          [id]: updatedItem,
+        };
+
+        await saveData(updatedData);
+      } catch (error) {
+        logger.error(`Error syncing ${dataType} item ${id}:`, error);
+
+        // Update error status
+        const errorItem: OfflineDataItem<T> = {
+          ...item,
+          status: 'error',
+          errorMessage: error instanceof Error ? error.message : 'Unknown error',
+          syncAttempts: item.syncAttempts + 1,
+        };
+
+        const updatedData = {
+          ...data,
+          [id]: errorItem,
+        };
+
+        await saveData(updatedData);
+        throw error;
+      } finally {
+        setIsSyncing(false);
       }
-    } catch (error) {
-      logger.error(`Error updating ${dataType} item:`, error);
-      throw error;
-    }
-  }, [data, dataType, isOnline, saveData]);
-
-  // Delete item
-  const deleteItem = useCallback(async (id: string): Promise<void> => {
-    try {
-      const updatedData = { ...data };
-      delete updatedData[id];
-
-      await saveData(updatedData);
-      
-      // Add to sync queue if online
-      if (isOnline) {
-        await offlineStorage.addToSyncQueue({
-          type: 'DELETE',
-          endpoint: `/${dataType}/${id}`,
-          priority: 'medium'
-        });
-      }
-    } catch (error) {
-      logger.error(`Error deleting ${dataType} item:`, error);
-      throw error;
-    }
-  }, [data, dataType, isOnline, saveData]);
-
-  // Get item by ID
-  const getItem = useCallback((id: string): T | null => {
-    const item = data[id];
-    return item ? item.data : null;
-  }, [data]);
-
-  // Get items with specific status
-  const getItemsByStatus = useCallback((status: DataSyncStatus): T[] => {
-    return Object.values(data)
-      .filter(item => item.status === status)
-      .map(item => item.data);
-  }, [data]);
-
-  // Sync specific item
-  const syncItem = useCallback(async (id: string): Promise<void> => {
-    const item = data[id];
-    if (!item) return;
-
-    try {
-      setIsSyncing(true);
-      
-      // Add to sync queue
-      await offlineStorage.addToSyncQueue({
-        type: 'UPDATE',
-        endpoint: `/${dataType}/${id}`,
-        data: item.data,
-        priority: 'high'
-      });
-
-      // Update local status
-      const updatedItem: OfflineDataItem<T> = {
-        ...item,
-        status: 'pending',
-        syncAttempts: item.syncAttempts + 1
-      };
-
-      const updatedData = {
-        ...data,
-        [id]: updatedItem
-      };
-
-      await saveData(updatedData);
-    } catch (error) {
-      logger.error(`Error syncing ${dataType} item ${id}:`, error);
-      
-      // Update error status
-      const errorItem: OfflineDataItem<T> = {
-        ...item,
-        status: 'error',
-        errorMessage: error instanceof Error ? error.message : 'Unknown error',
-        syncAttempts: item.syncAttempts + 1
-      };
-
-      const updatedData = {
-        ...data,
-        [id]: errorItem
-      };
-
-      await saveData(updatedData);
-      throw error;
-    } finally {
-      setIsSyncing(false);
-    }
-  }, [data, dataType, saveData]);
+    },
+    [data, dataType, saveData]
+  );
 
   // Sync all pending items
   const syncAll = useCallback(async (): Promise<void> => {
     try {
       setIsSyncing(true);
-      
+
       const pendingItems = getItemsByStatus('pending');
       const promises = pendingItems.map((_, index) => {
         const id = Object.keys(data)[index];
@@ -250,55 +269,61 @@ export function useOfflineData<T>(
   }, [data, getItemsByStatus, syncItem]);
 
   // Mark item as synced
-  const markAsSynced = useCallback(async (id: string): Promise<void> => {
-    const item = data[id];
-    if (!item) return;
-
-    const updatedItem: OfflineDataItem<T> = {
-      ...item,
-      status: 'synced',
-      syncAttempts: 0,
-      errorMessage: undefined
-    };
-
-    const updatedData = {
-      ...data,
-      [id]: updatedItem
-    };
-
-    await saveData(updatedData);
-  }, [data, saveData]);
-
-  // Resolve conflict for item
-  const resolveConflict = useCallback(async (
-    id: string,
-    resolvedData: T,
-    strategy: 'serverWins' | 'clientWins' | 'merge' = conflictResolutionStrategy
-  ): Promise<void> => {
-    try {
+  const markAsSynced = useCallback(
+    async (id: string): Promise<void> => {
       const item = data[id];
       if (!item) return;
 
-      const resolvedItem: OfflineDataItem<T> = {
+      const updatedItem: OfflineDataItem<T> = {
         ...item,
-        data: resolvedData,
-        status: 'pending',
-        lastModified: Date.now(),
+        status: 'synced',
         syncAttempts: 0,
-        errorMessage: undefined
+        errorMessage: undefined,
       };
 
       const updatedData = {
         ...data,
-        [id]: resolvedItem
+        [id]: updatedItem,
       };
 
       await saveData(updatedData);
-    } catch (error) {
-      logger.error(`Error resolving conflict for ${dataType} item ${id}:`, error);
-      throw error;
-    }
-  }, [data, dataType, conflictResolutionStrategy, saveData]);
+    },
+    [data, saveData]
+  );
+
+  // Resolve conflict for item
+  const resolveConflict = useCallback(
+    async (
+      id: string,
+      resolvedData: T,
+      strategy: 'serverWins' | 'clientWins' | 'merge' = conflictResolutionStrategy
+    ): Promise<void> => {
+      try {
+        const item = data[id];
+        if (!item) return;
+
+        const resolvedItem: OfflineDataItem<T> = {
+          ...item,
+          data: resolvedData,
+          status: 'pending',
+          lastModified: Date.now(),
+          syncAttempts: 0,
+          errorMessage: undefined,
+        };
+
+        const updatedData = {
+          ...data,
+          [id]: resolvedItem,
+        };
+
+        await saveData(updatedData);
+      } catch (error) {
+        logger.error(`Error resolving conflict for ${dataType} item ${id}:`, error);
+        throw error;
+      }
+    },
+    [data, dataType, conflictResolutionStrategy, saveData]
+  );
 
   // Clear all data
   const clearAll = useCallback(async (): Promise<void> => {
@@ -339,27 +364,27 @@ export function useOfflineData<T>(
     data,
     getItem,
     getItemsByStatus,
-    
+
     // CRUD operations
     addItem,
     updateItem,
     deleteItem,
-    
+
     // Sync operations
     syncItem,
     syncAll,
     markAsSynced,
     resolveConflict,
-    
+
     // Status
     isLoading,
     isSyncing,
     isOnline,
-    
+
     // Management
     clearAll,
     refresh,
-    
+
     // Stats
     totalCount: Object.keys(data).length,
     pendingCount: getItemsByStatus('pending').length,
@@ -374,7 +399,7 @@ export function useOfflineData<T>(
 export function useOfflineCourses() {
   return useOfflineData<any>('courses', {
     autoSync: true,
-    conflictResolutionStrategy: 'serverWins'
+    conflictResolutionStrategy: 'serverWins',
   });
 }
 
@@ -384,7 +409,7 @@ export function useOfflineCourses() {
 export function useOfflineUserData() {
   return useOfflineData<any>('userData', {
     autoSync: true,
-    conflictResolutionStrategy: 'clientWins'
+    conflictResolutionStrategy: 'clientWins',
   });
 }
 
@@ -394,7 +419,7 @@ export function useOfflineUserData() {
 export function useOfflineSettings() {
   return useOfflineData<any>('settings', {
     autoSync: false, // Settings typically don't need server sync
-    conflictResolutionStrategy: 'clientWins'
+    conflictResolutionStrategy: 'clientWins',
   });
 }
 

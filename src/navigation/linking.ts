@@ -67,7 +67,7 @@ export const linking: LinkingOptions<RootStackParamList> = {
 
     // Listen for notification responses (user tapping notification)
     const notificationSubscription = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
+      response => {
         const data = response.notification.request.content.data as NotificationData | undefined;
         if (data) {
           const url = buildNotificationDeepLink(data);
@@ -119,7 +119,7 @@ function buildNotificationDeepLink(data: NotificationData): string | null {
  * Call this from your root component
  */
 export function setupNotificationNavigation(): () => void {
-  const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+  const subscription = Notifications.addNotificationResponseReceivedListener(response => {
     // Navigation is handled by the linking config above
     // This is here for any additional side effects
     logger.info('Notification response received:', response);

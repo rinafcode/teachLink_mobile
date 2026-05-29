@@ -1,4 +1,4 @@
-import apiClient from "./axios.config";
+import apiClient from './axios.config';
 
 export const apiService = {
   // Example API methods
@@ -8,8 +8,8 @@ export const apiService = {
   delete: (url: string) => apiClient.delete(url),
 };
 
-export { courseApi } from "./courseApi";
-export { userApi } from "./userApi";
-export { fetchWithSWR, invalidateCache, clearCache } from "./cache";
+export { courseApi } from './courseApi';
+export { userApi } from './userApi';
+export { fetchWithSWR, invalidateCache, clearCache } from './cache';
 
 export default apiService;

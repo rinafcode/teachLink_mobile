@@ -26,17 +26,16 @@ export interface UseLongPressOptions {
   id?: string;
 }
 
-export interface LongPressHandlers
-  extends Pick<
-    ViewProps,
-    | 'onStartShouldSetResponder'
-    | 'onMoveShouldSetResponder'
-    | 'onResponderGrant'
-    | 'onResponderMove'
-    | 'onResponderRelease'
-    | 'onResponderTerminate'
-    | 'onResponderTerminationRequest'
-  > {}
+export interface LongPressHandlers extends Pick<
+  ViewProps,
+  | 'onStartShouldSetResponder'
+  | 'onMoveShouldSetResponder'
+  | 'onResponderGrant'
+  | 'onResponderMove'
+  | 'onResponderRelease'
+  | 'onResponderTerminate'
+  | 'onResponderTerminationRequest'
+> {}
 
 function distanceSq(ax: number, ay: number, bx: number, by: number): number {
   const dx = ax - bx;
@@ -98,10 +97,10 @@ export function useLongPress(options: UseLongPressOptions) {
 
   const handlers = React.useMemo<LongPressHandlers>(() => {
     return {
-      onStartShouldSetResponder: (e) => e.nativeEvent.touches.length === 1,
-      onMoveShouldSetResponder: (e) => e.nativeEvent.touches.length === 1,
+      onStartShouldSetResponder: e => e.nativeEvent.touches.length === 1,
+      onMoveShouldSetResponder: e => e.nativeEvent.touches.length === 1,
       onResponderTerminationRequest: () => true,
-      onResponderGrant: (e) => {
+      onResponderGrant: e => {
         if (e.nativeEvent.touches.length !== 1) return;
         const { pageX: x, pageY: y } = e.nativeEvent;
 
@@ -178,4 +177,3 @@ export function useLongPress(options: UseLongPressOptions) {
 
   return { longPressHandlers: handlers, pressProgress, resetLongPress: reset };
 }
-

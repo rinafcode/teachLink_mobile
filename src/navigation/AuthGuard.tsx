@@ -1,6 +1,6 @@
-import { useRouter } from "expo-router";
-import { useEffect } from "react";
-import { useAuth } from "../hooks";
+import { useRouter } from 'expo-router';
+import { useEffect } from 'react';
+import { useAuth } from '../hooks';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -16,7 +16,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     }
 
     if (!isAuthenticated) {
-      router.replace("/login");
+      router.replace('/login');
     }
   }, [isAuthenticated, isLoading]);
 
@@ -28,7 +28,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 }
 
 export function withAuthGuard<P extends object>(
-  Component: React.ComponentType<P>,
+  Component: React.ComponentType<P>
 ): React.ComponentType<P> {
   return function AuthGuardedComponent(props: P) {
     return (
