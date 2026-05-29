@@ -28,7 +28,7 @@ import {
 
 import { BiometricInlineButton, BiometricPrompt } from '../../components/mobile/BiometricPrompt';
 import { MobileFormInput } from '../../components/mobile/MobileFormInput';
-import { useBiometricAuth, useDynamicFontSize } from '../../hooks';
+import { useBiometricAuth, useDynamicFontSize, useFormValidation } from '../../hooks';
 import authService, { AuthResult } from '../../services/mobileAuth';
 import * as secureStorage from '../../services/secureStorage';
 import { validateEmail, validateRequired } from '../../utils/validation';
@@ -77,6 +77,16 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
     clearError: clearBiometricError,
   } = useBiometricAuth();
 
+  const {
+    errors: fieldErrors,
+    onChangeText: onFieldChange,
+    onBlur: onFieldBlur,
+    validateAll,
+  } = useFormValidation({
+    email: { validator: validateEmail },
+    password: { validator: v => validateRequired(v, 'Password') },
+  });
+
   const { scale } = useDynamicFontSize();
   const styles = createStyles(scale, isDark);
 
@@ -114,16 +124,7 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
 
   // ── Password login ───────────────────────────────────────────────────────
   const handlePasswordLogin = async () => {
-    const emailCheck = validateEmail(email);
-    if (!emailCheck.valid) {
-      setError(emailCheck.message ?? 'Invalid email.');
-      return;
-    }
-    const passwordCheck = validateRequired(password, 'Password');
-    if (!passwordCheck.valid) {
-      setError(passwordCheck.message ?? 'Password is required.');
-      return;
-    }
+    if (!validateAll({ email, password })) return;
 
     setError(null);
     setIsLoading(true);
@@ -166,7 +167,7 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
   };
 
   // ── Input border colors ──────────────────────────────────────────────────
-  const passwordBorder = error?.toLowerCase().includes('password')
+  const passwordBorder = fieldErrors.password
     ? '#ef4444'
     : passwordFocused
       ? accentColor
@@ -221,7 +222,10 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
               onChangeText={v => {
                 setEmail(v);
                 setError(null);
+                onFieldChange('email', v);
               }}
+              onBlur={() => onFieldBlur('email', email)}
+              error={fieldErrors.email}
               placeholder="you@example.com"
               isDark={isDark}
               cacheKey="email"
@@ -263,6 +267,7 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
                   onChangeText={v => {
                     setPassword(v);
                     setError(null);
+                    onFieldChange('password', v);
                   }}
                   placeholder="Enter your password"
                   placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
@@ -270,7 +275,10 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
                   autoComplete="current-password"
                   returnKeyType="go"
                   onFocus={() => setPasswordFocused(true)}
-                  onBlur={() => setPasswordFocused(false)}
+                  onBlur={() => {
+                    setPasswordFocused(false);
+                    onFieldBlur('password', password);
+                  }}
                   onSubmitEditing={handlePasswordLogin}
                 />
                 <TouchableOpacity
@@ -284,6 +292,17 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
                   )}
                 </TouchableOpacity>
               </View>
+              {fieldErrors.password && (
+                <View style={styles.errorRow}>
+                  <AlertCircle size={scale(13)} color="#ef4444" />
+                  <Text
+                    allowFontScaling={false}
+                    style={[styles.inlineErrorText, { fontSize: scale(12) }]}
+                  >
+                    {fieldErrors.password}
+                  </Text>
+                </View>
+              )}
             </View>
 
             {/* Remember Me */}
@@ -607,5 +626,16 @@ const createStyles = (scale: (size: number) => number, isDark: boolean) =>
     registerLink: {
       fontSize: scale(14),
       fontWeight: '700',
+    },
+    errorRow: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: 4,
+      marginTop: 4,
+    },
+    inlineErrorText: {
+      color: '#ef4444',
+      flex: 1,
+      fontWeight: '500' as const,
     },
   });
