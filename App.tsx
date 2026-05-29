@@ -1,31 +1,33 @@
+import * as Font from 'expo-font';
+import { ExpoRoot } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef } from 'react';
 import { Alert, AppState, AppStateStatus, LogBox } from 'react-native';
 
 import StorybookUI from './.rnstorybook';
 import './global.css';
-
-import * as Font from 'expo-font';
-import * as SplashScreen from 'expo-splash-screen';
 import { ErrorBoundary } from './src/components/common/ErrorBoundary';
+import { requireEnvVariables } from './src/config/env';
 import { initializeLogging } from './src/config/logging';
 import { AuthProvider, useAdaptiveTheme } from './src/hooks';
-import AppNavigator from './src/navigation/AppNavigator';
 import { setupNotificationNavigation } from './src/navigation/linking';
-import { apiClient } from './src/services/api';
-import { crashReportingService } from './src/services/cashReporting';
+import apiClient from './src/services/api/axios.config';
+import { requestQueue } from './src/services/api/requestQueue';
+import { crashReportingService } from './src/services/crashReporting';
 import { mobileAuthService } from './src/services/mobileAuth';
 import {
   addNotificationReceivedListener,
   getLastNotificationResponse,
+  registerForPushNotifications,
+  registerTokenWithBackend,
   removeNotificationListener,
 } from './src/services/pushNotifications';
-import { requestQueue } from './src/services/requestQueue';
+import { initializeSecureStorage } from './src/services/secureStorage';
 import socketService from './src/services/socket';
-import syncService from './src/services/syncService';
-import { useAppStore } from './src/store';
+import { syncService } from './src/services/syncService';
+import { useAppStore, useNotificationStore } from './src/store';
 import { handleCacheVersionUpdate } from './src/utils/cacheVersioning';
-import { requireEnvVariables } from './src/utils/env';
 import { appLogger } from './src/utils/logger';
 import { handleNotificationReceived } from './src/utils/notificationHandlers';
 
@@ -34,7 +36,6 @@ SplashScreen.preventAutoHideAsync();
 
 // SHOW_STORYBOOK flag based on environment variable
 const SHOW_STORYBOOK = process.env.EXPO_PUBLIC_STORYBOOK === 'true';
-
 
 // Centralized structured logging initialized on startup
 requireEnvVariables();
@@ -56,7 +57,7 @@ if (__DEV__) {
 }
 
 const App = () => {
-  const theme = useAppStore((state) => state.theme);
+  const theme = useAppStore(state => state.theme);
   useAdaptiveTheme();
 
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
@@ -98,8 +99,8 @@ const App = () => {
     crashReportingService.init();
 
     // Initialize secure storage (Keychain/Keystore) for encrypted token storage
-    initializeSecureStorage().catch((error) => {
-      logger.error('Failed to initialize secure storage:', error);
+    initializeSecureStorage().catch(error => {
+      appLogger.errorSync('Failed to initialize secure storage:', error as Error);
       // Continue app startup even if secure storage init fails
       // (user will be prompted to re-authenticate if needed)
     });
@@ -121,7 +122,7 @@ const App = () => {
     socketService.connect();
 
     // Initialize push notifications: request permissions and get device token
-    registerForPushNotifications().then(async (token) => {
+    registerForPushNotifications().then(async token => {
       if (token) {
         const { setPushToken, setTokenRegistered } = useNotificationStore.getState();
         setPushToken(token);
@@ -235,7 +236,7 @@ const App = () => {
     <ErrorBoundary>
       <AuthProvider>
         <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
-        <AppNavigator />
+        <ExpoRoot />
       </AuthProvider>
     </ErrorBoundary>
   );
