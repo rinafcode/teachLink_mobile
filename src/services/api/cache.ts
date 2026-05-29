@@ -3,6 +3,7 @@ interface CacheEntry<T> {
   cachedAt: number;
   ttl: number;       // ms until stale
   staleTtl: number;  // ms until evicted (stale-while-revalidate window)
+  dataVersion?: string; // optional server data version tag
 }
 
 const store = new Map<string, CacheEntry<unknown>>();
@@ -32,12 +33,26 @@ export function setCache<T>(
   data: T,
   ttl: number,
   staleTtl: number,
+  dataVersion?: string,
 ): void {
-  store.set(key, { data, cachedAt: Date.now(), ttl, staleTtl });
+  store.set(key, { data, cachedAt: Date.now(), ttl, staleTtl, dataVersion });
 }
 
 export function invalidateCache(key: string): void {
   store.delete(key);
+}
+
+/**
+ * Removes all in-memory cache entries that were stored with the given
+ * dataVersion. Useful when the server signals that a specific data version
+ * is no longer valid.
+ */
+export function invalidateCacheByDataVersion(version: string): void {
+  for (const [key, entry] of store) {
+    if (entry.dataVersion === version) {
+      store.delete(key);
+    }
+  }
 }
 
 export function clearCache(): void {
@@ -51,16 +66,18 @@ export function clearCache(): void {
  * - Triggers a background revalidation when the entry is stale.
  * - Falls back to a fresh fetch when no cache entry exists.
  *
- * @param key       Cache key
- * @param fetcher   Async function that fetches fresh data
- * @param ttl       Time (ms) before data is considered stale (default 60 s)
- * @param staleTtl  Time (ms) before stale data is evicted (default 5 min)
+ * @param key         Cache key
+ * @param fetcher     Async function that fetches fresh data
+ * @param ttl         Time (ms) before data is considered stale (default 60 s)
+ * @param staleTtl    Time (ms) before stale data is evicted (default 5 min)
+ * @param dataVersion Optional server data version tag for this entry
  */
 export async function fetchWithSWR<T>(
   key: string,
   fetcher: () => Promise<T>,
   ttl = 60_000,
   staleTtl = 300_000,
+  dataVersion?: string,
 ): Promise<T> {
   const cached = getCache<T>(key);
 
@@ -68,7 +85,7 @@ export async function fetchWithSWR<T>(
     if (isStaleCache(key)) {
       // Revalidate in the background; return stale data now
       fetcher()
-        .then((fresh) => setCache(key, fresh, ttl, staleTtl))
+        .then((fresh) => setCache(key, fresh, ttl, staleTtl, dataVersion))
         .catch(() => {/* keep stale data on error */});
     }
     return cached;
@@ -76,6 +93,6 @@ export async function fetchWithSWR<T>(
 
   // No cache – fetch synchronously
   const fresh = await fetcher();
-  setCache(key, fresh, ttl, staleTtl);
+  setCache(key, fresh, ttl, staleTtl, dataVersion);
   return fresh;
 }

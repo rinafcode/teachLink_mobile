@@ -18,6 +18,7 @@ import {
   toggleSortDirection,
   validateCellValue,
 } from '../utils/gridUtils';
+import { BatchProgress, batchExportData } from '../services/batchDataProcessor';
 import { logger } from '../utils/logger';
 
 // ─── State shape ─────────────────────────────────────────────────────────────
@@ -168,6 +169,10 @@ export interface UseDataGridReturn<T extends GridRow> {
 
   // ── Export ──
   exportData: (format: ExportFormat) => string;
+  exportDataAsync: (
+    format: ExportFormat,
+    onProgress?: (progress: BatchProgress) => void
+  ) => Promise<string>;
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
@@ -321,6 +326,18 @@ export function useDataGrid<T extends GridRow>(
     [processedRows, columns]
   );
 
+  const exportDataAsync = useCallback(
+    (format: ExportFormat, onProgress?: (progress: BatchProgress) => void): Promise<string> =>
+      batchExportData({
+        rows: processedRows,
+        columns,
+        format,
+        onProgress,
+        useWorker: true,
+      }),
+    [processedRows, columns]
+  );
+
   return {
     paginatedRows: pagination.rows,
     processedRows,
@@ -343,6 +360,7 @@ export function useDataGrid<T extends GridRow>(
     commitEdit,
     cancelEditing,
     exportData,
+    exportDataAsync,
   };
 }
 

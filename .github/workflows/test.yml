@@ -16,6 +16,10 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - name: Install dependencies
-        run: npm install
-      - name: Run tests
+        run: npm ci
+      - name: Run unit tests
         run: npm test -- --runInBand
+      - name: Run performance regression tests
+        run: npm test -- --testPathPattern=perf --runInBand
+      - name: Check performance budgets
+        run: npm test -- --testPathPattern=perf --runInBand --verbose

@@ -17,6 +17,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAdaptiveFrameRate } from '../../hooks/useAdaptiveFrameRate';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -82,18 +83,19 @@ export function FilterSheet({
   const translateY = useSharedValue(SHEET_HEIGHT);
   const overlayOpacity = useSharedValue(0);
   const [localValues, setLocalValues] = useState<FilterValues>(values);
+  const { durationMultiplier } = useAdaptiveFrameRate();
 
   const open = useCallback(() => {
-    translateY.value = withTiming(0, { duration: 280 });
-    overlayOpacity.value = withTiming(1, { duration: 280 });
-  }, [translateY, overlayOpacity]);
+    translateY.value = withTiming(0, { duration: 280 * durationMultiplier });
+    overlayOpacity.value = withTiming(1, { duration: 280 * durationMultiplier });
+  }, [translateY, overlayOpacity, durationMultiplier]);
 
   const close = useCallback(() => {
-    translateY.value = withTiming(SHEET_HEIGHT, { duration: 220 });
-    overlayOpacity.value = withTiming(0, { duration: 220 }, finished => {
+    translateY.value = withTiming(SHEET_HEIGHT, { duration: 220 * durationMultiplier });
+    overlayOpacity.value = withTiming(0, { duration: 220 * durationMultiplier }, finished => {
       if (finished) runOnJS(onClose)();
     });
-  }, [translateY, overlayOpacity, onClose]);
+  }, [translateY, overlayOpacity, onClose, durationMultiplier]);
 
   useEffect(() => {
     if (visible) {

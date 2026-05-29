@@ -9,7 +9,7 @@ import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { ErrorBoundary } from './src/components/common/ErrorBoundary';
 import { initializeLogging } from './src/config/logging';
-import { AuthProvider } from './src/hooks';
+import { AuthProvider, useAdaptiveTheme } from './src/hooks';
 import AppNavigator from './src/navigation/AppNavigator';
 import { setupNotificationNavigation } from './src/navigation/linking';
 import { apiClient } from './src/services/api';
@@ -24,6 +24,7 @@ import { requestQueue } from './src/services/requestQueue';
 import socketService from './src/services/socket';
 import syncService from './src/services/syncService';
 import { useAppStore } from './src/store';
+import { handleCacheVersionUpdate } from './src/utils/cacheVersioning';
 import { requireEnvVariables } from './src/utils/env';
 import { appLogger } from './src/utils/logger';
 import { handleNotificationReceived } from './src/utils/notificationHandlers';
@@ -56,6 +57,7 @@ if (__DEV__) {
 
 const App = () => {
   const theme = useAppStore((state) => state.theme);
+  useAdaptiveTheme();
 
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const [appIsReady, setAppIsReady] = React.useState(false);
@@ -67,6 +69,10 @@ const App = () => {
         await Font.loadAsync({
           // You can add custom fonts here later if needed
         });
+
+        // 2. Version-based cache invalidation: clear stale caches on app/data version bump
+        const appVersion = require('./package.json').version as string;
+        await handleCacheVersionUpdate(appVersion);
 
         // 2. Check Auth State / wait for store hydration
         // Zustand persist automatically hydrates, we can assume it's done or add a small delay

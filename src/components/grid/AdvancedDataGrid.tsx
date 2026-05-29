@@ -1,7 +1,6 @@
-import { ArrowDown, ArrowUp, ArrowUpDown, Filter, FilterX } from 'lucide-react-native';
-import React, { useCallback, useMemo } from 'react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Filter, FilterX, Upload } from 'lucide-react-native';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   ListRenderItemInfo,
   ScrollView,
@@ -17,6 +16,12 @@ import { InlineEditing } from './InlineEditing';
 import { useDataGrid, UseDataGridOptions } from '../../hooks/useDataGrid';
 import { ColumnDef, ExportFormat, GridRow, SortConfig, SortDirection } from '../../utils/gridUtils';
 import { ErrorBoundary } from '../common/ErrorBoundary';
+import { Skeleton } from '../ui/Skeleton';
+import { BatchProgress, batchImportCSV } from '../../services/batchDataProcessor';
+
+// Import for document picking (web and native)
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
@@ -32,6 +37,8 @@ export interface AdvancedDataGridProps<T extends GridRow = GridRow> extends UseD
   showFilters?: boolean;
   /** Show or hide the export toolbar. Defaults to `true`. */
   showExporter?: boolean;
+  /** Callback when imported rows are ready. Replaces the current dataset. */
+  onImport?: (newRows: GridRow[]) => void;
   /** Show a loading overlay while data is being fetched. */
   loading?: boolean;
   /** Message shown when the filtered result set is empty. */
@@ -67,9 +74,12 @@ export const AdvancedDataGrid = <T extends GridRow = GridRow>({
   loading = false,
   emptyMessage = 'No data to display',
   testID,
+  onImport,
   ...gridOptions
 }: AdvancedDataGridProps<T>) => {
   const grid = useDataGrid(rows, columns, gridOptions);
+  const [importProgress, setImportProgress] = useState<BatchProgress | null>(null);
+  const [activeImport, setActiveImport] = useState<boolean>(false);
 
   const {
     paginatedRows,
@@ -88,7 +98,7 @@ export const AdvancedDataGrid = <T extends GridRow = GridRow>({
     updateDraft,
     commitEdit,
     cancelEditing,
-    exportData,
+    exportDataAsync,
   } = grid;
 
   // ── Stable column widths ─────────────────────────────────────────────────
@@ -138,7 +148,7 @@ export const AdvancedDataGrid = <T extends GridRow = GridRow>({
           hasFilters={hasFilters}
           onClearFilters={clearAllFilters}
           showExporter={showExporter}
-          onExport={exportData}
+          onExport={exportDataAsync}
         />
 
         {/* ── Scrollable grid area ─────────────────────────────────────────── */}
@@ -166,7 +176,28 @@ export const AdvancedDataGrid = <T extends GridRow = GridRow>({
             {/* Data rows */}
             {loading ? (
               <View style={styles.loadingOverlay}>
-                <ActivityIndicator size="large" color="#19c3e6" />
+                {Array.from({ length: 6 }, (_, i) => (
+                  <View
+                    key={i}
+                    style={{
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      paddingVertical: 10,
+                      paddingHorizontal: 12,
+                      backgroundColor: '#fff',
+                      borderBottomWidth: 1,
+                      borderBottomColor: '#F3F4F6',
+                    }}
+                  >
+                    {columnWidths.map((_cw, j) => (
+                      <Skeleton
+                        key={j}
+                        width={j === 0 ? 80 : j % 3 === 0 ? 100 : 70}
+                        height={14}
+                      />
+                    ))}
+                  </View>
+                ))}
               </View>
             ) : paginatedRows.length === 0 ? (
               <View style={styles.emptyState}>
@@ -208,7 +239,10 @@ interface GridToolbarProps {
   hasFilters: boolean;
   onClearFilters: () => void;
   showExporter: boolean;
-  onExport: (format: ExportFormat) => string;
+  onExport: ReturnType<typeof useDataGrid>['exportDataAsync'];
+  showImporter: boolean;
+  onImport: (onProgress?: (progress: BatchProgress) => void) => Promise<GridRow[]>;
+  onImportComplete: (newRows: GridRow[]) => void;
 }
 
 const GridToolbar = ({
@@ -217,7 +251,82 @@ const GridToolbar = ({
   onClearFilters,
   showExporter,
   onExport,
+  showImporter,
+  onImport,
+  onImportComplete,
 }: GridToolbarProps) => {
+  const [activeType, setActiveType] = useState<'export' | 'import' | null>(null);
+  const [progress, setProgress] = useState<BatchProgress | null>(null);
+
+  const handleExport = useCallback(
+    async (format: ExportFormat) => {
+      if (activeType !== null) return;
+
+      setActiveType('export');
+      setProgress({ processed: 0, total: 0, percent: 0, phase: 'queued' });
+      try {
+        const data = await onExport(format, setProgress);
+
+        await Share.share({
+          message: data,
+          title: `Export data as ${LABEL[format]}`,
+        });
+      } catch (err) {
+        // Sharing cancelled by the user produces a rejection — treat it silently.
+        const message = err instanceof Error ? err.message : String(err);
+        if (!message.toLowerCase().includes('cancel')) {
+          logger.error('[GridToolbar] Share failed:', err);
+        }
+      } finally {
+        setActiveType(null);
+        setProgress(null);
+      }
+    },
+    [activeType, onExport]
+  );
+
+  const handleImport = useCallback(async () => {
+    if (activeType !== null) return;
+
+    setActiveType('import');
+    setProgress({ processed: 0, total: 0, percent: 0, phase: 'queued' });
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'text/csv',
+        // Also allow .csv extension
+      });
+
+      if (!result.cancelled && result.assets && result.assets[0]) {
+        const file = result.assets[0];
+        let csvString = '';
+        if (file.uri) {
+          // For web, we can use fetch
+          // For native, we can use FileSystem.readAsStringAsync
+          if (__WEB__) {
+            const response = await fetch(file.uri);
+            csvString = await response.text();
+          } else {
+            csvString = await FileSystem.readAsStringAsync(file.uri);
+          }
+        }
+
+        const newRows = await batchImportCSV({
+          csv: csvString,
+          chunkSize: 500,
+          onProgress: setProgress,
+          useWorker: true,
+        });
+
+        onImportComplete(newRows);
+      }
+    } catch (err) {
+      console.error('[GridToolbar] Import failed:', err);
+    } finally {
+      setActiveType(null);
+      setProgress(null);
+    }
+  }, [activeType, onImport, onImportComplete]);
+
   return (
     <View style={styles.toolbar}>
       <View style={styles.toolbarLeft}>
@@ -242,7 +351,57 @@ const GridToolbar = ({
           </View>
         )}
       </View>
-      {showExporter && <GridExporter onExport={onExport} disabled={totalRows === 0} />}
+      {showExporter && (
+        <TouchableOpacity
+          style={[styles.btn, activeType === 'export' && styles.btnDisabled]}
+          onPress={handleExport}
+          disabled={activeType !== null}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Export data"
+        >
+          {activeType === 'export' ? (
+            <ActivityIndicator size="small" color="#19c3e6" />
+          ) : (
+            <Download size={14} color="#19c3e6" />
+          )}
+        </TouchableOpacity>
+      )}
+      {showImporter && (
+        <TouchableOpacity
+          style={[styles.btn, activeType === 'import' && styles.btnDisabled]}
+          onPress={handleImport}
+          disabled={activeType !== null}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Import data from CSV"
+        >
+          {activeType === 'import' ? (
+            <ActivityIndicator size="small" color="#19c3e6" />
+          ) : (
+            <Upload size={14} color="#19c3e6" />
+          )}
+        </TouchableOpacity>
+      )}
+      {activeType && progress && (
+        <View
+          style={styles.progressWrap}
+          accessibilityRole="progressbar"
+          accessibilityValue={{
+            min: 0,
+            max: 100,
+            now: progress.percent,
+            text: `${progress.percent}%`,
+          }}
+        >
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressFill, { width: `${progress.percent}%` }]} />
+          </View>
+          <Text style={styles.progressText}>
+            {progress.phase === 'queued' ? 'Preparing' : `${progress.percent}%`}
+          </Text>
+        </View>
+      )}
     </View>
   );
 };

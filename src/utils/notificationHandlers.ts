@@ -11,7 +11,9 @@ type NavigationRef = {
 let navigationRef: NavigationRef | null = null;
 
 function isNotificationType(value: unknown): value is NotificationType {
-  return typeof value === 'string' && Object.values(NotificationType).includes(value as NotificationType);
+  return (
+    typeof value === 'string' && Object.values(NotificationType).includes(value as NotificationType)
+  );
 }
 
 function toNotificationData(value: unknown): NotificationData | undefined {
@@ -25,7 +27,8 @@ function toNotificationData(value: unknown): NotificationData | undefined {
     courseId: typeof maybeData.courseId === 'string' ? maybeData.courseId : undefined,
     conversationId:
       typeof maybeData.conversationId === 'string' ? maybeData.conversationId : undefined,
-    achievementId: typeof maybeData.achievementId === 'string' ? maybeData.achievementId : undefined,
+    achievementId:
+      typeof maybeData.achievementId === 'string' ? maybeData.achievementId : undefined,
     postId: typeof maybeData.postId === 'string' ? maybeData.postId : undefined,
     deepLink: typeof maybeData.deepLink === 'string' ? maybeData.deepLink : undefined,
   };
@@ -42,9 +45,7 @@ export function setNavigationRef(ref: NavigationRef): void {
 /**
  * Main handler for notification responses (when user taps a notification)
  */
-export function handleNotificationResponse(
-  response: Notifications.NotificationResponse
-): void {
+export function handleNotificationResponse(response: Notifications.NotificationResponse): void {
   const data = toNotificationData(response.notification.request.content.data);
 
   if (!data?.type) {
@@ -57,6 +58,8 @@ export function handleNotificationResponse(
   if (!isNotificationTypeEnabled(data.type)) {
     return;
   }
+
+  useNotificationStore.getState().recordEngagement();
 
   // Route to appropriate handler
   switch (data.type) {
@@ -170,17 +173,23 @@ export function handleCommunityActivity(data: NotificationData): void {
  * Handle notification received while app is in foreground
  * Stores the notification and optionally shows in-app UI
  */
-export function handleNotificationReceived(
-  notification: Notifications.Notification
-): void {
+export function handleNotificationReceived(notification: Notifications.Notification): void {
   const { title, body, data } = notification.request.content;
   const notificationData = toNotificationData(data);
 
   // Check if this notification type is enabled
   if (notificationData?.type) {
-    const { isNotificationTypeEnabled, addNotification } = useNotificationStore.getState();
+    const { isNotificationTypeEnabled, addNotification, shouldThrottleNotification } =
+      useNotificationStore.getState();
 
     if (!isNotificationTypeEnabled(notificationData.type)) {
+      return;
+    }
+
+    if (shouldThrottleNotification(notificationData.type)) {
+      logger.info('Notification throttled based on engagement', {
+        type: notificationData.type,
+      });
       return;
     }
 
@@ -224,30 +233,29 @@ export function buildDeepLink(data: NotificationData): string {
  * Parse deep link URL to notification data
  */
 export function parseDeepLink(url: string): NotificationData | null {
-  try {
-    const cleanUrl = url.replace('teachlink://', '');
-    const parts = cleanUrl.split('/');
-    const route = parts[0];
-    const id = parts[1];
-
-    switch (route) {
-      case 'course':
-        return { type: NotificationType.COURSE_UPDATE, courseId: id };
-      case 'courses':
-        return { type: NotificationType.COURSE_UPDATE };
-      case 'messages':
-        return { type: NotificationType.MESSAGE, conversationId: id };
-      case 'learn':
-        return { type: NotificationType.LEARNING_REMINDER };
-      case 'achievements':
-        return { type: NotificationType.ACHIEVEMENT_UNLOCK, achievementId: id };
-      case 'community':
-        return { type: NotificationType.COMMUNITY_ACTIVITY, postId: id };
-      default:
-        return null;
-    }
-  } catch (error) {
-    logger.error('Error parsing deep link:', error);
+  if (!url.startsWith('teachlink://')) {
     return null;
+  }
+
+  const path = url.replace('teachlink://', '');
+  const parts = path.split('/');
+  const route = parts[0];
+  const id = parts[1];
+
+  switch (route) {
+    case 'course':
+      return { type: NotificationType.COURSE_UPDATE, courseId: id };
+    case 'courses':
+      return { type: NotificationType.COURSE_UPDATE };
+    case 'messages':
+      return { type: NotificationType.MESSAGE, ...(id ? { conversationId: id } : {}) };
+    case 'learn':
+      return { type: NotificationType.LEARNING_REMINDER };
+    case 'achievements':
+      return { type: NotificationType.ACHIEVEMENT_UNLOCK, ...(id ? { achievementId: id } : {}) };
+    case 'community':
+      return { type: NotificationType.COMMUNITY_ACTIVITY, ...(id ? { postId: id } : {}) };
+    default:
+      return null;
   }
 }

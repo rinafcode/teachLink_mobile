@@ -1,7 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 import { Dimensions, ScrollView, StyleSheet, View } from 'react-native';
+import { useAnalytics } from '../../../hooks/useAnalytics';
 import { Question } from '../../../types/course';
+import { AnalyticsEvent } from '../../../utils/trackingEvents';
 import MobileQuestionCard from './MobileQuestionCard';
+import { Question } from '../../../types/course';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -18,30 +21,33 @@ interface QuizCarouselProps {
   onAnswerSelect: (questionId: string, answer: string | number, isMultiSelect?: boolean) => void;
 }
 
-export default function QuizCarousel({
+const QuizCarousel = ({
   questions,
   currentQuestionIndex,
   selectedAnswers,
   onQuestionChange,
   onAnswerSelect,
 }: QuizCarouselProps) {
+  const { trackEvent } = useAnalytics();
   const scrollViewRef = useRef<ScrollView>(null);
   const isScrollingRef = useRef(false);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Only scroll if not currently being scrolled by user
-    if (scrollViewRef.current && !isScrollingRef.current) {
-      scrollViewRef.current.scrollTo({
-        x: currentQuestionIndex * SCREEN_WIDTH,
-        animated: true,
-      });
+    if (flatListRef.current && !isScrollingRef.current) {
+      flatListRef.current.scrollToIndex({ index: currentQuestionIndex, animated: true });
     }
   }, [currentQuestionIndex]);
 
   const handleScroll = (event: any) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(offsetX / SCREEN_WIDTH);
+
+    trackEvent(AnalyticsEvent.PERFORMANCE_METRIC, {
+      event_category: 'high_frequency',
+      event_name: 'quiz_carousel_scroll',
+      offsetX: Math.round(offsetX),
+      index,
+    });
 
     // Clear any existing timeout
     if (scrollTimeoutRef.current) {
@@ -51,79 +57,69 @@ export default function QuizCarousel({
     // Mark as scrolling
     isScrollingRef.current = true;
 
-    // Update index if changed
+  const handleMomentumScrollEnd = (event: any) => {
+    const index = Math.round(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+    isScrollingRef.current = false;
     if (index !== currentQuestionIndex && index >= 0 && index < questions.length) {
       onQuestionChange(index);
     }
-
-    // Reset scrolling flag after scroll ends
-    scrollTimeoutRef.current = setTimeout(() => {
-      isScrollingRef.current = false;
-    }, 100);
   };
 
-  const handleScrollBeginDrag = () => {
-    isScrollingRef.current = true;
-  };
+  const renderItem = useCallback(
+    ({ item, index }: { item: Question; index: number }) => (
+      <View style={styles.cardContainer}>
+        <MobileQuestionCard
+          question={item}
+          questionNumber={index + 1}
+          totalQuestions={questions.length}
+          selectedAnswer={selectedAnswers[item.id]}
+          onAnswerSelect={onAnswerSelect}
+        />
+      </View>
+    ),
+    [questions.length, selectedAnswers, onAnswerSelect]
+  );
 
-  const handleScrollEndDrag = () => {
-    // Keep flag true briefly to prevent programmatic scroll interference
-    setTimeout(() => {
-      isScrollingRef.current = false;
-    }, 150);
-  };
-
-  const handleMomentumScrollEnd = () => {
-    // Scroll has completely finished
-    isScrollingRef.current = false;
-  };
-
-  if (questions.length === 0) {
-    return null;
-  }
+  if (questions.length === 0) return null;
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        ref={scrollViewRef}
+      <FlatList
+        ref={flatListRef}
+        data={questions}
+        renderItem={renderItem}
+        keyExtractor={item => item.id}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onScroll={handleScroll}
-        onScrollBeginDrag={handleScrollBeginDrag}
-        onScrollEndDrag={handleScrollEndDrag}
+        onScrollBeginDrag={() => {
+          isScrollingRef.current = true;
+        }}
         onMomentumScrollEnd={handleMomentumScrollEnd}
         scrollEventThrottle={16}
         decelerationRate="fast"
         snapToInterval={SCREEN_WIDTH}
         snapToAlignment="center"
-        contentContainerStyle={styles.scrollContent}
+        getItemLayout={getItemLayout}
+        windowSize={3}
+        maxToRenderPerBatch={1}
+        initialNumToRender={1}
+        removeClippedSubviews
         bounces={false}
-      >
-        {questions.map((question, index) => (
-          <View key={question.id} style={[styles.cardContainer, { width: SCREEN_WIDTH }]}>
-            <MobileQuestionCard
-              question={question}
-              questionNumber={index + 1}
-              totalQuestions={questions.length}
-              selectedAnswer={selectedAnswers[question.id]}
-              onAnswerSelect={onAnswerSelect}
-            />
-          </View>
-        ))}
-      </ScrollView>
+        testID="QuizCarouselList"
+      />
     </View>
   );
-}
+};
+
+export default QuizCarousel;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  scrollContent: {
-    alignItems: 'center',
-  },
   cardContainer: {
+    width: SCREEN_WIDTH,
     flex: 1,
     paddingHorizontal: 16,
     paddingVertical: 20,

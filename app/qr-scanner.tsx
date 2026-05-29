@@ -1,8 +1,9 @@
 import { useRouter } from 'expo-router';
-import React from 'react';
-import { Alert, View } from 'react-native';
-import QRScanner from '@/src/components/mobile/QRScanner';
+import React, { Suspense } from 'react';
+import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
 import { getPathFromDeepLink, parseDeepLinkUrl } from '@/src/utils/linkParser';
+
+const QRScanner = React.lazy(() => import('@/src/components/mobile/QRScanner'));
 
 export default function QRScannerScreen() {
   const router = useRouter();
@@ -19,8 +20,16 @@ export default function QRScannerScreen() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
-      <QRScanner onLinkScanned={handleLinkScanned} />
+    <View style={styles.container}>
+      <Suspense fallback={<ActivityIndicator style={StyleSheet.absoluteFill} size="large" />}>
+        <QRScanner onLinkScanned={handleLinkScanned} />
+      </Suspense>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});

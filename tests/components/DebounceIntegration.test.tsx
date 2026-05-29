@@ -21,18 +21,35 @@ jest.mock('lucide-react-native', () => {
   );
 });
 
+const mockTrackEvent = jest.fn();
+
 // Mock only necessary hooks, require actual useDebounce / useDebounceCallback
 jest.mock('../../src/hooks', () => {
   const actual = jest.requireActual('../../src/hooks');
   return {
     ...actual,
     useAnalytics: () => ({
-      trackEvent: jest.fn(),
+      trackEvent: mockTrackEvent,
     }),
     useDynamicFontSize: () => ({
       scale: (x: number) => x,
     }),
-    useMemoryMonitor: jest.fn(),
+    useMemoryMonitor: () => ({
+      isHighMemory: false,
+      isCriticalMemory: false,
+    }),
+  };
+});
+
+jest.mock('../../src/hooks/useAnalytics', () => {
+  return {
+    __esModule: true,
+    default: () => ({
+      trackEvent: mockTrackEvent,
+    }),
+    useAnalytics: () => ({
+      trackEvent: mockTrackEvent,
+    }),
   };
 });
 

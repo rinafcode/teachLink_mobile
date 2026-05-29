@@ -1,18 +1,20 @@
+import { useScrollToTop } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 import { CourseCardSkeleton, Skeleton, AppText as Text } from '@/src/components';
 import { sampleCourse } from '@/src/data/sampleCourse';
 import { useDynamicFontSize, useAnalytics } from '@/src/hooks';
-import { useAppStore } from '@/src/store';
 import { AnalyticsEvent, ScreenName } from '@/src/utils/trackingEvents';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { isLoading, setLoading } = useAppStore();
+  const [isLoading, setLoading] = useState(false);
   const { scale } = useDynamicFontSize();
   const { trackEvent, trackScreen } = useAnalytics();
+  const scrollRef = useRef<ScrollView>(null);
+  useScrollToTop(scrollRef);
 
   useEffect(() => {
     trackScreen(ScreenName.HOME);
@@ -68,6 +70,7 @@ export default function HomeScreen() {
 
   return (
     <ScrollView
+      ref={scrollRef}
       className="flex-1 bg-gray-50 dark:bg-slate-800"
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}

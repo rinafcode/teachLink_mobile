@@ -111,10 +111,10 @@ describe('AdvancedDataGrid', () => {
   });
 
   describe('loading state', () => {
-    it('renders an ActivityIndicator when loading is true', () => {
+    it('renders skeleton rows when loading is true', () => {
       const { toJSON } = render(<AdvancedDataGrid columns={columns} rows={[]} loading />);
       const json = JSON.stringify(toJSON());
-      expect(json).toContain('ActivityIndicator');
+      expect(json).toContain('Animated.View');
     });
   });
 

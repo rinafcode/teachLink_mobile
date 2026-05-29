@@ -3,6 +3,7 @@ import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native
 
 import { OfflineIndicator } from './OfflineIndicator';
 import { useNetworkStatus } from '../../hooks';
+import { useAdaptiveFrameRate } from '../../hooks/useAdaptiveFrameRate';
 // eslint-disable-next-line import/no-named-as-default
 import logger from '../../utils/logger';
 
@@ -108,15 +109,15 @@ OfflineUI.displayName = 'OfflineUI';
 const ToastComponent = (props: any) => {
   const { toast, onDismiss } = props;
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const { durationMultiplier } = useAdaptiveFrameRate();
 
   React.useEffect(() => {
-    // Fade in animation
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 300,
+      duration: 300 * durationMultiplier,
       useNativeDriver: true,
     }).start();
-  }, [fadeAnim]);
+  }, [fadeAnim, durationMultiplier]);
 
   const getToastStyle = () => {
     switch (toast.type) {

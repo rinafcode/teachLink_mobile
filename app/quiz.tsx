@@ -1,12 +1,8 @@
+import { QuizSkeleton } from '@/src/components/mobile/QuizSkeleton';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { lazy, Suspense } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import React, { Suspense } from 'react';
 
-const MobileQuizManager = lazy(() => import('@/src/components/mobile/MobileQuizManager'));
-
-const MobileQuizManager = lazyScreen(
-  () => import('@/src/components/mobile/MobileQuizManager')
-);
+const MobileQuizManager = React.lazy(() => import('@/src/components/mobile/MobileQuizManager'));
 
 export default function QuizScreen() {
   const router = useRouter();
@@ -16,13 +12,7 @@ export default function QuizScreen() {
   const parsedCourse = course ? JSON.parse(course as string) : null;
 
   return (
-    <Suspense
-      fallback={
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator />
-        </View>
-      }
-    >
+    <Suspense fallback={<QuizSkeleton />}>
       <MobileQuizManager
         quiz={parsedQuiz}
         courseId={courseId as string}

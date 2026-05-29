@@ -86,7 +86,8 @@
           "mode": "production"
         }
       ],
-      "expo-speech-recognition"
+      "expo-speech-recognition",
+      "expo-video"
     ],
     "notification": {
       "icon": "./assets/notification-icon.png",

@@ -4,16 +4,16 @@ import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import { useHapticFeedback } from '../../hooks';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 
-export interface PickerOption {
+export interface PickerOption<T extends string = string> {
   label: string;
-  value: string;
+  value: T;
   description?: string;
 }
 
-interface SettingsPickerProps {
-  value: string;
-  options: PickerOption[];
-  onValueChange: (value: string) => void;
+interface SettingsPickerProps<T extends string = string> {
+  value: T;
+  options: PickerOption<T>[];
+  onValueChange: (value: T) => void;
   label: string;
   description?: string;
   icon?: React.ReactNode;
@@ -25,7 +25,7 @@ interface SettingsPickerProps {
  * showing all available options. The selected option gets a cyan checkmark.
  * Matches the iOS-style grouped settings aesthetic used throughout the app.
  */
-export function SettingsPicker({
+export function SettingsPicker<T extends string = string>({
   value,
   options,
   onValueChange,
@@ -33,12 +33,12 @@ export function SettingsPicker({
   description,
   icon,
   disabled = false,
-}: SettingsPickerProps) {
+}: SettingsPickerProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
 
   const selectedLabel = options.find(o => o.value === value)?.label ?? value;
 
-  const handleSelect = (optionValue: string) => {
+  const handleSelect = (optionValue: T) => {
     useHapticFeedback('light');
     onValueChange(optionValue);
     setIsOpen(false);
