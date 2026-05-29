@@ -33,3 +33,4 @@ export { useOptimizedVideoGestures, OptimizedVideoGesturesView } from './useOpti
 
 export * from './useDebounce';
 export * from './usePredictivePreload';
+export * from './useModalStack';

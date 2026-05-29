@@ -18,6 +18,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAdaptiveFrameRate } from '../../hooks/useAdaptiveFrameRate';
+import { useModalStack } from '../../hooks/useModalStack';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -84,6 +85,7 @@ export function FilterSheet({
   const overlayOpacity = useSharedValue(0);
   const [localValues, setLocalValues] = useState<FilterValues>(values);
   const { durationMultiplier } = useAdaptiveFrameRate();
+  const { zIndex } = useModalStack(visible, 'FilterSheet');
 
   const open = useCallback(() => {
     translateY.value = withTiming(0, { duration: 280 * durationMultiplier });
@@ -131,7 +133,7 @@ export function FilterSheet({
   return (
     <ErrorBoundary boundaryName="FilterSheetModal">
       <Modal transparent visible={visible} animationType="none" onRequestClose={close}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={close}>
+        <Pressable style={[StyleSheet.absoluteFill, { zIndex }]} onPress={close}>
           <Animated.View style={[styles.overlay, overlayStyle]} />
         </Pressable>
         <Animated.View
@@ -141,6 +143,8 @@ export function FilterSheet({
             {
               paddingBottom: insets.bottom + 16,
               maxHeight: SHEET_HEIGHT,
+              zIndex: zIndex + 1,
+              elevation: zIndex + 1,
             },
           ]}
         >

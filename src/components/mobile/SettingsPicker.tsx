@@ -2,6 +2,7 @@ import { Check, ChevronRight } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useHapticFeedback } from '../../hooks';
+import { useModalStack } from '../../hooks/useModalStack';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 
 export interface PickerOption<T extends string = string> {
@@ -35,6 +36,7 @@ export function SettingsPicker<T extends string = string>({
   disabled = false,
 }: SettingsPickerProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
+  const { zIndex } = useModalStack(isOpen, 'SettingsPicker');
 
   const selectedLabel = options.find(o => o.value === value)?.label ?? value;
 
@@ -76,10 +78,10 @@ export function SettingsPicker<T extends string = string>({
         onRequestClose={() => setIsOpen(false)}
       >
         <ErrorBoundary boundaryName="SettingsPickerModal">
-          <View style={styles.modalContainer}>
+          <View style={[styles.modalContainer, { zIndex, elevation: zIndex }]}>
             {/* Dim backdrop — tap to dismiss */}
             <TouchableOpacity
-              style={StyleSheet.absoluteFillObject}
+              style={[StyleSheet.absoluteFillObject, { zIndex }]}
               activeOpacity={1}
               onPress={() => setIsOpen(false)}
             >
@@ -87,7 +89,7 @@ export function SettingsPicker<T extends string = string>({
             </TouchableOpacity>
 
             {/* Sheet */}
-            <View className="rounded-t-3xl bg-white pb-8 dark:bg-gray-800">
+            <View className="rounded-t-3xl bg-white pb-8 dark:bg-gray-800" style={{ zIndex: zIndex + 1, elevation: zIndex + 1 }}>
               {/* Drag handle */}
               <View className="items-center pb-1 pt-3">
                 <View className="h-1 w-10 rounded-full bg-gray-300 dark:bg-gray-600" />

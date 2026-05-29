@@ -1,6 +1,7 @@
 import React from 'react';
 import { Modal, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
 import { useNotificationPermission } from '../../hooks';
+import { useModalStack } from '../../hooks/useModalStack';
 import { useNotificationStore } from '../../store/notificationStore';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 
@@ -47,6 +48,7 @@ export function NotificationPrompt({
   const { requestPermission, isLoading, isDevice, openSettings, permissionStatus } =
     useNotificationPermission();
   const { setHasPromptedForPermission, setPermissionDeniedAt } = useNotificationStore();
+  const { zIndex } = useModalStack(visible, 'NotificationPrompt');
 
   const handleEnable = async () => {
     setHasPromptedForPermission(true);
@@ -78,8 +80,8 @@ export function NotificationPrompt({
     return (
       <ErrorBoundary boundaryName="NotificationPrompt.DeviceModal">
         <Modal visible={visible} animationType="slide" transparent>
-          <View className="flex-1 justify-end bg-black/50">
-            <View className="rounded-t-3xl bg-white px-6 pb-10 pt-6 dark:bg-gray-900">
+          <View className="flex-1 justify-end bg-black/50" style={{ zIndex, elevation: zIndex }}>
+            <View className="rounded-t-3xl bg-white px-6 pb-10 pt-6 dark:bg-gray-900" style={{ zIndex: zIndex + 1, elevation: zIndex + 1 }}>
               <Text className="mb-4 text-center text-lg text-gray-600 dark:text-gray-400">
                 Push notifications are only available on physical devices.
               </Text>
@@ -99,8 +101,8 @@ export function NotificationPrompt({
   return (
     <ErrorBoundary boundaryName="NotificationPrompt.Modal">
       <Modal visible={visible} animationType="slide" transparent>
-        <View className="flex-1 justify-end bg-black/50">
-          <SafeAreaView className="rounded-t-3xl bg-white dark:bg-gray-900">
+        <View className="flex-1 justify-end bg-black/50" style={{ zIndex, elevation: zIndex }}>
+          <SafeAreaView className="rounded-t-3xl bg-white dark:bg-gray-900" style={{ zIndex: zIndex + 1, elevation: zIndex + 1 }}>
             <View className="px-6 pb-4 pt-6">
               {/* Header */}
               <View className="mb-6 items-center">
