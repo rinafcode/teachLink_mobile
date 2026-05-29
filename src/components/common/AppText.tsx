@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Text as RNText, TextProps, StyleSheet } from 'react-native';
+
 import { useDynamicFontSize } from '../../hooks';
 
 interface AppTextProps extends TextProps {
@@ -10,34 +11,25 @@ interface AppTextProps extends TextProps {
   fixed?: boolean;
 }
 
+const AppTextInner: React.FC<AppTextProps> = ({ style, fixed = false, ...props }) => {
+  const { fontScale } = useDynamicFontSize();
+
+  const dynamicStyle = useMemo(() => {
+    const flat = StyleSheet.flatten(style) || {};
+    if (fixed || !flat.fontSize) return flat;
+
+    return {
+      ...flat,
+      fontSize: flat.fontSize * fontScale,
+      ...(flat.lineHeight ? { lineHeight: flat.lineHeight * fontScale } : {}),
+    };
+  }, [style, fixed, fontScale]);
+
+  return <RNText {...props} style={dynamicStyle} allowFontScaling={false} />;
+};
+
 /**
  * A wrapper around React Native's Text component that uses the useDynamicFontSize hook
  * to ensure consistent scaling across the application.
  */
-export const AppText: React.FC<AppTextProps> = ({ style, fixed = false, ...props }) => {
-  const { scale } = useDynamicFontSize();
-
-  // We flatten the style to easily extract and modify the fontSize
-  const flattenedStyle = StyleSheet.flatten(style) || {};
-
-  const dynamicStyle = { ...flattenedStyle };
-
-  if (!fixed && flattenedStyle.fontSize) {
-    dynamicStyle.fontSize = scale(flattenedStyle.fontSize);
-
-    // Also scale lineHeight if it exists to maintain proportions
-    if (flattenedStyle.lineHeight) {
-      dynamicStyle.lineHeight = scale(flattenedStyle.lineHeight);
-    }
-  }
-
-  return (
-    <RNText
-      {...props}
-      style={dynamicStyle}
-      // We set allowFontScaling to false because we are manually scaling
-      // via the dynamicStyle to have explicit control via our hook.
-      allowFontScaling={false}
-    />
-  );
-};
+export const AppText = React.memo(AppTextInner);

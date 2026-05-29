@@ -9,19 +9,20 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { AppText as Text } from '../common/AppText';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import BookmarkButton from './BookmarkButton';
+import { CourseViewerSkeleton } from './CourseViewerSkeleton';
+import LessonCarousel from './LessonCarousel';
+import MobileSyllabus from './MobileSyllabus';
 import { useCourseProgress, useDynamicFontSize } from '../../hooks';
-import { SafeAreaView } from "react-native-safe-area-context";
-import logger from "../../utils/logger";
-import PrimaryButton from "../common/PrimaryButton";
-import BookmarkButton from "./BookmarkButton";
-import LessonCarousel from "./LessonCarousel";
-import MobileSyllabus from "./MobileSyllabus";
-import { useAnalytics } from "../../hooks/useAnalytics";
-import { Course, Lesson, Note } from "../../types/course";
-import { AnalyticsEvent, ScreenName } from "../../utils/trackingEvents";
-import { ErrorBoundary } from "../common/ErrorBoundary";
-import { CourseViewerSkeleton } from "./CourseViewerSkeleton";
+import { useAnalytics } from '../../hooks/useAnalytics';
+import { Course, Lesson, Note } from '../../types/course';
+import { logger } from '../../utils/logger';
+import { AnalyticsEvent, ScreenName } from '../../utils/trackingEvents';
+import { AppText as Text } from '../common/AppText';
+import { ErrorBoundary } from '../common/ErrorBoundary';
+import PrimaryButton from '../common/PrimaryButton';
 
 /**
  * Props for the MobileCourseViewer component
@@ -41,13 +42,13 @@ interface MobileCourseViewerProps {
 
 type ViewMode = 'lesson' | 'syllabus' | 'notes';
 
-export default function MobileCourseViewer({
+const MobileCourseViewer: React.FC<MobileCourseViewerProps> = ({
   course,
   initialLessonId,
   initialViewMode,
   onBack,
   navigation,
-}: MobileCourseViewerProps) {
+}: MobileCourseViewerProps) => {
   const { scale } = useDynamicFontSize();
   const { trackEvent, trackScreen } = useAnalytics();
   const [viewMode, setViewMode] = useState<ViewMode>(initialViewMode || 'lesson');
@@ -64,7 +65,6 @@ export default function MobileCourseViewer({
   const {
     progress,
     isLoading,
-    updateLessonProgress,
     markLessonComplete,
     setCurrentLesson,
     addBookmark,
@@ -80,8 +80,11 @@ export default function MobileCourseViewer({
     autoSync: true,
   });
 
-  // Get all lessons in order
-  const allLessons = course.sections.flatMap(section => section.lessons.map(lesson => lesson));
+  // Memoized — recalculates only when the sections array reference changes (i.e. new course data).
+  const allLessons = useMemo(
+    () => course.sections.flatMap(section => section.lessons),
+    [course.sections]
+  );
 
   // Helper to get section ID for a lesson
   const getSectionIdForLesson = useCallback(
@@ -142,7 +145,7 @@ export default function MobileCourseViewer({
     } catch (error) {
       logger.error('Error in MobileCourseViewer:', error);
     }
-  }, [course.id]);
+  }, [course.id, course.title, trackEvent, trackScreen]);
 
   // Track course completion
   useEffect(() => {
@@ -341,7 +344,7 @@ export default function MobileCourseViewer({
         </View>
       );
     },
-    [progress, handleAddNote, handleEditNote, handleDeleteNote]
+    [progress, handleEditNote, handleDeleteNote]
   );
 
   if (isLoading) {
@@ -579,7 +582,9 @@ export default function MobileCourseViewer({
       </Modal>
     </SafeAreaView>
   );
-}
+};
+
+export default MobileCourseViewer;
 
 const styles = StyleSheet.create({
   container: {

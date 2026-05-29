@@ -17,10 +17,9 @@ import {
   Users,
   X,
 } from 'lucide-react-native';
-import React, { useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Animated,
   LayoutAnimation,
   Platform,
   SafeAreaView,
@@ -31,17 +30,19 @@ import {
   View,
 } from 'react-native';
 
-// Enable LayoutAnimation on Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
-import { AppText as Text } from '../common/AppText';
-import { CachedImage } from '../ui/CachedImage';
-import { Skeleton } from '../ui/Skeleton';
 import { Achievement, AchievementBadges } from './AchievementBadges';
 import { AvatarCamera } from './AvatarCamera';
 import { MobileFormInput } from './MobileFormInput';
 import { StatisticsDisplay } from './StatisticsDisplay';
+import { useUnlockedCount } from '../../store/achievementStore';
+import { AppText as Text } from '../common/AppText';
+import { CachedImage } from '../ui/CachedImage';
+import { Skeleton } from '../ui/Skeleton';
+
+// Enable LayoutAnimation on Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -105,6 +106,14 @@ interface ProfileData {
 }
 
 type ProfileTab = 'overview' | 'stats' | 'achievements' | 'connections';
+
+// Stable module-level constant — no dependencies on props or state.
+const TABS: { key: ProfileTab; label: string }[] = [
+  { key: 'overview', label: 'Profile' },
+  { key: 'stats', label: 'Stats' },
+  { key: 'achievements', label: 'Badges' },
+  { key: 'connections', label: 'Network' },
+];
 
 // ─── Mock data (replace with API call in production) ─────────────────────────
 
@@ -247,22 +256,156 @@ interface MobileProfileProps {
   isLoading?: boolean;
 }
 
-import { useDynamicFontSize } from '../../hooks';
-
-export const MobileProfile: React.FC<MobileProfileProps> = ({
+const MobileProfileInner: React.FC<MobileProfileProps> = ({
   userId: _userId,
   isDark = false,
   isLoading = false,
 }) => {
   const [profile, setProfile] = useState<ProfileData>(MOCK_PROFILE);
-  const { scale } = useDynamicFontSize();
-  const { achievements, unlockedCount } = useAchievementStore();
+  const unlockedCount = useUnlockedCount();
+  const [activeTab, setActiveTab] = useState<ProfileTab>('overview');
+  const [isEditing, setIsEditing] = useState(false);
+  const [isCameraVisible, setIsCameraVisible] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  // Progressive disclosure: advanced profile fields collapsed by default
+  const [showAdvancedFields, setShowAdvancedFields] = useState(false);
+
+  // Edit form state
+  const [editName, setEditName] = useState('');
+  const [editBio, setEditBio] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editLocation, setEditLocation] = useState('');
+  const [editWebsite, setEditWebsite] = useState('');
+  const [formErrors, setFormErrors] = useState<Record<string, string>>();
+
+  // Theme tokens
+  const bg = isDark ? '#0f172a' : '#f8fafc';
+  const cardBg = isDark ? '#1e293b' : '#fff';
+  const textPrimary = isDark ? '#f1f5f9' : '#1e293b';
+  const textSecondary = isDark ? '#94a3b8' : '#64748b';
+  const borderColor = isDark ? '#334155' : '#e2e8f0';
+
+  const getInitials = (name: string) =>
+    name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+
+  const handleStartEdit = useCallback(() => {
+    setEditName(profile.name);
+    setEditBio(profile.bio);
+    setEditEmail(profile.email);
+    setEditLocation(profile.location);
+    setEditWebsite(profile.website);
+    setFormErrors({});
+    setShowAdvancedFields(false);
+    setIsEditing(true);
+  }, [profile.name, profile.bio, profile.email, profile.location, profile.website]);
+
+  const handleToggleAdvancedFields = useCallback(() => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setShowAdvancedFields(prev => !prev);
+  }, []);
+
+  const validateForm = useCallback((): Record<string, string> => {
+    const errors: Record<string, string> = {};
+    if (!editName.trim()) errors.name = 'Name is required';
+    if (!editEmail.trim()) errors.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(editEmail)) errors.email = 'Enter a valid email address';
+    return errors;
+  }, [editName, editEmail]);
+
+  const handleSave = useCallback(async () => {
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+    setIsSaving(true);
+    // Simulate API call — replace with actual service call
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setProfile(prev => ({
+      ...prev,
+      name: editName.trim(),
+      bio: editBio.trim(),
+      email: editEmail.trim(),
+      location: editLocation.trim(),
+      website: editWebsite.trim(),
+    }));
+    setIsSaving(false);
+    setIsEditing(false);
+  }, [validateForm, editName, editBio, editEmail, editLocation, editWebsite]);
+
+  const handleCancelEdit = useCallback(() => {
+    setIsEditing(false);
+    setFormErrors({});
+  }, []);
+
+  const handleAvatarConfirm = useCallback((uri: string) => {
+    setProfile(prev => ({ ...prev, avatar: uri }));
+  }, []);
+
+  const handleCloseCamera = useCallback(() => setIsCameraVisible(false), []);
+
+  const handleToggleFollow = useCallback((connectionId: string) => {
+    setProfile(prev => ({
+      ...prev,
+      connections: prev.connections.map(c =>
+        c.id === connectionId ? { ...c, isFollowing: !c.isFollowing } : c
+      ),
+    }));
+  }, []);
+
+  const statsForDisplay = useMemo(
+    () => [
+      { label: 'Courses Done', value: profile.stats.coursesCompleted },
+      { label: 'Enrolled', value: profile.stats.coursesEnrolled },
+      { label: 'Hours', value: profile.stats.totalHours },
+      { label: 'Day Streak', value: `${profile.stats.streak} 🔥` },
+    ],
+    [
+      profile.stats.coursesCompleted,
+      profile.stats.coursesEnrolled,
+      profile.stats.totalHours,
+      profile.stats.streak,
+    ]
+  );
+
+  // stripItems holds JSX elements — memoize to avoid recreating React nodes on every render.
+  const stripItems = useMemo(
+    () => [
+      {
+        icon: <BookOpen size={16} color="#19c3e6" />,
+        value: profile.stats.coursesCompleted,
+        label: 'Done',
+      },
+      {
+        icon: <Users size={16} color="#2c8aec" />,
+        value: profile.stats.connections,
+        label: 'Network',
+      },
+      {
+        icon: <Trophy size={16} color="#586ce9" />,
+        value: unlockedCount,
+        label: 'Badges',
+      },
+      {
+        icon: <Clock size={16} color="#7c3aed" />,
+        value: `${profile.stats.totalHours}h`,
+        label: 'Learning',
+      },
+    ],
+    [
+      profile.stats.coursesCompleted,
+      profile.stats.connections,
+      profile.stats.totalHours,
+      unlockedCount,
+    ]
+  );
 
   if (isLoading) {
-    const bg = isDark ? '#0f172a' : '#f8fafc';
-    const cardBg = isDark ? '#1e293b' : '#fff';
-    const borderColor = isDark ? '#334155' : '#e2e8f0';
-
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
         <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
@@ -297,137 +440,6 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
       </SafeAreaView>
     );
   }
-  const [activeTab, setActiveTab] = useState<ProfileTab>('overview');
-  const [isEditing, setIsEditing] = useState(false);
-  const [isCameraVisible, setIsCameraVisible] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  // Progressive disclosure: advanced profile fields collapsed by default
-  const [showAdvancedFields, setShowAdvancedFields] = useState(false);
-
-  // Edit form state
-  const [editName, setEditName] = useState('');
-  const [editBio, setEditBio] = useState('');
-  const [editEmail, setEditEmail] = useState('');
-  const [editLocation, setEditLocation] = useState('');
-  const [editWebsite, setEditWebsite] = useState('');
-  const [formErrors, setFormErrors] = useState<Record<string, string>>();
-
-  // Theme tokens
-  const bg = isDark ? '#0f172a' : '#f8fafc';
-  const cardBg = isDark ? '#1e293b' : '#fff';
-  const textPrimary = isDark ? '#f1f5f9' : '#1e293b';
-  const textSecondary = isDark ? '#94a3b8' : '#64748b';
-  const borderColor = isDark ? '#334155' : '#e2e8f0';
-
-  const getInitials = (name: string) =>
-    name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-
-  const handleStartEdit = () => {
-    setEditName(profile.name);
-    setEditBio(profile.bio);
-    setEditEmail(profile.email);
-    setEditLocation(profile.location);
-    setEditWebsite(profile.website);
-    setFormErrors({});
-    setShowAdvancedFields(false); // reset disclosure state on each edit session
-    setIsEditing(true);
-  };
-
-  const handleToggleAdvancedFields = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setShowAdvancedFields(prev => !prev);
-  };
-
-  const validateForm = (): Record<string, string> => {
-    const errors: Record<string, string> = {};
-    if (!editName.trim()) errors.name = 'Name is required';
-    if (!editEmail.trim()) errors.email = 'Email is required';
-    else if (!/\S+@\S+\.\S+/.test(editEmail)) errors.email = 'Enter a valid email address';
-    return errors;
-  };
-
-  const handleSave = async () => {
-    const errors = validateForm();
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
-      return;
-    }
-    setIsSaving(true);
-    // Simulate API call — replace with actual service call
-    await new Promise(resolve => setTimeout(resolve, 800));
-    setProfile(prev => ({
-      ...prev,
-      name: editName.trim(),
-      bio: editBio.trim(),
-      email: editEmail.trim(),
-      location: editLocation.trim(),
-      website: editWebsite.trim(),
-    }));
-    setIsSaving(false);
-    setIsEditing(false);
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditing(false);
-    setFormErrors({});
-  };
-
-  const handleAvatarConfirm = (uri: string) => {
-    setProfile(prev => ({ ...prev, avatar: uri }));
-  };
-
-  const handleToggleFollow = (connectionId: string) => {
-    setProfile(prev => ({
-      ...prev,
-      connections: prev.connections.map(c =>
-        c.id === connectionId ? { ...c, isFollowing: !c.isFollowing } : c
-      ),
-    }));
-  };
-
-  // Tab config
-  const TABS: { key: ProfileTab; label: string }[] = [
-    { key: 'overview', label: 'Profile' },
-    { key: 'stats', label: 'Stats' },
-    { key: 'achievements', label: 'Badges' },
-    { key: 'connections', label: 'Network' },
-  ];
-
-  const statsForDisplay = [
-    { label: 'Courses Done', value: profile.stats.coursesCompleted },
-    { label: 'Enrolled', value: profile.stats.coursesEnrolled },
-    { label: 'Hours', value: profile.stats.totalHours },
-    { label: 'Day Streak', value: `${profile.stats.streak} 🔥` },
-  ];
-
-  // ─── Header strip items ───────────────────────────────────────────────────
-  const stripItems = [
-    {
-      icon: <BookOpen size={16} color="#19c3e6" />,
-      value: profile.stats.coursesCompleted,
-      label: 'Done',
-    },
-    {
-      icon: <Users size={16} color="#2c8aec" />,
-      value: profile.stats.connections,
-      label: 'Network',
-    },
-    {
-      icon: <Trophy size={16} color="#586ce9" />,
-      value: unlockedCount,
-      label: 'Badges',
-    },
-    {
-      icon: <Clock size={16} color="#7c3aed" />,
-      value: `${profile.stats.totalHours}h`,
-      label: 'Learning',
-    },
-  ];
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
@@ -656,15 +668,19 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                     onPress={handleToggleAdvancedFields}
                     activeOpacity={0.7}
                     accessibilityRole="button"
-                    accessibilityLabel={showAdvancedFields ? 'Hide advanced details' : 'Show advanced details'}
+                    accessibilityLabel={
+                      showAdvancedFields ? 'Hide advanced details' : 'Show advanced details'
+                    }
                     accessibilityState={{ expanded: showAdvancedFields }}
                   >
                     <Text style={[styles.disclosureToggleText, { color: '#19c3e6' }]}>
                       {showAdvancedFields ? 'Hide Advanced Details' : 'Advanced Details'}
                     </Text>
-                    {showAdvancedFields
-                      ? <ChevronUp size={16} color="#19c3e6" />
-                      : <ChevronDown size={16} color="#19c3e6" />}
+                    {showAdvancedFields ? (
+                      <ChevronUp size={16} color="#19c3e6" />
+                    ) : (
+                      <ChevronDown size={16} color="#19c3e6" />
+                    )}
                   </TouchableOpacity>
 
                   {/* ── Advanced Fields (expandable) ── */}
@@ -746,7 +762,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                   <Text style={styles.streakEmoji}>🔥</Text>
                   <View>
                     <Text style={styles.streakValue}>{profile.stats.streak} Day Streak</Text>
-                    <Text style={styles.streakSub}>Keep it up! You're on fire.</Text>
+                    <Text style={styles.streakSub}>{"Keep it up! You're on fire."}</Text>
                   </View>
                 </LinearGradient>
               </View>
@@ -853,11 +869,13 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
         visible={isCameraVisible}
         currentAvatar={profile.avatar}
         onConfirm={handleAvatarConfirm}
-        onClose={() => setIsCameraVisible(false)}
+        onClose={handleCloseCamera}
       />
     </SafeAreaView>
   );
 };
+
+export const MobileProfile = React.memo(MobileProfileInner);
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 

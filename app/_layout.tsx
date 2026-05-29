@@ -10,7 +10,7 @@ import { AnalyticsProvider, ErrorBoundary, OfflineIndicatorProvider } from '../s
 import { useAnalytics } from '../src/hooks';
 import { useDeepLink } from '../src/hooks/useDeepLink';
 import { sessionRestorationService } from '../src/services/sessionRestoration';
-import { useAppStore } from '../src/store';
+import { useTheme } from '../src/store/selectors';
 import { getPathFromDeepLink } from '../src/utils/linkParser';
 import { prefetchExternalResources } from '../src/utils/resourceHints';
 
@@ -40,7 +40,7 @@ const ScreenTracker = () => {
 
 // Sync global theme to NativeWind colorScheme
 const ThemeSync = () => {
-  const { theme } = useAppStore();
+  const theme = useTheme();
   const { setColorScheme } = useColorScheme();
 
   useEffect(() => {

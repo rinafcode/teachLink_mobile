@@ -1,6 +1,6 @@
+import { BookOpen, Clock } from 'lucide-react-native';
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { BookOpen, Clock } from 'lucide-react-native';
 
 export interface SearchResultItem {
   id: string;
@@ -19,7 +19,7 @@ export interface SearchResultCardProps {
   onPress: () => void;
 }
 
-export function SearchResultCard({ item, onPress }: SearchResultCardProps) {
+const SearchResultCardInner: React.FC<SearchResultCardProps> = ({ item, onPress }) => {
   const metaParts = [item.category, item.level].filter(Boolean);
   const metaText = metaParts.join(' · ');
   const screenReaderDescription = [item.title, item.description || item.subtitle, metaText]
@@ -59,7 +59,9 @@ export function SearchResultCard({ item, onPress }: SearchResultCardProps) {
       </View>
     </TouchableOpacity>
   );
-}
+};
+
+export const SearchResultCard = React.memo(SearchResultCardInner);
 
 const styles = StyleSheet.create({
   card: {

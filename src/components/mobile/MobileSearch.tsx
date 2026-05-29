@@ -1,5 +1,5 @@
 import { AlertCircle, Search, SlidersHorizontal } from 'lucide-react-native';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -106,7 +106,7 @@ export interface MobileSearchProps {
   placeholder?: string;
 }
 
-export const MobileSearch = ({
+const MobileSearchInner = ({
   onResultPress,
   placeholder = 'Search courses...',
 }: MobileSearchProps) => {
@@ -200,6 +200,32 @@ export const MobileSearch = ({
     setFilterSheetVisible(false);
   }, []);
 
+  const handleQueryChange = useCallback((text: string) => {
+    setQuery(text);
+    setQueryError(null);
+  }, []);
+
+  const handleFocus = useCallback(() => setSuggestionsVisible(true), []);
+
+  // Delay hiding so a tap on a suggestion registers before the list unmounts.
+  const blurTimer = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => () => clearTimeout(blurTimer.current), []);
+  const handleBlur = useCallback(() => {
+    blurTimer.current = setTimeout(() => setSuggestionsVisible(false), 180);
+  }, []);
+
+  const handleOpenFilters = useCallback(() => setFilterSheetVisible(true), []);
+  const handleCloseFilters = useCallback(() => setFilterSheetVisible(false), []);
+  const handleResetFilters = useCallback(() => setFilterValues({}), []);
+
+  // Stable renderItem — a new inline arrow would defeat React.memo on SearchResultCard.
+  const renderItem = useCallback(
+    ({ item }: { item: SearchResultItem }) => (
+      <SearchResultCard item={item} onPress={() => onResultPress?.(item)} />
+    ),
+    [onResultPress]
+  );
+
   const showSuggestions = suggestionsVisible && query.length > 0;
   const showHistory = suggestionsVisible && !query.trim();
   const showResults = hasSearched;
@@ -218,12 +244,9 @@ export const MobileSearch = ({
             placeholder={placeholder}
             placeholderTextColor="#9CA3AF"
             value={query}
-            onChangeText={text => {
-              setQuery(text);
-              setQueryError(null);
-            }}
-            onFocus={() => setSuggestionsVisible(true)}
-            onBlur={() => setTimeout(() => setSuggestionsVisible(false), 180)}
+            onChangeText={handleQueryChange}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
             onSubmitEditing={handleSubmit}
             returnKeyType="search"
           />
@@ -231,7 +254,7 @@ export const MobileSearch = ({
         </View>
         <View style={styles.actions}>
           <TouchableOpacity
-            onPress={() => setFilterSheetVisible(true)}
+            onPress={handleOpenFilters}
             style={[
               styles.filterBtn,
               Object.keys(filterValues).length > 0 && styles.filterBtnActive,
@@ -284,30 +307,29 @@ export const MobileSearch = ({
           <FlatList
             data={results}
             keyExtractor={item => item.id}
-            renderItem={({ item }) => (
-              <SearchResultCard item={item} onPress={() => onResultPress?.(item)} />
-            )}
+            renderItem={renderItem}
             contentContainerStyle={styles.resultsList}
-            ListEmptyComponent={
-              <Text style={styles.emptyText}>Try a different query or adjust filters.</Text>
-            }
+            ListEmptyComponent={EMPTY_LIST_COMPONENT}
           />
         </View>
       )}
 
       <FilterSheet
         visible={filterSheetVisible}
-        onClose={() => setFilterSheetVisible(false)}
+        onClose={handleCloseFilters}
         filters={DEFAULT_FILTERS}
         values={filterValues}
         onApply={handleApplyFilters}
-        onReset={() => setFilterValues({})}
+        onReset={handleResetFilters}
       />
     </KeyboardAvoidingView>
   );
 };
 
+export const MobileSearch = React.memo(MobileSearchInner);
+
 const styles = StyleSheet.create({
+  // NOTE: EMPTY_LIST_COMPONENT is defined after styles so it can reference styles.emptyText.
   container: {
     flex: 1,
     backgroundColor: '#F9FAFB',
@@ -414,3 +436,10 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
+
+// Defined after `styles` so styles.emptyText is in scope.
+// A module-level constant avoids creating a new element reference on every render,
+// which would prevent FlatList from short-circuiting ListEmptyComponent diffing.
+const EMPTY_LIST_COMPONENT = (
+  <Text style={styles.emptyText}>Try a different query or adjust filters.</Text>
+);

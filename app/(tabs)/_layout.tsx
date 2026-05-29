@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -7,19 +7,24 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { ErrorBoundary } from '@/src/components';
 
-export default function TabLayout() {
+const TabLayout = () => {
   const colorScheme = useColorScheme();
+
+  const screenOptions = useMemo(
+    () => ({
+      tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+      headerShown: false,
+      tabBarButton: HapticTab,
+    }),
+    [colorScheme]
+  );
 
   return (
     <ErrorBoundary boundaryName="TabsLayout">
       <Tabs
         // Keep all tab screens mounted so state and scroll positions survive tab switches
         detachInactiveScreens={false}
-        screenOptions={{
-          tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-          headerShown: false,
-          tabBarButton: HapticTab,
-        }}
+        screenOptions={screenOptions}
       >
         <Tabs.Screen
           name="index"
@@ -47,4 +52,6 @@ export default function TabLayout() {
       </Tabs>
     </ErrorBoundary>
   );
-}
+};
+
+export default TabLayout;
