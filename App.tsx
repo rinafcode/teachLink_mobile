@@ -29,10 +29,10 @@ import socketService from './src/services/socket';
 import syncService from './src/services/syncService';
 import { useAppStore } from './src/store';
 import { useNotificationStore } from './src/store/notificationStore';
+import { warmCriticalCaches } from './src/services/cacheWarming';
+import webVitalsService from './src/services/webVitals';
 import { handleCacheVersionUpdate } from './src/utils/cacheVersioning';
-import { requireEnvVariables } from './src/utils/env';
 import { appLogger, logger } from './src/utils/logger';
-import { appLogger } from './src/utils/logger';
 import { handleNotificationReceived } from './src/utils/notificationHandlers';
 import { prefetchExternalResources } from './src/utils/resourceHints';
 
@@ -53,6 +53,9 @@ prefetchExternalResources();
 initializeLogging().catch(err => {
   console.error('[App] Failed to initialize logging:', err);
 });
+
+// Start Core Web Vitals monitoring
+webVitalsService.init();
 
 if (__DEV__) {
   appLogger.infoSync('Development mode: centralized logger active');
@@ -107,6 +110,9 @@ const App = () => {
         startupProgressService.startStep('data');
         await new Promise(resolve => setTimeout(resolve, 500));
         startupProgressService.completeStep('data');
+
+        // 5. Warm critical caches (user profile + home feed) in parallel
+        await warmCriticalCaches();
       } catch (e) {
         console.warn('Error during app initialization:', e);
         // Mark the last step as failed

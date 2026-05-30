@@ -623,7 +623,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
           </View>
 
           {/* Quick stats strip */}
-          <View style={styles.statsStrip, { backgroundColor: cardBg, borderColor }]}>
+          <View style={[styles.statsStrip, { backgroundColor: cardBg, borderColor }]}>
             {stripItems.map((s, i) => (
               <View
                 key={`stat-${i}-${s.label}`}
