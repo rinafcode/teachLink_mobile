@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 
+import { useDeviceUiComplexity } from '../../hooks/useDeviceUiComplexity';
 import { CourseProgress, Lesson } from '../../types/course';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -37,6 +38,7 @@ const LessonCarousel = ({
   const flatListRef = useRef<FlatList<Lesson>>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const progressBarWidth = useRef(new Animated.Value(0)).current;
+  const { shouldDisableHeavyEffects } = useDeviceUiComplexity();
 
   useEffect(() => {
     const index = lessons.findIndex(lesson => lesson.id === currentLessonId);
@@ -94,12 +96,16 @@ const LessonCarousel = ({
     <View style={styles.container} testID="LessonCarousel">
       <View style={styles.progressBarContainer}>
         <Animated.View style={{ width: progressBarWidth, height: '100%' }}>
-          <LinearGradient
-            colors={['#20afe7', '#2c8aec', '#586ce9']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.progressBarGradient}
-          />
+          {shouldDisableHeavyEffects ? (
+            <View style={[styles.progressBarGradient, { backgroundColor: '#20afe7' }]} />
+          ) : (
+            <LinearGradient
+              colors={['#20afe7', '#2c8aec', '#586ce9']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.progressBarGradient}
+            />
+          )}
         </Animated.View>
       </View>
 
@@ -184,16 +190,24 @@ const LessonCarousel = ({
 
         {currentIndex === lessons.length - 1 ? (
           <TouchableOpacity onPress={onLastLessonNext} style={styles.navButton}>
-            <LinearGradient
-              colors={['#20afe7', '#2c8aec', '#586ce9']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.nextButtonGradient}
-            >
-              <Text style={styles.nextButtonText}>
-                {isLastLessonInSection ? 'Continue →' : 'Next →'}
-              </Text>
-            </LinearGradient>
+            {shouldDisableHeavyEffects ? (
+              <View style={[styles.nextButtonGradient, { backgroundColor: '#20afe7' }]}>
+                <Text style={styles.nextButtonText}>
+                  {isLastLessonInSection ? 'Continue →' : 'Next →'}
+                </Text>
+              </View>
+            ) : (
+              <LinearGradient
+                colors={['#20afe7', '#2c8aec', '#586ce9']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.nextButtonGradient}
+              >
+                <Text style={styles.nextButtonText}>
+                  {isLastLessonInSection ? 'Continue →' : 'Next →'}
+                </Text>
+              </LinearGradient>
+            )}
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
@@ -206,14 +220,20 @@ const LessonCarousel = ({
             }}
             style={styles.navButton}
           >
-            <LinearGradient
-              colors={['#20afe7', '#2c8aec', '#586ce9']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.nextButtonGradient}
-            >
-              <Text style={styles.nextButtonText}>Next →</Text>
-            </LinearGradient>
+            {shouldDisableHeavyEffects ? (
+              <View style={[styles.nextButtonGradient, { backgroundColor: '#20afe7' }]}>
+                <Text style={styles.nextButtonText}>Next →</Text>
+              </View>
+            ) : (
+              <LinearGradient
+                colors={['#20afe7', '#2c8aec', '#586ce9']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.nextButtonGradient}
+              >
+                <Text style={styles.nextButtonText}>Next →</Text>
+              </LinearGradient>
+            )}
           </TouchableOpacity>
         )}
       </View>

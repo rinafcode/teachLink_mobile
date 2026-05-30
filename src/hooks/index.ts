@@ -1,5 +1,6 @@
 export * from './useFormCache';
 export * from './useAdaptiveFrameRate';
+export * from './useDeviceUiComplexity';
 export * from './useAdaptiveTheme';
 export * from './useAnalytics';
 export { AuthProvider, useAuth } from './useAuth';

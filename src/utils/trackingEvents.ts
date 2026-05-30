@@ -40,6 +40,9 @@ export enum AnalyticsEvent {
   AB_EXPOSURE = 'ab_exposure',
   API_ERROR = 'api_error',
   CRASH_REPORT = 'crash_report',
+
+  // Device capability
+  DEVICE_COMPLEXITY_ASSIGNED = 'device_complexity_assigned',
 }
 
 /**
