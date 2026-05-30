@@ -12,6 +12,7 @@
       "@/components/*": ["./src/components/*", "./components/*"],
       "@/hooks/*": ["./src/hooks/*", "./hooks/*"],
       "@/constants/*": ["./constants/*"],
+      "@/utils/*": ["./src/utils/*"],
       "@/*": ["./*"]
     },
     "lib": ["ESNext", "DOM"],

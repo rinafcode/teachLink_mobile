@@ -1,10 +1,13 @@
 import { Image } from 'expo-image';
-import logger from './logger';
+
+import { getNegotiatedImageUrl } from './imageFormat';
+import { logger } from './logger';
 
 export class ImageCache {
   /**
    * Prefetches an array of image URLs to memory or disk.
-   * Useful for pre-loading images before they are rendered in a fast-scrolling list.
+   * Each URL is resolved to the optimal format for the current client
+   * (WebP on supporting platforms, PNG/JPEG fallback) before prefetching.
    *
    * @param urls Array of image URLs to prefetch
    * @returns A promise that resolves to an array of boolean flags indicating success
@@ -12,11 +15,11 @@ export class ImageCache {
   static async prefetchImages(urls: string[]): Promise<boolean[]> {
     try {
       if (!urls || urls.length === 0) return [];
-      
-      const promises = urls.map(async (url) => {
+
+      const promises = urls.map(async url => {
         if (!url) return false;
         try {
-          return await Image.prefetch(url);
+          return await Image.prefetch(getNegotiatedImageUrl(url));
         } catch (e) {
           logger.warn(`Failed to prefetch image: ${url}`, e);
           return false;

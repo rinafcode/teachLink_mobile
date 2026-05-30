@@ -1,8 +1,10 @@
 import { Image as ExpoImage, ImageProps as ExpoImageProps } from 'expo-image';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
+
 import { ImageCache } from '../../utils/imageCache';
-import logger from '../../utils/logger';
+import { getNegotiatedImageUrl } from '../../utils/imageFormat';
+import { logger } from '../../utils/logger';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -61,37 +63,37 @@ export const CachedImage: React.FC<CachedImageProps> = ({
   ...expoImageProps
 }) => {
   const [isLoading, setIsLoading] = useState(!!uri);
-  const [error, setError] = useState<Error | null>(null);
+
+  // Resolve the best format URL for this client once per URI change
+  const negotiatedUri = uri ? getNegotiatedImageUrl(uri) : uri;
 
   // ─── Prefetch image on mount or when URI changes ──────────────────────────
 
   useEffect(() => {
-    if (!uri) {
+    if (!negotiatedUri) {
       setIsLoading(false);
       return;
     }
 
     if (autoPrefetch) {
       setIsLoading(true);
-      ImageCache.prefetchImages([uri])
+      ImageCache.prefetchImages([negotiatedUri])
         .then(() => {
-          logger.debug(`✅ Image prefetched: ${uri}`);
+          logger.debug(`✅ Image prefetched: ${negotiatedUri}`);
         })
         .catch(e => {
-          logger.warn(`Failed to prefetch image: ${uri}`, e);
-          setError(e instanceof Error ? e : new Error(String(e)));
+          logger.warn(`Failed to prefetch image: ${negotiatedUri}`, e);
           onLoadError?.(e instanceof Error ? e : new Error(String(e)));
         });
     }
-  }, [uri, autoPrefetch, onLoadError]);
+  }, [negotiatedUri, autoPrefetch, onLoadError]);
 
   // ─── Handle loading complete ───────────────────────────────────────────────
 
   const handleLoadingComplete = () => {
     setIsLoading(false);
-    setError(null);
     onLoadComplete?.();
-    logger.debug(`✅ CachedImage rendered: ${uri}`);
+    logger.debug(`✅ CachedImage rendered: ${negotiatedUri ?? uri}`);
   };
 
   // ─── Handle loading error ──────────────────────────────────────────────────
@@ -99,9 +101,8 @@ export const CachedImage: React.FC<CachedImageProps> = ({
   const handleError = (e: any) => {
     const error = e instanceof Error ? e : new Error(String(e));
     setIsLoading(false);
-    setError(error);
     onLoadError?.(error);
-    logger.warn(`Failed to load image: ${uri}`, error);
+    logger.warn(`Failed to load image: ${negotiatedUri ?? uri}`, error);
   };
 
   // ─── Render ────────────────────────────────────────────────────────────────
@@ -113,7 +114,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
   return (
     <View style={[styles.container, style]}>
       <ExpoImage
-        source={{ uri }}
+        source={{ uri: negotiatedUri ?? uri }}
         onLoadingComplete={handleLoadingComplete}
         onError={handleError}
         accessibilityLabel={alt}

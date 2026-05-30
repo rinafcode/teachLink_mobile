@@ -26,18 +26,19 @@
  * FILES CHANGED: src/services/api/axios.config.ts ONLY
  */
 
-import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
-import { getEnv } from "../../config";
-import { appLogger } from "../../utils/logger";
-import { getAccessToken, getRefreshToken, saveTokens } from "../secureStorage";
-import { requestQueue } from "./requestQueue";
+import { create as createAxios, AxiosError, InternalAxiosRequestConfig } from 'axios';
+
+import { getEnv } from '../../config';
+import { buildImageAcceptHeader, isImageUrl } from '../../utils/imageFormat';
+import { appLogger } from '../../utils/logger';
+import { getAccessToken, getRefreshToken, saveTokens } from '../secureStorage';
+import { requestQueue } from './requestQueue';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-const getBackoffTime = (retryCount: number) =>
-  Math.min(1000 * 2 ** retryCount, 10000);
+const getBackoffTime = (retryCount: number) => Math.min(1000 * 2 ** retryCount, 10000);
 
 // ─── Rate Limit Backoff (Issue #141) ──────────────────────────────────────
 
@@ -50,13 +51,13 @@ const MAX_RATE_LIMIT_RETRIES = 5;
 
 // ─── Client ────────────────────────────────────────────────────────────────
 
-const baseURL = getEnv("EXPO_PUBLIC_API_BASE_URL");
+const baseURL = getEnv('EXPO_PUBLIC_API_BASE_URL');
 
-const apiClient = axios.create({
+const apiClient = createAxios({
   baseURL,
   timeout: 10000,
   headers: {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
   },
 });
 
@@ -70,9 +71,7 @@ let refreshQueue: {
 }[] = [];
 
 function processRefreshQueue(token: string | null, error: unknown) {
-  refreshQueue.forEach(({ resolve, reject }) =>
-    token ? resolve(token) : reject(error),
-  );
+  refreshQueue.forEach(({ resolve, reject }) => (token ? resolve(token) : reject(error)));
   refreshQueue = [];
 }
 
@@ -84,8 +83,13 @@ apiClient.interceptors.request.use(
     config._requestStartMs = Date.now();
 
     // Skip adding token for refresh requests
-    if (config.url?.includes("/auth/refresh")) {
+    if (config.url?.includes('/auth/refresh')) {
       return config;
+    }
+
+    // Content negotiation: advertise WebP support for image endpoints
+    if (config.url && isImageUrl(config.url)) {
+      config.headers.Accept = buildImageAcceptHeader();
     }
 
     const token = await getAccessToken();
@@ -96,13 +100,13 @@ apiClient.interceptors.request.use(
 
     return config;
   },
-  (error) => Promise.reject(error),
+  error => Promise.reject(error)
 );
 
 // ─── Response interceptor ───────────────────────────────────────────────────
 
 apiClient.interceptors.response.use(
-  (response) => {
+  response => {
     // Record successful API call for health metrics
     const cfg = response.config as InternalAxiosRequestConfig & { _requestStartMs?: number };
     const durationMs = cfg._requestStartMs ? Date.now() - cfg._requestStartMs : 0;
@@ -135,10 +139,10 @@ apiClient.interceptors.response.use(
     }
 
     // ── Log non-network errors ────────────────────────────────────────────
-    if (error.code === "ERR_NETWORK" || error.message === "Network Error") {
-      appLogger.warnSync("API not available (running in offline mode)");
+    if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+      appLogger.warnSync('API not available (running in offline mode)');
     } else if (error.response?.status !== 401) {
-      appLogger.errorSync("API Error", error as Error, {
+      appLogger.errorSync('API Error', error as Error, {
         status: error.response?.status,
         data: error.response?.data,
         endpoint: originalRequest.url,
@@ -147,7 +151,7 @@ apiClient.interceptors.response.use(
     }
 
     // ── Queue network errors for retry ───────────────────────────────────
-    if (error.code === "ERR_NETWORK" || error.message === "Network Error") {
+    if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
       if (originalRequest) {
         await requestQueue.addToQueue(originalRequest);
       }
@@ -158,7 +162,11 @@ apiClient.interceptors.response.use(
 
     // ─── 401: Token refresh flow ───────────────────────────────────────────
 
-    if (status === 401 && !originalRequest._retry && !originalRequest.url?.includes("/auth/refresh")) {
+    if (
+      status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest.url?.includes('/auth/refresh')
+    ) {
       originalRequest._retry = true;
 
       if (isRefreshing) {
@@ -177,17 +185,13 @@ apiClient.interceptors.response.use(
 
       try {
         const refreshToken = await getRefreshToken();
-        if (!refreshToken) throw new Error("No refresh token");
+        if (!refreshToken) throw new Error('No refresh token');
 
-        const { data } = await apiClient.post("/auth/refresh", {
+        const { data } = await apiClient.post('/auth/refresh', {
           refreshToken,
         });
 
-        const {
-          accessToken,
-          refreshToken: newRefresh,
-          expiresAt,
-        } = data.tokens;
+        const { accessToken, refreshToken: newRefresh, expiresAt } = data.tokens;
 
         await saveTokens(accessToken, newRefresh, expiresAt);
 
@@ -207,13 +211,13 @@ apiClient.interceptors.response.use(
     // ─── 403: Forbidden ────────────────────────────────────────────────────
 
     if (status === 403) {
-      appLogger.warnSync("403 Forbidden - access denied", {
+      appLogger.warnSync('403 Forbidden - access denied', {
         endpoint: originalRequest.url,
         method: originalRequest.method,
       });
 
       return Promise.reject({
-        message: "You are not allowed to perform this action",
+        message: 'You are not allowed to perform this action',
         status: 403,
       });
     }
@@ -226,7 +230,8 @@ apiClient.interceptors.response.use(
       if (originalRequest._retryCount < MAX_RATE_LIMIT_RETRIES) {
         originalRequest._retryCount += 1;
         const delayIndex = originalRequest._retryCount - 1;
-        const delayTime = RATE_LIMIT_DELAYS[delayIndex] || RATE_LIMIT_DELAYS[RATE_LIMIT_DELAYS.length - 1];
+        const delayTime =
+          RATE_LIMIT_DELAYS[delayIndex] || RATE_LIMIT_DELAYS[RATE_LIMIT_DELAYS.length - 1];
 
         // User feedback: Log retry attempt with countdown
         appLogger.warnSync(
@@ -245,20 +250,16 @@ apiClient.interceptors.response.use(
       }
 
       // Max retries exceeded - user-facing error
-      appLogger.errorSync(
-        `API Rate Limit: Max retries exceeded`,
-        undefined,
-        {
-          endpoint: originalRequest.url,
-          method: originalRequest.method,
-          maxRetries: MAX_RATE_LIMIT_RETRIES,
-        }
-      );
+      appLogger.errorSync(`API Rate Limit: Max retries exceeded`, undefined, {
+        endpoint: originalRequest.url,
+        method: originalRequest.method,
+        maxRetries: MAX_RATE_LIMIT_RETRIES,
+      });
 
       return Promise.reject({
-        message: "Too many requests. Please wait a moment and try again.",
+        message: 'Too many requests. Please wait a moment and try again.',
         status: 429,
-        code: "RATE_LIMIT_EXCEEDED",
+        code: 'RATE_LIMIT_EXCEEDED',
       });
     }
 
@@ -278,7 +279,7 @@ apiClient.interceptors.response.use(
       }
 
       return Promise.reject({
-        message: "Server error. Please try again later.",
+        message: 'Server error. Please try again later.',
         status,
       });
     }
@@ -286,7 +287,7 @@ apiClient.interceptors.response.use(
     // ─── Default fallback ──────────────────────────────────────────────────
 
     return Promise.reject(error);
-  },
+  }
 );
 
 export default apiClient;

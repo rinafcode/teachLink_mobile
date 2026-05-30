@@ -15,10 +15,25 @@ jest.mock('expo-image', () => ({
 }));
 
 jest.mock('@/utils/logger', () => ({
-  debug: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
+  __esModule: true,
+  logger: {
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  },
+  appLogger: {
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  },
+  default: {
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  },
 }));
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
@@ -59,7 +74,8 @@ describe('Image Cache Integration - Issue #143', () => {
       render(<CachedImage uri={testUri} autoPrefetch={true} />);
 
       await waitFor(() => {
-        expect(prefetchSpy).toHaveBeenCalledWith([testUri]);
+        // CachedImage passes the negotiated (WebP) URL to prefetchImages
+        expect(prefetchSpy).toHaveBeenCalledWith([`${testUri}?format=webp`]);
       });
     });
 
@@ -143,7 +159,7 @@ describe('Image Cache Integration - Issue #143', () => {
       const { rerender } = render(<CachedImage uri={firstUri} autoPrefetch={true} />);
 
       await waitFor(() => {
-        expect(prefetchSpy).toHaveBeenCalledWith([firstUri]);
+        expect(prefetchSpy).toHaveBeenCalledWith([`${firstUri}?format=webp`]);
       });
 
       prefetchSpy.mockClear();
@@ -151,7 +167,7 @@ describe('Image Cache Integration - Issue #143', () => {
       rerender(<CachedImage uri={secondUri} autoPrefetch={true} />);
 
       await waitFor(() => {
-        expect(prefetchSpy).toHaveBeenCalledWith([secondUri]);
+        expect(prefetchSpy).toHaveBeenCalledWith([`${secondUri}?format=webp`]);
       });
     });
 
