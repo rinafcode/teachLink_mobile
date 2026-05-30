@@ -6,6 +6,18 @@ import { MobileSearch } from '../../src/components/mobile/MobileSearch';
 
 // ── Mocks ──────────────────────────────────────────────────────────────────
 
+jest.mock('react-native-safe-area-context', () => {
+  const MockComponent = ({ children }: any) => children || null;
+  MockComponent.displayName = 'SafeAreaProvider';
+
+  return {
+    SafeAreaProvider: MockComponent,
+    SafeAreaView: MockComponent,
+    SafeAreaConsumer: ({ children }: any) => children({ top: 0, left: 0, right: 0, bottom: 0 }),
+    useSafeAreaInsets: () => ({ top: 0, left: 0, right: 0, bottom: 0 }),
+  };
+});
+
 jest.mock('lucide-react-native', () => ({
   AlertCircle: () => null,
   Search: () => null,
@@ -56,9 +68,8 @@ jest.mock('../../src/components/mobile/SearchHistory', () => ({
   SearchHistory: () => null,
 }));
 
-// Mock expo linear gradient
 jest.mock('expo-linear-gradient', () => ({
-  LinearGradient: ({ children }: any) => children,
+  LinearGradient: ({ children }: any) => children || null,
 }));
 
 describe('Debouncing Rapid User Input & Scroll Events', () => {
@@ -81,30 +92,22 @@ describe('Debouncing Rapid User Input & Scroll Events', () => {
 
       const input = getByPlaceholderText('Search courses...');
 
-      // Simulating rapid keystrokes typing: 'R', 'Re', 'Rea', 'React'
-      // Expected behavior: query state updates immediately in text input,
-      // but actual search/filtering (300ms debounce) is deferred.
       fireEvent.changeText(input, 'R');
       fireEvent.changeText(input, 'Re');
       fireEvent.changeText(input, 'Rea');
       fireEvent.changeText(input, 'React');
 
-      // Before 300ms, search results shouldn't render yet
       expect(queryByText('1 result')).toBeNull();
 
-      // Fast forward time by 200ms (not yet 300ms since last change)
       act(() => {
         jest.advanceTimersByTime(200);
       });
       expect(queryByText('1 result')).toBeNull();
 
-      // Complete the remaining 100ms debounce delay
       act(() => {
         jest.advanceTimersByTime(100);
       });
 
-      // Now it should have executed the search automatically and found results!
-      // (sampleCourse has "React Native" in title/description)
       expect(queryByText('1 result')).toBeTruthy();
     });
   });
@@ -122,7 +125,7 @@ describe('Debouncing Rapid User Input & Scroll Events', () => {
       const onLessonChange = jest.fn();
       const renderContent = jest.fn(() => null);
 
-      const { getByTestId } = render(
+      const { UNSAFE_getByType } = render(
         <LessonCarousel
           lessons={mockLessons}
           currentLessonId="1"
@@ -131,19 +134,9 @@ describe('Debouncing Rapid User Input & Scroll Events', () => {
         />
       );
 
-      // We obtain scroll view.
-      // Wait, LessonCarousel renders a ScrollView. We can simulate onScroll event.
-      // Line 188: <ScrollView horizontal pagingEnabled onScroll={handleScroll} ...
-      const scrollView = getByTestId('LessonCarousel').parent?.findByType('ScrollView');
+      const scrollView = UNSAFE_getByType('ScrollView');
       expect(scrollView).toBeDefined();
 
-      if (!scrollView) {
-        throw new Error('ScrollView not found in LessonCarousel');
-      }
-
-      // Simulate rapid drag/scroll offsets: 100, 200, 300, 375 (1 page width = SCREEN_WIDTH)
-      // Screen width is 375 by default inside test dimensions.
-      // Multiple scroll events fired sequentially (e.g. 10ms apart)
       act(() => {
         fireEvent.scroll(scrollView, {
           nativeEvent: { contentOffset: { x: 50, y: 0 } },
@@ -160,22 +153,17 @@ describe('Debouncing Rapid User Input & Scroll Events', () => {
         });
       });
 
-      // At this point, the index is page 1 (Lesson 2).
-      // Since it is debounced by 100ms, onLessonChange should NOT have been called yet.
       expect(onLessonChange).not.toHaveBeenCalled();
 
-      // Fast forward 50ms (still within 100ms)
       act(() => {
         jest.advanceTimersByTime(50);
       });
       expect(onLessonChange).not.toHaveBeenCalled();
 
-      // Complete 100ms from the last event
       act(() => {
         jest.advanceTimersByTime(50);
       });
 
-      // Should now be called exactly once for the final scrolled index!
       expect(onLessonChange).toHaveBeenCalledTimes(1);
       expect(onLessonChange).toHaveBeenCalledWith('2', 1);
     });

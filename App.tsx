@@ -8,6 +8,7 @@ import './global.css';
 import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { ErrorBoundary } from './src/components/common/ErrorBoundary';
+import { requireEnvVariables } from './src/config';
 import { initializeLogging } from './src/config/logging';
 import { AuthProvider, useAdaptiveTheme } from './src/hooks';
 import AppNavigator from './src/navigation/AppNavigator';
@@ -30,7 +31,9 @@ import { useNotificationStore } from './src/store/notificationStore';
 import { handleCacheVersionUpdate } from './src/utils/cacheVersioning';
 import { requireEnvVariables } from './src/utils/env';
 import { appLogger, logger } from './src/utils/logger';
+import { appLogger } from './src/utils/logger';
 import { handleNotificationReceived } from './src/utils/notificationHandlers';
+import { prefetchExternalResources } from './src/utils/resourceHints';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -41,6 +44,9 @@ const SHOW_STORYBOOK = process.env.EXPO_PUBLIC_STORYBOOK === 'true';
 
 // Centralized structured logging initialized on startup
 requireEnvVariables();
+
+// Preconnect to API hosts and external resources
+prefetchExternalResources();
 
 // Initialize centralized logging on app start
 initializeLogging().catch(err => {
@@ -78,7 +84,8 @@ const App = () => {
         // 1. Load fonts
         startupProgressService.startStep('fonts');
         await Font.loadAsync({
-          // You can add custom fonts here later if needed
+          'Inter-Regular': require('./assets/fonts/Inter-Regular.ttf'),
+          'Inter-Bold': require('./assets/fonts/Inter-Bold.ttf'),
         });
         startupProgressService.completeStep('fonts');
 
