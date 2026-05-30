@@ -2,7 +2,7 @@ const PROTOCOL_VERSION = 1;
 
 export type BinaryValue = string | number | boolean | null | undefined;
 
-type FieldType = "string" | "double" | "bool";
+type FieldType = 'string' | 'double' | 'bool';
 
 type EventSchema = {
   typeId: number;
@@ -13,37 +13,37 @@ const EVENT_SCHEMAS: Record<string, EventSchema> = {
   notification_created: {
     typeId: 1,
     fields: [
-      { key: "id", type: "string" },
-      { key: "title", type: "string" },
-      { key: "body", type: "string" },
-      { key: "createdAt", type: "string" },
-      { key: "isRead", type: "bool" },
+      { key: 'id', type: 'string' },
+      { key: 'title', type: 'string' },
+      { key: 'body', type: 'string' },
+      { key: 'createdAt', type: 'string' },
+      { key: 'isRead', type: 'bool' },
     ],
   },
   course_updated: {
     typeId: 2,
     fields: [
-      { key: "id", type: "string" },
-      { key: "title", type: "string" },
-      { key: "progress", type: "double" },
-      { key: "updatedAt", type: "string" },
+      { key: 'id', type: 'string' },
+      { key: 'title', type: 'string' },
+      { key: 'progress', type: 'double' },
+      { key: 'updatedAt', type: 'string' },
     ],
   },
   message_received: {
     typeId: 3,
     fields: [
-      { key: "id", type: "string" },
-      { key: "chatId", type: "string" },
-      { key: "senderId", type: "string" },
-      { key: "content", type: "string" },
-      { key: "timestamp", type: "string" },
-      { key: "isEdited", type: "bool" },
+      { key: 'id', type: 'string' },
+      { key: 'chatId', type: 'string' },
+      { key: 'senderId', type: 'string' },
+      { key: 'content', type: 'string' },
+      { key: 'timestamp', type: 'string' },
+      { key: 'isEdited', type: 'bool' },
     ],
   },
 };
 
 const TYPE_ID_TO_EVENT: Record<number, string> = Object.fromEntries(
-  Object.entries(EVENT_SCHEMAS).map(([event, schema]) => [schema.typeId, event]),
+  Object.entries(EVENT_SCHEMAS).map(([event, schema]) => [schema.typeId, event])
 );
 
 const encoder = new TextEncoder();
@@ -78,7 +78,7 @@ function decodeVarint(buffer: Uint8Array, offset: number): [number, number] {
     }
     shift += 7;
   }
-  throw new Error("Invalid varint encoding");
+  throw new Error('Invalid varint encoding');
 }
 
 function encodeTag(fieldNumber: number, wt: number): number[] {
@@ -87,7 +87,11 @@ function encodeTag(fieldNumber: number, wt: number): number[] {
 
 function encodeString(fieldNumber: number, value: string): number[] {
   const payload = Array.from(encoder.encode(value));
-  return [...encodeTag(fieldNumber, wireType.lengthDelimited), ...encodeVarint(payload.length), ...payload];
+  return [
+    ...encodeTag(fieldNumber, wireType.lengthDelimited),
+    ...encodeVarint(payload.length),
+    ...payload,
+  ];
 }
 
 function encodeBool(fieldNumber: number, value: boolean): number[] {
@@ -100,7 +104,10 @@ function encodeDouble(fieldNumber: number, value: number): number[] {
   return [...encodeTag(fieldNumber, wireType.fixed64), ...Array.from(bytes)];
 }
 
-export function encodeBinaryMessage(event: string, payload: Record<string, BinaryValue>): Uint8Array {
+export function encodeBinaryMessage(
+  event: string,
+  payload: Record<string, BinaryValue>
+): Uint8Array {
   const schema = EVENT_SCHEMAS[event];
   const binary: number[] = [];
 
@@ -112,13 +119,13 @@ export function encodeBinaryMessage(event: string, payload: Record<string, Binar
       const fieldNumber = idx + 10;
       const value = payload[field.key];
       if (value === null || value === undefined) return;
-      if (field.type === "string" && typeof value === "string") {
+      if (field.type === 'string' && typeof value === 'string') {
         binary.push(...encodeString(fieldNumber, value));
       }
-      if (field.type === "bool" && typeof value === "boolean") {
+      if (field.type === 'bool' && typeof value === 'boolean') {
         binary.push(...encodeBool(fieldNumber, value));
       }
-      if (field.type === "double" && typeof value === "number") {
+      if (field.type === 'double' && typeof value === 'number') {
         binary.push(...encodeDouble(fieldNumber, value));
       }
     });
@@ -130,12 +137,15 @@ export function encodeBinaryMessage(event: string, payload: Record<string, Binar
   return Uint8Array.from(binary);
 }
 
-export function decodeBinaryMessage(raw: ArrayBuffer | Uint8Array): { event: string; payload: Record<string, BinaryValue> } {
+export function decodeBinaryMessage(raw: ArrayBuffer | Uint8Array): {
+  event: string;
+  payload: Record<string, BinaryValue>;
+} {
   const bytes = raw instanceof Uint8Array ? raw : new Uint8Array(raw);
   let offset = 0;
   let eventTypeId: number | null = null;
-  let event = "";
-  let jsonPayload = "";
+  let event = '';
+  let jsonPayload = '';
   const payload: Record<string, BinaryValue> = {};
 
   while (offset < bytes.length) {
@@ -161,7 +171,7 @@ export function decodeBinaryMessage(raw: ArrayBuffer | Uint8Array): { event: str
       else if (eventTypeId && TYPE_ID_TO_EVENT[eventTypeId]) {
         const schema = EVENT_SCHEMAS[TYPE_ID_TO_EVENT[eventTypeId]];
         const field = schema.fields[fieldNumber - 10];
-        if (field?.type === "string") payload[field.key] = decoder.decode(chunk);
+        if (field?.type === 'string') payload[field.key] = decoder.decode(chunk);
       }
       continue;
     }
@@ -172,7 +182,7 @@ export function decodeBinaryMessage(raw: ArrayBuffer | Uint8Array): { event: str
       if (eventTypeId && TYPE_ID_TO_EVENT[eventTypeId]) {
         const schema = EVENT_SCHEMAS[TYPE_ID_TO_EVENT[eventTypeId]];
         const field = schema.fields[fieldNumber - 10];
-        if (field?.type === "bool") payload[field.key] = v === 1;
+        if (field?.type === 'bool') payload[field.key] = v === 1;
       }
       continue;
     }
@@ -183,7 +193,8 @@ export function decodeBinaryMessage(raw: ArrayBuffer | Uint8Array): { event: str
       if (eventTypeId && TYPE_ID_TO_EVENT[eventTypeId]) {
         const schema = EVENT_SCHEMAS[TYPE_ID_TO_EVENT[eventTypeId]];
         const field = schema.fields[fieldNumber - 10];
-        if (field?.type === "double") payload[field.key] = new DataView(slice.buffer, slice.byteOffset, 8).getFloat64(0, true);
+        if (field?.type === 'double')
+          payload[field.key] = new DataView(slice.buffer, slice.byteOffset, 8).getFloat64(0, true);
       }
     }
   }
@@ -192,10 +203,16 @@ export function decodeBinaryMessage(raw: ArrayBuffer | Uint8Array): { event: str
     return { event: TYPE_ID_TO_EVENT[eventTypeId], payload };
   }
 
-  return { event, payload: jsonPayload ? (JSON.parse(jsonPayload) as Record<string, BinaryValue>) : payload };
+  return {
+    event,
+    payload: jsonPayload ? (JSON.parse(jsonPayload) as Record<string, BinaryValue>) : payload,
+  };
 }
 
-export function estimatePayloadReduction(event: string, payload: Record<string, BinaryValue>): { jsonBytes: number; binaryBytes: number; reductionPercent: number } {
+export function estimatePayloadReduction(
+  event: string,
+  payload: Record<string, BinaryValue>
+): { jsonBytes: number; binaryBytes: number; reductionPercent: number } {
   const jsonBytes = encoder.encode(JSON.stringify({ event, payload })).length;
   const binaryBytes = encodeBinaryMessage(event, payload).length;
   const reductionPercent = Number((((jsonBytes - binaryBytes) / jsonBytes) * 100).toFixed(2));

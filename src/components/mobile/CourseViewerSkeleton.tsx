@@ -22,7 +22,12 @@ export const CourseViewerSkeleton = () => {
         <Skeleton width="45%" height={38} borderRadius={0} />
       </View>
       <View style={styles.content}>
-        <Skeleton width={SCREEN_WIDTH - 32} height={200} borderRadius={12} style={styles.contentBlock} />
+        <Skeleton
+          width={SCREEN_WIDTH - 32}
+          height={200}
+          borderRadius={12}
+          style={styles.contentBlock}
+        />
         <Skeleton width="60%" height={18} style={styles.sectionTitle} />
         <Skeleton width="100%" height={14} style={styles.contentLine} />
         <Skeleton width="95%" height={14} style={styles.contentLine} />

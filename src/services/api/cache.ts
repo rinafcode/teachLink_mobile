@@ -1,8 +1,8 @@
 interface CacheEntry<T> {
   data: T;
   cachedAt: number;
-  ttl: number;       // ms until stale
-  staleTtl: number;  // ms until evicted (stale-while-revalidate window)
+  ttl: number; // ms until stale
+  staleTtl: number; // ms until evicted (stale-while-revalidate window)
   dataVersion?: string; // optional server data version tag
 }
 
@@ -33,7 +33,7 @@ export function setCache<T>(
   data: T,
   ttl: number,
   staleTtl: number,
-  dataVersion?: string,
+  dataVersion?: string
 ): void {
   store.set(key, { data, cachedAt: Date.now(), ttl, staleTtl, dataVersion });
 }
@@ -77,7 +77,7 @@ export async function fetchWithSWR<T>(
   fetcher: () => Promise<T>,
   ttl = 60_000,
   staleTtl = 300_000,
-  dataVersion?: string,
+  dataVersion?: string
 ): Promise<T> {
   const cached = getCache<T>(key);
 
@@ -85,8 +85,10 @@ export async function fetchWithSWR<T>(
     if (isStaleCache(key)) {
       // Revalidate in the background; return stale data now
       fetcher()
-        .then((fresh) => setCache(key, fresh, ttl, staleTtl, dataVersion))
-        .catch(() => {/* keep stale data on error */});
+        .then(fresh => setCache(key, fresh, ttl, staleTtl, dataVersion))
+        .catch(() => {
+          /* keep stale data on error */
+        });
     }
     return cached;
   }

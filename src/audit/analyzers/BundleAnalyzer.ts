@@ -7,11 +7,11 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import type {
-    BundleAnalysis,
-    BundleChunk,
-    BundleFile,
-    DuplicateModule,
-    IPerformanceAnalyzer,
+  BundleAnalysis,
+  BundleChunk,
+  BundleFile,
+  DuplicateModule,
+  IPerformanceAnalyzer,
 } from './types';
 
 export class BundleAnalyzer implements IPerformanceAnalyzer {
@@ -44,9 +44,7 @@ export class BundleAnalyzer implements IPerformanceAnalyzer {
     try {
       const analysis = await this.analyze();
       const hasData =
-        analysis.totalSize > 0 ||
-        analysis.chunks.length > 0 ||
-        analysis.largeFiles.length > 0;
+        analysis.totalSize > 0 || analysis.chunks.length > 0 || analysis.largeFiles.length > 0;
       return hasData;
     } catch {
       return false;
@@ -92,11 +90,7 @@ export class BundleAnalyzer implements IPerformanceAnalyzer {
     if (!fs.existsSync(srcPath)) return 0;
 
     this.walkDir(srcPath, (filePath: string) => {
-      if (
-        filePath.endsWith('.ts') ||
-        filePath.endsWith('.tsx') ||
-        filePath.endsWith('.js')
-      ) {
+      if (filePath.endsWith('.ts') || filePath.endsWith('.tsx') || filePath.endsWith('.js')) {
         const stats = fs.statSync(filePath);
         totalSize += stats.size;
       }
@@ -135,11 +129,7 @@ export class BundleAnalyzer implements IPerformanceAnalyzer {
         for (const file of files) {
           if (file.endsWith('.tsx')) {
             chunks.push(
-              this.createChunk(
-                path.basename(file, '.tsx'),
-                path.join(appPath, file),
-                true
-              )
+              this.createChunk(path.basename(file, '.tsx'), path.join(appPath, file), true)
             );
           }
         }
@@ -165,11 +155,7 @@ export class BundleAnalyzer implements IPerformanceAnalyzer {
 
     if (fs.existsSync(dirPath)) {
       this.walkDir(dirPath, (filePath: string) => {
-        if (
-          filePath.endsWith('.ts') ||
-          filePath.endsWith('.tsx') ||
-          filePath.endsWith('.js')
-        ) {
+        if (filePath.endsWith('.ts') || filePath.endsWith('.tsx') || filePath.endsWith('.js')) {
           const stats = fs.statSync(filePath);
           size += stats.size;
           fileCount++;
@@ -196,11 +182,7 @@ export class BundleAnalyzer implements IPerformanceAnalyzer {
     if (!fs.existsSync(srcPath)) return [];
 
     this.walkDir(srcPath, (filePath: string) => {
-      if (
-        filePath.endsWith('.ts') ||
-        filePath.endsWith('.tsx') ||
-        filePath.endsWith('.js')
-      ) {
+      if (filePath.endsWith('.ts') || filePath.endsWith('.tsx') || filePath.endsWith('.js')) {
         const stats = fs.statSync(filePath);
         if (stats.size > threshold) {
           largeFiles.push({
@@ -253,7 +235,7 @@ export class BundleAnalyzer implements IPerformanceAnalyzer {
       }
 
       return Array.from(duplicates.values())
-        .filter((d) => d.count > 1)
+        .filter(d => d.count > 1)
         .sort((a, b) => b.totalSize - a.totalSize);
     } catch (error) {
       console.error('Error finding duplicate modules:', error);
@@ -344,9 +326,7 @@ export class BundleAnalyzer implements IPerformanceAnalyzer {
    */
   private getPackageVersion(packagePath: string): string {
     try {
-      const pkgJson = JSON.parse(
-        fs.readFileSync(path.join(packagePath, 'package.json'), 'utf-8')
-      );
+      const pkgJson = JSON.parse(fs.readFileSync(path.join(packagePath, 'package.json'), 'utf-8'));
       return pkgJson.version || '0.0.0';
     } catch {
       return 'unknown';
@@ -368,11 +348,7 @@ export class BundleAnalyzer implements IPerformanceAnalyzer {
       const files = fs.readdirSync(dirPath);
 
       for (const file of files) {
-        if (
-          file.startsWith('.') ||
-          file === 'node_modules' ||
-          file === '.git'
-        ) {
+        if (file.startsWith('.') || file === 'node_modules' || file === '.git') {
           continue;
         }
 

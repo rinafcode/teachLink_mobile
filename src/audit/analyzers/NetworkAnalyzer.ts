@@ -7,17 +7,17 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import type {
-    CacheMetrics,
-    DependencyAnalysis,
-    IPerformanceAnalyzer,
-    LicenseIssue,
-    NetworkAnalysis,
-    NetworkEndpoint,
-    OutdatedDependency,
-    RedundantRequest,
-    TransitiveDependency,
-    UnoptimizedAsset,
-    Vulnerability,
+  CacheMetrics,
+  DependencyAnalysis,
+  IPerformanceAnalyzer,
+  LicenseIssue,
+  NetworkAnalysis,
+  NetworkEndpoint,
+  OutdatedDependency,
+  RedundantRequest,
+  TransitiveDependency,
+  UnoptimizedAsset,
+  Vulnerability,
 } from './types';
 
 export class NetworkAnalyzer implements IPerformanceAnalyzer {
@@ -199,11 +199,7 @@ export class NetworkAnalyzer implements IPerformanceAnalyzer {
 
           if (stats.isDirectory()) {
             walkDir(fullPath);
-          } else if (
-            file.endsWith('.png') ||
-            file.endsWith('.jpg') ||
-            file.endsWith('.jpeg')
-          ) {
+          } else if (file.endsWith('.png') || file.endsWith('.jpg') || file.endsWith('.jpeg')) {
             const currentSize = stats.size;
 
             assets.push({
@@ -222,9 +218,7 @@ export class NetworkAnalyzer implements IPerformanceAnalyzer {
       console.error('Error finding unoptimized assets:', error);
     }
 
-    return assets
-      .sort((a, b) => b.savings - a.savings)
-      .slice(0, 10);
+    return assets.sort((a, b) => b.savings - a.savings).slice(0, 10);
   }
 
   /**
@@ -309,10 +303,7 @@ export class DependencyAnalyzer implements IPerformanceAnalyzer {
             name,
             currentVersion: d.current,
             latestVersion: d.latest,
-            majorVersionsBehind: this.calculateMajorVersionsDiff(
-              d.current,
-              d.latest
-            ),
+            majorVersionsBehind: this.calculateMajorVersionsDiff(d.current, d.latest),
             releaseDate: new Date().toISOString(),
           });
         }
@@ -374,9 +365,7 @@ export class DependencyAnalyzer implements IPerformanceAnalyzer {
                 id: issue.id || 'unknown',
                 description: issue.title || 'Unknown vulnerability',
                 affectedVersions: vuln.range || '*',
-                fixVersion: vuln.fixAvailable
-                  ? vuln.fixAvailable.name
-                  : undefined,
+                fixVersion: vuln.fixAvailable ? vuln.fixAvailable.name : undefined,
               });
             }
           }
@@ -457,11 +446,7 @@ export class DependencyAnalyzer implements IPerformanceAnalyzer {
    */
   private async checkLicenseCompliance(): Promise<LicenseIssue[]> {
     const issues: LicenseIssue[] = [];
-    const problematicLicenses = [
-      'AGPL',
-      'SSPL',
-      'GPLv3',
-    ];
+    const problematicLicenses = ['AGPL', 'SSPL', 'GPLv3'];
 
     const pkgJsonPath = path.join(this.projectRoot, 'package.json');
 
@@ -475,12 +460,7 @@ export class DependencyAnalyzer implements IPerformanceAnalyzer {
       };
 
       for (const [name] of Object.entries(allDeps)) {
-        const pkgPath = path.join(
-          this.projectRoot,
-          'node_modules',
-          name,
-          'package.json'
-        );
+        const pkgPath = path.join(this.projectRoot, 'node_modules', name, 'package.json');
 
         if (fs.existsSync(pkgPath)) {
           try {

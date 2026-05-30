@@ -1,8 +1,6 @@
-import React, { useEffect, useRef } from 'react';
-import { Dimensions, ScrollView, StyleSheet, View } from 'react-native';
-import { useAnalytics } from '../../../hooks/useAnalytics';
-import { Question } from '../../../types/course';
-import { AnalyticsEvent } from '../../../utils/trackingEvents';
+import React, { useCallback, useEffect, useRef } from 'react';
+import { Dimensions, FlatList, StyleSheet, View } from 'react-native';
+
 import MobileQuestionCard from './MobileQuestionCard';
 import { Question } from '../../../types/course';
 
@@ -27,9 +25,8 @@ const QuizCarousel = ({
   selectedAnswers,
   onQuestionChange,
   onAnswerSelect,
-}: QuizCarouselProps) {
-  const { trackEvent } = useAnalytics();
-  const scrollViewRef = useRef<ScrollView>(null);
+}: QuizCarouselProps): React.JSX.Element | null => {
+  const flatListRef = useRef<FlatList<Question>>(null);
   const isScrollingRef = useRef(false);
 
   useEffect(() => {
@@ -38,24 +35,10 @@ const QuizCarousel = ({
     }
   }, [currentQuestionIndex]);
 
-  const handleScroll = (event: any) => {
-    const offsetX = event.nativeEvent.contentOffset.x;
-    const index = Math.round(offsetX / SCREEN_WIDTH);
-
-    trackEvent(AnalyticsEvent.PERFORMANCE_METRIC, {
-      event_category: 'high_frequency',
-      event_name: 'quiz_carousel_scroll',
-      offsetX: Math.round(offsetX),
-      index,
-    });
-
-    // Clear any existing timeout
-    if (scrollTimeoutRef.current) {
-      clearTimeout(scrollTimeoutRef.current);
-    }
-
-    // Mark as scrolling
-    isScrollingRef.current = true;
+  const getItemLayout = useCallback(
+    (_: any, index: number) => ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * index, index }),
+    []
+  );
 
   const handleMomentumScrollEnd = (event: any) => {
     const index = Math.round(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);

@@ -90,14 +90,14 @@ class GesturePerformanceMonitorImpl implements GesturePerformanceMonitor {
     let minFps = 60;
     let maxFps = 60;
     if (this.frameDeltas.length > 0) {
-      const fpsList = this.frameDeltas.map((delta) => 1000 / delta);
+      const fpsList = this.frameDeltas.map(delta => 1000 / delta);
       minFps = Math.min(...fpsList);
       maxFps = Math.max(...fpsList);
     }
 
     // Count frame drops (frames that took significantly longer than target)
     const frameDropThreshold = GesturePerformanceMonitorImpl.FRAME_TIME_MS * 1.5; // 25ms = 1.5x target
-    const frameDrops = this.frameDeltas.filter((delta) => delta > frameDropThreshold).length;
+    const frameDrops = this.frameDeltas.filter(delta => delta > frameDropThreshold).length;
     const frameDropPercentage =
       this.frameDeltas.length > 0
         ? ((frameDrops / this.frameDeltas.length) * 100).toFixed(2)

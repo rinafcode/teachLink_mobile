@@ -16,85 +16,85 @@ import { createLazyComponent } from './lazyLoading';
 export const LazyMobileVideoPlayer = createLazyComponent<any>(
   'MobileVideoPlayer',
   () => import('../components/mobile/MobileVideoPlayer'),
-  'LazyMobileVideoPlayer',
+  'LazyMobileVideoPlayer'
 );
 
 export const LazyVideoControls = createLazyComponent<any>(
   'VideoControls',
   () => import('../components/mobile/VideoControls'),
-  'LazyVideoControls',
+  'LazyVideoControls'
 );
 
 // Data Grid Components
 export const LazyAdvancedDataGrid = createLazyComponent<any>(
   'AdvancedDataGrid',
   () => import('../components/grid/AdvancedDataGrid'),
-  'LazyAdvancedDataGrid',
+  'LazyAdvancedDataGrid'
 );
 
 // Profile Components
 export const LazyMobileProfile = createLazyComponent<any>(
   'MobileProfile',
   () => import('../components/mobile/MobileProfile'),
-  'LazyMobileProfile',
+  'LazyMobileProfile'
 );
 
 export const LazyAvatarCamera = createLazyComponent<any>(
   'AvatarCamera',
   () => import('../components/mobile/AvatarCamera'),
-  'LazyAvatarCamera',
+  'LazyAvatarCamera'
 );
 
 // Settings Components
 export const LazyMobileSettings = createLazyComponent<any>(
   'MobileSettings',
   () => import('../components/mobile/MobileSettings'),
-  'LazyMobileSettings',
+  'LazyMobileSettings'
 );
 
 // Course Viewer Components
 export const LazyCourseViewerContent = createLazyComponent<any>(
   'CourseViewerContent',
   () =>
-    import('../components/mobile/MobileCourseViewer').then((mod) => ({
+    import('../components/mobile/MobileCourseViewer').then(mod => ({
       default: mod.CourseViewerContent || mod.default,
     })),
-  'LazyCourseViewerContent',
+  'LazyCourseViewerContent'
 );
 
 // Quiz Components
 export const LazyMobileQuizManager = createLazyComponent<any>(
   'MobileQuizManager',
   () => import('../components/mobile/MobileQuizManager'),
-  'LazyMobileQuizManager',
+  'LazyMobileQuizManager'
 );
 
 // Search Components
 export const LazyMobileSearch = createLazyComponent<any>(
   'MobileSearch',
   () => import('../components/mobile/MobileSearch'),
-  'LazyMobileSearch',
+  'LazyMobileSearch'
 );
 
 // Camera/QR Components
 export const LazyQRScanner = createLazyComponent<any>(
   'QRScanner',
   () => import('../components/mobile/QRScanner'),
-  'LazyQRScanner',
+  'LazyQRScanner'
 );
 
 // Download Manager
 export const LazyDownloadQueue = createLazyComponent<any>(
   'DownloadQueue',
   () => import('../components/mobile/DownloadQueue'),
-  'LazyDownloadQueue',
+  'LazyDownloadQueue'
 );
 
 // Virtual List for large data
 export const LazyVirtualList = createLazyComponent<any>(
   'VirtualList',
   () => import('../components/mobile/VirtualList'),
-  'LazyVirtualList',
+  'LazyVirtualList'
 );
 
 /**
@@ -198,7 +198,7 @@ export function getEstimatedBundleSavings(): {
   const components = Object.values(lazyComponentRegistry);
   let totalSavings = 0;
 
-  const componentSizes = components.map((comp) => {
+  const componentSizes = components.map(comp => {
     const sizeStr = comp.estimatedSize.replace('KB', '');
     const sizeNum = parseFloat(sizeStr);
     totalSavings += sizeNum;

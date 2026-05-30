@@ -48,7 +48,7 @@ const LessonCarousel = ({
   renderLessonContent,
   onLastLessonNext,
   isLastLessonInSection = false,
-}: LessonCarouselProps) {
+}: LessonCarouselProps) => {
   const { trackEvent } = useAnalytics();
   const scrollViewRef = useRef<ScrollView>(null);
   const [currentIndex, setCurrentIndex] = useState(0);

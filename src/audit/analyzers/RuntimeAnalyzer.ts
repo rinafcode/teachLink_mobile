@@ -6,15 +6,15 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import type {
-    AssetAnalysis,
-    CPUMetrics,
-    FontInfo,
-    FontMetrics,
-    FormatOpportunity,
-    ImageInfo,
-    ImageMetrics,
-    IPerformanceAnalyzer,
-    RuntimeAnalysis,
+  AssetAnalysis,
+  CPUMetrics,
+  FontInfo,
+  FontMetrics,
+  FormatOpportunity,
+  ImageInfo,
+  ImageMetrics,
+  IPerformanceAnalyzer,
+  RuntimeAnalysis,
 } from './types';
 
 export class RuntimeAnalyzer implements IPerformanceAnalyzer {
@@ -95,9 +95,9 @@ export class RuntimeAnalyzer implements IPerformanceAnalyzer {
   private async analyzeCPUUsage(): Promise<CPUMetrics> {
     const distribution: Record<string, number> = {
       'js-execution': 45,
-      'rendering': 30,
-      'layout': 15,
-      'other': 10,
+      rendering: 30,
+      layout: 15,
+      other: 10,
     };
 
     return {
@@ -183,9 +183,7 @@ export class AssetAnalyzer implements IPerformanceAnalyzer {
       });
     }
 
-    const largestImages = images
-      .sort((a, b) => b.size - a.size)
-      .slice(0, 10);
+    const largestImages = images.sort((a, b) => b.size - a.size).slice(0, 10);
 
     const unusedImages = this.findUnusedImages(images);
     const formatOpportunities = this.findFormatOptimizations(images);
@@ -203,9 +201,7 @@ export class AssetAnalyzer implements IPerformanceAnalyzer {
   /**
    * Estimate image dimensions
    */
-  private estimateDimensions(
-    filePath: string
-  ): { width: number; height: number } {
+  private estimateDimensions(filePath: string): { width: number; height: number } {
     // This is a simplification - real implementation would read image metadata
     const fileName = path.basename(filePath).toLowerCase();
 
@@ -317,7 +313,7 @@ export class AssetAnalyzer implements IPerformanceAnalyzer {
           const fileName = path.basename(filePath);
           const baseName = fileName.split('-')[0];
 
-          let fontInfo = fonts.find((f) => f.name === baseName);
+          let fontInfo = fonts.find(f => f.name === baseName);
           if (!fontInfo) {
             fontInfo = {
               name: baseName,
@@ -392,10 +388,7 @@ export class AssetAnalyzer implements IPerformanceAnalyzer {
         const stats = fs.statSync(filePath);
 
         // Images over 1MB without compression
-        if (
-          /\.(png|jpg|jpeg)$/i.test(filePath) &&
-          stats.size > 1000000
-        ) {
+        if (/\.(png|jpg|jpeg)$/i.test(filePath) && stats.size > 1000000) {
           unoptimized.push(path.relative(this.projectRoot, filePath));
         }
       });

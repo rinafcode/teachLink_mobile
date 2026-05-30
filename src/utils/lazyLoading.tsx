@@ -81,7 +81,7 @@ export const lazyLoadingTracker = new LazyLoadingTracker();
 export function createLazyComponent<P extends object>(
   componentName: string,
   componentLoader: () => Promise<{ default: ComponentType<P> }>,
-  displayName?: string,
+  displayName?: string
 ): LazyExoticComponent<ComponentType<P>> {
   const tracker = lazyLoadingTracker;
   tracker.startTracking(componentName);
@@ -125,10 +125,7 @@ class LazyLoadErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error) {
-    console.error(
-      `[LazyLoad] Error in ${this.props.componentName || 'component'}:`,
-      error,
-    );
+    console.error(`[LazyLoad] Error in ${this.props.componentName || 'component'}:`, error);
     this.props.onError?.(error);
   }
 

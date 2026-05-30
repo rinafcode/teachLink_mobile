@@ -56,7 +56,7 @@ const secureStorageAdapter: StateStorage = {
 export const useAppStore = create<AppState>()(
   devtools(
     persist(
-      subscribeWithSelector((set) => ({
+      subscribeWithSelector(set => ({
         user: null,
         isAuthenticated: false,
         isAuthLoading: false,
@@ -68,8 +68,8 @@ export const useAppStore = create<AppState>()(
         theme: 'light',
         isLoading: false,
         error: null,
-        setUser: (user) => set({ user, isAuthenticated: !!user }, false, 'setUser'),
-        setTheme: (theme) => set({ theme }, false, 'setTheme'),
+        setUser: user => set({ user, isAuthenticated: !!user }, false, 'setUser'),
+        setTheme: theme => set({ theme }, false, 'setTheme'),
         setTokens: (accessToken, refreshToken, sessionExpiresAt) =>
           set(
             {
@@ -80,10 +80,10 @@ export const useAppStore = create<AppState>()(
             false,
             'setTokens'
           ),
-        setSessionExpiringSoon: (sessionExpiringSoon) =>
+        setSessionExpiringSoon: sessionExpiringSoon =>
           set({ sessionExpiringSoon }, false, 'setSessionExpiringSoon'),
-        setAuthLoading: (isAuthLoading) => set({ isAuthLoading }, false, 'setAuthLoading'),
-        setAuthError: (authError) => set({ authError }, false, 'setAuthError'),
+        setAuthLoading: isAuthLoading => set({ isAuthLoading }, false, 'setAuthLoading'),
+        setAuthError: authError => set({ authError }, false, 'setAuthError'),
         logout: () =>
           set(
             {
@@ -99,8 +99,8 @@ export const useAppStore = create<AppState>()(
             false,
             'logout'
           ),
-        setLoading: (isLoading) => set({ isLoading }, false, 'setLoading'),
-        setError: (error) => set({ error }, false, 'setError'),
+        setLoading: isLoading => set({ isLoading }, false, 'setLoading'),
+        setError: error => set({ error }, false, 'setError'),
       })),
       {
         name: 'app-auth-storage',
@@ -110,7 +110,7 @@ export const useAppStore = create<AppState>()(
          * Transient flags (isLoading, isAuthLoading, error, authError)
          * are intentionally excluded — they should always start fresh.
          */
-        partialize: (state) => ({
+        partialize: state => ({
           user: state.user,
           isAuthenticated: state.isAuthenticated,
           accessToken: state.accessToken,
