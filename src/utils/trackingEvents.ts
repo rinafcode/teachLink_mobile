@@ -36,6 +36,8 @@ export enum AnalyticsEvent {
 
   // Performance & Infrastructure
   PERFORMANCE_METRIC = 'performance_metric',
+  AB_ASSIGNMENT = 'ab_assignment',
+  AB_EXPOSURE = 'ab_exposure',
   API_ERROR = 'api_error',
   CRASH_REPORT = 'crash_report',
 }

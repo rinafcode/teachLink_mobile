@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, DimensionValue, StyleSheet, View, ViewStyle } from 'react-native';
+import { useAdaptiveFrameRate } from '../../hooks/useAdaptiveFrameRate';
 
 /**
  * Props for the Skeleton component
@@ -25,10 +26,11 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   style,
 }) => {
   const pulseAnim = useRef(new Animated.Value(0.3)).current;
+  const { durationMultiplier } = useAdaptiveFrameRate();
 
   useEffect(() => {
     const sharedAnimationConfig = {
-      duration: 1000,
+      duration: 1000 * durationMultiplier,
       useNativeDriver: true,
     };
 
@@ -44,7 +46,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
         }),
       ])
     ).start();
-  }, [pulseAnim]);
+  }, [pulseAnim, durationMultiplier]);
 
   const skeletonStyle: ViewStyle = {
     width: width,

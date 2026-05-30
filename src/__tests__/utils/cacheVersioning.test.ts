@@ -1,11 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { clearCache } from '../../services/api/cache';
 import {
-  parseSemver,
-  shouldInvalidateCache,
   getStoredCacheVersion,
-  setStoredCacheVersion,
   handleCacheVersionUpdate,
+  parseSemver,
+  setStoredCacheVersion,
+  shouldInvalidateCache,
 } from '../../utils/cacheVersioning';
 import { ImageCache } from '../../utils/imageCache';
 
@@ -19,23 +20,22 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 }));
 
 jest.mock('../../utils/imageCache', () => ({
-  ImageCache: {
-    clearCache: jest.fn(),
-  },
+  ImageCache: { clearCache: jest.fn() },
 }));
 
 jest.mock('../../utils/logger', () => ({
   __esModule: true,
-  default: {
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-    debug: jest.fn(),
-  },
+  default: { info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() },
+}));
+
+jest.mock('../../services/api/cache', () => ({
+  clearCache: jest.fn(),
+  invalidateCacheByDataVersion: jest.fn(),
 }));
 
 const mockStorage = AsyncStorage as jest.Mocked<typeof AsyncStorage>;
 const mockImageCache = ImageCache as jest.Mocked<typeof ImageCache>;
+const mockClearCache = jest.mocked(clearCache);
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -142,6 +142,40 @@ describe('handleCacheVersionUpdate', () => {
     expect(mockStorage.setItem).toHaveBeenCalledWith('@teachlink_cache_version', '1.0.0');
   });
 
+  it('clears in-memory cache on invalidation', async () => {
+    mockStorage.getItem.mockResolvedValue('1.0.0');
+    mockStorage.getAllKeys.mockResolvedValue(['@teachlink_cache_version', '@teachlink_courses']);
+
+    await handleCacheVersionUpdate('2.0.0');
+
+    expect(mockClearCache).toHaveBeenCalled();
+  });
+
+  it('does NOT clear in-memory cache when version is preserved', async () => {
+    mockStorage.getItem.mockResolvedValue('1.0.0');
+
+    await handleCacheVersionUpdate('1.0.1');
+
+    expect(mockClearCache).not.toHaveBeenCalled();
+  });
+
+  it('clears in-memory cache before AsyncStorage on invalidation', async () => {
+    mockStorage.getItem.mockResolvedValue('1.0.0');
+    mockStorage.getAllKeys.mockResolvedValue(['@teachlink_courses']);
+
+    const callOrder: string[] = [];
+    mockClearCache.mockImplementation(() => {
+      callOrder.push('clearCache');
+    });
+    mockStorage.multiRemove.mockImplementation(async () => {
+      callOrder.push('multiRemove');
+    });
+
+    await handleCacheVersionUpdate('2.0.0');
+
+    expect(callOrder.indexOf('clearCache')).toBeLessThan(callOrder.indexOf('multiRemove'));
+  });
+
   it('invalidates cache on major version bump', async () => {
     mockStorage.getItem.mockResolvedValue('1.0.0');
     mockStorage.getAllKeys.mockResolvedValue(['@teachlink_cache_version', '@teachlink_courses']);
@@ -149,7 +183,6 @@ describe('handleCacheVersionUpdate', () => {
     const result = await handleCacheVersionUpdate('2.0.0');
 
     expect(result).toBe(true);
-    // Should NOT remove the version key itself
     expect(mockStorage.multiRemove).toHaveBeenCalledWith(['@teachlink_courses']);
     expect(mockImageCache.clearCache).toHaveBeenCalled();
   });

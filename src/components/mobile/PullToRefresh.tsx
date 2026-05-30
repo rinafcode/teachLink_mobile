@@ -10,6 +10,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
+import { useAdaptiveFrameRate } from '../../hooks/useAdaptiveFrameRate';
 
 type AnyScrollComponent = React.ComponentType<any>;
 
@@ -84,6 +85,8 @@ export function PullToRefresh(props: PullToRefreshProps) {
 
   const [screenReaderEnabled, setScreenReaderEnabled] = React.useState(false);
 
+  const { durationMultiplier } = useAdaptiveFrameRate();
+
   React.useEffect(() => {
     let mounted = true;
     AccessibilityInfo.isScreenReaderEnabled().then(enabled => {
@@ -104,12 +107,12 @@ export function PullToRefresh(props: PullToRefreshProps) {
     (toValue: number) => {
       Animated.timing(pullY, {
         toValue,
-        duration: 180,
+        duration: 180 * durationMultiplier,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }).start();
     },
-    [pullY]
+    [pullY, durationMultiplier]
   );
 
   const runRefresh = React.useCallback(async () => {

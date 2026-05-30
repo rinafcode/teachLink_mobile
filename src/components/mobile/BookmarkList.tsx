@@ -1,12 +1,19 @@
-import React from 'react';
-import { ScrollView, Text, TouchableOpacity, View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import React from 'react';
+import { ScrollView, Text, TouchableOpacity, View, StyleSheet, Alert } from 'react-native';
 
+import { SwipeableRow } from './SwipeableRow';
 import { useBookmarkStore } from '../../store/bookmarkStore';
 
-export default function BookmarkList() {
-  const { bookmarks } = useBookmarkStore();
+export const BookmarkList = () => {
+  const { bookmarks, removeBookmark } = useBookmarkStore();
   const router = useRouter();
+
+  const handleArchive = (itemId: string) => {
+    Alert.alert('Archive Bookmark', 'Bookmark has been successfully archived.', [
+      { text: 'OK', onPress: () => removeBookmark(itemId) },
+    ]);
+  };
 
   if (bookmarks.length === 0) {
     return (
@@ -21,22 +28,32 @@ export default function BookmarkList() {
   return (
     <ScrollView contentContainerStyle={styles.list}>
       {bookmarks.map(item => (
-        <TouchableOpacity
+        <SwipeableRow
           key={item.itemId}
-          testID={`bookmark-item-${item.itemId}`}
-          style={styles.card}
-          onPress={() => router.push(item.url as any)}
-          activeOpacity={0.75}
-          accessibilityRole="link"
-          accessibilityLabel={item.title}
+          id={item.itemId}
+          onDelete={() => removeBookmark(item.itemId)}
+          onArchive={() => handleArchive(item.itemId)}
+          deleteLabel="Delete"
+          archiveLabel="Archive"
         >
-          <Text style={styles.cardTitle}>{item.title}</Text>
-          <Text style={styles.cardType}>{item.itemType}</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            testID={`bookmark-item-${item.itemId}`}
+            style={styles.card}
+            onPress={() => router.push(item.url as any)}
+            activeOpacity={0.75}
+            accessibilityRole="link"
+            accessibilityLabel={item.title}
+          >
+            <Text style={styles.cardTitle}>{item.title}</Text>
+            <Text style={styles.cardType}>{item.itemType}</Text>
+          </TouchableOpacity>
+        </SwipeableRow>
       ))}
     </ScrollView>
   );
-}
+};
+
+export default BookmarkList;
 
 const styles = StyleSheet.create({
   list: { padding: 16, gap: 10 },

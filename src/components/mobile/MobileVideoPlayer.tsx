@@ -44,7 +44,7 @@ const DEFAULT_RATES = [0.75, 1, 1.25, 1.5, 2];
 export type MobileVideoPlayerProps = {
   /** Array of video sources with different quality options */
   sources: VideoSource[];
-  /** Optional poster image URI to display before playback */
+  /** URI of the poster image to display before playback */
   posterUri?: string;
   /** Whether to start playback automatically when loaded */
   autoPlay?: boolean;
@@ -64,6 +64,8 @@ export type MobileVideoPlayerProps = {
   onPlaybackStatusUpdate?: (status: AVPlaybackStatus) => void;
   /** Callback when video quality changes */
   onQualityChange?: (qualityId: string) => void;
+  /** Pass true when the connection is known to be slow (2G / slow-3G) */
+  isSlowConnection?: boolean;
 };
 
 const MobileVideoPlayer = ({
@@ -78,6 +80,7 @@ const MobileVideoPlayer = ({
   onError,
   onPlaybackStatusUpdate,
   onQualityChange,
+  isSlowConnection,
 }: MobileVideoPlayerProps) => {
   const videoRef = useRef<Video | null>(null);
   const autoPlayHandledRef = useRef(false);
@@ -356,7 +359,7 @@ const MobileVideoPlayer = ({
       try {
         const state = await Network.getNetworkStateAsync();
         if (isMounted) {
-          setNetworkType(deriveNetworkType(state));
+          setNetworkType(deriveNetworkType(state, isSlowConnection));
         }
       } catch {
         // Ignore network errors.
@@ -364,13 +367,13 @@ const MobileVideoPlayer = ({
     };
     updateNetworkState();
     const subscription = Network.addNetworkStateListener(state => {
-      setNetworkType(deriveNetworkType(state));
+      setNetworkType(deriveNetworkType(state, isSlowConnection));
     });
     return () => {
       isMounted = false;
       subscription.remove();
     };
-  }, []);
+  }, [isSlowConnection]);
 
   useEffect(() => {
     if (!qualityOptions.some(option => option.id === selectedQualityId)) {

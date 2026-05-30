@@ -12,8 +12,8 @@ When **Adaptive Theme** is enabled under **Settings → App**, the app reads ill
 
 To avoid flickering near a single cutoff, two thresholds are used:
 
-| Transition | Condition |
-|------------|-----------|
+| Transition   | Condition              |
+| ------------ | ---------------------- |
 | Light → Dark | Lux falls below **25** |
 | Dark → Light | Lux rises above **75** |
 
@@ -33,13 +33,13 @@ The light sensor subscription is removed when the app moves to the background an
 
 ## Implementation
 
-| Piece | Location |
-|-------|----------|
-| Setting | `src/store/settingsStore.ts` — `adaptiveThemeEnabled` |
-| Sensor hook | `src/hooks/useAdaptiveTheme.ts` |
-| Root wiring | `App.tsx` |
-| UI toggle | `src/components/mobile/MobileSettings.tsx` |
-| Dependency | `expo-sensors` (`LightSensor`, Android only) |
+| Piece       | Location                                              |
+| ----------- | ----------------------------------------------------- |
+| Setting     | `src/store/settingsStore.ts` — `adaptiveThemeEnabled` |
+| Sensor hook | `src/hooks/useAdaptiveTheme.ts`                       |
+| Root wiring | `App.tsx`                                             |
+| UI toggle   | `src/components/mobile/MobileSettings.tsx`            |
+| Dependency  | `expo-sensors` (`LightSensor`, Android only)          |
 
 Pure debounce/hysteresis logic is exported from the hook for unit tests: `getCandidateThemeFromLux`, `advanceDebounce`.
 

@@ -95,7 +95,7 @@ export default function MobileQuestionCard({
               const isSelected = isOptionSelected(index);
               return (
                 <TouchableOpacity
-                  key={index}
+                  key={`option-${question.id}-${index}`}
                   onPress={() => handleOptionSelect(index)}
                   style={[styles.optionButton, isSelected && styles.optionButtonSelected]}
                 >

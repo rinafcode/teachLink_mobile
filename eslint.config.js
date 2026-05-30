@@ -10,7 +10,6 @@ module.exports = defineConfig([
   expoConfig,
   {
     ignores: ['dist/*', '.rnstorybook/storybook.requires.ts'],
-
   },
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
@@ -20,6 +19,12 @@ module.exports = defineConfig([
     settings: {
       react: {
         version: 'detect',
+      },
+      'import/resolver': {
+        typescript: {
+          alwaysTryTypes: true,
+          project: './tsconfig.json',
+        },
       },
     },
     rules: {

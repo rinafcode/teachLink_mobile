@@ -2,6 +2,7 @@ import { Download } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+import { BatchProgress } from '../../services/batchDataProcessor';
 import { ExportFormat } from '../../utils/gridUtils';
 import { logger } from '../../utils/logger';
 
@@ -13,7 +14,10 @@ export interface GridExporterProps {
    * Called when the user selects an export format.
    * Must return the serialized string to share.
    */
-  onExport: (format: ExportFormat) => string;
+  onExport: (
+    format: ExportFormat,
+    onProgress?: (progress: BatchProgress) => void
+  ) => string | Promise<string>;
   /** When `true`, the export buttons are rendered but non-interactive. */
   disabled?: boolean;
 }
@@ -36,14 +40,16 @@ export const GridExporter = ({
   disabled = false,
 }: GridExporterProps): React.ReactElement => {
   const [activeFormat, setActiveFormat] = useState<ExportFormat | null>(null);
+  const [progress, setProgress] = useState<BatchProgress | null>(null);
 
   const handleExport = useCallback(
     async (format: ExportFormat) => {
       if (disabled || activeFormat !== null) return;
 
       setActiveFormat(format);
+      setProgress({ processed: 0, total: 0, percent: 0, phase: 'queued' });
       try {
-        const data = onExport(format);
+        const data = await onExport(format, setProgress);
 
         await Share.share({
           message: data,
@@ -57,6 +63,7 @@ export const GridExporter = ({
         }
       } finally {
         setActiveFormat(null);
+        setProgress(null);
       }
     },
     [disabled, activeFormat, onExport]
@@ -91,6 +98,25 @@ export const GridExporter = ({
           </TouchableOpacity>
         );
       })}
+      {activeFormat && progress && (
+        <View
+          style={styles.progressWrap}
+          accessibilityRole="progressbar"
+          accessibilityValue={{
+            min: 0,
+            max: 100,
+            now: progress.percent,
+            text: `${progress.percent}%`,
+          }}
+        >
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressFill, { width: `${progress.percent}%` }]} />
+          </View>
+          <Text style={styles.progressText}>
+            {progress.phase === 'queued' ? 'Preparing' : `${progress.percent}%`}
+          </Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -133,5 +159,29 @@ const styles = StyleSheet.create({
   },
   btnTextDisabled: {
     color: '#9CA3AF',
+  },
+  progressWrap: {
+    minWidth: 90,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginLeft: 2,
+  },
+  progressTrack: {
+    width: 56,
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+    backgroundColor: '#E5E7EB',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#19c3e6',
+  },
+  progressText: {
+    minWidth: 28,
+    fontSize: 11,
+    color: '#6B7280',
+    fontWeight: '600',
   },
 });

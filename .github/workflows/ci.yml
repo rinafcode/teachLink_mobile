@@ -32,6 +32,9 @@ jobs:
       - name: Test
         run: npm test -- --passWithNoTests
 
+      - name: Validate OpenAPI Spec
+        run: npm run validate:openapi
+
       # ==============================
       # 🚀 PERFORMANCE BUDGET CHECKS
       # ==============================

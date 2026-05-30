@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Mic, Square } from 'lucide-react-native';
-import { useVoiceRecognition } from '../../hooks';
+import React, { useEffect } from 'react';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+import * as hooks from '../../hooks';
 
 export interface VoiceSearchProps {
   onTranscript: (text: string) => void;
@@ -11,12 +12,25 @@ export interface VoiceSearchProps {
   compact?: boolean;
 }
 
-export function VoiceSearch({
+export const VoiceSearch = ({
   onTranscript,
   onTranscriptFinal,
   disabled = false,
   compact = false,
-}: VoiceSearchProps) {
+}: VoiceSearchProps) => {
+  const useVoiceRecognition =
+    typeof hooks.useVoiceRecognition === 'function'
+      ? hooks.useVoiceRecognition
+      : () => ({
+          isListening: false,
+          transcript: '',
+          isAvailable: false,
+          error: null as string | null,
+          startListening: () => undefined,
+          stopListening: () => undefined,
+          resetTranscript: () => undefined,
+        });
+
   const {
     isListening,
     transcript,
@@ -112,7 +126,7 @@ export function VoiceSearch({
       )}
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   wrapper: {

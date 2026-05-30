@@ -1,6 +1,11 @@
 import * as Network from 'expo-network';
 import apiService from './api';
 import { offlineStorage, SyncOperation, SyncOperationInput } from './offlineStorage';
+import syncEntityManager from './sync/syncEntityManager';
+import type {
+  ConflictResolutionStrategy as VersionedConflictResolutionStrategy,
+  VersionedEntity,
+} from './sync/types';
 import logger from '../utils/logger';
 
 // Sync service configuration
@@ -12,10 +17,19 @@ interface SyncConfig {
 }
 
 // Conflict resolution strategies
-type ConflictResolutionStrategy = 'serverWins' | 'clientWins' | 'merge' | 'manual';
+type LegacyConflictResolutionStrategy = 'serverWins' | 'clientWins' | 'merge' | 'manual';
+type ConflictResolutionStrategy =
+  | VersionedConflictResolutionStrategy
+  | LegacyConflictResolutionStrategy;
 
 // Sync event types
-type SyncEventType = 'syncStarted' | 'syncCompleted' | 'syncFailed' | 'operationProcessed' | 'conflictDetected';
+type SyncEventType =
+  | 'syncStarted'
+  | 'syncCompleted'
+  | 'syncFailed'
+  | 'operationProcessed'
+  | 'conflictDetected'
+  | 'conflictResolved';
 
 // Sync event interface
 interface SyncEvent {
@@ -314,44 +328,61 @@ class SyncService {
   async resolveConflicts(
     localData: any,
     serverData: any,
-    strategy: ConflictResolutionStrategy = 'serverWins'
+    strategy: ConflictResolutionStrategy = 'server-wins',
+    baseData?: any,
   ): Promise<any> {
+    const normalizedStrategy = this.normalizeConflictStrategy(strategy);
+
     this.emitEvent({
       type: 'conflictDetected',
-      data: { localData, serverData },
+      data: { localData, serverData, strategy: normalizedStrategy },
       timestamp: Date.now()
     });
 
-    switch (strategy) {
-      case 'serverWins':
-        return serverData;
-      case 'clientWins':
-        return localData;
-      case 'merge':
-        return this.mergeData(localData, serverData);
-      case 'manual':
-        // Return both versions for manual resolution
-        return { local: localData, server: serverData };
-      default:
-        return serverData; // Default to server wins
+    if (strategy === 'manual') {
+      return { local: localData, server: serverData, base: baseData };
     }
+
+    const result = syncEntityManager.resolveRawConflict(
+      localData,
+      serverData,
+      normalizedStrategy,
+      baseData,
+    );
+
+    this.emitEvent({
+      type: 'conflictResolved',
+      data: result,
+      timestamp: Date.now()
+    });
+
+    return result.resolved.data;
   }
 
   /**
-   * Merge conflicting data
+   * Resolve a versioned conflict and persist the result in the version store.
    */
-  private mergeData(localData: any, serverData: any): any {
-    // Simple merge strategy - could be enhanced based on data structure
-    if (Array.isArray(localData) && Array.isArray(serverData)) {
-      // Merge arrays, removing duplicates
-      const combined = localData.concat(serverData);
-      return combined.filter((item, index) => combined.indexOf(item) === index);
-    } else if (typeof localData === 'object' && typeof serverData === 'object') {
-      // Merge objects
-      return { ...serverData, ...localData };
-    } else {
-      // For primitives, prefer server data
-      return serverData;
+  resolveVersionedConflict<T extends Record<string, unknown>>(
+    serverEntity: VersionedEntity<T>,
+    strategy: ConflictResolutionStrategy = 'merge',
+    baseEntity?: VersionedEntity<T>,
+  ) {
+    const normalizedStrategy = this.normalizeConflictStrategy(strategy);
+    return syncEntityManager.handleServerEntity(serverEntity, normalizedStrategy, baseEntity);
+  }
+
+  private normalizeConflictStrategy(
+    strategy: ConflictResolutionStrategy,
+  ): VersionedConflictResolutionStrategy {
+    switch (strategy) {
+      case 'serverWins':
+        return 'server-wins';
+      case 'clientWins':
+        return 'client-wins';
+      case 'manual':
+        return 'server-wins';
+      default:
+        return strategy;
     }
   }
 

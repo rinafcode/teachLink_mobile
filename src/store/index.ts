@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { createJSONStorage, devtools, persist, subscribeWithSelector } from 'zustand/middleware';
 
 import type { StateStorage } from 'zustand/middleware';
+import { toUnixMs } from './persistence';
 
 export interface User {
   id: string;
@@ -26,7 +27,7 @@ interface AppState {
   error: string | null;
   setUser: (user: User | null) => void;
   setTheme: (theme: 'light' | 'dark') => void;
-  setTokens: (accessToken: string, refreshToken: string, expiresAt: number) => void;
+  setTokens: (accessToken: string, refreshToken: string, expiresAt: number | Date) => void;
   setSessionExpiringSoon: (isExpiringSoon: boolean) => void;
   setAuthLoading: (isAuthLoading: boolean) => void;
   setAuthError: (authError: string | null) => void;
@@ -70,7 +71,15 @@ export const useAppStore = create<AppState>()(
         setUser: (user) => set({ user, isAuthenticated: !!user }, false, 'setUser'),
         setTheme: (theme) => set({ theme }, false, 'setTheme'),
         setTokens: (accessToken, refreshToken, sessionExpiresAt) =>
-          set({ accessToken, refreshToken, sessionExpiresAt }, false, 'setTokens'),
+          set(
+            {
+              accessToken,
+              refreshToken,
+              sessionExpiresAt: toUnixMs(sessionExpiresAt),
+            },
+            false,
+            'setTokens'
+          ),
         setSessionExpiringSoon: (sessionExpiringSoon) =>
           set({ sessionExpiringSoon }, false, 'setSessionExpiringSoon'),
         setAuthLoading: (isAuthLoading) => set({ isAuthLoading }, false, 'setAuthLoading'),
@@ -106,9 +115,18 @@ export const useAppStore = create<AppState>()(
           isAuthenticated: state.isAuthenticated,
           accessToken: state.accessToken,
           refreshToken: state.refreshToken,
-          sessionExpiresAt: state.sessionExpiresAt,
+          sessionExpiresAt: toUnixMs(state.sessionExpiresAt),
           theme: state.theme,
         }),
+        merge: (persistedState, currentState) => {
+          const hydratedState = (persistedState ?? {}) as Partial<AppState>;
+
+          return {
+            ...currentState,
+            ...hydratedState,
+            sessionExpiresAt: toUnixMs(hydratedState.sessionExpiresAt),
+          };
+        },
       }
     ),
     { name: 'AppStore' }
@@ -117,3 +135,4 @@ export const useAppStore = create<AppState>()(
 
 export * from './notificationStore';
 export * from './courseProgressStore';
+export * from './selectors';

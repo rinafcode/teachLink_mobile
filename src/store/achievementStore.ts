@@ -1,6 +1,7 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+
+import { asyncStorageJSONStorage, isRecord, unwrapPersistedState } from './persistence';
 
 /**
  * Rarity levels for achievement badges
@@ -48,6 +49,8 @@ export enum AchievementType {
 interface AchievementState {
   /** Array of all achievements (both locked and unlocked) */
   achievements: Achievement[];
+  /** Persisted unlock/progress data keyed by achievement ID */
+  achievementProgress: Record<string, AchievementProgress>;
   /** Number of unlocked achievements */
   unlockedCount: number;
   
@@ -64,6 +67,12 @@ interface AchievementState {
   resetAchievements: () => void;
   /** Initialize achievements with default set */
   initializeAchievements: (achievements: Achievement[]) => void;
+}
+
+interface AchievementProgress {
+  isLocked?: boolean;
+  unlockedAt?: string;
+  progress?: { current: number; total: number };
 }
 
 /**
@@ -141,10 +150,135 @@ export const DEFAULT_ACHIEVEMENTS: Achievement[] = [
   },
 ];
 
+const DEFAULT_ACHIEVEMENT_BY_ID = Object.fromEntries(
+  DEFAULT_ACHIEVEMENTS.map((achievement) => [achievement.id, achievement]),
+) as Record<string, Achievement>;
+
+function buildAchievementsFromProgress(progressById: Record<string, AchievementProgress>): Achievement[] {
+  return DEFAULT_ACHIEVEMENTS.map((achievement) => {
+    const progress = progressById[achievement.id];
+    if (!progress) {
+      return achievement;
+    }
+
+    return {
+      ...achievement,
+      ...(progress.isLocked !== undefined ? { isLocked: progress.isLocked } : {}),
+      ...(progress.unlockedAt !== undefined ? { unlockedAt: progress.unlockedAt } : {}),
+      ...(progress.progress ? { progress: progress.progress } : {}),
+    };
+  });
+}
+
+function snapshotAchievementProgress(achievements: Achievement[]): Record<string, AchievementProgress> {
+  return achievements.reduce<Record<string, AchievementProgress>>((snapshot, achievement) => {
+    const defaultAchievement = DEFAULT_ACHIEVEMENT_BY_ID[achievement.id];
+    if (!defaultAchievement) {
+      snapshot[achievement.id] = {
+        isLocked: achievement.isLocked,
+        unlockedAt: achievement.unlockedAt,
+        progress: achievement.progress,
+      };
+      return snapshot;
+    }
+
+    const progress: AchievementProgress = {};
+
+    if (achievement.isLocked !== defaultAchievement.isLocked) {
+      progress.isLocked = achievement.isLocked;
+    }
+
+    if (achievement.unlockedAt !== defaultAchievement.unlockedAt) {
+      progress.unlockedAt = achievement.unlockedAt;
+    }
+
+    const currentProgress = achievement.progress;
+    const defaultProgress = defaultAchievement.progress;
+    const progressChanged =
+      (!!currentProgress !== !!defaultProgress) ||
+      (currentProgress !== undefined &&
+        defaultProgress !== undefined &&
+        (currentProgress.current !== defaultProgress.current ||
+          currentProgress.total !== defaultProgress.total));
+
+    if (progressChanged && currentProgress) {
+      progress.progress = currentProgress;
+    }
+
+    if (Object.keys(progress).length > 0) {
+      snapshot[achievement.id] = progress;
+    }
+
+    return snapshot;
+  }, {});
+}
+
+function parseAchievementProgressMap(value: unknown): Record<string, AchievementProgress> {
+  if (!isRecord(value)) {
+    return {};
+  }
+
+  return Object.entries(value).reduce<Record<string, AchievementProgress>>((snapshot, [id, entry]) => {
+    if (!isRecord(entry)) {
+      return snapshot;
+    }
+
+    const progress: AchievementProgress = {};
+
+    if (typeof entry.isLocked === 'boolean') {
+      progress.isLocked = entry.isLocked;
+    }
+
+    if (typeof entry.unlockedAt === 'string') {
+      progress.unlockedAt = entry.unlockedAt;
+    }
+
+    if (isRecord(entry.progress)) {
+      const current = entry.progress.current;
+      const total = entry.progress.total;
+      if (typeof current === 'number' && typeof total === 'number') {
+        progress.progress = { current, total };
+      }
+    }
+
+    if (Object.keys(progress).length > 0) {
+      snapshot[id] = progress;
+    }
+
+    return snapshot;
+  }, {});
+}
+
+function normalizeAchievementState(rawState: unknown): {
+  achievements: Achievement[];
+  achievementProgress: Record<string, AchievementProgress>;
+  unlockedCount: number;
+} {
+  const persistedState = unwrapPersistedState<Partial<AchievementState>>(rawState) ?? {};
+  const legacyAchievements = Array.isArray(persistedState.achievements)
+    ? persistedState.achievements
+    : null;
+  const persistedProgress = parseAchievementProgressMap(persistedState.achievementProgress);
+  const legacyProgress = legacyAchievements ? snapshotAchievementProgress(legacyAchievements) : {};
+  const mergedProgress = { ...legacyProgress, ...persistedProgress };
+  const achievements = buildAchievementsFromProgress(mergedProgress);
+  const unlockedCount =
+    typeof persistedState.unlockedCount === 'number'
+      ? persistedState.unlockedCount
+      : achievements.filter((achievement) => !achievement.isLocked).length;
+
+  return {
+    achievements,
+    achievementProgress: mergedProgress,
+    unlockedCount,
+  };
+}
+
 export const useAchievementStore = create<AchievementState>()(
   persist(
     (set, get) => ({
-      achievements: DEFAULT_ACHIEVEMENTS,
+      achievements: buildAchievementsFromProgress({}),
+      achievementProgress: {},
       unlockedCount: 0,
 
       unlockAchievement: (id: string) =>
@@ -167,6 +301,7 @@ export const useAchievementStore = create<AchievementState>()(
 
           return {
             achievements: updatedAchievements,
+            achievementProgress: snapshotAchievementProgress(updatedAchievements),
             unlockedCount: updatedAchievements.filter((a) => !a.isLocked).length,
           };
         }),
@@ -199,6 +334,7 @@ export const useAchievementStore = create<AchievementState>()(
 
           return {
             achievements: updatedAchievements,
+            achievementProgress: snapshotAchievementProgress(updatedAchievements),
             unlockedCount: updatedAchievements.filter((a) => !a.isLocked).length,
           };
         }),
@@ -214,23 +350,34 @@ export const useAchievementStore = create<AchievementState>()(
 
       resetAchievements: () =>
         set({
-          achievements: DEFAULT_ACHIEVEMENTS,
+          achievements: buildAchievementsFromProgress({}),
+          achievementProgress: {},
           unlockedCount: 0,
         }),
 
       initializeAchievements: (achievements: Achievement[]) =>
         set({
           achievements,
+          achievementProgress: snapshotAchievementProgress(achievements),
           unlockedCount: achievements.filter((a) => !a.isLocked).length,
         }),
     }),
     {
       name: 'achievement-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      version: 1,
+      storage: asyncStorageJSONStorage,
       partialize: (state) => ({
-        achievements: state.achievements,
+        achievementProgress: state.achievementProgress,
         unlockedCount: state.unlockedCount,
       }),
-    }
+      migrate: (persistedState) => normalizeAchievementState(persistedState),
+      merge: (persistedState, currentState) => {
+        const normalizedState = normalizeAchievementState(persistedState);
+        return {
+          ...currentState,
+          ...normalizedState,
+        };
+      },
+    },
   )
 );

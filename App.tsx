@@ -29,6 +29,7 @@ import socketService from './src/services/socket';
 import syncService from './src/services/syncService';
 import { useAppStore } from './src/store';
 import { useNotificationStore } from './src/store/notificationStore';
+import { handleCacheVersionUpdate } from './src/utils/cacheVersioning';
 import { appLogger } from './src/utils/logger';
 import { handleNotificationReceived } from './src/utils/notificationHandlers';
 
@@ -68,6 +69,10 @@ const App = () => {
         await Font.loadAsync({
           // You can add custom fonts here later if needed
         });
+
+        // 2. Version-based cache invalidation: clear stale caches on app/data version bump
+        const appVersion = require('./package.json').version as string;
+        await handleCacheVersionUpdate(appVersion);
 
         // 2. Check Auth State / wait for store hydration
         // Zustand persist automatically hydrates, we can assume it's done or add a small delay

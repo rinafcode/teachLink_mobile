@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { ImageCache } from './imageCache';
 import logger from './logger'; // eslint-disable-line import/no-named-as-default
+import { clearCache } from '../services/api/cache';
 
 /**
  * Parses a semver string into its numeric components.
@@ -82,6 +83,8 @@ export async function handleCacheVersionUpdate(newVersion: string): Promise<bool
 
   if (needsInvalidation) {
     logger.info(`Cache invalidated: ${storedVersion ?? 'none'} → ${newVersion}`);
+    // Clear in-memory API cache immediately (synchronous)
+    clearCache();
     try {
       const allKeys = await AsyncStorage.getAllKeys();
       const keysToRemove = allKeys.filter(k => k !== CACHE_VERSION_KEY);

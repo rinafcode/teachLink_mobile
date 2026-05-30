@@ -28,15 +28,29 @@ export type QualityOption = {
   isAdaptive?: boolean;
 };
 
-export type NetworkType = 'wifi' | 'cellular' | 'unknown';
+export type NetworkType = 'wifi' | 'cellular' | 'slow-cellular' | 'unknown';
 
-export function deriveNetworkType(state?: { type?: string | null }): NetworkType {
+/**
+ * Maximum bitrate (in kbps) allowed for automatic quality selection per
+ * network type. `null` means no cap (use the highest available quality).
+ */
+export const BITRATE_CAP: Record<NetworkType, number | null> = {
+  wifi: null,
+  cellular: 1500,
+  'slow-cellular': 400,
+  unknown: 1500,
+};
+
+export function deriveNetworkType(
+  state?: { type?: string | null },
+  isSlowConnection?: boolean
+): NetworkType {
   const type = (state?.type ?? '').toString().toUpperCase();
   if (type === 'WIFI' || type === 'ETHERNET') {
     return 'wifi';
   }
   if (type === 'CELLULAR') {
-    return 'cellular';
+    return isSlowConnection ? 'slow-cellular' : 'cellular';
   }
   return 'unknown';
 }
@@ -115,17 +129,17 @@ export function selectAutoSource(
     return adaptive;
   }
   const sorted = [...sources].sort((a, b) => scoreQuality(a) - scoreQuality(b));
-  if (networkType === 'wifi') {
+  const cap = BITRATE_CAP[networkType];
+  if (cap == null) {
+    // No cap (e.g. wifi): use the highest available quality.
     return sorted[sorted.length - 1];
   }
-  if (networkType === 'cellular') {
-    const capped = pickWithinBitrate(sorted, 1500);
-    if (capped) {
-      return capped;
-    }
-    return sorted[Math.max(0, Math.floor(sorted.length / 2) - 1)];
+  const capped = pickWithinBitrate(sorted, cap);
+  if (capped) {
+    return capped;
   }
-  return sorted[Math.floor(sorted.length / 2)];
+  // No source fits within the cap: fall back to the lowest quality.
+  return sorted[0];
 }
 
 function pickWithinBitrate(

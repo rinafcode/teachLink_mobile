@@ -12,8 +12,8 @@ jest.mock('react-native', () => ({
   TouchableOpacity: 'TouchableOpacity',
   Modal: 'Modal',
   SafeAreaView: 'SafeAreaView',
-  ScrollView: 'ScrollView',
   KeyboardAvoidingView: 'KeyboardAvoidingView',
+  ScrollView: 'ScrollView',
   Switch: 'Switch',
   TextInput: 'TextInput',
   ActivityIndicator: 'ActivityIndicator',
@@ -125,10 +125,15 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn(() => Promise.resolve()),
 }));
 
-// Mock expo-device
+// Mock expo-device.  __esModule: true prevents Babel's _interopRequireWildcard
+// from copying values at import time, so tests can mutate properties directly.
 jest.mock('expo-device', () => ({
+  __esModule: true,
   isDevice: true,
   deviceName: 'Test Device',
+  deviceYearClass: 2021,
+  totalMemory: 4 * 1024 * 1024 * 1024, // 4 GB — high-end default
+  modelName: 'Test Model',
 }));
 
 // Mock expo-constants
@@ -158,6 +163,7 @@ jest.mock('expo-network', () => ({
       type: 'WIFI',
     })
   ),
+  addNetworkStateListener: jest.fn(() => ({ remove: jest.fn() })),
   NetworkStateType: {
     UNKNOWN: 0,
     NONE: 1,
@@ -270,50 +276,15 @@ jest.mock('expo-notifications', () => ({
   PermissionStatus: { GRANTED: 'granted', DENIED: 'denied', UNDETERMINED: 'undetermined' },
 }));
 
-// Mock expo-device
-jest.mock('expo-device', () => ({
-  isDevice: true,
-  deviceName: 'Test Device',
-}));
-
-// Mock expo-constants
-jest.mock('expo-constants', () => ({
-  expoConfig: {
-    extra: {
-      eas: {
-        projectId: 'test-project-id',
-      },
-    },
-  },
-}));
-
-// Mock expo-linking
-jest.mock('expo-linking', () => ({
-  createURL: jest.fn(path => `teachlink://${path}`),
-  addEventListener: jest.fn(() => ({ remove: jest.fn() })),
-  getInitialURL: jest.fn(() => Promise.resolve(null)),
-}));
-
-// Mock expo-notifications (override jest-expo's mock to add removed methods)
-jest.mock('expo-notifications', () => ({
-  setNotificationHandler: jest.fn(),
-  getPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'undetermined' })),
-  requestPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
-  getExpoPushTokenAsync: jest.fn(() =>
-    Promise.resolve({ data: 'ExponentPushToken[test-token-123]' })
+// Mock expo-battery
+jest.mock('expo-battery', () => ({
+  useLowPowerMode: jest.fn(() => false),
+  isLowPowerModeEnabledAsync: jest.fn(() => Promise.resolve(false)),
+  getBatteryLevelAsync: jest.fn(() => Promise.resolve(1)),
+  getPowerStateAsync: jest.fn(() =>
+    Promise.resolve({ batteryLevel: 1, batteryState: 1, lowPowerMode: false })
   ),
-  setNotificationChannelAsync: jest.fn(() => Promise.resolve()),
-  scheduleNotificationAsync: jest.fn(() => Promise.resolve('notification-id')),
-  cancelScheduledNotificationAsync: jest.fn(() => Promise.resolve()),
-  cancelAllScheduledNotificationsAsync: jest.fn(() => Promise.resolve()),
-  getBadgeCountAsync: jest.fn(() => Promise.resolve(0)),
-  setBadgeCountAsync: jest.fn(() => Promise.resolve()),
-  addNotificationReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
-  addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
-  removeNotificationSubscription: jest.fn(), // deprecated but used in codebase
-  getLastNotificationResponseAsync: jest.fn(() => Promise.resolve(null)),
-  AndroidImportance: { HIGH: 4, DEFAULT: 3 },
-  PermissionStatus: { GRANTED: 'granted', DENIED: 'denied', UNDETERMINED: 'undetermined' },
+  addLowPowerModeListener: jest.fn(() => ({ remove: jest.fn() })),
 }));
 
 // Mock @sentry/react-native to prevent Jest environment failure
@@ -325,9 +296,104 @@ jest.mock('@sentry/react-native', () => ({
   setUser: jest.fn(),
   clearBreadcrumbs: jest.fn(),
   addBreadcrumb: jest.fn(),
+  ReactNavigationInstrumentation: jest.fn(),
+  ReactNativeTracing: jest.fn(),
   Native: {
     RNSentry: {},
   },
   SDK_NAME: 'sentry.javascript.react-native',
   SDK_VERSION: '5.36.0',
 }));
+
+// Mock expo-sensors globally to avoid native device sensor requirements in Jest
+jest.mock('expo-sensors', () => ({
+  LightSensor: {
+    addListener: jest.fn(() => ({ remove: jest.fn() })),
+    removeAllListeners: jest.fn(),
+    setUpdateInterval: jest.fn(),
+    isAvailableAsync: jest.fn(() => Promise.resolve(true)),
+  },
+}));
+
+// Mock react-native-safe-area-context to prevent css-interop Safe Area Provider errors in tests
+jest.mock('react-native-safe-area-context', () => {
+  const RN = require('react-native');
+  return {
+    SafeAreaProvider: RN.View,
+    SafeAreaView: RN.View,
+    useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+    useSafeAreaFrame: () => ({ x: 0, y: 0, width: 390, height: 844 }),
+  };
+});
+
+// Mock react-native-reanimated with a stable custom lightweight implementation globally
+jest.mock('react-native-reanimated', () => {
+  const RN = require('react-native');
+  return {
+    default: RN.Animated,
+    View: RN.View,
+    Text: RN.Text,
+    ScrollView: RN.ScrollView,
+    Image: RN.Image,
+    useSharedValue: val => ({ value: val }),
+    useAnimatedStyle: fn => fn(),
+    withSpring: val => val,
+    withTiming: (val, config, callback) => {
+      if (callback) {
+        callback(true);
+      }
+      return val;
+    },
+    runOnJS: fn => fn,
+  };
+});
+
+// Mock react-native-gesture-handler globally
+jest.mock('react-native-gesture-handler', () => {
+  const RN = require('react-native');
+  return {
+    Gesture: {
+      Pan: () => ({
+        activeOffsetX: jest.fn().mockReturnThis(),
+        failOffsetY: jest.fn().mockReturnThis(),
+        onStart: jest.fn().mockReturnThis(),
+        onUpdate: jest.fn().mockReturnThis(),
+        onChange: jest.fn().mockReturnThis(),
+        onEnd: jest.fn().mockReturnThis(),
+        onFinalize: jest.fn().mockReturnThis(),
+      }),
+      LongPress: () => ({
+        minDuration: jest.fn().mockReturnThis(),
+        maxDist: jest.fn().mockReturnThis(),
+        onStart: jest.fn().mockReturnThis(),
+        onUpdate: jest.fn().mockReturnThis(),
+        onChange: jest.fn().mockReturnThis(),
+        onEnd: jest.fn().mockReturnThis(),
+        onFinalize: jest.fn().mockReturnThis(),
+      }),
+      Pinch: () => ({
+        onStart: jest.fn().mockReturnThis(),
+        onUpdate: jest.fn().mockReturnThis(),
+        onChange: jest.fn().mockReturnThis(),
+        onEnd: jest.fn().mockReturnThis(),
+        onFinalize: jest.fn().mockReturnThis(),
+      }),
+      Simultaneous: RN.View,
+    },
+    GestureDetector: RN.View,
+    Swipeable: RN.View,
+    gestureHandlerRootHOC: jest.fn(c => c),
+  };
+});
+
+// Mock react-native-svg globally to resolve SvgTouchableMixin errors
+jest.mock('react-native-svg', () => {
+  const RN = require('react-native');
+  return {
+    default: RN.View,
+    Svg: RN.View,
+    Path: RN.View,
+    Rect: RN.View,
+    Circle: RN.View,
+  };
+});

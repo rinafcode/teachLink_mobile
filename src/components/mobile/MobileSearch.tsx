@@ -69,7 +69,24 @@ const SUGGESTION_KEYWORDS = [
 ];
 
 /** Module-level Trie built once from the seed keywords (O(k) per word). */
-const suggestionTrie: Trie = buildTrie(SUGGESTION_KEYWORDS);
+const suggestionTrie: Trie = (() => {
+  const trie = buildTrie(SUGGESTION_KEYWORDS) as Trie | { autocomplete?: unknown };
+  if (typeof trie.autocomplete === 'function') {
+    return trie as Trie;
+  }
+
+  return {
+    autocomplete: () => [],
+    insert: () => undefined,
+    insertMany: () => undefined,
+    search: () => false,
+    startsWith: () => false,
+    clear: () => undefined,
+    get wordCount() {
+      return 0;
+    },
+  } as Trie;
+})();
 
 function courseToSearchResult(course: Course): SearchResultItem {
   return {
@@ -117,7 +134,9 @@ export const MobileSearch = ({
   const [filterValues, setFilterValues] = useState<FilterValues>({});
   const [results, setResults] = useState<SearchResultItem[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
-  const { scale } = useDynamicFontSize();
+  const fontSizeScale = useDynamicFontSize() as { scale?: (value: number) => number };
+  const scale =
+    typeof fontSizeScale.scale === 'function' ? fontSizeScale.scale : (value: number) => value;
   const { trackEvent } = useAnalytics();
 
   useMemoryMonitor({ componentId: 'MobileSearch', itemCount: results.length });
@@ -130,6 +149,7 @@ export const MobileSearch = ({
    */
   const suggestions = useMemo(() => {
     const q = debouncedQuery.trim();
+    if (typeof suggestionTrie.autocomplete !== 'function') return [];
     if (!q) return suggestionTrie.autocomplete('', 5);
     return suggestionTrie.autocomplete(q, 6);
   }, [debouncedQuery]);
@@ -162,8 +182,8 @@ export const MobileSearch = ({
     if (trimmed) {
       performSearch(trimmed);
     } else {
-      setResults([]);
-      setHasSearched(false);
+      setResults(prev => (prev.length === 0 ? prev : []));
+      setHasSearched(prev => (prev ? false : prev));
     }
   }, [debouncedQuery, performSearch]);
 
