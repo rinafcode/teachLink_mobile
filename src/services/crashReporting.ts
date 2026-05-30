@@ -1,7 +1,7 @@
-import { mobileAnalyticsService } from "./mobileAnalytics";
-import { sessionRestorationService } from "./sessionRestoration";
 import logger from "../utils/logger";
 import { AnalyticsEvent } from "../utils/trackingEvents";
+import { mobileAnalyticsService } from "./mobileAnalytics";
+import { sessionRestorationService } from "./sessionRestoration";
 
 /**
  * CrashReportingService manages global error tracking and exception handling.
@@ -86,6 +86,9 @@ class CrashReportingService {
       `❌ [Crash] ${isFatal ? "FATAL" : "Non-Fatal"} Crash: ${error.message}`,
       errorDetails,
     );
+
+    // Record in health metrics service
+    healthMetricsService.recordError();
 
     // Record as analytics event
     mobileAnalyticsService.trackEvent(
