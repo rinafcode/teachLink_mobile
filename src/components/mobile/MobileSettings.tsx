@@ -9,7 +9,6 @@ import {
   UIManager,
   View,
 } from 'react-native';
-
 import {
   BarChart2,
   Bell,
@@ -33,18 +32,19 @@ import {
   Wifi,
   RefreshCw,
   Fingerprint as FingerprintPattern,
+  Database,
 } from 'lucide-react-native';
 
-import { useTheme, useAppStore } from '../../store';
-import { useNotificationStore } from '../../store/notificationStore';
-import { useSettingsStore, ProfileVisibility, DownloadQuality } from '../../store/settingsStore';
-import { useDynamicFontSize } from '../../hooks';
-import { useBiometricAuth } from '../../hooks/useBiometricAuth';
-import { useFormCache } from '../../hooks/useFormCache';
 
 import { NativeToggle } from './NativeToggle';
 import { PickerOption, SettingsPicker } from './SettingsPicker';
 import { SettingsSection } from './SettingsSection';
+import { useDynamicFontSize } from '../../hooks';
+import { useBiometricAuth } from '../../hooks/useBiometricAuth';
+import { useFormCache } from '../../hooks/useFormCache';
+import { useTheme, useAppStore } from '../../store';
+import { useNotificationStore } from '../../store/notificationStore';
+import { useSettingsStore, ProfileVisibility, DownloadQuality } from '../../store/settingsStore';
 import { AppText } from '../common/AppText';
 
 // Enable LayoutAnimation on Android
@@ -66,7 +66,7 @@ interface SettingRowProps {
   destructive?: boolean;
 }
 
-function SettingRow({
+const SettingRow = ({
   icon,
   iconBg = 'bg-gray-100 dark:bg-gray-700',
   label,
@@ -74,7 +74,7 @@ function SettingRow({
   right,
   onPress,
   destructive = false,
-}: SettingRowProps) {
+}: SettingRowProps) => {
   const Row = onPress ? TouchableOpacity : View;
   const { scale } = useDynamicFontSize();
 
@@ -154,7 +154,7 @@ interface AdvancedToggleProps {
   onToggle: () => void;
 }
 
-function AdvancedToggle({ expanded, onToggle }: AdvancedToggleProps) {
+const AdvancedToggle = ({ expanded, onToggle }: AdvancedToggleProps) => {
   return (
     <TouchableOpacity
       onPress={onToggle}
@@ -183,11 +183,11 @@ function AdvancedToggle({ expanded, onToggle }: AdvancedToggleProps) {
 // Component
 // ─────────────────────────────────────────────────────────────
 
-export function MobileSettings({
+export const MobileSettings = ({
   onSignOut,
   onChangePassword,
   onLinkedAccounts,
-}: any) {
+}: any) => {
   const theme = useTheme();
   const setTheme = useAppStore(state => state.setTheme);
   const { preferences, setPreference } = useNotificationStore();
@@ -222,6 +222,8 @@ export function MobileSettings({
     setAutoplay,
     hapticFeedback,
     setHapticFeedback,
+    dataSaverEnabled,
+    setDataSaverEnabled,
   } = useSettingsStore();
 
   const {
@@ -363,6 +365,13 @@ export function MobileSettings({
               onValueChange={setTheme}
             />
           }
+        />
+
+        <SettingRow
+          icon={<Database size={18} color="#eab308" />}
+          label="Data Saver"
+          description="Reduces bandwidth by disabling prefetch and lowering image quality"
+          right={<NativeToggle value={dataSaverEnabled} onValueChange={setDataSaverEnabled} />}
         />
       </SettingsSection>
 

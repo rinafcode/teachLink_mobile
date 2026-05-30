@@ -7,17 +7,20 @@ This feature implements a progressive app startup system that displays initializ
 ## Features
 
 ✨ **Visual Progress Indicator**
+
 - Animated progress bar showing completion percentage
 - Real-time step-by-step progress display
 - Current step name display
 
 🎯 **User Confidence**
+
 - Transparent initialization process
 - Shows what the app is doing
 - Displays estimated time remaining
 - Prevents the blank screen perception
 
 📊 **Performance Tracking**
+
 - Tracks initialization steps with estimated duration
 - Monitors actual vs. estimated time
 - Supports step failure tracking
@@ -28,9 +31,11 @@ This feature implements a progressive app startup system that displays initializ
 ### Components
 
 #### 1. `StartupProgressService` (`src/services/startupProgressService.ts`)
+
 Central service for managing app startup progress tracking.
 
 **Key Methods:**
+
 - `registerStep(id, name, estimatedDurationMs)` - Register an initialization step
 - `startStep(id)` - Mark a step as in-progress
 - `completeStep(id)` - Mark a step as completed
@@ -40,15 +45,18 @@ Central service for managing app startup progress tracking.
 - `setInitializing(boolean)` - Set app initialization state
 
 **State Management:**
+
 - Uses Zustand for reactive state management
 - Maintains a Map of steps with status and timing information
 - Computes progress percentage based on completed steps
 - Calculates remaining time based on elapsed and total time
 
 #### 2. `StartupProgressOverlay` Component (`src/components/common/StartupProgressOverlay.tsx`)
+
 React Native component that displays the progress UI on the splash screen.
 
 **Features:**
+
 - Animated progress bar with smooth transitions
 - Progress percentage display (0-100%)
 - Step counter (e.g., "3 of 4 steps")
@@ -62,12 +70,14 @@ React Native component that displays the progress UI on the splash screen.
 - Error messages for failed steps
 
 **Visual Design:**
+
 - Clean, modern Material Design UI
 - Color-coded step status
 - Responsive layout that works on all screen sizes
 - Animated progress bar for smooth UX
 
 #### 3. Updated `App.tsx`
+
 Integrated progress tracking into the main app initialization:
 
 1. Registers startup steps:
@@ -102,7 +112,7 @@ startupProgressService.startStep('my-feature');
 try {
   // Do initialization work
   await initializeMyFeature();
-  
+
   // Complete the step
   startupProgressService.completeStep('my-feature');
 } catch (error) {
@@ -153,8 +163,18 @@ function MyComponent() {
 
 ## Performance Considerations
 
+### Critical Splash Styling
+
+The web shell in `app/+html.tsx` injects `CRITICAL_SPLASH_CSS` from `src/styles/splashCriticalCss.ts` directly into the document `<head>`. These first-paint styles only cover the stable splash surface: root height, zero body margin, light and dark splash background colors, and a non-scrolling initial viewport.
+
+Keeping this CSS inline avoids waiting for `global.css`, NativeWind, or any image request before the splash background is painted. Rich startup UI remains in `StartupProgressOverlay` with React Native `StyleSheet.create` styles because it renders after JavaScript starts and is not required for the first paint.
+
+The native splash configuration in `app.json` uses the same light and dark background colors, so web and native launches share the same initial visual frame and avoid a visible color jump.
+
 ### Estimated Durations
+
 The estimated durations for each step are based on typical device performance:
+
 - **Fonts**: 500ms - Loading custom fonts from storage
 - **Cache**: 800ms - Clearing outdated app caches
 - **Auth**: 1000ms - Validating authentication state and tokens
@@ -182,6 +202,7 @@ To simulate slow device performance:
 4. **Custom Steps**: Add artificial delays to steps to test estimated time accuracy
 
 Example test:
+
 ```typescript
 startupProgressService.registerStep('test', 'Test Step', 5000); // 5 second estimate
 startupProgressService.startStep('test');
@@ -192,16 +213,19 @@ startupProgressService.completeStep('test');
 ## Troubleshooting
 
 ### Progress Not Showing
+
 1. Ensure `StartupProgressOverlay` is rendered in the component hierarchy
 2. Check that `startupProgressService.setInitializing(true)` is called
 3. Verify steps are registered before they're started
 
 ### Incorrect Time Estimates
+
 1. Measure actual initialization times on target devices
 2. Adjust estimated durations in `prepareApp()`
 3. Account for network latency and device capabilities
 
 ### Steps Not Completing
+
 1. Ensure all steps are properly registered
 2. Check for errors in initialization logic
 3. Verify `completeStep()` or `failStep()` is called for each step

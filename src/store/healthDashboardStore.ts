@@ -14,6 +14,8 @@ import {
     MetricAlert,
 } from '../services/healthMetrics';
 
+import { shallowDiff } from '../utils/stateDiff';
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type DashboardStatus = 'idle' | 'polling' | 'error';
@@ -67,14 +69,28 @@ export const useHealthDashboardStore = create<HealthDashboardState>()(
       ...initialState,
 
       setSnapshot: (snapshot) =>
-        set({ snapshot, lastUpdated: Date.now() }, false, 'setSnapshot'),
+        set(
+          (state) => {
+            if (!state.snapshot && !snapshot) return state;
+            if (!state.snapshot) return { snapshot, lastUpdated: Date.now() };
+            const diff = shallowDiff(state.snapshot, snapshot);
+            if (!diff) return state;
+            return { snapshot: { ...state.snapshot, ...diff } as HealthSnapshot, lastUpdated: Date.now() };
+          },
+          false,
+          'setSnapshot'
+        ),
 
       setAlerts: (alerts) =>
         set({ alerts }, false, 'setAlerts'),
 
       setThresholds: (partial) =>
         set(
-          (state) => ({ thresholds: { ...state.thresholds, ...partial } }),
+          (state) => {
+            const diff = shallowDiff(state.thresholds, partial);
+            if (!diff) return state; // Return unchanged state to bypass allocation
+            return { thresholds: { ...state.thresholds, ...diff } };
+          },
           false,
           'setThresholds'
         ),

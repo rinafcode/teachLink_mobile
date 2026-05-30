@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Network from 'expo-network';
+
 import { courseApi } from '../../src/services/api/courseApi';
 import { userApi } from '../../src/services/api/userApi';
 import { preloadService } from '../../src/services/preloadService';
@@ -8,6 +9,7 @@ import { useAppStore } from '../../src/store/index';
 import { useQuizStore } from '../../src/store/quizStore';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { ImageCache } from '../../src/utils/imageCache';
+
 
 // Mock offline storage
 const asyncStorageStore: Record<string, string> = {};
@@ -93,7 +95,7 @@ describe('PreloadService', () => {
     jest.clearAllMocks();
     
     // Reset stores to default mock structures
-    useSettingsStore.setState({ downloadOverWifiOnly: true });
+    useSettingsStore.setState({ downloadOverWifiOnly: true, dataSaverEnabled: false });
     useCourseProgressStore.setState({
       progressMap: {
         'course_123': {
@@ -198,6 +200,16 @@ describe('PreloadService', () => {
 
       // Should run SWR fetches
       expect(courseApi.getCourses).toHaveBeenCalled();
+    });
+
+    it('aborts preloading when dataSaverEnabled is true', async () => {
+      useSettingsStore.setState({ dataSaverEnabled: true });
+
+      const mockRouter = { prefetch: jest.fn() };
+      await preloadService.preload('/(tabs)', mockRouter);
+
+      expect(mockRouter.prefetch).not.toHaveBeenCalled();
+      expect(courseApi.getCourses).not.toHaveBeenCalled();
     });
 
     it('skips predictive preloading when prefetch is paused', async () => {

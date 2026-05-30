@@ -11,5 +11,6 @@ export const apiService = {
 export { courseApi } from "./courseApi";
 export { userApi } from "./userApi";
 export { fetchWithSWR, invalidateCache, clearCache } from "./cache";
+export { batchClient } from "./batchClient";
 
 export default apiService;

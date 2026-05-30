@@ -17,7 +17,23 @@
     },
     "production": {
       "ios": {
-        "autoIncrement": true
+        "autoIncrement": true,
+        "buildConfiguration": "Release",
+        "xcodeVersion": "latest",
+        "env": {
+          "SWIFT_OPTIMIZATION_LEVEL": "-O",
+          "GCC_OPTIMIZATION_LEVEL": "3",
+          "LLVM_LTO": "YES",
+          "ENABLE_BITCODE": "YES",
+          "DEAD_CODE_STRIPPING": "YES",
+          "STRIP_INSTALLED_PRODUCT": "YES",
+          "STRIP_STYLE": "all",
+          "DEPLOYMENT_POSTPROCESSING": "YES",
+          "SEPARATE_STRIP": "YES",
+          "GCC_GENERATE_DEBUGGING_SYMBOLS": "NO",
+          "DEBUG_INFORMATION_FORMAT": "dwarf-with-dsym",
+          "COMPILER_INDEX_STORE_ENABLE": "NO"
+        }
       },
       "android": {
         "autoIncrement": true

@@ -1,12 +1,17 @@
 import * as Network from 'expo-network';
-import logger from '../utils/logger';
+
 import apiService from './api';
-import { offlineStorage, SyncOperation } from './offlineStorage';
+import batchClient from './api/batchClient';
+import { offlineStorage, SyncOperation, SyncOperationType } from './offlineStorage';
 import syncEntityManager from './sync/syncEntityManager';
+import { useSettingsStore } from '../store/settingsStore';
+import logger from '../utils/logger';
+
 import type {
     ConflictResolutionStrategy as VersionedConflictResolutionStrategy,
     VersionedEntity,
 } from './sync/types';
+
 
 // Sync service configuration
 interface SyncConfig {
@@ -89,15 +94,21 @@ class SyncService {
    */
   async manualSync(): Promise<void> {
     logger.info('Manual sync triggered');
-    await this.syncPendingOperations();
+    await this.syncPendingOperations(true);
   }
 
   /**
    * Main sync process
    */
-  private async syncPendingOperations(): Promise<void> {
+  private async syncPendingOperations(isManual = false): Promise<void> {
     if (this.isSyncing) {
       logger.debug('Sync already in progress, skipping');
+      return;
+    }
+
+    const settings = useSettingsStore.getState();
+    if (settings.dataSaverEnabled && !isManual) {
+      logger.debug('SyncService: Skipped auto-sync — Data Saver mode enabled');
       return;
     }
 
@@ -141,14 +152,62 @@ class SyncService {
   }
 
   /**
-   * Process a batch of operations
+   * Process a batch of operations — mutation types are combined into a single
+   * POST /api/batch request; READ operations continue on the individual path.
    */
   private async processBatch(operations: SyncOperation[]): Promise<void> {
-    const promises = operations.slice(0, this.config.maxConcurrentSyncs).map(op => 
-      this.processOperation(op)
-    );
+    const reads = operations.filter(op => op.type === 'READ');
+    const mutations = operations.filter(op => op.type !== 'READ');
 
-    await Promise.all(promises);
+    const readPromises = reads.map(op => this.processOperation(op));
+
+    const mutationPromises = mutations.map(op => {
+      const method = this.mapOperationToMethod(op.type);
+      if (!method) return this.processOperation(op);
+
+      return batchClient
+        .mutate(method, op.endpoint, op.data)
+        .then(async result => {
+          await offlineStorage.removeFromSyncQueue(op.id);
+          logger.info(`Batch operation completed: ${op.id}`);
+          this.emitEvent({
+            type: 'operationProcessed',
+            operationId: op.id,
+            data: result,
+            timestamp: Date.now(),
+          });
+        })
+        .catch(async (error: any) => {
+          logger.error(`Batch operation failed: ${op.id}`, error);
+          if (op.retries < op.maxRetries) {
+            await offlineStorage.incrementRetryCount(op.id);
+            setTimeout(
+              () => this.retryOperation(op.id),
+              this.calculateRetryDelay(op.retries),
+            );
+          } else {
+            this.handlePermanentFailure(op, error);
+          }
+          this.emitEvent({
+            type: 'syncFailed',
+            operationId: op.id,
+            error,
+            timestamp: Date.now(),
+          });
+        });
+    });
+
+    // mutate() calls above are synchronous enqueues; flush sends them as one request.
+    await Promise.all([batchClient.flush(), ...mutationPromises, ...readPromises]);
+  }
+
+  private mapOperationToMethod(
+    type: SyncOperationType,
+  ): 'POST' | 'PUT' | 'DELETE' | null {
+    if (type === 'CREATE') return 'POST';
+    if (type === 'UPDATE') return 'PUT';
+    if (type === 'DELETE') return 'DELETE';
+    return null;
   }
 
   /**

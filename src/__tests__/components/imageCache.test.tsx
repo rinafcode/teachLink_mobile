@@ -1,9 +1,10 @@
 import { render, waitFor } from '@testing-library/react-native';
 import React from 'react';
 
-import { CachedImage } from '@/components/ui/CachedImage';
-import { usePrefetchImages } from '@/hooks/usePrefetchImages';
-import { ImageCache } from '@/utils/imageCache';
+import { CachedImage } from '../../components/ui/CachedImage';
+import { usePrefetchImages } from '../../hooks/usePrefetchImages';
+import { ImageCache } from '../../utils/imageCache';
+import { useSettingsStore } from '../../store/settingsStore';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -165,6 +166,26 @@ describe('Image Cache Integration - Issue #143', () => {
 
       const image = getByTestId('cached-image');
       expect(image.props.style).toContainEqual(customStyle);
+    });
+
+    it('should lower image quality and bypass prefetching when dataSaverEnabled is true', async () => {
+      useSettingsStore.setState({ dataSaverEnabled: true });
+      const testUri = 'https://example.com/image@2x.jpg?width=400';
+      const prefetchSpy = jest.spyOn(ImageCache, 'prefetchImages');
+
+      const { getByTestId } = render(
+        <CachedImage uri={testUri} testID="cached-image" autoPrefetch={true} />
+      );
+
+      const image = getByTestId('cached-image');
+      expect(image.props.source.uri).toContain('image@1x.jpg');
+      expect(image.props.source.uri).toContain('quality=low');
+      expect(image.props.source.uri).toContain('q=30');
+
+      expect(prefetchSpy).not.toHaveBeenCalled();
+
+      // Restore settings
+      useSettingsStore.setState({ dataSaverEnabled: false });
     });
   });
 
@@ -345,6 +366,26 @@ describe('Image Cache Integration - Issue #143', () => {
       await waitFor(() => {
         expect(onError).toHaveBeenCalled();
       });
+    });
+
+    it('should bypass prefetching when dataSaverEnabled is true', async () => {
+      useSettingsStore.setState({ dataSaverEnabled: true });
+      const urls = ['https://example.com/image1.jpg'];
+      const prefetchSpy = jest.spyOn(ImageCache, 'prefetchImages');
+
+      const TestComponent = () => {
+        usePrefetchImages(urls, { auto: true });
+        return null;
+      };
+
+      render(<TestComponent />);
+
+      await waitFor(() => {
+        expect(prefetchSpy).not.toHaveBeenCalled();
+      });
+
+      // Restore
+      useSettingsStore.setState({ dataSaverEnabled: false });
     });
   });
 
