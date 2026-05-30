@@ -9,18 +9,18 @@ import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { ErrorBoundary } from './src/components/common/ErrorBoundary';
 import { initializeLogging } from './src/config/logging';
-import { AuthProvider, useAdaptiveTheme } from './src/hooks';
+import { AuthProvider, useAdaptiveTheme, useAppLifecycle } from './src/hooks';
 import AppNavigator from './src/navigation/AppNavigator';
 import { setupNotificationNavigation } from './src/navigation/linking';
 import { apiClient } from './src/services/api';
-import { crashReportingService } from './src/services/cashReporting';
+import { crashReportingService } from './src/services/crashReporting';
 import { mobileAuthService } from './src/services/mobileAuth';
 import {
   addNotificationReceivedListener,
   getLastNotificationResponse,
   removeNotificationListener,
 } from './src/services/pushNotifications';
-import { requestQueue } from './src/services/requestQueue';
+import { requestQueue } from './src/services/api/requestQueue';
 import socketService from './src/services/socket';
 import syncService from './src/services/syncService';
 import { useAppStore } from './src/store';
@@ -58,6 +58,10 @@ if (__DEV__) {
 const App = () => {
   const theme = useAppStore((state) => state.theme);
   useAdaptiveTheme();
+
+  // Pause animations, stop timers, and defer syncs when app is backgrounded;
+  // resume everything when it returns to the foreground.
+  useAppLifecycle();
 
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const [appIsReady, setAppIsReady] = React.useState(false);
@@ -153,6 +157,7 @@ const App = () => {
     return () => {
       socketService.disconnect();
       syncService.stopAutoSync();
+      requestQueue.stopMonitoring();
       notificationCleanup();
       removeNotificationListener(subscription);
       // Clean up the unhandled rejection handler

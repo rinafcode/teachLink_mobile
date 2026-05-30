@@ -117,3 +117,74 @@ describe('Skeleton', () => {
     });
   });
 });
+
+// ── AppState lifecycle ────────────────────────────────────────────────────────
+
+import { AppState } from 'react-native';
+
+describe('Skeleton — AppState animation lifecycle', () => {
+  // Grab the mocked Animated internals provided by jest.setup.js
+  const { Animated: MockAnimated } = require('react-native');
+
+  let stopMock: jest.Mock;
+  let loopInstance: { start: jest.Mock; stop: jest.Mock };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+
+    // Each Animated.loop() call returns a fresh controllable handle
+    stopMock = jest.fn();
+    loopInstance = { start: jest.fn(), stop: stopMock };
+    MockAnimated.loop.mockReturnValue(loopInstance);
+  });
+
+  it('starts the animation on mount', () => {
+    render(<Skeleton />);
+    expect(MockAnimated.loop).toHaveBeenCalled();
+    expect(loopInstance.start).toHaveBeenCalled();
+  });
+
+  it('stops the animation when the app goes to background', () => {
+    render(<Skeleton />);
+
+    // Simulate AppState → background
+    const [[, handler]] = (AppState.addEventListener as jest.Mock).mock.calls;
+    handler('background');
+
+    expect(stopMock).toHaveBeenCalled();
+  });
+
+  it('stops the animation when the app becomes inactive', () => {
+    render(<Skeleton />);
+
+    const [[, handler]] = (AppState.addEventListener as jest.Mock).mock.calls;
+    handler('inactive');
+
+    expect(stopMock).toHaveBeenCalled();
+  });
+
+  it('restarts the animation when the app returns to the foreground', () => {
+    render(<Skeleton />);
+    const callsBefore = MockAnimated.loop.mock.calls.length;
+
+    const [[, handler]] = (AppState.addEventListener as jest.Mock).mock.calls;
+    handler('background');
+    handler('active');
+
+    // A new loop should have been created when returning to active
+    expect(MockAnimated.loop.mock.calls.length).toBeGreaterThan(callsBefore);
+    expect(loopInstance.start).toHaveBeenCalledTimes(2); // mount + foreground
+  });
+
+  it('stops the animation and removes the AppState listener on unmount', () => {
+    const mockRemove = jest.fn();
+    (AppState.addEventListener as jest.Mock).mockReturnValue({ remove: mockRemove });
+
+    const { unmount } = render(<Skeleton />);
+    unmount();
+
+    expect(stopMock).toHaveBeenCalled();
+    expect(mockRemove).toHaveBeenCalled();
+  });
+});
+

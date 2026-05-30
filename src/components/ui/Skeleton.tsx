@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, DimensionValue, StyleSheet, View, ViewStyle } from 'react-native';
+import { Animated, AppState, AppStateStatus, DimensionValue, StyleSheet, View, ViewStyle } from 'react-native';
 import { useAdaptiveFrameRate } from '../../hooks/useAdaptiveFrameRate';
 
 /**
@@ -26,15 +26,19 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   style,
 }) => {
   const pulseAnim = useRef(new Animated.Value(0.3)).current;
+  const animationRef = useRef<Animated.CompositeAnimation | null>(null);
   const { durationMultiplier } = useAdaptiveFrameRate();
 
-  useEffect(() => {
+  const startAnimation = () => {
+    // Stop any existing animation before starting a new one
+    animationRef.current?.stop();
+
     const sharedAnimationConfig = {
       duration: 1000 * durationMultiplier,
       useNativeDriver: true,
     };
 
-    Animated.loop(
+    animationRef.current = Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
           ...sharedAnimationConfig,
@@ -45,8 +49,30 @@ export const Skeleton: React.FC<SkeletonProps> = ({
           toValue: 0.3,
         }),
       ])
-    ).start();
-  }, [pulseAnim, durationMultiplier]);
+    );
+    animationRef.current.start();
+  };
+
+  useEffect(() => {
+    startAnimation();
+
+    const handleAppStateChange = (nextState: AppStateStatus) => {
+      if (nextState === 'active') {
+        startAnimation();
+      } else {
+        // background or inactive — pause the shimmer
+        animationRef.current?.stop();
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    return () => {
+      animationRef.current?.stop();
+      subscription.remove();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [durationMultiplier]);
 
   const skeletonStyle: ViewStyle = {
     width: width,

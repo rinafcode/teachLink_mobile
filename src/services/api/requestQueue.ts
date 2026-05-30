@@ -18,6 +18,8 @@ class RequestQueue {
   private readonly MAX_RETRIES = 3;
   private isProcessing = false;
   private listeners: ((count: number) => void)[] = [];
+  private monitoringIntervalId: ReturnType<typeof setInterval> | null = null;
+  private apiClientRef: any = null;
 
   /**
    * Add a failed request to the queue
@@ -118,15 +120,42 @@ class RequestQueue {
   }
 
   /**
-   * Start monitoring network and processing queue
+   * Start monitoring network and processing queue.
+   * Safe to call multiple times — no-ops if already running.
    */
   startMonitoring(apiClient: any): void {
-    const interval = setInterval(async () => {
+    if (this.monitoringIntervalId !== null) {
+      return; // already running
+    }
+    this.apiClientRef = apiClient;
+    this.monitoringIntervalId = setInterval(async () => {
       await this.processQueue(apiClient);
     }, 10000); // Check every 10 seconds
 
     // Also process immediately if online
     this.processQueue(apiClient);
+  }
+
+  /**
+   * Stop network-monitoring interval.
+   * Called when the app moves to the background to save battery.
+   */
+  stopMonitoring(): void {
+    if (this.monitoringIntervalId !== null) {
+      clearInterval(this.monitoringIntervalId);
+      this.monitoringIntervalId = null;
+      logger.info('Request queue monitoring stopped');
+    }
+  }
+
+  /**
+   * Resume monitoring after returning to the foreground.
+   * Uses the apiClient that was passed to the last startMonitoring call.
+   */
+  resumeMonitoring(): void {
+    if (this.apiClientRef) {
+      this.startMonitoring(this.apiClientRef);
+    }
   }
 
   /**
