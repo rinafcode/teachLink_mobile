@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   Alert,
   ActivityIndicator,
@@ -236,7 +236,7 @@ export function MobileSettings({
   const { scale } = useDynamicFontSize();
   const { clearCache: clearStoredFormFields } = useFormCache([]);
 
-  const handleClearFormCache = () => {
+  const handleClearFormCache = useCallback(() => {
     Alert.alert(
       'Clear Cached Form Data',
       'Remove saved names, emails, and addresses from this device?',
@@ -252,9 +252,9 @@ export function MobileSettings({
         },
       ]
     );
-  };
+  }, [clearStoredFormFields]);
 
-  const handleBiometricToggle = async (value: boolean) => {
+  const handleBiometricToggle = useCallback(async (value: boolean) => {
     if (value) {
       const ok = await enableBiometric();
       if (!ok) {
@@ -263,16 +263,16 @@ export function MobileSettings({
     } else {
       await disableBiometric();
     }
-  };
+  }, [enableBiometric, disableBiometric]);
 
-  const handleSignOut = () => {
+  const handleSignOut = useCallback(() => {
     Alert.alert('Sign Out', 'Are you sure?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Sign Out', style: 'destructive', onPress: onSignOut },
     ]);
-  };
+  }, [onSignOut]);
 
-  const handleManualSync = async () => {
+  const handleManualSync = useCallback(async () => {
     Alert.alert('Sync', 'Sync data with server?', [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -288,19 +288,19 @@ export function MobileSettings({
         },
       },
     ]);
-  };
+  }, []);
 
-  const handleClearDownloads = () => {
+  const handleClearDownloads = useCallback(() => {
     Alert.alert('Clear Downloads', 'Remove all downloads?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Clear', style: 'destructive' },
     ]);
-  };
+  }, []);
 
-  const handleToggleAdvanced = () => {
+  const handleToggleAdvanced = useCallback(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setShowAdvancedSettings(prev => !prev);
-  };
+  }, []);
 
   return (
     <ScrollView className="flex-1 bg-gray-50 dark:bg-gray-900">

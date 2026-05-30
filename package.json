@@ -4,6 +4,8 @@
   "version": "1.4.0",
   "scripts": {
     "start": "expo start",
+    "subset-fonts": "python scripts/subset-fonts.py",
+    "eas-build-pre-install": "pip install fonttools && python scripts/subset-fonts.py",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo run:android",
     "ios": "expo run:ios",

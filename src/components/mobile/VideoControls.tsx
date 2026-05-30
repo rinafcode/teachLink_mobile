@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { QualityOption } from '../../services/videoQuality';
 
@@ -95,47 +95,65 @@ const VideoControls = ({
     return selected?.label ?? 'Auto';
   }, [qualityOptions, selectedQualityId]);
 
-  const handleSeekBarLayout = (event: any) => {
+  const handleSeekBarLayout = useCallback((event: any) => {
     setSeekBarWidth(event.nativeEvent.layout.width);
-  };
+  }, []);
 
-  const positionFromEvent = (event: any) => {
+  const positionFromEvent = useCallback((event: any) => {
     if (seekBarWidth <= 0 || durationMillis <= 0) {
       return 0;
     }
     const x = event.nativeEvent.locationX;
     return clamp((x / seekBarWidth) * durationMillis, 0, durationMillis);
-  };
+  }, [seekBarWidth, durationMillis]);
 
-  const handleSeekGrant = (event: any) => {
+  const handleSeekGrant = useCallback((event: any) => {
     if (!durationMillis) {
       return;
     }
     onSeekStart?.();
     const position = positionFromEvent(event);
     onSeekPreview?.(position);
-  };
+  }, [durationMillis, onSeekStart, onSeekPreview, positionFromEvent]);
 
-  const handleSeekMove = (event: any) => {
+  const handleSeekMove = useCallback((event: any) => {
     if (!durationMillis) {
       return;
     }
     const position = positionFromEvent(event);
     onSeekPreview?.(position);
-  };
+  }, [durationMillis, onSeekPreview, positionFromEvent]);
 
-  const handleSeekRelease = (event: any) => {
+  const handleSeekRelease = useCallback((event: any) => {
     if (!durationMillis) {
       return;
     }
     const position = positionFromEvent(event);
     onSeek(position);
     onSeekEnd?.();
-  };
+  }, [durationMillis, positionFromEvent, onSeek, onSeekEnd]);
 
-  const handleSeekTerminate = () => {
+  const handleSeekTerminate = useCallback(() => {
     onSeekEnd?.();
-  };
+  }, [onSeekEnd]);
+
+  const handleToggleSpeedMenu = useCallback(() => {
+    setIsSpeedMenuOpen(prev => !prev);
+  }, []);
+
+  const handleToggleQualityMenu = useCallback(() => {
+    setIsQualityMenuOpen(prev => !prev);
+  }, []);
+
+  const handleSelectRate = useCallback((rate: number) => {
+    onChangeRate(rate);
+    setIsSpeedMenuOpen(false);
+  }, [onChangeRate]);
+
+  const handleSelectQualityOption = useCallback((qualityId: string) => {
+    onSelectQuality(qualityId);
+    setIsQualityMenuOpen(false);
+  }, [onSelectQuality]);
 
   return (
     <Animated.View pointerEvents={visible ? 'auto' : 'none'} style={[styles.overlay, { opacity }]}>
@@ -202,14 +220,14 @@ const VideoControls = ({
         <View style={styles.controlsRow}>
           <Pressable
             accessibilityLabel="Playback speed"
-            onPress={() => setIsSpeedMenuOpen(prev => !prev)}
+            onPress={handleToggleSpeedMenu}
             style={styles.controlButton}
           >
             <Text style={styles.controlText}>{formatRate(playbackRate)}</Text>
           </Pressable>
           <Pressable
             accessibilityLabel="Quality"
-            onPress={() => setIsQualityMenuOpen(prev => !prev)}
+            onPress={handleToggleQualityMenu}
             style={styles.controlButton}
           >
             <Text style={styles.controlText}>{qualityLabel}</Text>
@@ -242,10 +260,7 @@ const VideoControls = ({
                   <Pressable
                     key={rate}
                     accessibilityLabel={`Set playback speed ${formatRate(rate)}`}
-                    onPress={() => {
-                      onChangeRate(rate);
-                      setIsSpeedMenuOpen(false);
-                    }}
+                    onPress={() => handleSelectRate(rate)}
                     style={styles.menuItem}
                   >
                     <Text
@@ -267,10 +282,7 @@ const VideoControls = ({
                   <Pressable
                     key={option.id}
                     accessibilityLabel={`Set quality ${option.label}`}
-                    onPress={() => {
-                      onSelectQuality(option.id);
-                      setIsQualityMenuOpen(false);
-                    }}
+                    onPress={() => handleSelectQualityOption(option.id)}
                     style={styles.menuItem}
                   >
                     <Text

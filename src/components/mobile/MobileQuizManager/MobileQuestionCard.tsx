@@ -16,7 +16,7 @@ interface MobileQuestionCardProps {
   onAnswerSelect: (questionId: string, answer: string | number, isMultiSelect?: boolean) => void;
 }
 
-export default function MobileQuestionCard({
+const MobileQuestionCard = React.memo(function MobileQuestionCard({
   question,
   questionNumber,
   totalQuestions,
@@ -181,7 +181,9 @@ export default function MobileQuestionCard({
       </View>
     </ScrollView>
   );
-}
+});
+
+export default MobileQuestionCard;
 
 const styles = StyleSheet.create({
   container: {

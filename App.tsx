@@ -8,6 +8,7 @@ import './global.css';
 import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { ErrorBoundary } from './src/components/common/ErrorBoundary';
+import { requireEnvVariables } from './src/config';
 import { initializeLogging } from './src/config/logging';
 import { AuthProvider, useAdaptiveTheme } from './src/hooks';
 import AppNavigator from './src/navigation/AppNavigator';
@@ -16,20 +17,25 @@ import { apiClient } from './src/services/api';
 import { crashReportingService } from './src/services/cashReporting';
 import { mobileAuthService } from './src/services/mobileAuth';
 import {
-  addNotificationReceivedListener,
-  getLastNotificationResponse,
-  removeNotificationListener,
+    addNotificationReceivedListener,
+    getLastNotificationResponse,
+    registerForPushNotifications, registerTokenWithBackend,
+    removeNotificationListener,
 } from './src/services/pushNotifications';
 import { requestQueue } from './src/services/requestQueue';
+import { initializeSecureStorage } from './src/services/secureStorage';
 import socketService from './src/services/socket';
 import syncService from './src/services/syncService';
 import { useAppStore } from './src/store';
+import { useNotificationStore } from './src/store/notificationStore';
 import { handleCacheVersionUpdate } from './src/utils/cacheVersioning';
 import { requireEnvVariables } from './src/utils/env';
+import { appLogger, logger } from './src/utils/logger';
 import { appLogger } from './src/utils/logger';
 import { handleNotificationReceived } from './src/utils/notificationHandlers';
 import { warmCriticalCaches } from './src/services/cacheWarming';
 import webVitalsService from './src/services/webVitals';
+import { prefetchExternalResources } from './src/utils/resourceHints';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -40,6 +46,9 @@ const SHOW_STORYBOOK = process.env.EXPO_PUBLIC_STORYBOOK === 'true';
 
 // Centralized structured logging initialized on startup
 requireEnvVariables();
+
+// Preconnect to API hosts and external resources
+prefetchExternalResources();
 
 // Initialize centralized logging on app start
 initializeLogging().catch(err => {
@@ -70,25 +79,53 @@ const App = () => {
   useEffect(() => {
     async function prepareApp() {
       try {
+        // Initialize progress tracking
+        startupProgressService.setInitializing(true);
+        startupProgressService.registerStep('fonts', 'Loading Fonts', 500);
+        startupProgressService.registerStep('cache', 'Clearing Cache', 800);
+        startupProgressService.registerStep('auth', 'Checking Authentication', 1000);
+        startupProgressService.registerStep('data', 'Loading Initial Data', 1500);
+
         // 1. Load fonts
+        startupProgressService.startStep('fonts');
         await Font.loadAsync({
-          // You can add custom fonts here later if needed
+          'Inter-Regular': require('./assets/fonts/Inter-Regular.ttf'),
+          'Inter-Bold': require('./assets/fonts/Inter-Bold.ttf'),
         });
+        startupProgressService.completeStep('fonts');
 
         // 2. Version-based cache invalidation: clear stale caches on app/data version bump
+        startupProgressService.startStep('cache');
         const appVersion = require('./package.json').version as string;
         await handleCacheVersionUpdate(appVersion);
+        startupProgressService.completeStep('cache');
 
-        // 2. Check Auth State / wait for store hydration
+        // 3. Check Auth State / wait for store hydration
+        startupProgressService.startStep('auth');
         // Zustand persist automatically hydrates, we can assume it's done or add a small delay
         // to ensure initial data fetching completes.
+        await new Promise(resolve => setTimeout(resolve, 300));
+        startupProgressService.completeStep('auth');
 
         // 3. Warm critical caches (user profile + home feed) in parallel
         await warmCriticalCaches();
+        // 4. Initial data fetch (simulate or add real fetch)
+        startupProgressService.startStep('data');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        startupProgressService.completeStep('data');
       } catch (e) {
         console.warn('Error during app initialization:', e);
+        // Mark the last step as failed
+        const inProgressStep = startupProgressService.getInProgressStep();
+        if (inProgressStep) {
+          startupProgressService.failStep(
+            inProgressStep.id,
+            e instanceof Error ? e.message : String(e)
+          );
+        }
       } finally {
         setAppIsReady(true);
+        startupProgressService.setInitializing(false);
         await SplashScreen.hideAsync();
       }
     }
@@ -238,6 +275,7 @@ const App = () => {
 
   return (
     <ErrorBoundary>
+      <StartupProgressOverlay />
       <AuthProvider>
         <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
         <AppNavigator />

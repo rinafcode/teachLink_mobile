@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { TouchableOpacity, Text, ActivityIndicator, View, StyleSheet } from 'react-native';
 
 import { useBookmarkStore, BookmarkItem } from '../../store/bookmarkStore';
@@ -24,13 +24,13 @@ export default function BookmarkButton({
   };
   const config = sizeConfig[size];
 
-  const handleToggle = async () => {
+  const handleToggle = useCallback(async () => {
     if (bookmarked) {
       await removeBookmark(item.itemId);
     } else {
       await addBookmark(item);
     }
-  };
+  }, [bookmarked, item, addBookmark, removeBookmark]);
 
   const backgroundColor = bookmarked ? '#fef3c7' : '#f3f4f6';
   const borderColor = bookmarked ? '#facc15' : '#d1d5db';

@@ -1,5 +1,5 @@
 import { Eye, EyeOff, AlertCircle } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, TextInput, TextInputProps, TouchableOpacity, StyleSheet } from 'react-native';
 
 import { useDynamicFontSize } from '../../hooks';
@@ -81,20 +81,24 @@ export const MobileFormInput: React.FC<MobileFormInputProps> = ({
     };
   }, [cacheKey, isFocused, value]);
 
-  const handleBlur = (e: Parameters<NonNullable<TextInputProps['onBlur']>>[0]) => {
+  const handleBlur = useCallback((e: Parameters<NonNullable<TextInputProps['onBlur']>>[0]) => {
     setIsFocused(false);
     if (cacheKey && cacheOnBlur && value.trim()) {
       void setCachedFieldValue(cacheKey, value);
     }
     onBlur?.(e);
-  };
+  }, [cacheKey, cacheOnBlur, value, onBlur]);
 
-  const handleApplySuggestion = () => {
+  const handleApplySuggestion = useCallback(() => {
     if (suggestion) {
       onChangeText(suggestion);
       setSuggestion(null);
     }
-  };
+  }, [suggestion, onChangeText]);
+
+  const handleFocus = useCallback(() => setIsFocused(true), []);
+
+  const handleTogglePassword = useCallback(() => setShowPassword(prev => !prev), []);
 
   const borderColor = error ? '#ef4444' : isFocused ? '#19c3e6' : isDark ? '#334155' : '#e2e8f0';
 
@@ -144,7 +148,7 @@ export const MobileFormInput: React.FC<MobileFormInputProps> = ({
           value={value}
           onChangeText={onChangeText}
           ref={inputRef}
-          onFocus={() => setIsFocused(true)}
+          onFocus={handleFocus}
           onBlur={handleBlur}
           secureTextEntry={isPassword && !showPassword}
           multiline={multiline}
@@ -153,7 +157,7 @@ export const MobileFormInput: React.FC<MobileFormInputProps> = ({
         />
 
         {isPassword && (
-          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.rightIcon}>
+          <TouchableOpacity onPress={handleTogglePassword} style={styles.rightIcon}>
             {showPassword ? (
               <EyeOff size={scale(20)} color={isDark ? '#64748b' : '#94a3b8'} />
             ) : (
