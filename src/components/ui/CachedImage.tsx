@@ -1,8 +1,10 @@
 import { Image as ExpoImage, ImageProps as ExpoImageProps } from 'expo-image';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
+
+import { getCDNAssetUrl } from '../../utils/cdn';
 import { ImageCache } from '../../utils/imageCache';
-import logger from '../../utils/logger';
+import appLogger from '../../utils/logger'; // eslint-disable-line import/no-named-as-default
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -60,30 +62,29 @@ export const CachedImage: React.FC<CachedImageProps> = ({
   style,
   ...expoImageProps
 }) => {
-  const [isLoading, setIsLoading] = useState(!!uri);
-  const [error, setError] = useState<Error | null>(null);
+  const cdnUri = uri ? getCDNAssetUrl(uri) : '';
+  const [isLoading, setIsLoading] = useState(!!cdnUri);
 
   // ─── Prefetch image on mount or when URI changes ──────────────────────────
 
   useEffect(() => {
-    if (!uri) {
+    if (!cdnUri) {
       setIsLoading(false);
       return;
     }
 
     if (autoPrefetch) {
       setIsLoading(true);
-      ImageCache.prefetchImages([uri])
+      ImageCache.prefetchImages([cdnUri])
         .then(() => {
-          logger.debug(`✅ Image prefetched: ${uri}`);
+          appLogger.debug(`✅ Image prefetched: ${cdnUri}`);
         })
         .catch(e => {
-          logger.warn(`Failed to prefetch image: ${uri}`, e);
-          setError(e instanceof Error ? e : new Error(String(e)));
+          appLogger.warn(`Failed to prefetch image: ${cdnUri}`, e);
           onLoadError?.(e instanceof Error ? e : new Error(String(e)));
         });
     }
-  }, [uri, autoPrefetch, onLoadError]);
+  }, [cdnUri, autoPrefetch, onLoadError]);
 
   // ─── Handle loading complete ───────────────────────────────────────────────
 
@@ -91,7 +92,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
     setIsLoading(false);
     setError(null);
     onLoadComplete?.();
-    logger.debug(`✅ CachedImage rendered: ${uri}`);
+    appLogger.debug(`✅ CachedImage rendered: ${cdnUri}`);
   };
 
   // ─── Handle loading error ──────────────────────────────────────────────────
@@ -101,19 +102,19 @@ export const CachedImage: React.FC<CachedImageProps> = ({
     setIsLoading(false);
     setError(error);
     onLoadError?.(error);
-    logger.warn(`Failed to load image: ${uri}`, error);
+    appLogger.warn(`Failed to load image: ${cdnUri}`, error);
   };
 
   // ─── Render ────────────────────────────────────────────────────────────────
 
-  if (!uri) {
+  if (!cdnUri) {
     return null;
   }
 
   return (
     <View style={[styles.container, style]}>
       <ExpoImage
-        source={{ uri }}
+        source={{ uri: cdnUri }}
         onLoadingComplete={handleLoadingComplete}
         onError={handleError}
         accessibilityLabel={alt}

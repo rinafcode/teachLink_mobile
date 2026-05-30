@@ -5,6 +5,28 @@ import { CachedImage } from '@/components/ui/CachedImage';
 import { usePrefetchImages } from '@/hooks/usePrefetchImages';
 import { ImageCache } from '@/utils/imageCache';
 
+// ─── CDN Mock ─────────────────────────────────────────────────────────────────
+// getCDNAssetUrl rewrites remote URLs by appending ?v=<version>.
+// We stub it here to return a predictable versioned URL so prefetch assertions
+// can match the exact value that CachedImage passes to ImageCache.
+jest.mock('@/utils/cdn', () => ({
+  getCDNAssetUrl: jest.fn((url: string | null | undefined) => {
+    if (!url) return '';
+    if (/^https?:\/\//.test(url)) {
+      return `${url}?v=TEST_VERSION`;
+    }
+    return `https://cdn.teachlink.com/${url}?v=TEST_VERSION`;
+  }),
+  getCDNFontUrl: jest.fn((name: string) =>
+    name ? `https://cdn.teachlink.com/fonts/${name}?v=TEST_VERSION` : ''
+  ),
+  isCDNUrl: jest.fn(
+    (url: string) => typeof url === 'string' && url.startsWith('https://cdn.teachlink.com')
+  ),
+  CDN_BASE_URL: 'https://cdn.teachlink.com',
+  APP_VERSION: 'TEST_VERSION',
+}));
+
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
 jest.mock('expo-image', () => ({
@@ -54,12 +76,28 @@ describe('Image Cache Integration - Issue #143', () => {
 
     it('should prefetch image on mount when autoPrefetch is true', async () => {
       const testUri = 'https://example.com/image.jpg';
+      const cdnUri = `${testUri}?v=TEST_VERSION`;
       const prefetchSpy = jest.spyOn(ImageCache, 'prefetchImages');
 
       render(<CachedImage uri={testUri} autoPrefetch={true} />);
 
       await waitFor(() => {
-        expect(prefetchSpy).toHaveBeenCalledWith([testUri]);
+        // CachedImage passes the CDN-rewritten URL to prefetch
+        expect(prefetchSpy).toHaveBeenCalledWith([cdnUri]);
+      });
+    });
+
+    it('should rewrite image URL to CDN when uri is provided', async () => {
+      const testUri = 'https://example.com/course-thumbnail.jpg';
+      const prefetchSpy = jest.spyOn(ImageCache, 'prefetchImages');
+
+      render(<CachedImage uri={testUri} autoPrefetch={true} />);
+
+      await waitFor(() => {
+        // Ensure CDN URL contains versioning query parameter
+        const calledWith = prefetchSpy.mock.calls[0]?.[0]?.[0] ?? '';
+        expect(calledWith).toContain('?v=TEST_VERSION');
+        expect(calledWith).toContain('example.com/course-thumbnail.jpg');
       });
     });
 
@@ -143,7 +181,7 @@ describe('Image Cache Integration - Issue #143', () => {
       const { rerender } = render(<CachedImage uri={firstUri} autoPrefetch={true} />);
 
       await waitFor(() => {
-        expect(prefetchSpy).toHaveBeenCalledWith([firstUri]);
+        expect(prefetchSpy).toHaveBeenCalledWith([`${firstUri}?v=TEST_VERSION`]);
       });
 
       prefetchSpy.mockClear();
@@ -151,7 +189,7 @@ describe('Image Cache Integration - Issue #143', () => {
       rerender(<CachedImage uri={secondUri} autoPrefetch={true} />);
 
       await waitFor(() => {
-        expect(prefetchSpy).toHaveBeenCalledWith([secondUri]);
+        expect(prefetchSpy).toHaveBeenCalledWith([`${secondUri}?v=TEST_VERSION`]);
       });
     });
 
