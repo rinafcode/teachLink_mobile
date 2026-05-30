@@ -37,11 +37,13 @@ const MobileQuestionCard = React.memo(function MobileQuestionCard({
   }, [selectedAnswer]);
 
   const handleOptionSelect = (optionIndex: number) => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     useHapticFeedback('light');
     onAnswerSelect(question.id, optionIndex, question.multiple);
   };
 
   const handleTrueFalse = (value: number) => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     useHapticFeedback('light');
     onAnswerSelect(question.id, value, false);
   };

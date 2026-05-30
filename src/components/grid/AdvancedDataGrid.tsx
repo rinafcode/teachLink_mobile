@@ -1,6 +1,7 @@
-import { ArrowDown, ArrowUp, ArrowUpDown, Filter, FilterX, Upload } from 'lucide-react-native';
+import { ArrowDown, ArrowUp, ArrowUpDown, Download, Filter, FilterX, Upload } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   ListRenderItemInfo,
   ScrollView,

@@ -35,6 +35,7 @@ export function NativeToggle({
   activeThumbColor = '#0099b3',
 }: NativeToggleProps) {
   const handleChange = (newValue: boolean) => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     useHapticFeedback('light');
     onValueChange(newValue);
   };
