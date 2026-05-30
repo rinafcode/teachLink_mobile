@@ -1,5 +1,6 @@
-import React from 'react';
 import { render, RenderAPI } from '@testing-library/react-native';
+import React from 'react';
+
 import { MobileFormInput } from '../../src/components/mobile/MobileFormInput';
 
 // Mock lucide icons used inside the component
@@ -10,7 +11,11 @@ jest.mock('lucide-react-native', () => ({
 }));
 
 const renderComponent = (props: Record<string, unknown>): RenderAPI =>
-  render(<MobileFormInput {...props} />);
+  render(
+    <MobileFormInput
+      {...(props as unknown as React.ComponentProps<typeof MobileFormInput>)}
+    />,
+  );
 
 describe('MobileFormInput', () => {
   const baseProps = {

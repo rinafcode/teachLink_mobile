@@ -5,6 +5,7 @@ import { AppState } from 'react-native';
 import {
   advanceDebounce,
   CONSECUTIVE_READINGS_REQUIRED,
+  type DebounceState,
   getCandidateThemeFromLux,
   useAdaptiveTheme,
 } from '../../src/hooks/useAdaptiveTheme';
@@ -65,10 +66,10 @@ describe('getCandidateThemeFromLux', () => {
 });
 
 describe('advanceDebounce', () => {
-  const initial = { candidate: null as const, consecutiveCount: 0 };
+  const initial: DebounceState = { candidate: null, consecutiveCount: 0 };
 
   it('requires consecutive stable readings before confirming', () => {
-    let state = initial;
+    let state: DebounceState = initial;
     let result = advanceDebounce(state, 10, 'light');
     expect(result.confirmedTheme).toBeNull();
     expect(result.state.consecutiveCount).toBe(1);

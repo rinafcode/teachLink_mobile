@@ -1,6 +1,7 @@
 import { Image as ExpoImage, ImageProps as ExpoImageProps } from 'expo-image';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
+
 import { ImageCache } from '../../utils/imageCache';
 import logger from '../../utils/logger';
 
@@ -114,7 +115,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
     <View style={[styles.container, style]}>
       <ExpoImage
         source={{ uri }}
-        onLoadingComplete={handleLoadingComplete}
+        onLoad={handleLoadingComplete}
         onError={handleError}
         accessibilityLabel={alt}
         accessibilityRole="image"

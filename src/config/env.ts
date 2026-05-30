@@ -1,3 +1,19 @@
+export interface EnvConfig {
+  EXPO_PUBLIC_API_BASE_URL: string;
+  EXPO_PUBLIC_SOCKET_URL: string;
+}
+
+export interface ValidationResult {
+  valid: boolean;
+  missing: string[];
+  errors: string[];
+}
+
+const REQUIRED_VARIABLES: (keyof EnvConfig)[] = [
+  'EXPO_PUBLIC_API_BASE_URL',
+  'EXPO_PUBLIC_SOCKET_URL',
+];
+
 export function validateEnvVariables(): ValidationResult {
   const missing: string[] = [];
   const errors: string[] = [];
@@ -63,7 +79,7 @@ export function getEnv(variable: keyof EnvConfig): string {
 
   if (!value) {
     throw new Error(
-      `Environment variable ${variable} is not set. Call requireEnvVariables() at app startup.`
+      `Environment variable ${String(variable)} is not set. Call requireEnvVariables() at app startup.`
     );
   }
   return value;

@@ -195,7 +195,7 @@ describe('SecureStorage - Keychain/Keystore Verification #140', () => {
 
     it('should enforce device unlock requirement for token retrieval', async () => {
       await secureStorage.initializeSecureStorage();
-      storeCache['teachlink_access_token'] = 'token_value';
+      mockStorage['teachlink_access_token'] = 'token_value';
       await secureStorage.getAccessToken();
 
       expect(mockSecureStore.getItemAsync).toHaveBeenCalledWith(
@@ -245,7 +245,7 @@ describe('SecureStorage - Keychain/Keystore Verification #140', () => {
     });
 
     it('should retrieve access token from Keychain/Keystore', async () => {
-      storeCache['teachlink_access_token'] = 'stored_access_token';
+      mockStorage['teachlink_access_token'] = 'stored_access_token';
 
       const token = await secureStorage.getAccessToken();
 
@@ -340,7 +340,7 @@ describe('SecureStorage - Keychain/Keystore Verification #140', () => {
 
     it('should retrieve and deserialize user data from Keychain/Keystore', async () => {
       const userData = { id: 'user_123', name: 'Test User' };
-      storeCache['teachlink_user_data'] = JSON.stringify(userData);
+      mockStorage['teachlink_user_data'] = JSON.stringify(userData);
 
       const retrieved = await secureStorage.getUserData();
 
@@ -376,7 +376,6 @@ describe('SecureStorage - Keychain/Keystore Verification #140', () => {
         expect.stringContaining('❌ CRITICAL'),
         expect.any(Object)
       );
-      expect(loggedCriticalError).toBe(true);
     });
 
     it('should NOT log sensitive data values', async () => {
@@ -399,7 +398,6 @@ describe('SecureStorage - Keychain/Keystore Verification #140', () => {
         expect.stringContaining('✅'),
         expect.any(Object)
       );
-      expect(loggedSuccess).toBe(true);
     });
   });
 

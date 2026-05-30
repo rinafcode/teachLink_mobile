@@ -1,4 +1,5 @@
 export * from './mobile';
+export { AnalyticsProvider } from './mobile/AnalyticsProvider';
 
 export * from './common/AppText';
 export { ErrorBoundary } from './common/ErrorBoundary';

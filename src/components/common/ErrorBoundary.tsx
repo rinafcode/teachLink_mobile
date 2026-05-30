@@ -1,5 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
 import { crashReportingService } from '../../services/crashReporting';
 import logger from '../../utils/logger';
 
@@ -77,7 +78,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
     // Always log locally as a fallback for development and non-configured monitoring.
     logger.error(`[${boundaryName}] Caught runtime error:`, error.message);
-    logger.error(error);
+    logger.error(error.message, error);
     logger.error(`[${boundaryName}] Component stack:\n${errorInfo.componentStack}`);
 
     this.props.onError?.(error, errorInfo);

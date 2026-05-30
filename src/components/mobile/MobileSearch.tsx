@@ -166,7 +166,7 @@ export const MobileSearch = ({
       setQueryError(null);
       const trimmed = searchQuery.trim();
       addToSearchHistory(trimmed);
-      trackEvent(AnalyticsEvent.SEARCH_QUERY, { query: trimmed, filters: filterValues });
+      trackEvent(AnalyticsEvent.SEARCH_QUERY, { query: trimmed, filters: JSON.stringify(filterValues) });
       const filtered = filterCourse(sampleCourse, trimmed, filterValues)
         ? [courseToSearchResult(sampleCourse)]
         : [];

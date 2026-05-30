@@ -8,7 +8,7 @@
 import { render } from '@testing-library/react-native';
 import React from 'react';
 import { Animated } from 'react-native';
-import { Gesture } from 'react-native-gesture-handler';
+import { GestureDetector } from 'react-native-gesture-handler';
 
 import { useOptimizedLongPress } from '../../hooks/useOptimizedLongPress';
 import { useOptimizedPinchZoom } from '../../hooks/useOptimizedPinchZoom';
@@ -114,9 +114,9 @@ describe('Gesture Performance Optimization', () => {
         });
 
         return (
-          <Gesture.Simultaneous gesture={gesture}>
+          <GestureDetector gesture={gesture}>
             <Animated.View testID="swipeView" style={animatedStyle} />
-          </Gesture.Simultaneous>
+          </GestureDetector>
         );
       };
 

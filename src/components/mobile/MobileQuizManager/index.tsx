@@ -13,6 +13,10 @@ import logger from '../../../utils/logger';
 import { AnalyticsEvent, ScreenName } from '../../../utils/trackingEvents';
 import PrimaryButton from '../../common/PrimaryButton';
 
+interface LegacyNavigationProp {
+  navigate: (route: string, params?: Record<string, unknown>) => void;
+}
+
 interface MobileQuizManagerProps {
   /** The quiz data to display and manage */
   quiz: Quiz;

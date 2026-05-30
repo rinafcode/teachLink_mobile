@@ -15,7 +15,7 @@ import { useDeepLink } from '../src/hooks/useDeepLink';
 import { sessionRestorationService } from '../src/services/sessionRestoration';
 import { preloadService } from '../src/services/preloadService';
 import { useAppStore } from '../src/store';
-import { getPathFromDeepLink } from '../src/utils/linkParser';
+import { getPathFromDeepLink, type ParsedDeepLink } from '../src/utils/linkParser';
 import { prefetchExternalResources } from '../src/utils/resourceHints';
 
 // Kick off resource hints early
@@ -72,15 +72,12 @@ const ThemeSync = () => {
 const RootLayout = () => {
   const router = useRouter();
 
-  const handleDeepLink = useCallback(
-    deepLink => {
-      const path = getPathFromDeepLink(deepLink);
-      if (path) {
-        router.replace(path);
-      }
-    },
-    [router]
-  );
+  const handleDeepLink = useCallback((deepLink: ParsedDeepLink) => {
+    const path = getPathFromDeepLink(deepLink);
+    if (path) {
+      router.replace(path);
+    }
+  }, [router]);
 
   useDeepLink(handleDeepLink);
 
@@ -138,4 +135,27 @@ const RootLayout = () => {
         <AnalyticsProvider>
           <ScreenTracker />
           <ThemeSync />
+          <OfflineIndicatorProvider>
+            <GestureHandlerRootView style={{ flex: 1 }}>
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="course-viewer" options={{ headerShown: false }} />
+                <Stack.Screen name="profile/[userId]" options={{ headerShown: false }} />
+                <Stack.Screen name="search" options={{ headerShown: false }} />
+                <Stack.Screen name="settings" options={{ headerShown: false }} />
+                <Stack.Screen name="qr-scanner" options={{ headerShown: false }} />
+                <Stack.Screen name="quiz" options={{ headerShown: false }} />
+                <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+              </Stack>
+              {/* DEV-only memory profiler overlay; renders null in production. */}
+              <MemoryProfilerOverlay />
+            </GestureHandlerRootView>
+          </OfflineIndicatorProvider>
+        </AnalyticsProvider>
+      </RetryErrorBoundary>
+    </ErrorBoundary>
+  );
+};
+
+export default RootLayout;
 

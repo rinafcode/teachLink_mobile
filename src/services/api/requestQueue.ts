@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { InternalAxiosRequestConfig } from 'axios';
 import * as Network from 'expo-network';
+
 import logger from '../../utils/logger';
 
 // Queued request interface
@@ -154,7 +155,7 @@ class RequestQueue {
   private async checkConnectivity(): Promise<boolean> {
     try {
       const state = await Network.getNetworkStateAsync();
-      return state.isConnected && state.isInternetReachable;
+      return Boolean(state.isConnected && state.isInternetReachable);
     } catch {
       return false;
     }

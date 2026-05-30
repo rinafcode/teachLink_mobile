@@ -28,14 +28,14 @@ interface SettingRowProps {
   disabled?: boolean;
 }
 
-function SettingRow({
+const SettingRow = ({
   icon,
   title,
   description,
   value,
   onValueChange,
   disabled = false,
-}: SettingRowProps) {
+}: SettingRowProps) => {
   return (
     <View className={`flex-row items-center px-4 py-4 ${disabled ? 'opacity-50' : ''}`}>
       <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900">
@@ -57,7 +57,7 @@ function SettingRow({
   );
 }
 
-export function NotificationSettings() {
+export const NotificationSettings = () => {
   const { permissionStatus, requestPermission, openSettings, isLoading } =
     useNotificationPermission();
   const { preferences, setPreference, pushToken } = useNotificationStore();

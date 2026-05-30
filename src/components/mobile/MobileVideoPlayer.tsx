@@ -1,4 +1,12 @@
-import { Audio, AVPlaybackStatus, AVPlaybackStatusToSet, ResizeMode, Video } from 'expo-av';
+import {
+  Audio,
+  AVPlaybackStatus,
+  AVPlaybackStatusToSet,
+  InterruptionModeAndroid,
+  InterruptionModeIOS,
+  ResizeMode,
+  Video,
+} from 'expo-av';
 import * as Network from 'expo-network';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -44,7 +52,7 @@ export type MobileVideoPlayerProps = {
   initialRate?: number;
   /** Available playback rate options */
   rateOptions?: number[];
-  /** ID of the initial quality to use */
+  /** Initial quality ID to use for playback */
   initialQualityId?: string;
   /** Custom style for the video container */
   style?: StyleProp<ViewStyle>;
@@ -327,18 +335,12 @@ const MobileVideoPlayer = ({
     if (!enableBackgroundAudio) {
       return;
     }
-    let previousMode: Awaited<ReturnType<typeof Audio.getAudioModeAsync>> | null = null;
     const configure = async () => {
       try {
-        // eslint-disable-next-line import/namespace
-        previousMode = await Audio.getAudioModeAsync();
         await Audio.setAudioModeAsync({
-          ...previousMode,
           allowsRecordingIOS: false,
-          // eslint-disable-next-line import/namespace
-          interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_DUCK_OTHERS,
-          // eslint-disable-next-line import/namespace
-          interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DUCK_OTHERS,
+          interruptionModeIOS: InterruptionModeIOS.DuckOthers,
+          interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
           playsInSilentModeIOS: false,
           staysActiveInBackground: true,
           shouldDuckAndroid: true,
@@ -349,11 +351,6 @@ const MobileVideoPlayer = ({
       }
     };
     configure();
-    return () => {
-      if (previousMode) {
-        Audio.setAudioModeAsync(previousMode).catch(() => {});
-      }
-    };
   }, [enableBackgroundAudio]);
 
   useEffect(() => {
