@@ -11,15 +11,16 @@ import {
 import { AppText as Text } from '../common/AppText';
 
 /**
- * Props for the MobileFormInput component
+ * Props for the MobileFormInput component.
+ * Supports both uncontrolled (value/onChangeText) and react-hook-form Controller usage.
  */
 interface MobileFormInputProps extends TextInputProps {
   /** Label text for the input field */
   label: string;
   /** Current value of the input */
-  value: string;
+  value?: string;
   /** Callback when the input value changes */
-  onChangeText: (text: string) => void;
+  onChangeText?: (text: string) => void;
   /** Error message to display */
   error?: string;
   /** Hint text to display next to the label */
