@@ -23,7 +23,7 @@ import {
     registerForPushNotifications, registerTokenWithBackend,
     removeNotificationListener,
 } from './src/services/pushNotifications';
-import { requestQueue } from './src/services/requestQueue';
+import { requestQueue } from './src/services/api/requestQueue';
 import { initializeSecureStorage } from './src/services/secureStorage';
 import socketService from './src/services/socket';
 import syncService from './src/services/syncService';
