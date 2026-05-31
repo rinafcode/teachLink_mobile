@@ -66,275 +66,276 @@ const RARITY_LABELS: Record<BadgeRarity, string> = {
   legendary: 'Legendary',
 };
 
-export const AchievementBadges: React.FC<AchievementBadgesProps> = React.memo(({
-  achievements,
-  isDark = false,
-}) => {
-  const [selectedBadge, setSelectedBadge] = useState<Achievement | null>(null);
-  const badgeRefs = useRef<{ [key: string]: any }>({});
-  const activeTriggerRef = useRef<any>(null);
+export const AchievementBadges: React.FC<AchievementBadgesProps> = React.memo(
+  ({ achievements, isDark = false }) => {
+    const [selectedBadge, setSelectedBadge] = useState<Achievement | null>(null);
+    const badgeRefs = useRef<{ [key: string]: any }>({});
+    const activeTriggerRef = useRef<any>(null);
 
-  const unlockedCount = achievements.filter(a => !a.isLocked).length;
-  const totalCount = achievements.length;
+    const unlockedCount = achievements.filter(a => !a.isLocked).length;
+    const totalCount = achievements.length;
 
-  const handleSelectBadge = useCallback((achievement: Achievement) => {
-    activeTriggerRef.current = badgeRefs.current[achievement.id];
-    setSelectedBadge(achievement);
-    announceToScreenReader(`Opening details for ${achievement.name} badge.`);
-  }, []);
+    const handleSelectBadge = useCallback((achievement: Achievement) => {
+      activeTriggerRef.current = badgeRefs.current[achievement.id];
+      setSelectedBadge(achievement);
+      announceToScreenReader(`Opening details for ${achievement.name} badge.`);
+    }, []);
 
-  const renderBadge = (achievement: Achievement) => {
-    const rarity = achievement.rarity ?? 'common';
-    const gradColors = RARITY_COLORS[rarity];
-    const isLocked = achievement.isLocked;
+    const renderBadge = (achievement: Achievement) => {
+      const rarity = achievement.rarity ?? 'common';
+      const gradColors = RARITY_COLORS[rarity];
+      const isLocked = achievement.isLocked;
 
-    const badgeLabel = combineAriaLabels(
-      `${achievement.name} badge`,
-      RARITY_LABELS[rarity],
-      isLocked ? 'Locked' : `Unlocked on ${achievement.unlockedAt ?? 'unknown date'}`,
-      achievement.progress && !achievement.unlockedAt
-        ? `Progress: ${achievement.progress.current} of ${achievement.progress.total}`
-        : null
-    );
+      const badgeLabel = combineAriaLabels(
+        `${achievement.name} badge`,
+        RARITY_LABELS[rarity],
+        isLocked ? 'Locked' : `Unlocked on ${achievement.unlockedAt ?? 'unknown date'}`,
+        achievement.progress && !achievement.unlockedAt
+          ? `Progress: ${achievement.progress.current} of ${achievement.progress.total}`
+          : null
+      );
+
+      return (
+        <TouchableOpacity
+          key={achievement.id}
+          ref={el => {
+            badgeRefs.current[achievement.id] = el;
+          }}
+          onPress={() => handleSelectBadge(achievement)}
+          style={styles.badgeWrapper}
+          activeOpacity={0.8}
+          {...getAccessibilityProps(badgeLabel, 'button', 'Double tap to view badge details')}
+        >
+          <View style={[styles.badgeOuter, isLocked && styles.badgeOuterLocked]}>
+            {isLocked ? (
+              <View style={[styles.badgeInner, styles.lockedInner]}>
+                <Lock size={22} color="#94a3b8" />
+              </View>
+            ) : (
+              <LinearGradient colors={gradColors} style={styles.badgeInner}>
+                {achievement.iconUrl ? (
+                  <CachedImage
+                    uri={achievement.iconUrl}
+                    style={styles.badgeImage}
+                    alt={`${achievement.name} icon`}
+                    autoPrefetch={true}
+                  />
+                ) : (
+                  <Text style={styles.badgeEmoji} importantForAccessibility="no-hide-descendants">
+                    {achievement.emoji ?? '🏆'}
+                  </Text>
+                )}
+              </LinearGradient>
+            )}
+            {!isLocked && rarity !== 'common' && (
+              <View style={[styles.rarityDot, { backgroundColor: gradColors[0] }]} />
+            )}
+          </View>
+
+          <Text
+            style={[
+              styles.badgeName,
+              {
+                color: isLocked ? '#94a3b8' : isDark ? '#e2e8f0' : '#334155',
+              },
+            ]}
+            numberOfLines={2}
+            importantForAccessibility="no-hide-descendants"
+          >
+            {achievement.name}
+          </Text>
+
+          {achievement.progress && !achievement.unlockedAt && (
+            <View
+              style={styles.progressBar}
+              accessibilityRole="progressbar"
+              accessibilityValue={{
+                min: 0,
+                max: achievement.progress.total,
+                now: achievement.progress.current,
+              }}
+              accessibilityLabel={`${achievement.name} progress bar`}
+            >
+              <View
+                style={[
+                  styles.progressFill,
+                  {
+                    width: `${(achievement.progress.current / achievement.progress.total) * 100}%`,
+                    backgroundColor: gradColors[0],
+                  },
+                ]}
+              />
+            </View>
+          )}
+        </TouchableOpacity>
+      );
+    };
 
     return (
-      <TouchableOpacity
-        key={achievement.id}
-        ref={el => {
-          badgeRefs.current[achievement.id] = el;
-        }}
-        onPress={() => handleSelectBadge(achievement)}
-        style={styles.badgeWrapper}
-        activeOpacity={0.8}
-        {...getAccessibilityProps(badgeLabel, 'button', 'Double tap to view badge details')}
-      >
-        <View style={[styles.badgeOuter, isLocked && styles.badgeOuterLocked]}>
-          {isLocked ? (
-            <View style={[styles.badgeInner, styles.lockedInner]}>
-              <Lock size={22} color="#94a3b8" />
-            </View>
-          ) : (
-            <LinearGradient colors={gradColors} style={styles.badgeInner}>
-              {achievement.iconUrl ? (
-                <CachedImage
-                  uri={achievement.iconUrl}
-                  style={styles.badgeImage}
-                  alt={`${achievement.name} icon`}
-                  autoPrefetch={true}
-                />
-              ) : (
-                <Text style={styles.badgeEmoji} importantForAccessibility="no-hide-descendants">
-                  {achievement.emoji ?? '🏆'}
-                </Text>
-              )}
-            </LinearGradient>
-          )}
-          {!isLocked && rarity !== 'common' && (
-            <View style={[styles.rarityDot, { backgroundColor: gradColors[0] }]} />
-          )}
+      <View style={[styles.container, { backgroundColor: isDark ? '#0f172a' : '#fff' }]}>
+        {/* Section header */}
+        <View style={styles.sectionHeader} accessibilityRole="header">
+          <View style={styles.headerLeft}>
+            <Award size={20} color="#19c3e6" />
+            <Text style={[styles.sectionTitle, { color: isDark ? '#f1f5f9' : '#1e293b' }]}>
+              Achievements
+            </Text>
+          </View>
+          <View
+            style={styles.countBadge}
+            accessibilityLabel={`${unlockedCount} out of ${totalCount} achievements unlocked`}
+          >
+            <Text style={styles.countText}>
+              {unlockedCount}/{totalCount}
+            </Text>
+          </View>
         </View>
 
-        <Text
-          style={[
-            styles.badgeName,
-            {
-              color: isLocked ? '#94a3b8' : isDark ? '#e2e8f0' : '#334155',
-            },
-          ]}
-          numberOfLines={2}
-          importantForAccessibility="no-hide-descendants"
-        >
-          {achievement.name}
-        </Text>
-
-        {achievement.progress && !achievement.unlockedAt && (
-          <View
-            style={styles.progressBar}
-            accessibilityRole="progressbar"
-            accessibilityValue={{
-              min: 0,
-              max: achievement.progress.total,
-              now: achievement.progress.current,
-            }}
-            accessibilityLabel={`${achievement.name} progress bar`}
+        {achievements.length > 0 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+            accessibilityLabel="Horizontal achievements list"
           >
-            <View
-              style={[
-                styles.progressFill,
-                {
-                  width: `${(achievement.progress.current / achievement.progress.total) * 100}%`,
-                  backgroundColor: gradColors[0],
-                },
-              ]}
-            />
+            {achievements.map(renderBadge)}
+          </ScrollView>
+        ) : (
+          <View
+            style={styles.emptyState}
+            {...getAccessibilityProps(
+              'No achievements earned yet. Complete courses to earn badges.',
+              'none'
+            )}
+          >
+            <Award size={40} color="#e2e8f0" />
+            <Text style={[styles.emptyText, { color: isDark ? '#475569' : '#94a3b8' }]}>
+              Complete courses to earn badges
+            </Text>
           </View>
         )}
-      </TouchableOpacity>
-    );
-  };
 
-  return (
-    <View style={[styles.container, { backgroundColor: isDark ? '#0f172a' : '#fff' }]}>
-      {/* Section header */}
-      <View style={styles.sectionHeader} accessibilityRole="header">
-        <View style={styles.headerLeft}>
-          <Award size={20} color="#19c3e6" />
-          <Text style={[styles.sectionTitle, { color: isDark ? '#f1f5f9' : '#1e293b' }]}>
-            Achievements
-          </Text>
-        </View>
-        <View
-          style={styles.countBadge}
-          accessibilityLabel={`${unlockedCount} out of ${totalCount} achievements unlocked`}
+        {/* Badge detail modal */}
+        <AccessibleModal
+          visible={!!selectedBadge}
+          onClose={() => setSelectedBadge(null)}
+          accessibilityLabel="Achievement details"
+          overlayStyle={styles.modalOverlay}
+          containerStyle={[styles.modalCard, { backgroundColor: isDark ? '#1e293b' : '#fff' }]}
+          triggerRef={activeTriggerRef}
         >
-          <Text style={styles.countText}>
-            {unlockedCount}/{totalCount}
-          </Text>
-        </View>
-      </View>
+          <ErrorBoundary boundaryName="AchievementBadgesModal">
+            <AccessibleButton
+              label="Close details"
+              onPress={() => setSelectedBadge(null)}
+              containerStyle={styles.modalClose}
+              activeOpacity={0.6}
+            >
+              <X size={18} color="#64748b" />
+            </AccessibleButton>
 
-      {achievements.length > 0 ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-          accessibilityLabel="Horizontal achievements list"
-        >
-          {achievements.map(renderBadge)}
-        </ScrollView>
-      ) : (
-        <View
-          style={styles.emptyState}
-          {...getAccessibilityProps(
-            'No achievements earned yet. Complete courses to earn badges.',
-            'none'
-          )}
-        >
-          <Award size={40} color="#e2e8f0" />
-          <Text style={[styles.emptyText, { color: isDark ? '#475569' : '#94a3b8' }]}>
-            Complete courses to earn badges
-          </Text>
-        </View>
-      )}
-
-      {/* Badge detail modal */}
-      <AccessibleModal
-        visible={!!selectedBadge}
-        onClose={() => setSelectedBadge(null)}
-        accessibilityLabel="Achievement details"
-        overlayStyle={styles.modalOverlay}
-        containerStyle={[styles.modalCard, { backgroundColor: isDark ? '#1e293b' : '#fff' }]}
-        triggerRef={activeTriggerRef}
-      >
-        <ErrorBoundary boundaryName="AchievementBadgesModal">
-          <AccessibleButton
-            label="Close details"
-            onPress={() => setSelectedBadge(null)}
-            containerStyle={styles.modalClose}
-            activeOpacity={0.6}
-          >
-            <X size={18} color="#64748b" />
-          </AccessibleButton>
-
-          {selectedBadge &&
-            (() => {
-              const rarity: BadgeRarity = selectedBadge.rarity ?? 'common';
-              const gradColors = RARITY_COLORS[rarity];
-              return (
-                <>
-                  <View style={styles.modalBadgeContainer}>
-                    {selectedBadge.isLocked ? (
-                      <View
-                        style={[styles.modalBadgeInner, styles.lockedInner]}
-                        accessibilityLabel="Locked badge"
-                      >
-                        <Lock size={32} color="#94a3b8" />
-                      </View>
-                    ) : (
-                      <LinearGradient
-                        colors={gradColors}
-                        style={styles.modalBadgeInner}
-                        accessibilityLabel="Unlocked badge icon"
-                      >
-                        <Text
-                          style={styles.modalEmoji}
-                          importantForAccessibility="no-hide-descendants"
-                        >
-                          {selectedBadge.emoji ?? '🏆'}
-                        </Text>
-                      </LinearGradient>
-                    )}
-                  </View>
-
-                  <Text style={[styles.modalName, { color: isDark ? '#f1f5f9' : '#1e293b' }]}>
-                    {selectedBadge.name}
-                  </Text>
-
-                  <View
-                    style={styles.rarityTag}
-                    accessibilityLabel={`Rarity: ${RARITY_LABELS[rarity]}`}
-                  >
-                    <Text style={[styles.rarityText, { color: gradColors[0] }]}>
-                      {RARITY_LABELS[rarity]}
-                    </Text>
-                  </View>
-
-                  {selectedBadge.description && (
-                    <Text
-                      style={[styles.modalDescription, { color: isDark ? '#94a3b8' : '#64748b' }]}
-                    >
-                      {selectedBadge.description}
-                    </Text>
-                  )}
-
-                  {selectedBadge.unlockedAt && (
-                    <Text
-                      style={[styles.unlockedDate, { color: isDark ? '#475569' : '#94a3b8' }]}
-                      accessibilityLabel={`Unlocked on ${selectedBadge.unlockedAt}`}
-                    >
-                      Unlocked {selectedBadge.unlockedAt}
-                    </Text>
-                  )}
-
-                  {selectedBadge.progress && !selectedBadge.unlockedAt && (
-                    <View style={styles.modalProgress}>
-                      <Text
-                        style={[styles.progressLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}
-                      >
-                        Progress: {selectedBadge.progress.current}/{selectedBadge.progress.total}
-                      </Text>
-                      <View
-                        style={styles.modalProgressBar}
-                        accessibilityRole="progressbar"
-                        accessibilityValue={{
-                          min: 0,
-                          max: selectedBadge.progress.total,
-                          now: selectedBadge.progress.current,
-                        }}
-                      >
+            {selectedBadge &&
+              (() => {
+                const rarity: BadgeRarity = selectedBadge.rarity ?? 'common';
+                const gradColors = RARITY_COLORS[rarity];
+                return (
+                  <>
+                    <View style={styles.modalBadgeContainer}>
+                      {selectedBadge.isLocked ? (
                         <View
-                          style={[
-                            styles.modalProgressFill,
-                            {
-                              width: `${
-                                (selectedBadge.progress.current / selectedBadge.progress.total) *
-                                100
-                              }%`,
-                              backgroundColor: gradColors[0],
-                            },
-                          ]}
-                        />
-                      </View>
+                          style={[styles.modalBadgeInner, styles.lockedInner]}
+                          accessibilityLabel="Locked badge"
+                        >
+                          <Lock size={32} color="#94a3b8" />
+                        </View>
+                      ) : (
+                        <LinearGradient
+                          colors={gradColors}
+                          style={styles.modalBadgeInner}
+                          accessibilityLabel="Unlocked badge icon"
+                        >
+                          <Text
+                            style={styles.modalEmoji}
+                            importantForAccessibility="no-hide-descendants"
+                          >
+                            {selectedBadge.emoji ?? '🏆'}
+                          </Text>
+                        </LinearGradient>
+                      )}
                     </View>
-                  )}
-                </>
-              );
-            })()}
-        </ErrorBoundary>
-      </AccessibleModal>
-    </View>
-  );
-});
+
+                    <Text style={[styles.modalName, { color: isDark ? '#f1f5f9' : '#1e293b' }]}>
+                      {selectedBadge.name}
+                    </Text>
+
+                    <View
+                      style={styles.rarityTag}
+                      accessibilityLabel={`Rarity: ${RARITY_LABELS[rarity]}`}
+                    >
+                      <Text style={[styles.rarityText, { color: gradColors[0] }]}>
+                        {RARITY_LABELS[rarity]}
+                      </Text>
+                    </View>
+
+                    {selectedBadge.description && (
+                      <Text
+                        style={[styles.modalDescription, { color: isDark ? '#94a3b8' : '#64748b' }]}
+                      >
+                        {selectedBadge.description}
+                      </Text>
+                    )}
+
+                    {selectedBadge.unlockedAt && (
+                      <Text
+                        style={[styles.unlockedDate, { color: isDark ? '#475569' : '#94a3b8' }]}
+                        accessibilityLabel={`Unlocked on ${selectedBadge.unlockedAt}`}
+                      >
+                        Unlocked {selectedBadge.unlockedAt}
+                      </Text>
+                    )}
+
+                    {selectedBadge.progress && !selectedBadge.unlockedAt && (
+                      <View style={styles.modalProgress}>
+                        <Text
+                          style={[styles.progressLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}
+                        >
+                          Progress: {selectedBadge.progress.current}/{selectedBadge.progress.total}
+                        </Text>
+                        <View
+                          style={styles.modalProgressBar}
+                          accessibilityRole="progressbar"
+                          accessibilityValue={{
+                            min: 0,
+                            max: selectedBadge.progress.total,
+                            now: selectedBadge.progress.current,
+                          }}
+                        >
+                          <View
+                            style={[
+                              styles.modalProgressFill,
+                              {
+                                width: `${
+                                  (selectedBadge.progress.current / selectedBadge.progress.total) *
+                                  100
+                                }%`,
+                                backgroundColor: gradColors[0],
+                              },
+                            ]}
+                          />
+                        </View>
+                      </View>
+                    )}
+                  </>
+                );
+              })()}
+          </ErrorBoundary>
+        </AccessibleModal>
+      </View>
+    );
+  }
+);
+
+AchievementBadges.displayName = 'AchievementBadges';
 
 const styles = StyleSheet.create({
   container: {
