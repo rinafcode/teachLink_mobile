@@ -2,6 +2,7 @@ import logger from "../utils/logger";
 import { AnalyticsEvent } from "../utils/trackingEvents";
 import { mobileAnalyticsService } from "./mobileAnalytics";
 import { sessionRestorationService } from "./sessionRestoration";
+import { sentryContextService } from "./sentryContext";
 
 /**
  * CrashReportingService manages global error tracking and exception handling.
@@ -96,18 +97,29 @@ class CrashReportingService {
       errorDetails,
     );
 
+    // Send to Sentry with full session context
+    sentryContextService.captureException(error, {
+      tags: {
+        crash_type: isFatal ? 'fatal' : 'non_fatal',
+        error_count: String(this.unhandledErrorCount),
+      },
+      extra: {
+        isFatal: !!isFatal,
+        unhandledErrorCount: this.unhandledErrorCount,
+      },
+      ...(isFatal ? { fingerprint: ['fatal-crash', error.message] } : {}),
+    });
+
     // Preserve session state so next launch can offer restoration
     if (isFatal) {
       sessionRestorationService.captureOnCrash();
+      sentryContextService.trackAppLifecycle('crash');
     }
 
     // Alert if threshold is exceeded (production alert)
     if (this.unhandledErrorCount >= this.MAX_ERRORS_THRESHOLD) {
       this.alertProductionIssue(errorDetails);
     }
-
-    // In a real implementation:
-    // crashlytics().recordError(error);
   }
 
   /**
@@ -133,6 +145,7 @@ class CrashReportingService {
   ): void {
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorStack = error instanceof Error ? error.stack : undefined;
+    const errorObj = error instanceof Error ? error : new Error(errorMessage);
 
     const payload = {
       context,
@@ -148,16 +161,20 @@ class CrashReportingService {
 
     mobileAnalyticsService.trackEvent(AnalyticsEvent.API_ERROR, payload);
 
-    // In a real implementation:
-    // crashlytics().recordError(error);
+    // Capture with Sentry, attaching extra context data
+    sentryContextService.captureException(errorObj, {
+      tags: { error_context: context ?? 'unknown' },
+      extra: { context, ...extraData },
+    });
   }
 
   /**
    * Tag the current crash report with user ID to help debugging specific user issues.
+   * Delegates to sentryContextService so the Sentry scope is also updated.
    */
-  public setUser(userId: string): void {
+  public setUser(userId: string, email?: string, role?: string): void {
     logger.debug(`CrashReporting: Bound to user ${userId}`);
-    // crashlytics().setUserId(userId);
+    sentryContextService.setUser({ id: userId, email, role });
   }
 
   /**

@@ -57,6 +57,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
+import { sentryContextService } from '../services/sentryContext';
 
 // ─── CONFIGURATION ─────────────────────────────────────────────────────────
 
@@ -274,25 +275,56 @@ export async function clearLogFiles(): Promise<void> {
 // ─── REMOTE LOGGING (SENTRY INTEGRATION) ──────────────────────────────────
 
 export function sendToRemoteLogging(entry: StructuredLogEntry, error?: Error): void {
-  // Critical errors go to Sentry immediately
+  // Add a breadcrumb for every WARN and above so Sentry has a trail of recent
+  // log activity even for errors that don't throw an exception.
+  if (entry.level === 'ERROR' || entry.level === 'WARN') {
+    Sentry.addBreadcrumb({
+      category: 'log',
+      message: entry.message,
+      level: (entry.level.toLowerCase() as Sentry.SeverityLevel),
+      data: {
+        component: entry.component,
+        action: entry.action,
+        requestId: entry.requestId,
+        ...(entry.meta ? { meta: entry.meta } : {}),
+      },
+      timestamp: Date.now() / 1000,
+    });
+  }
+
+  // Critical errors go to Sentry immediately with full session context
   if (entry.level === 'ERROR') {
+    const captureContext = sentryContextService.buildCaptureContext({
+      tags: {
+        component: entry.component || 'unknown',
+        action: entry.action || 'unknown',
+        ...(entry.requestId ? { requestId: entry.requestId } : {}),
+      },
+      extra: {
+        requestId: entry.requestId,
+        duration: entry.duration,
+        status: entry.status,
+        ...(entry.meta ? { meta: entry.meta } : {}),
+      },
+      contexts: {
+        logging: {
+          userId: entry.userId,
+          requestId: entry.requestId,
+          component: entry.component,
+          action: entry.action,
+          status: entry.status,
+          duration: entry.duration,
+        },
+      },
+    });
+
     if (error instanceof Error) {
-      Sentry.captureException(error, {
-        contexts: {
-          logging: {
-            userId: entry.userId,
-            requestId: entry.requestId,
-            component: entry.component,
-            action: entry.action,
-          },
-        },
-        tags: {
-          component: entry.component || 'unknown',
-          action: entry.action || 'unknown',
-        },
-      });
+      Sentry.captureException(error, captureContext);
     } else {
-      Sentry.captureMessage(entry.message, 'error');
+      Sentry.captureMessage(entry.message, {
+        level: 'error',
+        ...captureContext,
+      });
     }
   }
 }
@@ -316,13 +348,35 @@ export async function initializeLogging(): Promise<void> {
       await Sentry.init({
         dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
         tracesSampleRate: 0.1,
-        environment: isDev ? 'development' : 'production',
-        beforeSend(event, hint) {
-          // Filter out sensitive data
+        environment: 'production',
+        // Capture 100% of sessions so replay / breadcrumb trails are always available
+        replaysSessionSampleRate: 0.1,
+        replaysOnErrorSampleRate: 1.0,
+        beforeSend(event) {
+          // Strip auth tokens from request headers
           if (event.request?.headers?.Authorization) {
             delete event.request.headers.Authorization;
           }
+          // Attach current screen to every event automatically
+          const screen = sentryContextService.getCurrentScreen();
+          if (screen) {
+            event.tags = { ...event.tags, 'screen.current': screen };
+          }
           return event;
+        },
+        beforeBreadcrumb(breadcrumb) {
+          // Sanitise any URL that might carry query-string tokens
+          if (breadcrumb.data?.url) {
+            try {
+              const u = new URL(String(breadcrumb.data.url));
+              u.searchParams.delete('token');
+              u.searchParams.delete('access_token');
+              breadcrumb.data.url = u.toString();
+            } catch {
+              // not a full URL — leave as-is
+            }
+          }
+          return breadcrumb;
         },
       });
     }

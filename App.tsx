@@ -21,6 +21,8 @@ import { handleCacheVersionUpdate } from './src/utils/cacheVersioning';
 import { appLogger } from './src/utils/logger';
 import { prefetchExternalResources } from './src/utils/resourceHints';
 import { mobileAnalyticsService } from './src/services/mobileAnalytics';
+import { sentryContextService } from './src/services/sentryContext';
+import { flushLogQueue } from './src/config/logging';
 import { AnalyticsEvent, PerformanceMetric } from './src/utils/trackingEvents';
 
 const appStartTime = Date.now();
@@ -117,6 +119,10 @@ const App = () => {
           launch_type: 'cold',
         });
         appLogger.infoSync(`[App] Cold start completed in ${coldStartDuration}ms`);
+
+        // Record app launch breadcrumb so every Sentry event has launch context
+        sentryContextService.trackAppLifecycle('launch');
+        sentryContextService.trackAction('app_cold_start', { durationMs: coldStartDuration });
       }
     }
 
@@ -189,9 +195,17 @@ const App = () => {
     const appStateSubscription = AppState.addEventListener('change', nextAppState => {
       const wasInBackground = appStateRef.current.match(/inactive|background/);
       const isForegrounded = nextAppState === 'active';
+      const isBackgrounded = appStateRef.current === 'active' && nextAppState.match(/inactive|background/);
 
       if (wasInBackground && isForegrounded) {
+        sentryContextService.trackAppLifecycle('foreground');
         void checkSessionOnForeground();
+      }
+
+      if (isBackgrounded) {
+        sentryContextService.trackAppLifecycle('background');
+        // Flush queued logs before going to background so nothing is lost
+        void flushLogQueue();
       }
 
       appStateRef.current = nextAppState;
