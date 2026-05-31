@@ -25,7 +25,8 @@ export * from './useScreenReader';
 export * from './useSwipe';
 export * from './useVideoGestures';
 export * from './useVoiceRecognition';
-export * from './useStreamingData';
+export * from './useFocusRestore';
+export * from './useFocusTrap';
 
 // Optimized gesture handlers (named exports avoid duplicate SwipeDirection/SwipeInfo types)
 export { OptimizedLongPressView, useOptimizedLongPress } from './useOptimizedLongPress';
@@ -36,4 +37,5 @@ export { OptimizedVideoGesturesView, useOptimizedVideoGestures } from './useOpti
 export * from './useDebounce';
 export * from './useHealthDashboard';
 export * from './usePredictivePreload';
+export * from './useReactProfiler';
 

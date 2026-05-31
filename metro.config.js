@@ -221,4 +221,12 @@ nativewindConfig.serializer.customSerializer = wrapWithRouteSizeAnalyzer(
   nativewindConfig.serializer.customSerializer,
 );
 
+// Register Metro asset inlining plugin for Issue #369
+nativewindConfig.transformer ??= {};
+nativewindConfig.transformer.assetPlugins = [
+  ...(nativewindConfig.transformer.assetPlugins || []),
+  require.resolve('./tools/metro-plugins/imageInlinePlugin.js'),
+];
+
 module.exports = nativewindConfig;
+

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Pressable, Text, View } from 'react-native';
 import type { QualityOption } from '../../services/videoQuality';
 
 type VideoControlsProps = {
@@ -156,55 +156,59 @@ const VideoControls = ({
   }, [onSelectQuality]);
 
   return (
-    <Animated.View pointerEvents={visible ? 'auto' : 'none'} style={[styles.overlay, { opacity }]}>
-      <View style={styles.topRow}>
-        <View style={styles.topSpacer} />
+    <Animated.View
+      pointerEvents={visible ? 'auto' : 'none'}
+      className="absolute inset-0 justify-between bg-black/35"
+      style={{ opacity }}
+    >
+      <View className="flex-row items-center px-3 pt-2.5">
+        <View className="flex-1" />
         {isPiPSupported ? (
           <Pressable
             accessibilityLabel={
               isPiPActive ? 'Exit picture in picture' : 'Enter picture in picture'
             }
             onPress={onTogglePiP}
-            style={styles.controlButton}
+            className="px-2.5 py-1.5"
           >
-            <Text style={styles.controlText}>{isPiPActive ? 'PiP On' : 'PiP'}</Text>
+            <Text className="text-white text-xs font-semibold">{isPiPActive ? 'PiP On' : 'PiP'}</Text>
           </Pressable>
         ) : null}
         <Pressable
           accessibilityLabel={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
           onPress={onToggleFullscreen}
-          style={styles.controlButton}
+          className="px-2.5 py-1.5"
         >
-          <Text style={styles.controlText}>{isFullscreen ? 'Exit' : 'Full'}</Text>
+          <Text className="text-white text-xs font-semibold">{isFullscreen ? 'Exit' : 'Full'}</Text>
         </Pressable>
       </View>
 
-      <View style={styles.centerRow}>
+      <View className="items-center justify-center">
         <Pressable
           accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
           onPress={onPlayPause}
-          style={styles.playButton}
+          className="bg-black/55 px-4.5 py-2.5 rounded-full"
         >
-          <Text style={styles.playText}>{isPlaying ? 'Pause' : 'Play'}</Text>
+          <Text className="text-white text-base font-semibold">{isPlaying ? 'Pause' : 'Play'}</Text>
         </Pressable>
       </View>
 
-      <View style={styles.bottomRow}>
+      <View className="px-3 pb-3">
         {previewPositionMillis != null ? (
-          <View style={styles.previewBubble}>
-            <Text style={styles.previewText}>
+          <View className="self-center bg-black/65 px-2.5 py-1 rounded-xl mb-2">
+            <Text className="text-white text-xs">
               {formatTime(displayPosition)} / {formatTime(durationMillis)}
             </Text>
           </View>
         ) : null}
 
-        <View style={styles.timeRow}>
-          <Text style={styles.timeText}>{formatTime(displayPosition)}</Text>
-          <Text style={styles.timeText}>{formatTime(durationMillis)}</Text>
+        <View className="flex-row justify-between mb-1.5">
+          <Text className="text-[#f1f1f1] text-xs">{formatTime(displayPosition)}</Text>
+          <Text className="text-[#f1f1f1] text-xs">{formatTime(durationMillis)}</Text>
         </View>
 
         <View
-          style={styles.seekBar}
+          className="h-5.5 rounded-lg bg-white/15 justify-center mb-2.5 overflow-hidden"
           onLayout={handleSeekBarLayout}
           onStartShouldSetResponder={() => true}
           onResponderGrant={handleSeekGrant}
@@ -212,25 +216,33 @@ const VideoControls = ({
           onResponderRelease={handleSeekRelease}
           onResponderTerminate={handleSeekTerminate}
         >
-          <View style={[styles.seekBuffered, { width: bufferedWidth }]} />
-          <View style={[styles.seekProgress, { width: progressWidth }]} />
-          <View style={[styles.seekThumb, { left: thumbLeft }]} />
+          <View className="absolute left-0 top-0 bottom-0 bg-white/30" style={{ width: bufferedWidth }} />
+          <View className="absolute left-0 top-0 bottom-0 bg-white" style={{ width: progressWidth }} />
+          <View
+            className="absolute bg-white"
+            style={{
+              left: thumbLeft,
+              width: SEEK_THUMB_SIZE,
+              height: SEEK_THUMB_SIZE,
+              borderRadius: SEEK_THUMB_SIZE / 2,
+            }}
+          />
         </View>
 
-        <View style={styles.controlsRow}>
+        <View className="flex-row items-center justify-between">
           <Pressable
             accessibilityLabel="Playback speed"
             onPress={handleToggleSpeedMenu}
-            style={styles.controlButton}
+            className="px-2.5 py-1.5"
           >
-            <Text style={styles.controlText}>{formatRate(playbackRate)}</Text>
+            <Text className="text-white text-xs font-semibold">{formatRate(playbackRate)}</Text>
           </Pressable>
           <Pressable
             accessibilityLabel="Quality"
             onPress={handleToggleQualityMenu}
-            style={styles.controlButton}
+            className="px-2.5 py-1.5"
           >
-            <Text style={styles.controlText}>{qualityLabel}</Text>
+            <Text className="text-white text-xs font-semibold">{qualityLabel}</Text>
           </Pressable>
           {isPiPSupported ? (
             <Pressable
@@ -238,36 +250,35 @@ const VideoControls = ({
                 isPiPActive ? 'Exit picture in picture' : 'Enter picture in picture'
               }
               onPress={onTogglePiP}
-              style={styles.controlButton}
+              className="px-2.5 py-1.5"
             >
-              <Text style={styles.controlText}>{isPiPActive ? 'PiP On' : 'PiP'}</Text>
+              <Text className="text-white text-xs font-semibold">{isPiPActive ? 'PiP On' : 'PiP'}</Text>
             </Pressable>
           ) : null}
           <Pressable
             accessibilityLabel={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
             onPress={onToggleFullscreen}
-            style={styles.controlButton}
+            className="px-2.5 py-1.5"
           >
-            <Text style={styles.controlText}>{isFullscreen ? 'Exit' : 'Full'}</Text>
+            <Text className="text-white text-xs font-semibold">{isFullscreen ? 'Exit' : 'Full'}</Text>
           </Pressable>
         </View>
 
         {(isSpeedMenuOpen || isQualityMenuOpen) && (
-          <View style={styles.menuBackdrop}>
+          <View className="mt-2">
             {isSpeedMenuOpen ? (
-              <View style={styles.menu}>
+              <View className="bg-black/85 rounded-lg py-1.5">
                 {rateOptions.map(rate => (
                   <Pressable
                     key={rate}
                     accessibilityLabel={`Set playback speed ${formatRate(rate)}`}
                     onPress={() => handleSelectRate(rate)}
-                    style={styles.menuItem}
+                    className="px-3 py-2"
                   >
                     <Text
-                      style={[
-                        styles.menuText,
-                        rate === playbackRate ? styles.menuTextActive : null,
-                      ]}
+                      className={`text-[#dcdcdc] text-[13px] ${
+                        rate === playbackRate ? 'text-white font-bold' : ''
+                      }`}
                     >
                       {formatRate(rate)}
                     </Text>
@@ -277,19 +288,18 @@ const VideoControls = ({
             ) : null}
 
             {isQualityMenuOpen ? (
-              <View style={styles.menu}>
+              <View className="bg-black/85 rounded-lg py-1.5">
                 {qualityOptions.map(option => (
                   <Pressable
                     key={option.id}
                     accessibilityLabel={`Set quality ${option.label}`}
                     onPress={() => handleSelectQualityOption(option.id)}
-                    style={styles.menuItem}
+                    className="px-3 py-2"
                   >
                     <Text
-                      style={[
-                        styles.menuText,
-                        option.id === selectedQualityId ? styles.menuTextActive : null,
-                      ]}
+                      className={`text-[#dcdcdc] text-[13px] ${
+                        option.id === selectedQualityId ? 'text-white font-bold' : ''
+                      }`}
                     >
                       {option.label}
                     </Text>
@@ -301,8 +311,8 @@ const VideoControls = ({
         )}
 
         {(isLoading || isBuffering || isSwitchingQuality) && (
-          <View style={styles.statusRow}>
-            <Text style={styles.statusText}>
+          <View className="mt-1.5">
+            <Text className="text-white text-[11px]">
               {isSwitchingQuality ? 'Switching quality' : isBuffering ? 'Buffering' : 'Loading'}
             </Text>
           </View>
@@ -338,131 +348,5 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
-  },
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingTop: 10,
-  },
-  topSpacer: {
-    flex: 1,
-  },
-  centerRow: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bottomRow: {
-    paddingHorizontal: 12,
-    paddingBottom: 12,
-  },
-  playButton: {
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 22,
-  },
-  playText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  timeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  timeText: {
-    color: '#f1f1f1',
-    fontSize: 12,
-  },
-  seekBar: {
-    height: 22,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    justifyContent: 'center',
-    marginBottom: 10,
-    overflow: 'hidden',
-  },
-  seekBuffered: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  seekProgress: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    backgroundColor: '#fff',
-  },
-  seekThumb: {
-    position: 'absolute',
-    width: SEEK_THUMB_SIZE,
-    height: SEEK_THUMB_SIZE,
-    borderRadius: SEEK_THUMB_SIZE / 2,
-    backgroundColor: '#fff',
-  },
-  controlsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  controlButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  controlText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  menuBackdrop: {
-    marginTop: 8,
-  },
-  menu: {
-    backgroundColor: 'rgba(0, 0, 0, 0.85)',
-    borderRadius: 8,
-    paddingVertical: 6,
-  },
-  menuItem: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  menuText: {
-    color: '#dcdcdc',
-    fontSize: 13,
-  },
-  menuTextActive: {
-    color: '#fff',
-    fontWeight: '700',
-  },
-  previewBubble: {
-    alignSelf: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginBottom: 8,
-  },
-  previewText: {
-    color: '#fff',
-    fontSize: 12,
-  },
-  statusRow: {
-    marginTop: 6,
-  },
-  statusText: {
-    color: '#fff',
-    fontSize: 11,
-  },
-});
-
 export default VideoControls;
+

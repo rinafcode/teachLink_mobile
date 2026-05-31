@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import * as Device from 'expo-device';
 import { useLowPowerMode } from 'expo-battery';
+import { useSettingsStore } from '../store/settingsStore';
 
 /** Devices made before this year are classified as low-end. */
 const LOW_END_YEAR_CLASS = 2018;
@@ -22,6 +23,8 @@ export interface AdaptiveFrameRateConfig {
   isLowEndDevice: boolean;
   /** True when iOS Low Power Mode or Android Power Saver is active. */
   isBatterySaverEnabled: boolean;
+  /** True when data saver mode is enabled by user preference. */
+  isDataSaverEnabled: boolean;
   /** True when either condition requires reduced animation complexity. */
   shouldReduceAnimations: boolean;
 }
@@ -46,11 +49,12 @@ function detectLowEndDevice(): boolean {
  * Animated.timing(value, { duration: 300 * durationMultiplier, ... })
  */
 export function useAdaptiveFrameRate(): AdaptiveFrameRateConfig {
+  const dataSaverEnabled = useSettingsStore(state => state.dataSaverEnabled);
   const isBatterySaverEnabled = useLowPowerMode();
   const isLowEndDevice = useMemo(() => detectLowEndDevice(), []);
 
   return useMemo(() => {
-    const shouldReduceAnimations = isLowEndDevice || isBatterySaverEnabled;
+    const shouldReduceAnimations = isLowEndDevice || isBatterySaverEnabled || dataSaverEnabled;
     const targetFPS: 30 | 60 = shouldReduceAnimations ? 30 : 60;
     const durationMultiplier: 1 | 2 = shouldReduceAnimations ? 2 : 1;
 
@@ -60,7 +64,8 @@ export function useAdaptiveFrameRate(): AdaptiveFrameRateConfig {
       frameIntervalMs: 1000 / targetFPS,
       isLowEndDevice,
       isBatterySaverEnabled,
+      isDataSaverEnabled: dataSaverEnabled,
       shouldReduceAnimations,
     };
-  }, [isLowEndDevice, isBatterySaverEnabled]);
+  }, [isLowEndDevice, isBatterySaverEnabled, dataSaverEnabled]);
 }

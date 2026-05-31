@@ -1,6 +1,6 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type ProfileVisibility = 'public' | 'private' | 'friends_only';
 export type DownloadQuality = 'low' | 'medium' | 'high';
@@ -30,6 +30,7 @@ interface SettingsState {
   autoplay: boolean;
   hapticFeedback: boolean;
   adaptiveThemeEnabled: boolean;
+  dataSaverEnabled: boolean;
 
   // Actions — Account
   setProfileVisibility: (v: ProfileVisibility) => void;
@@ -52,6 +53,7 @@ interface SettingsState {
   setAutoplay: (v: boolean) => void;
   setHapticFeedback: (v: boolean) => void;
   setAdaptiveThemeEnabled: (v: boolean) => void;
+  setDataSaverEnabled: (v: boolean) => void;
 
   // Misc
   resetSettings: () => void;
@@ -78,6 +80,7 @@ const DEFAULT_SETTINGS: Omit<
   autoplay: true,
   hapticFeedback: true,
   adaptiveThemeEnabled: false,
+  dataSaverEnabled: false,
 };
 
 const INITIAL_STATE = {
@@ -95,6 +98,7 @@ const INITIAL_STATE = {
   autoplay: true,
   hapticFeedback: true,
   adaptiveThemeEnabled: false,
+  dataSaverEnabled: false,
 };
 
 export const useSettingsStore = create<SettingsState>()(
@@ -118,11 +122,12 @@ export const useSettingsStore = create<SettingsState>()(
       setStorageLimit: v => set({ storageLimit: v }),
 
       // App Preferences
-      setLanguage: v => set({ language: v }),
-      setFontSize: v => set({ fontSize: v }),
-      setAutoplay: v => set({ autoplay: v }),
-      setHapticFeedback: v => set({ hapticFeedback: v }),
-      setAdaptiveThemeEnabled: v => set({ adaptiveThemeEnabled: v }),
+      setLanguage: (v) => set({ language: v }),
+      setFontSize: (v) => set({ fontSize: v }),
+      setAutoplay: (v) => set({ autoplay: v }),
+      setHapticFeedback: (v) => set({ hapticFeedback: v }),
+      setAdaptiveThemeEnabled: (v) => set({ adaptiveThemeEnabled: v }),
+      setDataSaverEnabled: (v) => set({ dataSaverEnabled: v }),
 
       resetSettings: () => set(INITIAL_STATE),
     }),
@@ -144,6 +149,8 @@ export const useSettingsStore = create<SettingsState>()(
         fontSize: state.fontSize,
         autoplay: state.autoplay,
         hapticFeedback: state.hapticFeedback,
+        adaptiveThemeEnabled: state.adaptiveThemeEnabled,
+        dataSaverEnabled: state.dataSaverEnabled,
       }),
       migrate: persistedState => (persistedState ?? {}) as Partial<SettingsState>,
     }

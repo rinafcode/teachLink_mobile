@@ -51,7 +51,7 @@ jobs:
       # ==============================
 
       - name: Build App (required for bundle check)
-        run: npm run build
+        run: npx expo export --platform web
 
       - name: Check Bundle Size
         run: node scripts/checkBundleSize.js

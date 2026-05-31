@@ -133,14 +133,18 @@ export interface StructuredLogEntry {
 
 // ─── BATCH QUEUE ──────────────────────────────────────────────────────────
 
-const BATCH_MAX_SIZE = 100;
-const BATCH_FLUSH_INTERVAL_MS = 5000;
+const BATCH_MAX_SIZE = 20;
+const BATCH_FLUSH_INTERVAL_MS = 2000;
+const LOG_STORAGE_PREFIX = '@teachlink/logs';
+const MAX_LOG_FILES = 10;
+const MAX_LOG_SIZE = 5 * 1024 * 1024; // 5MB per file
 
 class BatchQueue {
   private buffer: StructuredLogEntry[] = [];
   private timer: ReturnType<typeof setTimeout> | null = null;
 
   enqueue(entry: StructuredLogEntry): void {
+    if (isDev && !process.env.LOG_TO_STORAGE) return;
     this.buffer.push(entry);
     if (this.buffer.length >= BATCH_MAX_SIZE) {
       this.flush();
@@ -175,49 +179,35 @@ export function enqueueLogEntry(entry: StructuredLogEntry): void {
   logBatchQueue.enqueue(entry);
 }
 
-// ─── LOG TRANSPORT / PERSISTENCE ──────────────────────────────────────────
-
-const LOG_STORAGE_PREFIX = '@teachlink/logs';
-const MAX_LOG_FILES = 10;
-const MAX_LOG_SIZE = 5 * 1024 * 1024; // 5MB per file
-
 /** Persist a batch of entries to AsyncStorage in a single operation */
 async function persistBatch(entries: StructuredLogEntry[]): Promise<void> {
-  for (const entry of entries) {
-    await persistLogEntry(entry);
-  }
-}
-
-/**
- * Store log entry in AsyncStorage for offline access and debugging.
- * Implements rotation: creates new files when size threshold exceeded.
- */
-export async function persistLogEntry(entry: StructuredLogEntry): Promise<void> {
+  if (entries.length === 0) return;
   try {
-    // Skip persistence in dev unless explicitly enabled
-    if (isDev && !process.env.LOG_TO_STORAGE) {
-      return;
-    }
-
-    const logData = JSON.stringify(entry);
-
-    // Get current log buffer size
+    const logData = entries.map(entry => JSON.stringify(entry)).join('\n');
+    
     const storageKey = `${LOG_STORAGE_PREFIX}/current`;
     const currentLog = await AsyncStorage.getItem(storageKey);
     const currentSize = currentLog ? currentLog.length : 0;
 
-    // Rotate if size exceeded
     if (currentSize + logData.length > MAX_LOG_SIZE) {
       await rotateLogFiles();
     }
 
-    // Append to current log
     const newLog = currentLog ? `${currentLog}\n${logData}` : logData;
     await AsyncStorage.setItem(storageKey, newLog);
   } catch {
-    // Silent fail for storage errors to avoid logging loops
-    // In production, could send to Sentry
+    // Silent fail for storage errors
   }
+}
+
+/** Exposed for manual flush (e.g. app background) */
+export async function flushLogQueue(): Promise<void> {
+  logBatchQueue.flush();
+}
+
+/** Deprecated backward compatible handler */
+export async function persistLogEntry(entry: StructuredLogEntry): Promise<void> {
+  enqueueLogEntry(entry);
 }
 
 /**
@@ -363,6 +353,7 @@ export default {
   popLogContext,
   clearLogContext,
   persistLogEntry,
+  flushLogQueue,
   retrieveLogFiles,
   clearLogFiles,
   sendToRemoteLogging,
