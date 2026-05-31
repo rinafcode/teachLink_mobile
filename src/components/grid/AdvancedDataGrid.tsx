@@ -1,23 +1,25 @@
 import { ArrowDown, ArrowUp, ArrowUpDown, Filter, FilterX, Upload } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
-  FlatList,
-  ListRenderItemInfo,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    FlatList,
+    ListRenderItemInfo,
+    ScrollView,
+    Share,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
-import { GridExporter } from './GridExporter';
-import { GridFiltering } from './GridFiltering';
-import { InlineEditing } from './InlineEditing';
 import { useDataGrid, UseDataGridOptions } from '../../hooks/useDataGrid';
+import { batchImportCSV, BatchProgress } from '../../services/batchDataProcessor';
 import { ColumnDef, ExportFormat, GridRow, SortConfig, SortDirection } from '../../utils/gridUtils';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 import { Skeleton } from '../ui/Skeleton';
-import { BatchProgress, batchImportCSV } from '../../services/batchDataProcessor';
+import { GridExporter } from './GridExporter';
+import { GridFiltering } from './GridFiltering';
+import { InlineEditing } from './InlineEditing';
 
 // Import for document picking (web and native)
 import * as DocumentPicker from 'expo-document-picker';
@@ -352,20 +354,7 @@ const GridToolbar = ({
         )}
       </View>
       {showExporter && (
-        <TouchableOpacity
-          style={[styles.btn, activeType === 'export' && styles.btnDisabled]}
-          onPress={handleExport}
-          disabled={activeType !== null}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel="Export data"
-        >
-          {activeType === 'export' ? (
-            <ActivityIndicator size="small" color="#19c3e6" />
-          ) : (
-            <Download size={14} color="#19c3e6" />
-          )}
-        </TouchableOpacity>
+        <GridExporter onExport={onExport} disabled={activeType !== null} />
       )}
       {showImporter && (
         <TouchableOpacity

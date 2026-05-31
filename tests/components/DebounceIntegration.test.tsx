@@ -1,4 +1,4 @@
-import { render, fireEvent, act } from '@testing-library/react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
 import React from 'react';
 
 import LessonCarousel from '../../src/components/mobile/LessonCarousel';
@@ -134,12 +134,10 @@ describe('Debouncing Rapid User Input & Scroll Events', () => {
       // We obtain scroll view.
       // Wait, LessonCarousel renders a ScrollView. We can simulate onScroll event.
       // Line 188: <ScrollView horizontal pagingEnabled onScroll={handleScroll} ...
-      const scrollView = getByTestId('LessonCarousel').parent?.findByType('ScrollView');
-      expect(scrollView).toBeDefined();
+      const carouselList = getByTestId('LessonCarouselList');
+      expect(carouselList).toBeDefined();
 
-      if (!scrollView) {
-        throw new Error('ScrollView not found in LessonCarousel');
-      }
+      const scrollView = carouselList;
 
       // Simulate rapid drag/scroll offsets: 100, 200, 300, 375 (1 page width = SCREEN_WIDTH)
       // Screen width is 375 by default inside test dimensions.

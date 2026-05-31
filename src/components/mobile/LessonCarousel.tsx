@@ -1,13 +1,13 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Animated,
-  Dimensions,
-  FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Animated,
+    Dimensions,
+    FlatList,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
 import { CourseProgress, Lesson } from '../../types/course';
@@ -80,6 +80,27 @@ const LessonCarousel = ({
     [currentIndex, lessons, onLessonChange]
   );
 
+  // Debounced onScroll to prevent rapid state updates while dragging.
+  const scrollDebounceRef = useRef<number | null>(null);
+
+  const handleScroll = useCallback((event: { nativeEvent: { contentOffset: { x: number } } }) => {
+    const x = event.nativeEvent.contentOffset.x;
+    if (scrollDebounceRef.current) {
+      clearTimeout(scrollDebounceRef.current as any);
+    }
+    scrollDebounceRef.current = (setTimeout(() => {
+      handleMomentumScrollEnd({ nativeEvent: { contentOffset: { x } } });
+    }, 100) as unknown) as number;
+  }, [handleMomentumScrollEnd]);
+
+  useEffect(() => {
+    return () => {
+      if (scrollDebounceRef.current) {
+        clearTimeout(scrollDebounceRef.current as any);
+      }
+    };
+  }, []);
+
   const currentLesson = lessons[currentIndex];
 
   if (lessons.length === 0) {
@@ -149,6 +170,7 @@ const LessonCarousel = ({
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={handleMomentumScrollEnd}
+        onScroll={handleScroll}
         scrollEventThrottle={16}
         decelerationRate="fast"
         snapToInterval={SCREEN_WIDTH}

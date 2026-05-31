@@ -287,6 +287,41 @@ jest.mock('expo-battery', () => ({
   addLowPowerModeListener: jest.fn(() => ({ remove: jest.fn() })),
 }));
 
+// Lightweight mock for expo-router to avoid pulling in navigation internals during tests
+jest.mock('expo-router', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    back: jest.fn(),
+    prefetch: jest.fn(),
+  }),
+  Link: ({ children }) => children,
+  useLocalSearchParams: () => ({}),
+  usePathname: () => '/',
+  useSegments: () => [],
+}), { virtual: true });
+
+// Mock expo-document-picker and expo-file-system used by components/tests
+jest.mock(
+  'expo-document-picker',
+  () => ({
+    getDocumentAsync: jest.fn(() => Promise.resolve({ type: 'cancelled' })),
+    getDocumentsAsync: jest.fn(() => Promise.resolve([])),
+  }),
+  { virtual: true }
+);
+
+jest.mock(
+  'expo-file-system',
+  () => ({
+    documentDirectory: '/tmp/',
+    readAsStringAsync: jest.fn(() => Promise.resolve('')),
+    writeAsStringAsync: jest.fn(() => Promise.resolve()),
+    deleteAsync: jest.fn(() => Promise.resolve()),
+  }),
+  { virtual: true }
+);
+
 // Mock @sentry/react-native to prevent Jest environment failure
 jest.mock('@sentry/react-native', () => ({
   init: jest.fn(),
