@@ -37,4 +37,4 @@ export { OptimizedVideoGesturesView, useOptimizedVideoGestures } from './useOpti
 export * from './useDebounce';
 export * from './useHealthDashboard';
 export * from './usePredictivePreload';
-
+export * from './useTouchDeduplication';
