@@ -5,6 +5,10 @@
 **/.next/**
 **/coverage/**
 
+# Lock files — must not be reformatted (breaks npm ci integrity checks)
+package-lock.json
+npm-shrinkwrap.json
+
 # Generated
 *.log
 .DS_Store
