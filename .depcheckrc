@@ -4,6 +4,15 @@
     "@storybook/addon-ondevice-controls",
     "@storybook/addon-ondevice-actions",
     "storybook",
-    "@storybook/react"
+    "@storybook/react",
+    "expo-asset",
+    "expo-speech-recognition",
+    "prettier-plugin-tailwindcss",
+    "@lhci/cli",
+    "@testing-library/jest-native",
+    "@types/babel__core",
+    "@types/babel__generator",
+    "@types/babel__template",
+    "@types/babel__traverse"
   ]
 }
