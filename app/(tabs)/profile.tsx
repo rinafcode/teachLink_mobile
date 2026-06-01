@@ -1,13 +1,19 @@
-import { useAppStore } from '@/src/store';
-import React, { Suspense, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
-const MobileProfile = React.lazy(() =>
-  import('@/src/components/mobile/MobileProfile').then(m => ({ default: m.MobileProfile }))
-);
+import { ProfileSkeleton } from '@/components/mobile/ProfileSkeleton';
+import { useAppStore } from '@/store';
+import { createLazyRoute } from '@/utils/lazyRoute';
 
-export default function ProfileTab() {
-  const theme = useAppStore(s => s.theme);
-  const user = useAppStore(s => s.user);
+const LazyMobileProfile = createLazyRoute({
+  importFn: () =>
+    import('@/components/mobile/MobileProfile').then((m) => ({ default: m.MobileProfile })),
+  LoadingFallback: ProfileSkeleton,
+  boundaryName: 'ProfileTabRoute',
+});
+
+const ProfileTab = () => {
+  const theme = useAppStore((s) => s.theme);
+  const user = useAppStore((s) => s.user);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -18,8 +24,8 @@ export default function ProfileTab() {
   const userId = user?.id ?? '123';
 
   return (
-    <Suspense fallback={null}>
-      <MobileProfile userId={userId} isDark={theme === 'dark'} isLoading={isLoading} />
-    </Suspense>
+    <LazyMobileProfile userId={userId} isDark={theme === 'dark'} isLoading={isLoading} />
   );
-}
+};
+
+export default ProfileTab;

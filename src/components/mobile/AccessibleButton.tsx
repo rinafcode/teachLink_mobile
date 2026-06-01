@@ -2,8 +2,8 @@ import React from 'react';
 import {
   TouchableOpacity,
   StyleSheet,
-  ViewStyle,
   StyleProp,
+  ViewStyle,
   GestureResponderEvent,
 } from 'react-native';
 import { getAccessibilityProps } from '../../utils/accessibility';
@@ -17,34 +17,19 @@ import { getAccessibilityProps } from '../../utils/accessibility';
  * See docs/prop-patterns.md.
  */
 interface AccessibleButtonProps {
-  /** Accessibility label for screen readers */
   label: string;
-  /** Additional accessibility hint for screen readers */
   hint?: string;
-  /** Accessibility role for the button */
   role?: 'button' | 'link';
-  /** Optional custom styles for the button container */
   containerStyle?: StyleProp<ViewStyle>;
-  /** Style applied to the TouchableOpacity */
   style?: StyleProp<ViewStyle>;
-  /** Button content */
   children?: React.ReactNode;
-  /** Whether the button is disabled */
   disabled?: boolean;
-  /** Opacity when pressed. Defaults to 0.7 */
   activeOpacity?: number;
-  /** Press handler */
   onPress?: (event: GestureResponderEvent) => void;
-  /** Long-press handler */
   onLongPress?: (event: GestureResponderEvent) => void;
-  /** Test identifier for automated tests */
   testID?: string;
 }
 
-/**
- * A reusable accessible button component for TeachLink mobile.
- * Ensures a minimum touch target of 44x44 and provides consistent accessibility props.
- */
 export const AccessibleButton: React.FC<AccessibleButtonProps> = ({
   label,
   hint,

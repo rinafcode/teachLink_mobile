@@ -18,6 +18,8 @@ jest.mock('react-native', () => ({
   TextInput: 'TextInput',
   ActivityIndicator: 'ActivityIndicator',
   Image: 'Image',
+  Pressable: 'Pressable',
+  TouchableWithoutFeedback: 'TouchableWithoutFeedback',
   StyleSheet: {
     create: styles => styles,
     flatten: style => (style ? (Array.isArray(style) ? Object.assign({}, ...style) : style) : {}),
@@ -163,6 +165,7 @@ jest.mock('expo-network', () => ({
       type: 'WIFI',
     })
   ),
+  addNetworkStateListener: jest.fn(() => ({ remove: jest.fn() })),
   NetworkStateType: {
     UNKNOWN: 0,
     NONE: 1,

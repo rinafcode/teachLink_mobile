@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import { useEffect } from "react";
 import { useAuth } from "../hooks";
+import { sentryContextService } from "../services/sentryContext";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -16,6 +17,11 @@ export function AuthGuard({ children }: AuthGuardProps) {
     }
 
     if (!isAuthenticated) {
+      sentryContextService.addBreadcrumb({
+        category: 'auth',
+        message: 'AuthGuard: unauthenticated — redirecting to /login',
+        level: 'warning',
+      });
       router.replace("/login");
     }
   }, [isAuthenticated, isLoading]);

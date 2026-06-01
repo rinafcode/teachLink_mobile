@@ -9,33 +9,20 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useAnalytics } from '../../hooks/useAnalytics';
-import { Lesson, CourseProgress } from '../../types/course';
-import { AnalyticsEvent } from '../../utils/trackingEvents';
-import { useDebounceCallback } from '../../hooks';
+
+import { CourseProgress, Lesson } from '../../types/course';
+import { useSettingsStore } from '../../store/settingsStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-/**
- * Props for the LessonCarousel component
- */
 interface LessonCarouselProps {
-  /** Array of lessons to display in the carousel */
   lessons: Lesson[];
-  /** ID of the currently active lesson */
   currentLessonId: string;
-  /** Course progress data */
   progress?: CourseProgress | null;
-  /** Callback when the active lesson changes */
   onLessonChange: (lessonId: string, index: number) => void;
-  /** Callback when lesson progress is updated */
   onProgressUpdate?: (lessonId: string, position: number) => void;
-  /** Function to render the content for each lesson */
   renderLessonContent: (lesson: Lesson) => React.ReactNode;
-  /** Callback when "Next" is clicked on the last lesson */
   onLastLessonNext?: () => void;
-  /** Whether the current lesson is the last in its section */
   isLastLessonInSection?: boolean;
 }
 
@@ -44,126 +31,63 @@ const LessonCarousel = ({
   currentLessonId,
   progress,
   onLessonChange,
-  onProgressUpdate,
   renderLessonContent,
   onLastLessonNext,
   isLastLessonInSection = false,
-}: LessonCarouselProps) {
-  const { trackEvent } = useAnalytics();
-  const scrollViewRef = useRef<ScrollView>(null);
+}: LessonCarouselProps) => {
+  const dataSaverEnabled = useSettingsStore(state => state.dataSaverEnabled);
+  const flatListRef = useRef<FlatList<Lesson>>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const progressBarWidth = useRef(new Animated.Value(0)).current;
 
-  // Find initial index
   useEffect(() => {
     const index = lessons.findIndex(lesson => lesson.id === currentLessonId);
-    if (index !== -1 && index !== currentIndex) {
+    if (index >= 0 && index !== currentIndex) {
       setCurrentIndex(index);
       flatListRef.current?.scrollToIndex({ index, animated: false });
     }
-    // currentIndex intentionally omitted: we only want to sync when the
-    // controlled prop (currentLessonId / lessons) changes, not on every
-    // internal index update.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentLessonId, lessons]);
+  }, [currentLessonId, currentIndex, lessons]);
 
-  // Update progress bar
   useEffect(() => {
-    if (progress && lessons.length > 0) {
-      const completedCount = lessons.filter(
-        lesson => progress.lessons[lesson.id]?.completed
-      ).length;
-      const progressPercent = (completedCount / lessons.length) * 100;
+    if (!progress || lessons.length === 0) return;
+
+    const completedCount = lessons.filter(lesson => progress.lessons[lesson.id]?.completed).length;
+    const progressPercent = (completedCount / lessons.length) * 100;
+    const toValue = (progressPercent / 100) * SCREEN_WIDTH;
+
+    if (dataSaverEnabled) {
+      progressBarWidth.setValue(toValue);
+    } else {
       Animated.spring(progressBarWidth, {
-        toValue: (progressPercent / 100) * SCREEN_WIDTH,
+        toValue,
         useNativeDriver: false,
         tension: 50,
         friction: 7,
       }).start();
     }
-  }, [progress, lessons, progressBarWidth]);
-
-  const scrollToIndex = (index: number, animated = true) => {
-    if (scrollViewRef.current) {
-      scrollViewRef.current.scrollTo({
-        x: index * SCREEN_WIDTH,
-        animated,
-      });
-    }
-  };
-
-  const debouncedScroll = useDebounceCallback((offsetX: number) => {
-    const index = Math.round(offsetX / SCREEN_WIDTH);
-    if (index >= 0 && index < lessons.length) {
-      setCurrentIndex((prevIndex) => {
-        if (index !== prevIndex) {
-          const lesson = lessons[index];
-          onLessonChange(lesson.id, index);
-          return index;
-        }
-        return prevIndex;
-      });
-    }
-  }, 100);
-
-  const handleScroll = (event: any) => {
-    const offsetX = event.nativeEvent.contentOffset.x;
-    trackEvent(AnalyticsEvent.PERFORMANCE_METRIC, {
-      event_category: 'high_frequency',
-      event_name: 'lesson_carousel_scroll',
-      offsetX: Math.round(offsetX),
-    });
-    debouncedScroll(offsetX);
-  };
-
-  const handleMomentumScrollEnd = (event: any) => {
-    const offsetX = event.nativeEvent.contentOffset.x;
-    const index = Math.round(offsetX / SCREEN_WIDTH);
-    if (index >= 0 && index < lessons.length) {
-      setCurrentIndex(index);
-      onLessonChange(lessons[index].id, index);
-    }
-  };
-
-  const goToPrevious = () => {
-    if (currentIndex > 0) {
-      const newIndex = currentIndex - 1;
-      scrollToIndex(newIndex);
-      setCurrentIndex(newIndex);
-      onLessonChange(lessons[newIndex].id, newIndex);
-    }
-  };
-
-  const goToNext = () => {
-    if (currentIndex < lessons.length - 1) {
-      const newIndex = currentIndex + 1;
-      scrollToIndex(newIndex);
-      setCurrentIndex(newIndex);
-      onLessonChange(lessons[newIndex].id, newIndex);
-    }
-  };
+  }, [lessons, progress, progressBarWidth, dataSaverEnabled]);
 
   const getItemLayout = useCallback(
-    (_: any, index: number) => ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * index, index }),
+    (_: ArrayLike<Lesson> | null | undefined, index: number) => ({
+      length: SCREEN_WIDTH,
+      offset: SCREEN_WIDTH * index,
+      index,
+    }),
     []
   );
 
-  const renderItem = useCallback(
-    ({ item: lesson }: { item: Lesson }) => (
-      <View style={[styles.lessonContainer, { width: SCREEN_WIDTH }]}>
-        <FlatList
-          data={[lesson]}
-          renderItem={({ item }) => (
-            <View style={styles.lessonContent}>{renderLessonContent(item)}</View>
-          )}
-          keyExtractor={() => lesson.id}
-          showsVerticalScrollIndicator
-          contentContainerStyle={styles.lessonContentContainer}
-        />
-      </View>
-    ),
-    [renderLessonContent]
+  const handleMomentumScrollEnd = useCallback(
+    (event: { nativeEvent: { contentOffset: { x: number } } }) => {
+      const index = Math.round(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+      if (index < 0 || index >= lessons.length || index === currentIndex) return;
+
+      setCurrentIndex(index);
+      onLessonChange(lessons[index].id, index);
+    },
+    [currentIndex, lessons, onLessonChange]
   );
+
+  const currentLesson = lessons[currentIndex];
 
   if (lessons.length === 0) {
     return (
@@ -173,12 +97,8 @@ const LessonCarousel = ({
     );
   }
 
-  const currentLesson = lessons[currentIndex];
-  const lessonProgress = progress?.lessons[currentLesson.id];
-
   return (
     <View style={styles.container} testID="LessonCarousel">
-      {/* Progress Bar */}
       <View style={styles.progressBarContainer}>
         <Animated.View style={{ width: progressBarWidth, height: '100%' }}>
           <LinearGradient
@@ -190,7 +110,6 @@ const LessonCarousel = ({
         </Animated.View>
       </View>
 
-      {/* Lesson Indicators */}
       <View style={styles.indicatorsContainer}>
         <View style={styles.indicatorsRow}>
           {lessons.map((lesson, index) => {
@@ -214,10 +133,9 @@ const LessonCarousel = ({
         </Text>
       </View>
 
-      {/* Lesson Title */}
       <View style={styles.titleContainer}>
         <Text style={styles.titleText}>{currentLesson.title}</Text>
-        {lessonProgress?.completed && (
+        {progress?.lessons[currentLesson.id]?.completed && (
           <View style={styles.completedBadge}>
             <View style={styles.completedDot} />
             <Text style={styles.completedText}>✓ Completed</Text>
@@ -225,11 +143,14 @@ const LessonCarousel = ({
         )}
       </View>
 
-      {/* Swipeable Content */}
       <FlatList
         ref={flatListRef}
         data={lessons}
-        renderItem={renderItem}
+        renderItem={({ item }) => (
+          <View style={[styles.lessonContainer, { width: SCREEN_WIDTH }]}>
+            <View style={styles.lessonContent}>{renderLessonContent(item)}</View>
+          </View>
+        )}
         keyExtractor={item => item.id}
         horizontal
         pagingEnabled
@@ -247,10 +168,15 @@ const LessonCarousel = ({
         testID="LessonCarouselList"
       />
 
-      {/* Navigation Buttons */}
       <View style={styles.navigationContainer}>
         <TouchableOpacity
-          onPress={goToPrevious}
+          onPress={() => {
+            if (currentIndex === 0) return;
+            const nextIndex = currentIndex - 1;
+            flatListRef.current?.scrollToIndex({ index: nextIndex, animated: !dataSaverEnabled });
+            setCurrentIndex(nextIndex);
+            onLessonChange(lessons[nextIndex].id, nextIndex);
+          }}
           disabled={currentIndex === 0}
           style={[
             styles.navButton,
@@ -277,7 +203,16 @@ const LessonCarousel = ({
             </LinearGradient>
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity onPress={goToNext} style={styles.navButton}>
+          <TouchableOpacity
+            onPress={() => {
+              const nextIndex = currentIndex + 1;
+              if (nextIndex >= lessons.length) return;
+              flatListRef.current?.scrollToIndex({ index: nextIndex, animated: !dataSaverEnabled });
+              setCurrentIndex(nextIndex);
+              onLessonChange(lessons[nextIndex].id, nextIndex);
+            }}
+            style={styles.navButton}
+          >
             <LinearGradient
               colors={['#20afe7', '#2c8aec', '#586ce9']}
               start={{ x: 0, y: 0 }}
@@ -292,8 +227,6 @@ const LessonCarousel = ({
     </View>
   );
 };
-
-export default LessonCarousel;
 
 const styles = StyleSheet.create({
   container: {
@@ -383,9 +316,6 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 32,
   },
-  lessonContentContainer: {
-    flexGrow: 1,
-  },
   navigationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -446,3 +376,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
+
+export default LessonCarousel;

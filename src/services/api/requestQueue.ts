@@ -18,6 +18,8 @@ class RequestQueue {
   private readonly MAX_RETRIES = 3;
   private isProcessing = false;
   private listeners: ((count: number) => void)[] = [];
+  private monitoringInterval: ReturnType<typeof setInterval> | null = null;
+  private apiClient: any | null = null;
 
   /**
    * Add a failed request to the queue
@@ -120,13 +122,35 @@ class RequestQueue {
   /**
    * Start monitoring network and processing queue
    */
-  startMonitoring(apiClient: any): void {
-    const interval = setInterval(async () => {
-      await this.processQueue(apiClient);
+  startMonitoring(apiClient?: any): void {
+    if (apiClient) {
+      this.apiClient = apiClient;
+    }
+
+    if (!this.apiClient) {
+      logger.warn('RequestQueue: Cannot start monitoring without an apiClient');
+      return;
+    }
+
+    if (this.monitoringInterval) {
+      logger.warn('RequestQueue: Monitoring is already running');
+      return;
+    }
+
+    this.monitoringInterval = setInterval(async () => {
+      await this.processQueue(this.apiClient!);
     }, 10000); // Check every 10 seconds
 
     // Also process immediately if online
-    this.processQueue(apiClient);
+    void this.processQueue(this.apiClient);
+  }
+
+  stopMonitoring(): void {
+    if (this.monitoringInterval) {
+      clearInterval(this.monitoringInterval);
+      this.monitoringInterval = null;
+      logger.info('RequestQueue: Monitoring stopped due to memory pressure');
+    }
   }
 
   /**

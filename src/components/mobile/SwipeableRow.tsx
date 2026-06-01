@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { Trash2, Archive } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -80,9 +80,9 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
   }, [id, isDeletedShared, isHapticTriggered, translationX]);
 
   // Haptic feedback trigger on JavaScript thread
-  const triggerHaptic = () => {
+  const triggerHaptic = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-  };
+  }, []);
 
   const panGesture = Gesture.Pan()
     .activeOffsetX([-10, 10]) // Don't intercept minor horizontal scroll/clicks
@@ -132,15 +132,15 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
       }
     });
 
-  const handleLayout = (event: LayoutChangeEvent) => {
+  const handleLayout = useCallback((event: LayoutChangeEvent) => {
     if (layoutHeight === null) {
       const { height } = event.nativeEvent.layout;
       setLayoutHeight(height);
       itemHeight.value = height;
     }
-  };
+  }, [layoutHeight, itemHeight]);
 
-  const executeDelete = () => {
+  const executeDelete = useCallback(() => {
     isDeletedShared.value = true;
     translationX.value = withTiming(-SCREEN_WIDTH, { duration: 200 });
     itemHeight.value = withTiming(0, { duration: 250 }, finished => {
@@ -148,15 +148,15 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
         runOnJS(onDelete)();
       }
     });
-  };
+  }, [isDeletedShared, translationX, itemHeight, onDelete]);
 
-  const executeArchive = () => {
+  const executeArchive = useCallback(() => {
     translationX.value = withTiming(SCREEN_WIDTH, { duration: 200 }, finished => {
       if (finished && onArchive) {
         runOnJS(onArchive)();
       }
     });
-  };
+  }, [translationX, onArchive]);
 
   const animatedRowStyle = useAnimatedStyle(() => {
     const height = itemHeight.value !== null ? itemHeight.value : 'auto';

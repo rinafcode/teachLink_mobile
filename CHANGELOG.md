@@ -1,3 +1,182 @@
+# [1.14.0](https://github.com/rinafcode/teachLink_mobile/compare/v1.13.0...v1.14.0) (2026-06-01)
+
+
+### Features
+
+* add resource timing metrics for API calls and image loads ([c34e734](https://github.com/rinafcode/teachLink_mobile/commit/c34e73413e1cf438aad68f7ee8a11f049714641c)), closes [#31](https://github.com/rinafcode/teachLink_mobile/issues/31) [#32](https://github.com/rinafcode/teachLink_mobile/issues/32) [#33](https://github.com/rinafcode/teachLink_mobile/issues/33) [#34](https://github.com/rinafcode/teachLink_mobile/issues/34)
+* timeout countdown with progress bar and retry button ([9a4e516](https://github.com/rinafcode/teachLink_mobile/commit/9a4e51612c12efa07259b380c35a8aff11c625d7)), closes [#11](https://github.com/rinafcode/teachLink_mobile/issues/11) [#20](https://github.com/rinafcode/teachLink_mobile/issues/20)
+
+# [1.13.0](https://github.com/rinafcode/teachLink_mobile/compare/v1.12.0...v1.13.0) (2026-06-01)
+
+
+### Features
+
+* implement TopicFeed UI/UX enhancement ([5e49d20](https://github.com/rinafcode/teachLink_mobile/commit/5e49d20d90059b6d9c48f0465f0acb324b2f0c84))
+
+
+### Performance Improvements
+
+* add removeClippedSubviews to FlatList components ([1dc4ca3](https://github.com/rinafcode/teachLink_mobile/commit/1dc4ca31f6aadc5aecd1c63a20a81727b4d85e51))
+
+# [1.12.0](https://github.com/rinafcode/teachLink_mobile/compare/v1.11.0...v1.12.0) (2026-06-01)
+
+
+### Features
+
+* warm critical caches during splash screen startup ([a7f7b03](https://github.com/rinafcode/teachLink_mobile/commit/a7f7b03503f69df433c9b48cd5e5cab86ed96f1a))
+
+# [1.11.0](https://github.com/rinafcode/teachLink_mobile/compare/v1.10.0...v1.11.0) (2026-06-01)
+
+
+### Bug Fixes
+
+* add build script and regenerate package-lock.json ([1a8a4f3](https://github.com/rinafcode/teachLink_mobile/commit/1a8a4f3bda97e11d995b18e443cfa0a842de5c67))
+* replace missing 'npm run build' with 'npx expo export' in CI workflow ([faf9ea0](https://github.com/rinafcode/teachLink_mobile/commit/faf9ea0b0bc96cfccfa924c2001ea05e34e14941))
+* strip production debug code ([eaf8818](https://github.com/rinafcode/teachLink_mobile/commit/eaf88180950262537cb3ca092f5960975177d3de))
+
+
+### Features
+
+* Add cache warming and prefetching strategies for critical data ([d23ea2a](https://github.com/rinafcode/teachLink_mobile/commit/d23ea2a4e6d95e3f5613f4cf4ef5572b4b18d0e3))
+* add Core Web Vitals monitoring with regression alerts ([0fbfbd1](https://github.com/rinafcode/teachLink_mobile/commit/0fbfbd18419260383db1754f9ac691d77e5a404c))
+* add performance regression testing to CI pipeline ([3b13996](https://github.com/rinafcode/teachLink_mobile/commit/3b13996607a12b9d65ff08d8095ffef8202bafc7)), closes [#31](https://github.com/rinafcode/teachLink_mobile/issues/31) [#32](https://github.com/rinafcode/teachLink_mobile/issues/32) [#34](https://github.com/rinafcode/teachLink_mobile/issues/34)
+* add React Profiler integration and performance monitoring ([#246](https://github.com/rinafcode/teachLink_mobile/issues/246)) ([b44bc9f](https://github.com/rinafcode/teachLink_mobile/commit/b44bc9f57242c5f143df70d343bca6cc01d3e7c1))
+* add zustandBatch utility for batching state updates in React Native ([b52b8b2](https://github.com/rinafcode/teachLink_mobile/commit/b52b8b2a5ccfcb962e57b4f8e814e5ec1c99758f))
+* animation state machine hook with FilterSheet integration ([72e649a](https://github.com/rinafcode/teachLink_mobile/commit/72e649abcd52398cd19b8dd898e3563669c0f8f1))
+* **build:** inline small image assets under 1KB as data URLs ([6956ca0](https://github.com/rinafcode/teachLink_mobile/commit/6956ca07684b3d1de29f567897c395e3bc3a9a54))
+* implement accessible focus management hooks and AccessibleModal component ([70154eb](https://github.com/rinafcode/teachLink_mobile/commit/70154eb9809084beeed6ad1ceab078cef44809fe))
+* Implement battery level-aware performance throttling ([e99271a](https://github.com/rinafcode/teachLink_mobile/commit/e99271aac36dd95f9d59536b1d53d230cfb2c31e))
+* implement clipboard performance optimization for large text ([#335](https://github.com/rinafcode/teachLink_mobile/issues/335)) ([8b9e2da](https://github.com/rinafcode/teachLink_mobile/commit/8b9e2da98adac5f319d0e32768df1da3eee3ffb7))
+* implement cursor-based pagination for courses and add related hooks and tests ([8216a32](https://github.com/rinafcode/teachLink_mobile/commit/8216a32a7cb1b145fbd0d9b3dac30d4cf42fc34f))
+* implement incremental builds and CI/CD caching ([#241](https://github.com/rinafcode/teachLink_mobile/issues/241)) ([d90dff1](https://github.com/rinafcode/teachLink_mobile/commit/d90dff174e2a1541b55a662a402c97327840021c))
+* implement modal portal to isolate modals from parent re-renders ([922617c](https://github.com/rinafcode/teachLink_mobile/commit/922617ce48eaba6d3502c8e102966a67c5a60ced)), closes [#5](https://github.com/rinafcode/teachLink_mobile/issues/5) [#7](https://github.com/rinafcode/teachLink_mobile/issues/7) [#29](https://github.com/rinafcode/teachLink_mobile/issues/29)
+* implement search cancellation in MobileSearch component ([0bd5fe4](https://github.com/rinafcode/teachLink_mobile/commit/0bd5fe495d7ac7c99052a35373a025fe3ea5844e))
+* implement smart cache size management with LRU eviction ([e79efac](https://github.com/rinafcode/teachLink_mobile/commit/e79efacb302f61437aedd971cd1aac7f1cb18590))
+* lazy load Sentry and socket.io ([0453648](https://github.com/rinafcode/teachLink_mobile/commit/04536486cd26c8f1ed0b7fb3610ebea04c1a65e0))
+* measure predictive-preload accuracy and document the system ([a466a02](https://github.com/rinafcode/teachLink_mobile/commit/a466a0256a91d854855cefa692239a8311e13e2a))
+* optimize CSS-in-JS styling with atomic NativeWind styles ([#350](https://github.com/rinafcode/teachLink_mobile/issues/350)) ([2e6ab6f](https://github.com/rinafcode/teachLink_mobile/commit/2e6ab6fdca359c68d5e5632e17556b882652423c))
+* optimize location data fetching with caching, batching and precision tiers ([5a7c149](https://github.com/rinafcode/teachLink_mobile/commit/5a7c149cc0653d70fdf80486bb8727d756b47915))
+* warm critical caches during splash screen startup ([c489fff](https://github.com/rinafcode/teachLink_mobile/commit/c489ffff5e2d4b7817d70f08e155e74f29668257))
+
+
+### Performance Improvements
+
+* implement keyboard event delegation at root level ([d552064](https://github.com/rinafcode/teachLink_mobile/commit/d5520647621f0c69b3c0887731f9cc0e9484f38b))
+* **ios:** optimize iOS build with LLVM O3, LTO, and bitcode ([0eac62e](https://github.com/rinafcode/teachLink_mobile/commit/0eac62e7f3f41eb99105215775a4d270e9a54007))
+
+# [1.9.0](https://github.com/rinafcode/teachLink_mobile/compare/v1.8.0...v1.9.0) (2026-05-30)
+
+
+### Bug Fixes
+
+* resolve tmp package high vulnerability in npm audit ([289894b](https://github.com/rinafcode/teachLink_mobile/commit/289894bcbb17644b7f39812dd469bc8363cfb3d2))
+
+
+### Features
+
+* implement user preference for data-saver mode ([5fa933d](https://github.com/rinafcode/teachLink_mobile/commit/5fa933d59a53cdfe877ccf25a1637b7f30c3f3a1))
+
+
+### Performance Improvements
+
+* implement efficient diff algorithm for deep object updates ([22c2a5a](https://github.com/rinafcode/teachLink_mobile/commit/22c2a5a93c6e4882cab1ad89c3ea0036fd1bbec9))
+* implement native bridge batching for haptics and logging ([dc630c5](https://github.com/rinafcode/teachLink_mobile/commit/dc630c53ad25be1be45f8013240ceb6d03ecb9b2))
+
+# [1.8.0](https://github.com/rinafcode/teachLink_mobile/compare/v1.7.0...v1.8.0) (2026-05-30)
+
+
+### Features
+
+* **notifications:** implement efficient deduplication and batching ([#387](https://github.com/rinafcode/teachLink_mobile/issues/387)) ([45d2b95](https://github.com/rinafcode/teachLink_mobile/commit/45d2b9595775848c60fbb1ab3f1edf1f3446e872))
+
+# [1.7.0](https://github.com/rinafcode/teachLink_mobile/compare/v1.6.0...v1.7.0) (2026-05-30)
+
+
+### Features
+
+* add StreamingProgressBar component for visual progress feedback ([85359f4](https://github.com/rinafcode/teachLink_mobile/commit/85359f420d2e5a8c7a30fc3988e420b887ad683f))
+* add useStreamingData hook for progressive rendering with automatic deduplication and metrics ([95f70ad](https://github.com/rinafcode/teachLink_mobile/commit/95f70ad232ba452833e79337ba817757319b728d))
+* implement streaming API service for progressive rendering with TTFB optimization ([93ae011](https://github.com/rinafcode/teachLink_mobile/commit/93ae01138a8c106f7a9b17650686247d159bac3c))
+
+# [1.6.0](https://github.com/rinafcode/teachLink_mobile/compare/v1.5.0...v1.6.0) (2026-05-30)
+
+
+### Features
+
+* **logging:** implement async batched logging to prevent UI blocking ([8e57654](https://github.com/rinafcode/teachLink_mobile/commit/8e576540f95e6827dfd2c18b216c0d80e47e09a5)), closes [#362](https://github.com/rinafcode/teachLink_mobile/issues/362)
+
+# [1.5.0](https://github.com/rinafcode/teachLink_mobile/compare/v1.4.0...v1.5.0) (2026-05-30)
+
+
+### Bug Fixes
+
+* **#347:** Replace index-based keys with stable unique identifiers ([e2917f8](https://github.com/rinafcode/teachLink_mobile/commit/e2917f8f2a3c7ce19625daa12cc2a2e4b00a1275)), closes [#347](https://github.com/rinafcode/teachLink_mobile/issues/347)
+* **lint:** sort imports alphabetically and structurally to satisfy strict rule matchers ([f3215f2](https://github.com/rinafcode/teachLink_mobile/commit/f3215f278caf75123622298f2b317f2ad25c2bf7))
+
+
+### Features
+
+* **build:** add custom Babel production optimizer plugin ([3079903](https://github.com/rinafcode/teachLink_mobile/commit/3079903cf74883488599b00d9671b620a05d3cde))
+* enhance useMemoryMonitor with heap tracking, automated leak detection, and high-usage alerts ([071a2b7](https://github.com/rinafcode/teachLink_mobile/commit/071a2b7e977173b1e196cc75928fd2181d7301c6)), closes [hi#usage](https://github.com/hi/issues/usage)
+* implement font subsetting pipeline and custom font loading ([#253](https://github.com/rinafcode/teachLink_mobile/issues/253)) ([3d9bf4c](https://github.com/rinafcode/teachLink_mobile/commit/3d9bf4ce277e9afaa42b8d707278188938ca314c))
+* implement progressive app startup with visible progress indicator ([0fb5159](https://github.com/rinafcode/teachLink_mobile/commit/0fb51594797edbd9488757bbed91034614b9d314))
+* implement react.memo for expensive list item components ([ab05a9a](https://github.com/rinafcode/teachLink_mobile/commit/ab05a9af6c15f5f17231fbc92dacd65291b197d7))
+* timeout countdown with progress bar and retry button ([c11e193](https://github.com/rinafcode/teachLink_mobile/commit/c11e19325ad6435d276db027a6fc7ce462dd6efc)), closes [#11](https://github.com/rinafcode/teachLink_mobile/issues/11) [#20](https://github.com/rinafcode/teachLink_mobile/issues/20)
+
+
+### Performance Improvements
+
+* add useCallback memoization to prevent unnecessary re-renders ([87fb612](https://github.com/rinafcode/teachLink_mobile/commit/87fb612c106c99709d64d0536236ede5bf9ba86e)), closes [#5](https://github.com/rinafcode/teachLink_mobile/issues/5) [#7](https://github.com/rinafcode/teachLink_mobile/issues/7) [#29](https://github.com/rinafcode/teachLink_mobile/issues/29)
+
+# [1.4.0](https://github.com/rinafcode/teachLink_mobile/compare/v1.3.0...v1.4.0) (2026-05-29)
+
+
+### Bug Fixes
+
+* **#261:** wire isSlowConnection to video quality adaptation ([59d4958](https://github.com/rinafcode/teachLink_mobile/commit/59d49580e92497052d50ef0d32973745ca1c240d)), closes [#261](https://github.com/rinafcode/teachLink_mobile/issues/261)
+
+
+### Features
+
+* add useFormValidation hook with 300ms debounce ([#351](https://github.com/rinafcode/teachLink_mobile/issues/351)) ([d4f3e64](https://github.com/rinafcode/teachLink_mobile/commit/d4f3e64e44c990245b61f34f66f09f52f4337ac8))
+* added smart preloading of next likely screens ([dad22cb](https://github.com/rinafcode/teachLink_mobile/commit/dad22cbdc7ffe961b5707472f25be9bd935a0390))
+* **components:** error boundary with automatic retry and exponential backoff ([8ced93b](https://github.com/rinafcode/teachLink_mobile/commit/8ced93bd4dc1ceb284b2283e54a52f15e553987f)), closes [#376](https://github.com/rinafcode/teachLink_mobile/issues/376)
+* **devtools:** add in-app memory profiling overlay for development ([4be8119](https://github.com/rinafcode/teachLink_mobile/commit/4be81194401f7f77004cfa409b4f2b9a53f8c82d)), closes [#378](https://github.com/rinafcode/teachLink_mobile/issues/378)
+
+
+### Performance Improvements
+
+* lazy routes with Suspense and error boundaries ([574494e](https://github.com/rinafcode/teachLink_mobile/commit/574494ecbb096ba23ff171d09e3bd55d1d8224fb)), closes [#377](https://github.com/rinafcode/teachLink_mobile/issues/377)
+
+# [1.3.0](https://github.com/rinafcode/teachLink_mobile/compare/v1.2.0...v1.3.0) (2026-05-29)
+
+
+### Bug Fixes
+
+* harden mobile search and video player tests ([af42884](https://github.com/rinafcode/teachLink_mobile/commit/af42884b5dd0b2c13c90407767e38c4613b2eaa7))
+* regenerate package-lock.json to sync with package.json dependencies ([bd919f4](https://github.com/rinafcode/teachLink_mobile/commit/bd919f4d23a8e0fb1ee40bff8c364c6d7cf83f57))
+* repair quiz carousel bundle parse errors ([d451ac7](https://github.com/rinafcode/teachLink_mobile/commit/d451ac76f42c8e043fc938ec617d2a7dd8fbc614))
+* resolve CI, dependency audit, and bundle size tracking workflow failures ([fcc8a5d](https://github.com/rinafcode/teachLink_mobile/commit/fcc8a5dcbcbce679af6ef0193f4727e4431c08e9))
+
+
+### Features
+
+* **#354:** Implement performance regression tests for heavy components ([81d04af](https://github.com/rinafcode/teachLink_mobile/commit/81d04af5e28abb68372613e6b4ace5d5e5ebe7bd)), closes [#354](https://github.com/rinafcode/teachLink_mobile/issues/354) [#354](https://github.com/rinafcode/teachLink_mobile/issues/354)
+* **#392:** Implement efficient virtual scroll for infinite lists ([4f374ce](https://github.com/rinafcode/teachLink_mobile/commit/4f374ce40662bd91989ff30ddb8eeb9b7b367ea0)), closes [#392](https://github.com/rinafcode/teachLink_mobile/issues/392)
+* **#412:** Implement batch processing for large data imports/exports ([6d5fa4e](https://github.com/rinafcode/teachLink_mobile/commit/6d5fa4e979b56552a226e1fb3ccf1da5f7494806)), closes [#412](https://github.com/rinafcode/teachLink_mobile/issues/412)
+* **#640:** add OpenAPI 3.0 compliance validation with CI integration ([a319477](https://github.com/rinafcode/teachLink_mobile/commit/a3194778b57d02f4f646b6d2eb66826ffab0939c)), closes [#640](https://github.com/rinafcode/teachLink_mobile/issues/640)
+* cache reusable form values for autofill ([b514fd4](https://github.com/rinafcode/teachLink_mobile/commit/b514fd456f895034a49c198dca2b6cf8b01364fd))
+* expand cached form prefilling across auth flows ([0aaeedf](https://github.com/rinafcode/teachLink_mobile/commit/0aaeedf2d3a20d9ea92293cfbfee3160db6a29b2))
+* implement optimized video player with native controls and buffering strategy ([c6da89b](https://github.com/rinafcode/teachLink_mobile/commit/c6da89b132d635c5e7172e0c5b3ee7a88948bcb3))
+* reduce animation frame rate on low-end devices and battery saver mode ([8fb4b40](https://github.com/rinafcode/teachLink_mobile/commit/8fb4b40d8b8ce8afdbae9c766a0089644cf40884))
+* version-based cache invalidation ([#260](https://github.com/rinafcode/teachLink_mobile/issues/260)) ([d51bd44](https://github.com/rinafcode/teachLink_mobile/commit/d51bd4445634135852f64a45d0d78d069ccc5ecc))
+* virtualize LessonCarousel and QuizCarousel with FlatList ([7c5be18](https://github.com/rinafcode/teachLink_mobile/commit/7c5be18bdc8926df1c214c46ec7ca40a757da526))
+
+
+### Performance Improvements
+
+* **navigation:** implement deep link pre-warming ([#388](https://github.com/rinafcode/teachLink_mobile/issues/388)) ([3649cb9](https://github.com/rinafcode/teachLink_mobile/commit/3649cb9b43f235fb387af609edb37fe1de75b711))
+
 # [1.2.0](https://github.com/rinafcode/teachLink_mobile/compare/v1.1.0...v1.2.0) (2026-05-28)
 
 

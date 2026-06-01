@@ -1,0 +1,138 @@
+name: Monitor CI Build Times
+
+on:
+  schedule:
+    # Run every day at 9 AM UTC
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'Number of days to analyze'
+        required: false
+        default: '7'
+        type: string
+
+jobs:
+  monitor:
+    name: Monitor Build Performance
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Analyze CI build times
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node scripts/monitorCIBuildTimes.js \
+            --workflow=ci-optimized \
+            --days=${{ github.event.inputs.days || '7' }} \
+            --report
+
+      - name: Upload metrics report
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-metrics-report
+          path: reports/ci-metrics-*.json
+          retention-days: 90
+
+      - name: Check performance thresholds
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # This will exit with error if performance targets not met
+          node scripts/monitorCIBuildTimes.js \
+            --workflow=ci-optimized \
+            --days=7 \
+            --json > metrics.json
+          
+          # Parse and check thresholds
+          AVG_DURATION=$(node -p "JSON.parse(require('fs').readFileSync('metrics.json')).stats.avgDuration")
+          CACHE_HIT_RATE=$(node -p "JSON.parse(require('fs').readFileSync('metrics.json')).cacheStats.cacheHitRate")
+          
+          echo "Average Duration: ${AVG_DURATION} minutes"
+          echo "Cache Hit Rate: ${CACHE_HIT_RATE}%"
+          
+          # Check if we're meeting targets
+          if (( $(echo "$AVG_DURATION > 5" | bc -l) )); then
+            echo "::warning::Average build time (${AVG_DURATION}m) exceeds target (3m)"
+          fi
+          
+          if (( $(echo "$CACHE_HIT_RATE < 80" | bc -l) )); then
+            echo "::warning::Cache hit rate (${CACHE_HIT_RATE}%) below target (80%)"
+          fi
+
+      - name: Create issue if performance degrades
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const metrics = JSON.parse(fs.readFileSync('metrics.json', 'utf8'));
+            
+            const issueBody = `
+            ## ⚠️ CI Performance Degradation Detected
+            
+            The CI build times have exceeded acceptable thresholds.
+            
+            ### Current Metrics
+            - **Average Build Time**: ${metrics.stats.avgDuration} minutes (Target: ≤ 3 minutes)
+            - **Cache Hit Rate**: ${metrics.cacheStats.cacheHitRate}% (Target: ≥ 80%)
+            - **Success Rate**: ${metrics.stats.successRate}%
+            
+            ### Build Duration Statistics
+            - Median: ${metrics.stats.medianDuration} minutes
+            - 95th Percentile: ${metrics.stats.p95Duration} minutes
+            - Min: ${metrics.stats.minDuration} minutes
+            - Max: ${metrics.stats.maxDuration} minutes
+            
+            ### Recommendations
+            1. Review recent changes to dependencies
+            2. Check cache invalidation patterns
+            3. Investigate slow builds in workflow logs
+            4. Consider optimizing build steps
+            
+            ### Related Documentation
+            - [CI/CD Caching Strategy](../docs/CI_CD_CACHING_STRATEGY.md)
+            - [Issue #241](https://github.com/${context.repo.owner}/${context.repo.repo}/issues/241)
+            
+            ---
+            *This issue was automatically created by the build monitoring workflow.*
+            `;
+            
+            // Check if similar issue already exists
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'performance,ci/cd'
+            });
+            
+            const existingIssue = issues.data.find(issue => 
+              issue.title.includes('CI Performance Degradation')
+            );
+            
+            if (existingIssue) {
+              // Update existing issue
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssue.number,
+                body: `### Update: ${new Date().toISOString().split('T')[0]}\n\n${issueBody}`
+              });
+            } else {
+              // Create new issue
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '⚠️ CI Performance Degradation Detected',
+                body: issueBody,
+                labels: ['performance', 'ci/cd', 'automated']
+              });
+            }

@@ -206,7 +206,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
         {/* Features list */}
         <View style={styles.featuresList}>
           {plan.features.map((feature, i) => (
-            <View key={i} style={styles.featureRow}>
+            <View key={`feature-${plan.id}-${i}`} style={styles.featureRow}>
               <View style={[styles.featureCheck, { backgroundColor: `${meta.colors[0]}20` }]}>
                 <Check size={12} color={meta.colors[0]} />
               </View>
@@ -280,7 +280,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
 
       <View style={styles.featuresList}>
         {FREE_FEATURES.map((feature, i) => (
-          <View key={i} style={styles.featureRow}>
+          <View key={`free-feature-${i}`} style={styles.featureRow}>
             <View style={[styles.featureCheck, { backgroundColor: '#64748b20' }]}>
               <Check size={12} color="#64748b" />
             </View>

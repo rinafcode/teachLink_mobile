@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useSettingsStore } from '../store/settingsStore';
+import { useDeviceStore } from '../store/deviceStore';
+import { memoryPressureService } from '../services/memoryPressureService';
 import { ImageCache } from '../utils/imageCache';
 import logger from '../utils/logger';
 
@@ -60,6 +63,8 @@ export function usePrefetchImages(
   options: UsePrefetchImagesOptions = {},
 ): UsePrefetchImagesReturn {
   const { auto = true, onComplete, onError, delay = 0 } = options;
+  const dataSaverEnabled = useSettingsStore(state => state.dataSaverEnabled);
+  const isLowBattery = useDeviceStore(state => state.isLowBattery);
 
   // ─── State ────────────────────────────────────────────────────────────────
 
@@ -70,7 +75,17 @@ export function usePrefetchImages(
 
   const prefetch = useCallback(
     async (toFetch: (string | null | undefined)[]) => {
+      if (dataSaverEnabled || isLowBattery) {
+        logger.debug(`usePrefetchImages: Skipped prefetching — ${dataSaverEnabled ? 'Data Saver' : 'Low Battery'} mode enabled`);
+        return [];
+      }
+
       try {
+        if (memoryPressureService.isUnderPressure()) {
+          logger.warn('Skipping image prefetch due to high memory pressure');
+          return [];
+        }
+
         setIsPrefetching(true);
 
         // Filter out null/undefined URLs
@@ -105,13 +120,13 @@ export function usePrefetchImages(
         setIsPrefetching(false);
       }
     },
-    [onComplete, onError],
+    [onComplete, onError, dataSaverEnabled, isLowBattery],
   );
 
   // ─── Auto-prefetch on mount or URL change ─────────────────────────────────
 
   useEffect(() => {
-    if (!auto) return;
+    if (!auto || dataSaverEnabled || isLowBattery || memoryPressureService.isUnderPressure()) return;
 
     const validUrls = urls.filter((url) => !!url) as string[];
     if (validUrls.length === 0) return;
@@ -126,7 +141,7 @@ export function usePrefetchImages(
     }
 
     prefetch(urls);
-  }, [urls, auto, delay, prefetch]);
+  }, [urls, auto, delay, prefetch, dataSaverEnabled, isLowBattery]);
 
   // ─── Clear cache function ──────────────────────────────────────────────────
 

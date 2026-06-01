@@ -1,5 +1,5 @@
 import { User } from "../../store";
-import apiClient from "./axios.config";
+import { batchClient } from "./batchClient";
 import { fetchWithSWR, invalidateCache } from "./cache";
 
 const userKey = (id: string) => `users:${id}`;
@@ -12,7 +12,7 @@ export const userApi = {
   getUser(id: string): Promise<User> {
     return fetchWithSWR(
       userKey(id),
-      () => apiClient.get<User>(`/users/${id}`).then((r) => r.data),
+      () => batchClient.get(`/users/${id}`),
       TTL,
       STALE_TTL,
     );

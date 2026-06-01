@@ -1,23 +1,16 @@
+import { ChevronDown, ChevronUp } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
-  LayoutAnimation,
-  Platform,
-  ScrollView,
-  Switch,
-  Text,
-  TouchableOpacity,
-  UIManager,
-  View,
+    ScrollView,
+    Switch,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { ChevronDown, ChevronUp } from 'lucide-react-native';
 import { useNotificationPermission } from '../../hooks';
 import { useNotificationStore } from '../../store/notificationStore';
 import { NotificationPreferences } from '../../types/notifications';
-
-// Enable LayoutAnimation on Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
+import { configureNext } from '../../utils/layoutAnimation';
 
 interface SettingRowProps {
   icon: string;
@@ -90,7 +83,7 @@ export function NotificationSettings() {
   };
 
   const handleToggleAdvancedNotifications = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    configureNext();
     setShowAdvancedNotifications(prev => !prev);
   };
 

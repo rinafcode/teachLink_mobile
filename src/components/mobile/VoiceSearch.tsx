@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Mic, Square } from 'lucide-react-native';
-import { useVoiceRecognition } from '../../hooks';
+import React, { useEffect } from 'react';
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
+
+import * as hooks from '../../hooks';
 
 export interface VoiceSearchProps {
   onTranscript: (text: string) => void;
@@ -11,12 +12,25 @@ export interface VoiceSearchProps {
   compact?: boolean;
 }
 
-export function VoiceSearch({
+export const VoiceSearch = ({
   onTranscript,
   onTranscriptFinal,
   disabled = false,
   compact = false,
-}: VoiceSearchProps) {
+}: VoiceSearchProps) => {
+  const useVoiceRecognition =
+    typeof hooks.useVoiceRecognition === 'function'
+      ? hooks.useVoiceRecognition
+      : () => ({
+          isListening: false,
+          transcript: '',
+          isAvailable: false,
+          error: null as string | null,
+          startListening: () => undefined,
+          stopListening: () => undefined,
+          resetTranscript: () => undefined,
+        });
+
   const {
     isListening,
     transcript,
@@ -60,7 +74,7 @@ export function VoiceSearch({
       <TouchableOpacity
         onPress={handlePress}
         disabled={disabled}
-        style={[styles.micBtn, disabled && styles.buttonDisabled]}
+        className={`p-2.5 justify-center items-center ${disabled ? 'opacity-50' : ''}`}
         accessibilityLabel={isListening ? 'Stop voice search' : 'Start voice search'}
         activeOpacity={0.8}
       >
@@ -74,101 +88,47 @@ export function VoiceSearch({
   }
 
   return (
-    <View style={styles.wrapper}>
+    <View className="items-center">
       {error ? (
-        <Text style={styles.error} numberOfLines={2}>
+        <Text className="text-[11px] text-red-500 mb-1 text-center max-w-[140px]" numberOfLines={2}>
           {error}
         </Text>
       ) : null}
       <TouchableOpacity
         onPress={handlePress}
         disabled={disabled}
-        style={[
-          styles.button,
-          isListening && styles.buttonActive,
-          disabled && styles.buttonDisabled,
-        ]}
+        className={`flex-row items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl min-w-[88px] ${
+          isListening ? 'bg-[#19c3e6]' : 'bg-gray-100'
+        } ${disabled ? 'opacity-50' : ''}`}
         activeOpacity={0.8}
       >
         {isListening ? (
           <>
             <Square size={20} color="#fff" fill="#fff" />
-            <Text style={styles.buttonLabel}>Stop</Text>
+            <Text className="text-sm font-semibold text-white">Stop</Text>
           </>
         ) : (
           <>
             <Mic size={22} color={isAvailable ? '#19c3e6' : '#9CA3AF'} />
-            <Text style={[styles.buttonLabel, !isAvailable && styles.buttonLabelMuted]}>Voice</Text>
+            <Text
+              className={`text-sm font-semibold ${
+                isAvailable ? 'text-gray-900' : 'text-gray-400'
+              }`}
+            >
+              Voice
+            </Text>
           </>
         )}
       </TouchableOpacity>
       {isListening && (
-        <View style={styles.listeningBar}>
+        <View className="flex-row items-center gap-2 mt-2 px-3 py-1.5 bg-sky-100 rounded-lg max-w-full">
           <ActivityIndicator size="small" color="#19c3e6" />
-          <Text style={styles.listeningText} numberOfLines={1}>
+          <Text className="text-[13px] text-sky-700 flex-1" numberOfLines={1}>
             {transcript || 'Listening...'}
           </Text>
         </View>
       )}
     </View>
   );
-}
+};
 
-const styles = StyleSheet.create({
-  wrapper: {
-    alignItems: 'center',
-  },
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    backgroundColor: '#F3F4F6',
-    minWidth: 88,
-  },
-  buttonActive: {
-    backgroundColor: '#19c3e6',
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  buttonLabelMuted: {
-    color: '#9CA3AF',
-  },
-  error: {
-    fontSize: 11,
-    color: '#EF4444',
-    marginBottom: 4,
-    textAlign: 'center',
-    maxWidth: 140,
-  },
-  listeningBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#E0F2FE',
-    borderRadius: 8,
-    maxWidth: '100%',
-  },
-  listeningText: {
-    fontSize: 13,
-    color: '#0369A1',
-    flex: 1,
-  },
-  micBtn: {
-    padding: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

@@ -29,6 +29,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { getEnv } from "../../config";
 import { appLogger } from "../../utils/logger";
+import { startTiming, notifyEntry } from "../../utils/performanceTiming";
 import { getAccessToken, getRefreshToken, saveTokens } from "../secureStorage";
 import { requestQueue } from "./requestQueue";
 
@@ -79,7 +80,10 @@ function processRefreshQueue(token: string | null, error: unknown) {
 // ─── Request interceptor ───────────────────────────────────────────────────
 
 apiClient.interceptors.request.use(
-  async (config: InternalAxiosRequestConfig) => {
+  async (config: InternalAxiosRequestConfig & { _requestStartMs?: number }) => {
+    // Stamp request start time for latency tracking
+    config._requestStartMs = Date.now();
+
     // Skip adding token for refresh requests
     if (config.url?.includes("/auth/refresh")) {
       return config;
@@ -91,6 +95,10 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
+    // Attach timing finish function to config for use in response interceptor
+    (config as InternalAxiosRequestConfig & { _timingFinish?: ReturnType<typeof startTiming> })._timingFinish =
+      startTiming('api', config.url ?? 'unknown', config.method?.toUpperCase());
+
     return config;
   },
   (error) => Promise.reject(error),
@@ -99,12 +107,37 @@ apiClient.interceptors.request.use(
 // ─── Response interceptor ───────────────────────────────────────────────────
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Record successful API call for health metrics
+    const cfg = response.config as InternalAxiosRequestConfig & { _requestStartMs?: number };
+    const durationMs = cfg._requestStartMs ? Date.now() - cfg._requestStartMs : 0;
+    healthMetricsService.recordApiCall({
+      endpoint: cfg.url ?? 'unknown',
+      method: (cfg.method ?? 'GET').toUpperCase(),
+      durationMs,
+      statusCode: response.status,
+    });
+    return response;
+  },
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;
       _retryCount?: number;
+      _requestStartMs?: number;
     };
+
+    // ── Record API error for health metrics ───────────────────────────────
+    if (originalRequest && error.response) {
+      const durationMs = originalRequest._requestStartMs
+        ? Date.now() - originalRequest._requestStartMs
+        : 0;
+      healthMetricsService.recordApiCall({
+        endpoint: originalRequest.url ?? 'unknown',
+        method: (originalRequest.method ?? 'GET').toUpperCase(),
+        durationMs,
+        statusCode: error.response.status,
+      });
+    }
 
     // ── Log non-network errors ────────────────────────────────────────────
     if (error.code === "ERR_NETWORK" || error.message === "Network Error") {
@@ -116,6 +149,13 @@ apiClient.interceptors.response.use(
         endpoint: originalRequest.url,
         method: originalRequest.method,
       });
+    }
+
+    // Record failed timing (only once, on first error — not on retries)
+    if (originalRequest._timingFinish && !originalRequest._retryCount) {
+      const entry = originalRequest._timingFinish(false, error.response?.status);
+      notifyEntry(entry);
+      originalRequest._timingFinish = undefined;
     }
 
     // ── Queue network errors for retry ───────────────────────────────────

@@ -5,7 +5,7 @@ import { Skeleton } from '../ui/Skeleton';
 
 export const DataGridSkeleton = () => {
   const renderRow = (index: number) => (
-    <View key={index} style={styles.row}>
+    <View key={`skeleton-row-${index}`} style={styles.row}>
       <Skeleton width={Math.random() > 0.3 ? 80 : 120} height={14} />
       <Skeleton width={Math.random() > 0.5 ? 60 : 100} height={14} />
       <Skeleton width={Math.random() > 0.4 ? 90 : 70} height={14} />

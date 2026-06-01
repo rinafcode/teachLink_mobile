@@ -1,5 +1,5 @@
 import { useNotificationStore } from '../../store/notificationStore';
-import { NotificationType, DEFAULT_NOTIFICATION_PREFERENCES } from '../../types/notifications';
+import { DEFAULT_NOTIFICATION_PREFERENCES, NotificationType } from '../../types/notifications';
 
 // Helper to get fresh store state
 const getStore = () => useNotificationStore.getState();
@@ -16,6 +16,7 @@ describe('notificationStore', () => {
       preferences: DEFAULT_NOTIFICATION_PREFERENCES,
       notifications: [],
       unreadCount: 0,
+      notificationHistory: [],
       lastEngagedAt: null,
       lastNotificationSentAtByType: {},
     });
@@ -130,6 +131,43 @@ describe('notificationStore', () => {
           new Date('2026-05-27T15:05:00.000Z')
         )
       ).toBe(false);
+    });
+
+    it('should deduplicate identical notifications within the dedupe window', () => {
+      const payload = {
+        type: NotificationType.MESSAGE,
+        title: 'New Message',
+        body: 'You have a new message',
+        data: { conversationId: 'conv-1' },
+      };
+
+      getStore().addNotification(payload);
+      getStore().addNotification(payload);
+
+      expect(getStore().notifications).toHaveLength(1);
+      expect(getStore().unreadCount).toBe(1);
+      expect(getStore().notificationHistory).toHaveLength(1);
+    });
+
+    it('should batch similar notifications for the same target', () => {
+      getStore().addNotification({
+        type: NotificationType.MESSAGE,
+        title: 'New Message',
+        body: 'Message 1',
+        data: { conversationId: 'conv-1' },
+      });
+
+      getStore().addNotification({
+        type: NotificationType.MESSAGE,
+        title: 'New Message',
+        body: 'Message 2',
+        data: { conversationId: 'conv-1' },
+      });
+
+      expect(getStore().notifications).toHaveLength(1);
+      expect(getStore().notifications[0].groupCount).toBe(2);
+      expect(getStore().notifications[0].title).toBe('2 new messages');
+      expect(getStore().unreadCount).toBe(2);
     });
 
     it('should add notification', () => {

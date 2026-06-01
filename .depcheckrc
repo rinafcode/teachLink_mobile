@@ -1,0 +1,9 @@
+{
+  "ignores": [
+    "@storybook/react-native",
+    "@storybook/addon-ondevice-controls",
+    "@storybook/addon-ondevice-actions",
+    "storybook",
+    "@storybook/react"
+  ]
+}

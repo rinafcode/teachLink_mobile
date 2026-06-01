@@ -1,5 +1,5 @@
 import Constants from 'expo-constants';
-import * as Device from 'expo-device';
+import { isDevice } from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { NotificationData, NotificationType } from '../types/notifications';
@@ -21,7 +21,7 @@ Notifications.setNotificationHandler({
  * Register for push notifications and get the Expo push token
  */
 export async function registerForPushNotifications(): Promise<string | null> {
-  if (!Device.isDevice) {
+  if (!isDevice) {
     logger.warn('Push notifications require a physical device');
     return null;
   }
