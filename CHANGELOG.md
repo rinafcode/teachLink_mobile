@@ -1,3 +1,10 @@
+# [1.12.0](https://github.com/rinafcode/teachLink_mobile/compare/v1.11.0...v1.12.0) (2026-06-01)
+
+
+### Features
+
+* warm critical caches during splash screen startup ([a7f7b03](https://github.com/rinafcode/teachLink_mobile/commit/a7f7b03503f69df433c9b48cd5e5cab86ed96f1a))
+
 # [1.11.0](https://github.com/rinafcode/teachLink_mobile/compare/v1.10.0...v1.11.0) (2026-06-01)
 
 
