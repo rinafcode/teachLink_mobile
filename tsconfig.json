@@ -9,6 +9,9 @@
     "baseUrl": ".",
 
     "paths": {
+      "@/components/*": ["./src/components/*", "./components/*"],
+      "@/hooks/*": ["./src/hooks/*", "./hooks/*"],
+      "@/constants/*": ["./constants/*"],
       "@/*": ["./*"]
     },
     "lib": ["ESNext", "DOM"],

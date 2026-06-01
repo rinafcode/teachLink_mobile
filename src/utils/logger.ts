@@ -47,7 +47,7 @@ import {
   pushLogContext,
   popLogContext,
   clearLogContext as clearCtx,
-  persistLogEntry,
+  enqueueLogEntry,
   sendToRemoteLogging,
   loggingConfig,
 } from '../config/logging';
@@ -73,8 +73,7 @@ const LEVEL_EMOJI: Record<LogLevel, string> = {
 // ─── PRODUCTION BUILD INFORMATION ─────────────────────────────────────
 
 // @ts-ignore - Available in Expo/RN environment
-const APP_VERSION = (typeof __EXPO_VERSION__ !== 'undefined' ? __EXPO_VERSION__ : '1.0.0');
-const PACKAGE_ID = 'teachlink_mobile';
+const APP_VERSION = typeof __EXPO_VERSION__ !== 'undefined' ? __EXPO_VERSION__ : '1.0.0';
 
 // ─── LOGGER IMPLEMENTATION ────────────────────────────────────────────────
 
@@ -215,12 +214,7 @@ class AppLogger {
   /**
    * Main logging implementation
    */
-  private async log(
-    level: LogLevel,
-    message: string,
-    meta?: any,
-    error?: Error
-  ): Promise<void> {
+  private async log(level: LogLevel, message: string, meta?: any, error?: Error): Promise<void> {
     // Early exit if below min level
     if (level > this.minLevel) {
       return;
@@ -232,8 +226,8 @@ class AppLogger {
     // Output to console
     this.outputToConsole(level, message, entry, error);
 
-    // Persist to storage
-    await persistLogEntry(entry);
+    // Enqueue for async batched persistence (non-blocking)
+    enqueueLogEntry(entry);
 
     // Send to remote logging
     sendToRemoteLogging(entry, error);
@@ -243,11 +237,7 @@ class AppLogger {
    * ERROR level — Always logged
    * Use for: exceptions, failures, critical issues
    */
-  async error(
-    message: string,
-    error?: Error | unknown,
-    meta?: any
-  ): Promise<void> {
+  async error(message: string, error?: Error | unknown, meta?: any): Promise<void> {
     const err = error instanceof Error ? error : undefined;
     const errorMeta = !err && error ? { error: String(error) } : {};
     await this.log(LogLevel.ERROR, message, { ...errorMeta, ...meta }, err);
@@ -327,26 +317,18 @@ class AppLogger {
     meta?: any
   ): Promise<void> {
     const ctx = getLogContext();
-    await this.error(
-      `API Error: ${statusCode || '?'} ${endpoint}`,
-      error,
-      {
-        endpoint,
-        statusCode,
-        requestId: ctx.requestId,
-        ...meta,
-      }
-    );
+    await this.error(`API Error: ${statusCode || '?'} ${endpoint}`, error, {
+      endpoint,
+      statusCode,
+      requestId: ctx.requestId,
+      ...meta,
+    });
   }
 
   /**
    * Log component lifecycle
    */
-  async logComponent(
-    componentName: string,
-    action: string,
-    meta?: any
-  ): Promise<void> {
+  async logComponent(componentName: string, action: string, meta?: any): Promise<void> {
     await this.setContext({ component: componentName });
     await this.debug(`Component: ${action}`, meta);
   }
@@ -372,13 +354,30 @@ class AppLogger {
   }
 
   warnSync(message: string, meta?: any): void {
+    if (LogLevel.WARN > this.minLevel) {
+      return;
+    }
+
     const entry = this.buildEntry(LogLevel.WARN, message, meta);
     this.outputToConsole(LogLevel.WARN, message, entry);
   }
 
   infoSync(message: string, meta?: any): void {
+    if (LogLevel.INFO > this.minLevel) {
+      return;
+    }
+
     const entry = this.buildEntry(LogLevel.INFO, message, meta);
     this.outputToConsole(LogLevel.INFO, message, entry);
+  }
+
+  debugSync(message: string, meta?: any): void {
+    if (LogLevel.DEBUG > this.minLevel) {
+      return;
+    }
+
+    const entry = this.buildEntry(LogLevel.DEBUG, message, meta);
+    this.outputToConsole(LogLevel.DEBUG, message, entry);
   }
 }
 
@@ -413,4 +412,3 @@ export const logger = {
   component: (componentName: string, action: string, data?: any) =>
     appLogger.infoSync(`[${componentName}] ${action}`, data),
 };
-

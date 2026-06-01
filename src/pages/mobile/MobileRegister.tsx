@@ -3,27 +3,28 @@ import { AlertCircle, BookOpen, Lock, Mail, User } from 'lucide-react-native';
 import React, { useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
 import { MobileFormInput } from '../../components/mobile/MobileFormInput';
 import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
+import { useFormCache } from '../../hooks/useFormCache';
+import { useFormValidation } from '../../hooks/useFormValidation';
 import { cacheFormValues } from '../../services/formCache';
 import {
-  getPasswordStrength,
-  validateConfirmPassword,
-  validateEmail,
-  validateName,
-  validatePassword,
+    getPasswordStrength,
+    validateConfirmPassword,
+    validateEmail,
+    validateName,
+    validatePassword,
 } from '../../utils/validation';
 
 interface MobileRegisterProps {
@@ -32,32 +33,32 @@ interface MobileRegisterProps {
   isDark?: boolean;
 }
 
-interface RegisterFormValues {
-  name: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-}
-
 export const MobileRegister: React.FC<MobileRegisterProps> = ({
   onRegisterSuccess,
   onLogin,
   isDark = false,
 }) => {
-  const {
-    control,
-    handleSubmit,
-    watch,
-    formState: { errors },
-  } = useForm<RegisterFormValues>({
-    defaultValues: { name: '', email: '', password: '', confirmPassword: '' },
-  });
-
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
   const confirmRef = useRef<TextInput>(null);
+
+  const {
+    errors,
+    onChangeText: onFieldChange,
+    onBlur: onFieldBlur,
+    validateAll,
+  } = useFormValidation({
+    name: { validator: validateName },
+    email: { validator: validateEmail },
+    password: { validator: validatePassword },
+    confirmPassword: { validator: v => validateConfirmPassword(password, v) },
+  });
 
   const { scale } = useDynamicFontSize();
   const styles = createStyles(scale);
@@ -69,10 +70,15 @@ export const MobileRegister: React.FC<MobileRegisterProps> = ({
   const accentColor = '#19c3e6';
   const inputBg = isDark ? '#0f172a' : '#f8fafc';
 
-  const passwordValue = watch('password');
-  const passwordStrength = getPasswordStrength(passwordValue);
+  const passwordStrength = getPasswordStrength(password);
 
-  const onSubmit = async (data: RegisterFormValues) => {
+  useEffect(() => {
+    if (formCacheLoading) return;
+    applyPrefillToFields({ fullName: name, email }, { fullName: setName, email: setEmail });
+  }, [applyPrefillToFields, email, formCacheLoading, name, prefillValues]);
+
+  const handleRegister = async () => {
+    if (!validateAll({ name, email, password, confirmPassword })) return;
     setIsLoading(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -83,9 +89,11 @@ export const MobileRegister: React.FC<MobileRegisterProps> = ({
     }
   };
 
+  const fieldBorder = (field: keyof typeof errors) => (errors[field] ? '#ef4444' : borderColor);
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
-      <KeyboardAvoidingView
+      <DelegatedKeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.kav}
       >
@@ -112,153 +120,114 @@ export const MobileRegister: React.FC<MobileRegisterProps> = ({
           </View>
 
           <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
-            <Controller
-              control={control}
-              name="name"
-              rules={{
-                validate: v => {
-                  const r = validateName(v);
-                  return r.valid || (r.message ?? 'Name is required.');
-                },
+            <MobileFormInput
+              inputRef={nameRef}
+              label="Full Name"
+              value={name}
+              onChangeText={v => {
+                setName(v);
+                onFieldChange('name', v);
               }}
-              render={({ field: { onChange, value } }) => (
-                <MobileFormInput
-                  label="Full Name"
-                  value={value}
-                  onChangeText={onChange}
-                  placeholder="Your full name"
-                  required
-                  error={errors.name?.message}
-                  isDark={isDark}
-                  cacheKey="fullName"
-                  keyboardType="default"
-                  autoCapitalize="words"
-                  leftIcon={<User size={18} color={textSecondary} />}
-                  onSubmitEditing={() => emailRef.current?.focus()}
-                />
-              )}
+              onBlur={() => onFieldBlur('name', name)}
+              placeholder="Your full name"
+              required
+              error={errors.name}
+              isDark={isDark}
+              cacheKey="fullName"
+              keyboardType="default"
+              autoCapitalize="words"
+              leftIcon={<User size={18} color={textSecondary} />}
+              onSubmitEditing={() => emailRef.current?.focus()}
             />
 
-            <Controller
-              control={control}
-              name="email"
-              rules={{
-                validate: v => {
-                  const r = validateEmail(v);
-                  return r.valid || (r.message ?? 'Invalid email.');
-                },
+            <MobileFormInput
+              inputRef={emailRef}
+              label="Email"
+              value={email}
+              onChangeText={v => {
+                setEmail(v);
+                onFieldChange('email', v);
               }}
-              render={({ field: { onChange, value } }) => (
-                <MobileFormInput
-                  inputRef={emailRef}
-                  label="Email"
-                  value={value}
-                  onChangeText={onChange}
-                  placeholder="you@example.com"
-                  required
-                  error={errors.email?.message}
-                  isDark={isDark}
-                  cacheKey="email"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  leftIcon={<Mail size={18} color={textSecondary} />}
-                  onSubmitEditing={() => passwordRef.current?.focus()}
-                />
-              )}
+              onBlur={() => onFieldBlur('email', email)}
+              placeholder="you@example.com"
+              required
+              error={errors.email}
+              isDark={isDark}
+              cacheKey="email"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              leftIcon={<Mail size={18} color={textSecondary} />}
+              onSubmitEditing={() => passwordRef.current?.focus()}
             />
 
             {/* Password */}
-            <Controller
-              control={control}
-              name="password"
-              rules={{
-                validate: v => {
-                  const r = validatePassword(v);
-                  return r.valid || (r.message ?? 'Invalid password.');
-                },
-              }}
-              render={({ field: { onChange, value } }) => (
-                <View style={styles.fieldWrap}>
-                  <Text allowFontScaling={false} style={[styles.label, { color: textSecondary }]}>
-                    Password <Text style={styles.required}>*</Text>
-                  </Text>
-                  <View
-                    style={[
-                      styles.inputRow,
-                      {
-                        borderColor: errors.password ? '#ef4444' : borderColor,
-                        backgroundColor: inputBg,
-                      },
-                    ]}
-                  >
-                    <Lock size={scale(18)} color={textSecondary} />
-                    <TextInput
-                      allowFontScaling={false}
-                      ref={passwordRef}
-                      style={[styles.input, { color: textPrimary }]}
-                      value={value}
-                      onChangeText={onChange}
-                      placeholder="Min 8 chars, 1 uppercase, 1 number"
-                      placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
-                      secureTextEntry
-                      autoComplete="new-password"
-                      returnKeyType="next"
-                      onSubmitEditing={() => confirmRef.current?.focus()}
-                    />
-                  </View>
-                  {errors.password && (
-                    <FieldError message={errors.password.message!} scale={scale} />
-                  )}
-                  {value.length > 0 && !errors.password && (
-                    <PasswordStrengthBar strength={passwordStrength} scale={scale} />
-                  )}
-                </View>
+            <View style={styles.fieldWrap}>
+              <Text allowFontScaling={false} style={[styles.label, { color: textSecondary }]}>
+                Password <Text style={styles.required}>*</Text>
+              </Text>
+              <View
+                style={[
+                  styles.inputRow,
+                  { borderColor: fieldBorder('password'), backgroundColor: inputBg },
+                ]}
+              >
+                <Lock size={scale(18)} color={textSecondary} />
+                <TextInput
+                  allowFontScaling={false}
+                  ref={passwordRef}
+                  style={[styles.input, { color: textPrimary }]}
+                  value={password}
+                  onChangeText={v => {
+                    setPassword(v);
+                    onFieldChange('password', v);
+                  }}
+                  onBlur={() => onFieldBlur('password', password)}
+                  placeholder="Min 8 chars, 1 uppercase, 1 number"
+                  placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
+                  secureTextEntry
+                  autoComplete="new-password"
+                  returnKeyType="next"
+                  onSubmitEditing={() => confirmRef.current?.focus()}
+                />
+              </View>
+              {errors.password && <FieldError message={errors.password} scale={scale} />}
+              {password.length > 0 && !errors.password && (
+                <PasswordStrengthBar strength={passwordStrength} scale={scale} />
               )}
             />
 
             {/* Confirm Password */}
-            <Controller
-              control={control}
-              name="confirmPassword"
-              rules={{
-                validate: v => {
-                  const r = validateConfirmPassword(passwordValue, v);
-                  return r.valid || (r.message ?? 'Passwords do not match.');
-                },
-              }}
-              render={({ field: { onChange, value } }) => (
-                <View style={styles.fieldWrap}>
-                  <Text allowFontScaling={false} style={[styles.label, { color: textSecondary }]}>
-                    Confirm Password <Text style={styles.required}>*</Text>
-                  </Text>
-                  <View
-                    style={[
-                      styles.inputRow,
-                      {
-                        borderColor: errors.confirmPassword ? '#ef4444' : borderColor,
-                        backgroundColor: inputBg,
-                      },
-                    ]}
-                  >
-                    <Lock size={scale(18)} color={textSecondary} />
-                    <TextInput
-                      allowFontScaling={false}
-                      ref={confirmRef}
-                      style={[styles.input, { color: textPrimary }]}
-                      value={value}
-                      onChangeText={onChange}
-                      placeholder="Repeat your password"
-                      placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
-                      secureTextEntry
-                      autoComplete="new-password"
-                      returnKeyType="go"
-                      onSubmitEditing={handleSubmit(onSubmit)}
-                    />
-                  </View>
-                  {errors.confirmPassword && (
-                    <FieldError message={errors.confirmPassword.message!} scale={scale} />
-                  )}
-                </View>
+            <View style={styles.fieldWrap}>
+              <Text allowFontScaling={false} style={[styles.label, { color: textSecondary }]}>
+                Confirm Password <Text style={styles.required}>*</Text>
+              </Text>
+              <View
+                style={[
+                  styles.inputRow,
+                  { borderColor: fieldBorder('confirmPassword'), backgroundColor: inputBg },
+                ]}
+              >
+                <Lock size={scale(18)} color={textSecondary} />
+                <TextInput
+                  allowFontScaling={false}
+                  ref={confirmRef}
+                  style={[styles.input, { color: textPrimary }]}
+                  value={confirmPassword}
+                  onChangeText={v => {
+                    setConfirmPassword(v);
+                    onFieldChange('confirmPassword', v);
+                  }}
+                  onBlur={() => onFieldBlur('confirmPassword', confirmPassword)}
+                  placeholder="Repeat your password"
+                  placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
+                  secureTextEntry
+                  autoComplete="new-password"
+                  returnKeyType="go"
+                  onSubmitEditing={handleRegister}
+                />
+              </View>
+              {errors.confirmPassword && (
+                <FieldError message={errors.confirmPassword} scale={scale} />
               )}
             />
 
@@ -299,7 +268,7 @@ export const MobileRegister: React.FC<MobileRegisterProps> = ({
             </View>
           )}
         </ScrollView>
-      </KeyboardAvoidingView>
+      </DelegatedKeyboardAvoidingView>
     </SafeAreaView>
   );
 };

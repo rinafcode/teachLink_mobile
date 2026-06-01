@@ -17,8 +17,7 @@ import {
   Users,
   X,
 } from 'lucide-react-native';
-import React, { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   LayoutAnimation,
@@ -319,32 +318,61 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
   const textSecondary = isDark ? '#94a3b8' : '#64748b';
   const borderColor = isDark ? '#334155' : '#e2e8f0';
 
-  const getInitials = (name: string) =>
+  const getInitials = useCallback((name: string) =>
     name
       .split(' ')
       .map(n => n[0])
       .join('')
       .toUpperCase()
-      .slice(0, 2);
+      .slice(0, 2),
+  []);
 
-  const handleStartEdit = () => {
-    reset({
-      name: profile.name,
-      email: profile.email,
-      bio: profile.bio,
-      location: profile.location,
-      website: profile.website,
-    });
-    setShowAdvancedFields(false);
+  const handleStartEdit = useCallback(() => {
+    setEditName(profile.name);
+    setEditBio(profile.bio);
+    setEditEmail(profile.email);
+    setEditLocation(profile.location);
+    setEditWebsite(profile.website);
+    applyPrefillToFields(
+      {
+        fullName: profile.name,
+        email: profile.email,
+        bio: profile.bio,
+        location: profile.location,
+        website: profile.website,
+      },
+      {
+        fullName: setEditName,
+        email: setEditEmail,
+        bio: setEditBio,
+        location: setEditLocation,
+        website: setEditWebsite,
+      }
+    );
+    setFormErrors({});
+    setShowAdvancedFields(false); // reset disclosure state on each edit session
     setIsEditing(true);
-  };
+  }, [profile, applyPrefillToFields]);
 
-  const handleToggleAdvancedFields = () => {
+  const handleToggleAdvancedFields = useCallback(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setShowAdvancedFields(prev => !prev);
-  };
+  }, []);
 
-  const handleSave = handleSubmit(async data => {
+  const validateForm = useCallback((): Record<string, string> => {
+    const errors: Record<string, string> = {};
+    if (!editName.trim()) errors.name = 'Name is required';
+    if (!editEmail.trim()) errors.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(editEmail)) errors.email = 'Enter a valid email address';
+    return errors;
+  }, [editName, editEmail]);
+
+  const handleSave = useCallback(async () => {
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
     setIsSaving(true);
     await new Promise(resolve => setTimeout(resolve, 800));
     setProfile(prev => ({
@@ -364,24 +392,30 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
     });
     setIsSaving(false);
     setIsEditing(false);
-  });
+  }, [validateForm, editName, editBio, editEmail, editLocation, editWebsite, persistFields]);
 
-  const handleCancelEdit = () => {
+  const handleCancelEdit = useCallback(() => {
     setIsEditing(false);
-  };
+    setFormErrors({});
+  }, []);
 
-  const handleAvatarConfirm = (uri: string) => {
+  const handleAvatarConfirm = useCallback((uri: string) => {
     setProfile(prev => ({ ...prev, avatar: uri }));
-  };
+  }, []);
 
-  const handleToggleFollow = (connectionId: string) => {
+  const handleToggleFollow = useCallback((connectionId: string) => {
     setProfile(prev => ({
       ...prev,
       connections: prev.connections.map(c =>
         c.id === connectionId ? { ...c, isFollowing: !c.isFollowing } : c
       ),
     }));
-  };
+  }, []);
+
+  const handleOpenCamera = useCallback(() => setIsCameraVisible(true), []);
+  const handleCloseCamera = useCallback(() => setIsCameraVisible(false), []);
+
+  const handleSelectTab = useCallback((tab: ProfileTab) => setActiveTab(tab), []);
 
   // Tab config
   const TABS: { key: ProfileTab; label: string }[] = [
@@ -438,7 +472,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
           <View style={styles.avatarRow}>
             <TouchableOpacity
               style={styles.avatarContainer}
-              onPress={() => setIsCameraVisible(true)}
+            onPress={handleOpenCamera}
               activeOpacity={0.85}
               accessibilityRole="button"
               accessibilityLabel="Change avatar"
@@ -555,7 +589,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
           <View style={[styles.statsStrip, { backgroundColor: cardBg, borderColor }]}>
             {stripItems.map((s, i) => (
               <View
-                key={i}
+                key={`stat-${i}-${s.label}`}
                 style={[
                   styles.statCell,
                   i < stripItems.length - 1 && {
@@ -578,7 +612,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
             <TouchableOpacity
               key={tab.key}
               style={styles.tabItem}
-              onPress={() => setActiveTab(tab.key)}
+              onPress={() => handleSelectTab(tab.key)}
               accessibilityRole="tab"
               accessibilityState={{ selected: activeTab === tab.key }}
               accessibilityLabel={`${tab.label} tab`}
@@ -753,7 +787,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                       value: profile.website || 'Not set',
                     },
                   ].map((item, i) => (
-                    <View key={i} style={[styles.detailRow, { borderBottomColor: borderColor }]}>
+                    <View key={`detail-${i}-${item.label}`} style={[styles.detailRow, { borderBottomColor: borderColor }]}>
                       <View style={styles.detailIconLabel}>
                         {item.icon}
                         <Text style={[styles.detailLabel, { color: textSecondary }]}>
@@ -890,7 +924,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
         visible={isCameraVisible}
         currentAvatar={profile.avatar}
         onConfirm={handleAvatarConfirm}
-        onClose={() => setIsCameraVisible(false)}
+        onClose={handleCloseCamera}
       />
     </SafeAreaView>
   );

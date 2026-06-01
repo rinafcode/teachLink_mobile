@@ -2,6 +2,7 @@ import React, { createContext, ReactNode, useContext, useEffect, useRef } from '
 import { AppState, AppStateStatus } from 'react-native';
 import { crashReportingService } from '../../services/crashReporting';
 import { mobileAnalyticsService } from '../../services/mobileAnalytics';
+import webVitalsService from '../../services/webVitals';
 import logger from '../../utils/logger';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 
@@ -24,9 +25,10 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({ children }
 
   useEffect(() => {
     // 1. Initialize services on mount
-    logger.info('📱 [AnalyticsProvider] Initializing tracking and crash reporting...');
+    logger.info('📱 [AnalyticsProvider] Initializing tracking, crash reporting and web vitals...');
     mobileAnalyticsService.init();
     crashReportingService.init();
+    webVitalsService.init();
 
     // 2. Manage session lifecycle (Foreground vs. Background)
     const handleAppStateChange = (nextAppState: AppStateStatus) => {

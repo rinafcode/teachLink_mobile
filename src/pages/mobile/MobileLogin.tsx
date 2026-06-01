@@ -1,35 +1,35 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import {
-  AlertCircle,
-  Apple,
-  BookOpen,
-  Chrome,
-  Eye,
-  EyeOff,
-  Lock,
-  LogIn,
-  Mail,
+    AlertCircle,
+    Apple,
+    BookOpen,
+    Chrome,
+    Eye,
+    EyeOff,
+    Lock,
+    LogIn,
+    Mail,
 } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
+
 
 import { BiometricInlineButton, BiometricPrompt } from '../../components/mobile/BiometricPrompt';
 import { MobileFormInput } from '../../components/mobile/MobileFormInput';
-import { useBiometricAuth, useDynamicFontSize } from '../../hooks';
+import { useBiometricAuth, useDynamicFontSize, useFormValidation } from '../../hooks';
 import authService, { AuthResult } from '../../services/mobileAuth';
 import * as secureStorage from '../../services/secureStorage';
 import { validateEmail, validateRequired } from '../../utils/validation';
@@ -86,6 +86,16 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
     clearError: clearBiometricError,
   } = useBiometricAuth();
 
+  const {
+    errors: fieldErrors,
+    onChangeText: onFieldChange,
+    onBlur: onFieldBlur,
+    validateAll,
+  } = useFormValidation({
+    email: { validator: validateEmail },
+    password: { validator: v => validateRequired(v, 'Password') },
+  });
+
   const { scale } = useDynamicFontSize();
   const styles = createStyles(scale, isDark);
 
@@ -119,8 +129,10 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
   const accentColor = '#19c3e6';
 
   // ── Password login ───────────────────────────────────────────────────────
-  const onSubmit = async (data: LoginFormValues) => {
-    setServerError(null);
+  const handlePasswordLogin = async () => {
+    if (!validateAll({ email, password })) return;
+
+    setError(null);
     setIsLoading(true);
     try {
       const result = await authService.login({
@@ -159,12 +171,17 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
     );
   };
 
-  const displayError = serverError ?? errors.email?.message ?? errors.password?.message;
+  // ── Input border colors ──────────────────────────────────────────────────
+  const passwordBorder = fieldErrors.password
+    ? '#ef4444'
+    : passwordFocused
+      ? accentColor
+      : borderColor;
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
-      <KeyboardAvoidingView
+      <DelegatedKeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.kav}
       >
@@ -203,33 +220,24 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
               </View>
             )}
 
-            <Controller
-              control={control}
-              name="email"
-              rules={{
-                validate: v => {
-                  const r = validateEmail(v);
-                  return r.valid || (r.message ?? 'Invalid email.');
-                },
+            <MobileFormInput
+              inputRef={emailRef}
+              label="Email"
+              value={email}
+              onChangeText={v => {
+                setEmail(v);
+                setError(null);
+                onFieldChange('email', v);
               }}
-              render={({ field: { onChange, value } }) => (
-                <MobileFormInput
-                  label="Email"
-                  value={value}
-                  onChangeText={v => {
-                    onChange(v);
-                    setServerError(null);
-                  }}
-                  placeholder="you@example.com"
-                  isDark={isDark}
-                  cacheKey="email"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  leftIcon={<Mail size={scale(18)} color={textSecondary} />}
-                  onSubmitEditing={() => passwordRef.current?.focus()}
-                  error={errors.email?.message}
-                />
-              )}
+              onBlur={() => onFieldBlur('email', email)}
+              error={fieldErrors.email}
+              placeholder="you@example.com"
+              isDark={isDark}
+              cacheKey="email"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              leftIcon={<Mail size={scale(18)} color={textSecondary} />}
+              onSubmitEditing={() => passwordRef.current?.focus()}
             />
 
             {/* Password */}
@@ -249,55 +257,57 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
                   </TouchableOpacity>
                 )}
               </View>
-              <Controller
-                control={control}
-                name="password"
-                rules={{
-                  validate: v => {
-                    const r = validateRequired(v, 'Password');
-                    return r.valid || (r.message ?? 'Password is required.');
-                  },
-                }}
-                render={({ field: { onChange, value } }) => (
-                  <View
-                    style={[
-                      styles.inputRow,
-                      {
-                        borderColor: errors.password ? '#ef4444' : borderColor,
-                        backgroundColor: isDark ? '#0f172a' : '#f8fafc',
-                      },
-                    ]}
+              <View
+                style={[
+                  styles.inputRow,
+                  { borderColor: passwordBorder, backgroundColor: isDark ? '#0f172a' : '#f8fafc' },
+                ]}
+              >
+                <Lock size={scale(18)} color={passwordFocused ? accentColor : textSecondary} />
+                <TextInput
+                  allowFontScaling={false}
+                  ref={passwordRef}
+                  style={[styles.input, { color: textPrimary }]}
+                  value={password}
+                  onChangeText={v => {
+                    setPassword(v);
+                    setError(null);
+                    onFieldChange('password', v);
+                  }}
+                  placeholder="Enter your password"
+                  placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
+                  secureTextEntry={!showPassword}
+                  autoComplete="current-password"
+                  returnKeyType="go"
+                  onFocus={() => setPasswordFocused(true)}
+                  onBlur={() => {
+                    setPasswordFocused(false);
+                    onFieldBlur('password', password);
+                  }}
+                  onSubmitEditing={handlePasswordLogin}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(s => !s)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  {showPassword ? (
+                    <EyeOff size={scale(18)} color={textSecondary} />
+                  ) : (
+                    <Eye size={scale(18)} color={textSecondary} />
+                  )}
+                </TouchableOpacity>
+              </View>
+              {fieldErrors.password && (
+                <View style={styles.errorRow}>
+                  <AlertCircle size={scale(13)} color="#ef4444" />
+                  <Text
+                    allowFontScaling={false}
+                    style={[styles.inlineErrorText, { fontSize: scale(12) }]}
                   >
-                    <Lock size={scale(18)} color={textSecondary} />
-                    <TextInput
-                      allowFontScaling={false}
-                      ref={passwordRef}
-                      style={[styles.input, { color: textPrimary }]}
-                      value={value}
-                      onChangeText={v => {
-                        onChange(v);
-                        setServerError(null);
-                      }}
-                      placeholder="Enter your password"
-                      placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
-                      secureTextEntry={!showPassword}
-                      autoComplete="current-password"
-                      returnKeyType="go"
-                      onSubmitEditing={handleSubmit(onSubmit)}
-                    />
-                    <TouchableOpacity
-                      onPress={() => setShowPassword(s => !s)}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    >
-                      {showPassword ? (
-                        <EyeOff size={scale(18)} color={textSecondary} />
-                      ) : (
-                        <Eye size={scale(18)} color={textSecondary} />
-                      )}
-                    </TouchableOpacity>
-                  </View>
-                )}
-              />
+                    {fieldErrors.password}
+                  </Text>
+                </View>
+              )}
             </View>
 
             {/* Remember Me */}
@@ -422,7 +432,7 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
             </View>
           )}
         </ScrollView>
-      </KeyboardAvoidingView>
+      </DelegatedKeyboardAvoidingView>
 
       {/* Biometric modal */}
       <BiometricPrompt
@@ -621,5 +631,16 @@ const createStyles = (scale: (size: number) => number, isDark: boolean) =>
     registerLink: {
       fontSize: scale(14),
       fontWeight: '700',
+    },
+    errorRow: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: 4,
+      marginTop: 4,
+    },
+    inlineErrorText: {
+      color: '#ef4444',
+      flex: 1,
+      fontWeight: '500' as const,
     },
   });

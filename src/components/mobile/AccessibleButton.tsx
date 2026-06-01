@@ -2,9 +2,8 @@ import React from 'react';
 import {
   TouchableOpacity,
   TouchableOpacityProps,
-  StyleSheet,
-  ViewStyle,
   StyleProp,
+  ViewStyle,
 } from 'react-native';
 import { getAccessibilityProps } from '../../utils/accessibility';
 
@@ -20,6 +19,8 @@ interface AccessibleButtonProps extends TouchableOpacityProps {
   role?: 'button' | 'link';
   /** Optional custom styles for the button container */
   containerStyle?: StyleProp<ViewStyle>;
+  /** Optional NativeWind className */
+  className?: string;
 }
 
 /**
@@ -35,6 +36,7 @@ export const AccessibleButton: React.FC<AccessibleButtonProps> = ({
   containerStyle,
   disabled,
   activeOpacity = 0.7,
+  className,
   ...rest
 }: AccessibleButtonProps) => {
   const accessibilityProps = getAccessibilityProps(label, role as 'button' | 'link', hint, {
@@ -47,18 +49,11 @@ export const AccessibleButton: React.FC<AccessibleButtonProps> = ({
       {...accessibilityProps}
       disabled={disabled}
       activeOpacity={activeOpacity}
-      style={[styles.base, containerStyle, style]}
+      className={`min-touch-target justify-center items-center ${className || ''}`}
+      style={[containerStyle, style]}
     >
       {children}
     </TouchableOpacity>
   );
 };
 
-const styles = StyleSheet.create({
-  base: {
-    minWidth: 44,
-    minHeight: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

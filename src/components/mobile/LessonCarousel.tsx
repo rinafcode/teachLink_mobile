@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 
 import { CourseProgress, Lesson } from '../../types/course';
+import { useSettingsStore } from '../../store/settingsStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -34,6 +35,7 @@ const LessonCarousel = ({
   onLastLessonNext,
   isLastLessonInSection = false,
 }: LessonCarouselProps) => {
+  const dataSaverEnabled = useSettingsStore(state => state.dataSaverEnabled);
   const flatListRef = useRef<FlatList<Lesson>>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const progressBarWidth = useRef(new Animated.Value(0)).current;
@@ -51,14 +53,19 @@ const LessonCarousel = ({
 
     const completedCount = lessons.filter(lesson => progress.lessons[lesson.id]?.completed).length;
     const progressPercent = (completedCount / lessons.length) * 100;
+    const toValue = (progressPercent / 100) * SCREEN_WIDTH;
 
-    Animated.spring(progressBarWidth, {
-      toValue: (progressPercent / 100) * SCREEN_WIDTH,
-      useNativeDriver: false,
-      tension: 50,
-      friction: 7,
-    }).start();
-  }, [lessons, progress, progressBarWidth]);
+    if (dataSaverEnabled) {
+      progressBarWidth.setValue(toValue);
+    } else {
+      Animated.spring(progressBarWidth, {
+        toValue,
+        useNativeDriver: false,
+        tension: 50,
+        friction: 7,
+      }).start();
+    }
+  }, [lessons, progress, progressBarWidth, dataSaverEnabled]);
 
   const getItemLayout = useCallback(
     (_: ArrayLike<Lesson> | null | undefined, index: number) => ({
@@ -166,7 +173,7 @@ const LessonCarousel = ({
           onPress={() => {
             if (currentIndex === 0) return;
             const nextIndex = currentIndex - 1;
-            flatListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
+            flatListRef.current?.scrollToIndex({ index: nextIndex, animated: !dataSaverEnabled });
             setCurrentIndex(nextIndex);
             onLessonChange(lessons[nextIndex].id, nextIndex);
           }}
@@ -200,7 +207,7 @@ const LessonCarousel = ({
             onPress={() => {
               const nextIndex = currentIndex + 1;
               if (nextIndex >= lessons.length) return;
-              flatListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
+              flatListRef.current?.scrollToIndex({ index: nextIndex, animated: !dataSaverEnabled });
               setCurrentIndex(nextIndex);
               onLessonChange(lessons[nextIndex].id, nextIndex);
             }}

@@ -57,7 +57,7 @@ export const MobileTabBar = ({ state, descriptors, navigation }: BottomTabBarPro
         if (route.name === 'Create') {
           return (
             <TouchableOpacity
-              key={index}
+              key={route.key}
               accessible={true}
               testID={`tab-${route.name.toLowerCase()}`}
               accessibilityRole="button"
@@ -76,7 +76,7 @@ export const MobileTabBar = ({ state, descriptors, navigation }: BottomTabBarPro
 
         return (
           <TouchableOpacity
-            key={index}
+            key={route.key}
             accessible={true}
             testID={`tab-${route.name.toLowerCase()}`}
             accessibilityRole="button"

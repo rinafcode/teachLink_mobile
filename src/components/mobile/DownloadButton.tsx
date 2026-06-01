@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import { CheckCircle2, Clock, Download, XCircle } from 'lucide-react-native';
-import React from 'react';
+import React, { useCallback } from 'react';
 import { ActivityIndicator, TouchableOpacity, View } from 'react-native';
 import { useDownloads } from '../../hooks/useDownloads';
 import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
@@ -20,7 +20,7 @@ export function DownloadButton({ id, title, url, size, className }: DownloadButt
 
   const task = tasks.find(t => t.id === id);
 
-  const handlePress = async () => {
+  const handlePress = useCallback(async () => {
     if (!task) {
       try {
         await startDownload(id, title, url, size);
@@ -30,9 +30,9 @@ export function DownloadButton({ id, title, url, size, className }: DownloadButt
     } else if (task.status === 'completed') {
       removeDownload(id);
     }
-  };
+  }, [task, id, title, url, size, startDownload, removeDownload]);
 
-  const renderIcon = () => {
+  const renderIcon = useCallback(() => {
     if (!task) return <Download size={scale(20)} color="#4B5563" />;
 
     switch (task.status) {
@@ -47,15 +47,15 @@ export function DownloadButton({ id, title, url, size, className }: DownloadButt
       default:
         return <Download size={scale(20)} color="#4B5563" />;
     }
-  };
+  }, [task, scale]);
 
-  const getLabel = () => {
+  const getLabel = useCallback(() => {
     if (!task) return 'Download';
     if (task.status === 'downloading') return `${Math.round(task.progress * 100)}%`;
     if (task.status === 'queued') return 'Queued';
     if (task.status === 'completed') return 'Offline';
     return 'Retry';
-  };
+  }, [task]);
 
   return (
     <TouchableOpacity

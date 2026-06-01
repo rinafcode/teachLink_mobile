@@ -1,7 +1,18 @@
 import * as Network from 'expo-network';
+
 import apiService from './api';
-import { offlineStorage, SyncOperation, SyncOperationInput } from './offlineStorage';
+import batchClient from './api/batchClient';
+import { offlineStorage, SyncOperation, SyncOperationType } from './offlineStorage';
+import syncEntityManager from './sync/syncEntityManager';
+import { useSettingsStore } from '../store/settingsStore';
+import { useDeviceStore } from '../store/deviceStore';
 import logger from '../utils/logger';
+
+import type {
+    ConflictResolutionStrategy as VersionedConflictResolutionStrategy,
+    VersionedEntity,
+} from './sync/types';
+
 
 // Sync service configuration
 interface SyncConfig {
@@ -12,10 +23,19 @@ interface SyncConfig {
 }
 
 // Conflict resolution strategies
-type ConflictResolutionStrategy = 'serverWins' | 'clientWins' | 'merge' | 'manual';
+type LegacyConflictResolutionStrategy = 'serverWins' | 'clientWins' | 'merge' | 'manual';
+type ConflictResolutionStrategy =
+  | VersionedConflictResolutionStrategy
+  | LegacyConflictResolutionStrategy;
 
 // Sync event types
-type SyncEventType = 'syncStarted' | 'syncCompleted' | 'syncFailed' | 'operationProcessed' | 'conflictDetected';
+type SyncEventType =
+  | 'syncStarted'
+  | 'syncCompleted'
+  | 'syncFailed'
+  | 'operationProcessed'
+  | 'conflictDetected'
+  | 'conflictResolved';
 
 // Sync event interface
 interface SyncEvent {
@@ -40,6 +60,19 @@ class SyncService {
       batchSize: 10,
       ...config,
     };
+
+    // Subscribe to battery status changes to adjust sync frequency
+    useDeviceStore.subscribe(
+      (state: any, prevState: any) => {
+        if (state.isLowBattery !== prevState.isLowBattery) {
+          logger.info(`SyncService: Low battery status changed to ${state.isLowBattery}, restarting auto-sync`);
+          if (this.syncIntervalId) {
+            this.stopAutoSync();
+            this.startAutoSync();
+          }
+        }
+      }
+    );
   }
 
   /**
@@ -51,9 +84,12 @@ class SyncService {
       return;
     }
 
+    const isLowBattery = useDeviceStore.getState().isLowBattery;
+    const interval = isLowBattery ? 120000 : this.config.syncInterval; // 2 minutes if low battery
+
     this.syncIntervalId = setInterval(() => {
       this.syncPendingOperations();
-    }, this.config.syncInterval);
+    }, interval);
 
     logger.info('Auto sync started');
     this.emitEvent({ type: 'syncStarted', timestamp: Date.now() });
@@ -75,16 +111,30 @@ class SyncService {
    */
   async manualSync(): Promise<void> {
     logger.info('Manual sync triggered');
-    await this.syncPendingOperations();
+    await this.syncPendingOperations(true);
   }
 
   /**
    * Main sync process
    */
-  private async syncPendingOperations(): Promise<void> {
+  private async syncPendingOperations(isManual = false): Promise<void> {
     if (this.isSyncing) {
       logger.debug('Sync already in progress, skipping');
       return;
+    }
+
+    const settings = useSettingsStore.getState();
+    const { isLowBattery } = useDeviceStore.getState();
+
+    if (settings.dataSaverEnabled && !isManual) {
+      logger.debug('SyncService: Skipped auto-sync — Data Saver mode enabled');
+      return;
+    }
+
+    if (isLowBattery && !isManual) {
+      // Additional check: maybe we should even skip altogether in extreme cases,
+      // but "reduce frequency" is the requirement.
+      logger.debug('SyncService: Processing auto-sync in Low Battery mode (reduced frequency)');
     }
 
     // Check network connectivity
@@ -127,14 +177,62 @@ class SyncService {
   }
 
   /**
-   * Process a batch of operations
+   * Process a batch of operations — mutation types are combined into a single
+   * POST /api/batch request; READ operations continue on the individual path.
    */
   private async processBatch(operations: SyncOperation[]): Promise<void> {
-    const promises = operations.slice(0, this.config.maxConcurrentSyncs).map(op => 
-      this.processOperation(op)
-    );
+    const reads = operations.filter(op => op.type === 'READ');
+    const mutations = operations.filter(op => op.type !== 'READ');
 
-    await Promise.all(promises);
+    const readPromises = reads.map(op => this.processOperation(op));
+
+    const mutationPromises = mutations.map(op => {
+      const method = this.mapOperationToMethod(op.type);
+      if (!method) return this.processOperation(op);
+
+      return batchClient
+        .mutate(method, op.endpoint, op.data)
+        .then(async result => {
+          await offlineStorage.removeFromSyncQueue(op.id);
+          logger.info(`Batch operation completed: ${op.id}`);
+          this.emitEvent({
+            type: 'operationProcessed',
+            operationId: op.id,
+            data: result,
+            timestamp: Date.now(),
+          });
+        })
+        .catch(async (error: any) => {
+          logger.error(`Batch operation failed: ${op.id}`, error);
+          if (op.retries < op.maxRetries) {
+            await offlineStorage.incrementRetryCount(op.id);
+            setTimeout(
+              () => this.retryOperation(op.id),
+              this.calculateRetryDelay(op.retries),
+            );
+          } else {
+            this.handlePermanentFailure(op, error);
+          }
+          this.emitEvent({
+            type: 'syncFailed',
+            operationId: op.id,
+            error,
+            timestamp: Date.now(),
+          });
+        });
+    });
+
+    // mutate() calls above are synchronous enqueues; flush sends them as one request.
+    await Promise.all([batchClient.flush(), ...mutationPromises, ...readPromises]);
+  }
+
+  private mapOperationToMethod(
+    type: SyncOperationType,
+  ): 'POST' | 'PUT' | 'DELETE' | null {
+    if (type === 'CREATE') return 'POST';
+    if (type === 'UPDATE') return 'PUT';
+    if (type === 'DELETE') return 'DELETE';
+    return null;
   }
 
   /**
@@ -275,6 +373,13 @@ class SyncService {
     }
   }
 
+  removeAllEventListeners(): void {
+    if (this.eventListeners.length > 0) {
+      this.eventListeners = [];
+      logger.info('SyncService: Cleared all sync event listeners due to memory pressure');
+    }
+  }
+
   /**
    * Emit sync event to all listeners
    */
@@ -314,44 +419,61 @@ class SyncService {
   async resolveConflicts(
     localData: any,
     serverData: any,
-    strategy: ConflictResolutionStrategy = 'serverWins'
+    strategy: ConflictResolutionStrategy = 'server-wins',
+    baseData?: any,
   ): Promise<any> {
+    const normalizedStrategy = this.normalizeConflictStrategy(strategy);
+
     this.emitEvent({
       type: 'conflictDetected',
-      data: { localData, serverData },
+      data: { localData, serverData, strategy: normalizedStrategy },
       timestamp: Date.now()
     });
 
-    switch (strategy) {
-      case 'serverWins':
-        return serverData;
-      case 'clientWins':
-        return localData;
-      case 'merge':
-        return this.mergeData(localData, serverData);
-      case 'manual':
-        // Return both versions for manual resolution
-        return { local: localData, server: serverData };
-      default:
-        return serverData; // Default to server wins
+    if (strategy === 'manual') {
+      return { local: localData, server: serverData, base: baseData };
     }
+
+    const result = syncEntityManager.resolveRawConflict(
+      localData,
+      serverData,
+      normalizedStrategy,
+      baseData,
+    );
+
+    this.emitEvent({
+      type: 'conflictResolved',
+      data: result,
+      timestamp: Date.now()
+    });
+
+    return result.resolved.data;
   }
 
   /**
-   * Merge conflicting data
+   * Resolve a versioned conflict and persist the result in the version store.
    */
-  private mergeData(localData: any, serverData: any): any {
-    // Simple merge strategy - could be enhanced based on data structure
-    if (Array.isArray(localData) && Array.isArray(serverData)) {
-      // Merge arrays, removing duplicates
-      const combined = localData.concat(serverData);
-      return combined.filter((item, index) => combined.indexOf(item) === index);
-    } else if (typeof localData === 'object' && typeof serverData === 'object') {
-      // Merge objects
-      return { ...serverData, ...localData };
-    } else {
-      // For primitives, prefer server data
-      return serverData;
+  resolveVersionedConflict<T extends Record<string, unknown>>(
+    serverEntity: VersionedEntity<T>,
+    strategy: ConflictResolutionStrategy = 'merge',
+    baseEntity?: VersionedEntity<T>,
+  ) {
+    const normalizedStrategy = this.normalizeConflictStrategy(strategy);
+    return syncEntityManager.handleServerEntity(serverEntity, normalizedStrategy, baseEntity);
+  }
+
+  private normalizeConflictStrategy(
+    strategy: ConflictResolutionStrategy,
+  ): VersionedConflictResolutionStrategy {
+    switch (strategy) {
+      case 'serverWins':
+        return 'server-wins';
+      case 'clientWins':
+        return 'client-wins';
+      case 'manual':
+        return 'server-wins';
+      default:
+        return strategy;
     }
   }
 

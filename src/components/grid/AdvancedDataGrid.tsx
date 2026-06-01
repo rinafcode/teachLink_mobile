@@ -481,7 +481,7 @@ interface DataRowProps<T extends GridRow> {
   onCancel: () => void;
 }
 
-const DataRow = <T extends GridRow>({
+const DataRow = React.memo(function DataRow<T extends GridRow>({
   row,
   rowIndex,
   columns,
@@ -492,7 +492,7 @@ const DataRow = <T extends GridRow>({
   onChangeDraft,
   onCommit,
   onCancel,
-}: DataRowProps<T>) => {
+}: DataRowProps<T>) {
   const isEvenRow = rowIndex % 2 === 0;
 
   return (
@@ -518,7 +518,20 @@ const DataRow = <T extends GridRow>({
       })}
     </View>
   );
-};
+}, (prev, next) => {
+  return prev.row.id === next.row.id
+    && prev.rowIndex === next.rowIndex
+    && prev.columns === next.columns
+    && prev.columnWidths === next.columnWidths
+    && prev.editingCell?.rowId === next.editingCell?.rowId
+    && prev.editingCell?.columnKey === next.editingCell?.columnKey
+    && prev.editingCell?.draft === next.editingCell?.draft
+    && prev.editError === next.editError
+    && prev.onStartEdit === next.onStartEdit
+    && prev.onChangeDraft === next.onChangeDraft
+    && prev.onCommit === next.onCommit
+    && prev.onCancel === next.onCancel;
+}) as <T extends GridRow>(props: DataRowProps<T>) => JSX.Element;
 
 // ─── PaginationBar ────────────────────────────────────────────────────────────
 

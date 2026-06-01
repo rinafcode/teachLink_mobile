@@ -88,6 +88,7 @@ class MobileAnalyticsService {
     if (this.shouldThrottleHighFrequencyEvent(event, properties)) {
       return;
     }
+
     // Implement sampling for non-critical events (10% rate)
     if (!this.CRITICAL_EVENTS.has(event)) {
       if (Math.random() > 0.1) {

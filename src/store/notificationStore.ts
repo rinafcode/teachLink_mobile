@@ -1,11 +1,13 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import {
-  NotificationPreferences,
-  StoredNotification,
-  DEFAULT_NOTIFICATION_PREFERENCES,
-  NotificationType,
+    DEFAULT_NOTIFICATION_PREFERENCES,
+    NotificationData,
+    NotificationHistoryEntry,
+    NotificationPreferences,
+    NotificationType,
+    StoredNotification,
 } from '../types/notifications';
 
 interface NotificationState {
@@ -24,6 +26,7 @@ interface NotificationState {
   // Received notifications
   notifications: StoredNotification[];
   unreadCount: number;
+  notificationHistory: NotificationHistoryEntry[];
   lastEngagedAt: string | null;
   lastNotificationSentAtByType: Partial<Record<NotificationType, string>>;
 
@@ -67,6 +70,7 @@ export const useNotificationStore = create<NotificationState>()(
       preferences: DEFAULT_NOTIFICATION_PREFERENCES,
       notifications: [],
       unreadCount: 0,
+      notificationHistory: [],
       lastEngagedAt: null,
       lastNotificationSentAtByType: {},
 
@@ -112,16 +116,63 @@ export const useNotificationStore = create<NotificationState>()(
       // Notification actions
       addNotification: (notification) =>
         set((state) => {
-          const newNotification: StoredNotification = {
-            ...notification,
-            id: generateId(),
-            receivedAt: new Date().toISOString(),
-            read: false,
-          };
+          const now = new Date().toISOString();
+          const fingerprint = buildNotificationFingerprint(notification);
+          const dedupeWindowMinutes = 10;
+          const cutoff = new Date(Date.now() - dedupeWindowMinutes * 60 * 1000);
+
+          const recentHistory = state.notificationHistory.filter(
+            (entry) => new Date(entry.receivedAt).getTime() >= cutoff.getTime()
+          );
+
+          const isDuplicate = recentHistory.some((entry) => entry.fingerprint === fingerprint);
+          if (isDuplicate) {
+            return {
+              notificationHistory: [{ fingerprint, receivedAt: now }, ...recentHistory].slice(0, 200),
+            };
+          }
+
+          const groupKey = buildNotificationGroupKey(notification.type, notification.data);
+          const existingIndex = state.notifications.findIndex((item) =>
+            buildNotificationGroupKey(item.type, item.data) === groupKey
+          );
+
+          let notifications: StoredNotification[];
+
+          if (existingIndex >= 0) {
+            const existing = state.notifications[existingIndex];
+            const groupCount = (existing.groupCount ?? 1) + 1;
+            const title = formatGroupedTitle(notification.type, groupCount, existing.title, notification.title);
+            const body = formatGroupedBody(existing.body, notification.body, groupCount);
+
+            const updatedNotification: StoredNotification = {
+              ...existing,
+              title,
+              body,
+              groupCount,
+              read: false,
+              receivedAt: now,
+            };
+
+            notifications = [updatedNotification, ...state.notifications.filter((_, index) => index !== existingIndex)];
+          } else {
+            const newNotification: StoredNotification = {
+              ...notification,
+              id: generateId(),
+              receivedAt: now,
+              read: false,
+              groupCount: 1,
+            };
+
+            notifications = [newNotification, ...state.notifications].slice(0, 100);
+          }
+
+          const notificationHistory = [{ fingerprint, receivedAt: now }, ...recentHistory].slice(0, 200);
 
           return {
-            notifications: [newNotification, ...state.notifications].slice(0, 100), // Keep last 100
+            notifications,
             unreadCount: state.unreadCount + 1,
+            notificationHistory,
           };
         }),
 
@@ -159,6 +210,7 @@ export const useNotificationStore = create<NotificationState>()(
         set({
           notifications: [],
           unreadCount: 0,
+          notificationHistory: [],
         }),
 
       recordEngagement: () =>
@@ -234,12 +286,86 @@ export const useNotificationStore = create<NotificationState>()(
         preferences: state.preferences,
         notifications: state.notifications,
         unreadCount: state.unreadCount,
+        notificationHistory: state.notificationHistory,
         lastEngagedAt: state.lastEngagedAt,
         lastNotificationSentAtByType: state.lastNotificationSentAtByType,
       }),
     }
   )
 );
+
+function normalizeText(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function getNotificationTargetKey(type: NotificationType, data?: NotificationData): string {
+  if (!data) return 'global';
+
+  switch (type) {
+    case NotificationType.COURSE_UPDATE:
+      return data.courseId ? `course:${data.courseId}` : 'course:all';
+    case NotificationType.MESSAGE:
+      return data.conversationId ? `message:${data.conversationId}` : 'message:all';
+    case NotificationType.LEARNING_REMINDER:
+      return 'learning_reminder';
+    case NotificationType.ACHIEVEMENT_UNLOCK:
+      return data.achievementId ? `achievement:${data.achievementId}` : 'achievement:all';
+    case NotificationType.COMMUNITY_ACTIVITY:
+      return data.postId ? `community:${data.postId}` : 'community:all';
+    default:
+      return 'global';
+  }
+}
+
+function buildNotificationGroupKey(type: NotificationType, data?: NotificationData): string {
+  return `${type}|${getNotificationTargetKey(type, data)}`;
+}
+
+function buildNotificationFingerprint(
+  notification: Omit<StoredNotification, 'id' | 'receivedAt' | 'read'>
+): string {
+  return [
+    notification.type,
+    getNotificationTargetKey(notification.type, notification.data),
+    normalizeText(notification.title),
+    normalizeText(notification.body),
+  ].join('|');
+}
+
+function formatGroupedTitle(
+  type: NotificationType,
+  count: number,
+  existingTitle: string,
+  incomingTitle: string
+): string {
+  if (count <= 1) {
+    return incomingTitle;
+  }
+
+  switch (type) {
+    case NotificationType.MESSAGE:
+      return `${count} new messages`;
+    case NotificationType.COURSE_UPDATE:
+      return `${count} course updates`;
+    case NotificationType.ACHIEVEMENT_UNLOCK:
+      return `${count} achievements unlocked`;
+    case NotificationType.COMMUNITY_ACTIVITY:
+      return `${count} community updates`;
+    case NotificationType.LEARNING_REMINDER:
+      return `${count} learning reminders`;
+    default:
+      return `${count} new notifications`;
+  }
+}
+
+function formatGroupedBody(existingBody: string, incomingBody: string, count: number): string {
+  if (count <= 1 || existingBody === incomingBody) {
+    return incomingBody;
+  }
+
+  const merged = [existingBody, incomingBody].filter(Boolean).join('\n');
+  return merged.length > 250 ? `${merged.slice(0, 250)}...` : merged;
+}
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
