@@ -11,6 +11,16 @@ function transform(code: string): string {
   return result?.code || '';
 }
 
+function transformProduction(code: string): string {
+  const result = transformSync(code, {
+    plugins: [[productionOptimizer, { production: true }]],
+    babelrc: false,
+    configFile: false,
+    compact: true,
+  });
+  return result?.code || '';
+}
+
 describe('productionOptimizer Babel Plugin', () => {
   describe('Object Property Shorthand Collapse', () => {
     it('should collapse property to shorthand when key and value identifiers match', () => {
@@ -101,6 +111,48 @@ describe('productionOptimizer Babel Plugin', () => {
       const input = 'const val = false || doSomething();';
       const output = transform(input);
       expect(output).toBe('const val=doSomething();');
+    });
+  });
+
+  describe('Production Debug Stripping', () => {
+    it('removes verbose console calls while retaining errors', () => {
+      const input = `
+        console.log('debug');
+        console.info('info');
+        console.warn('warn');
+        console.debug('debug');
+        console.trace('trace');
+        console.error('error');
+      `;
+      const output = transformProduction(input);
+
+      expect(output).toBe("console.error('error');");
+    });
+
+    it('removes development-only branches from production output', () => {
+      const input = `
+        if (__DEV__) {
+          require('./DevTools');
+        } else {
+          startApp();
+        }
+        const Storybook = __DEV__ && require('./.rnstorybook');
+        const AppEntry = __DEV__ && process.env.EXPO_PUBLIC_STORYBOOK === 'true'
+          ? Storybook
+          : App;
+      `;
+      const output = transformProduction(input);
+
+      expect(output).toBe("startApp();const Storybook=false;const AppEntry=App;");
+      expect(output).not.toContain('DevTools');
+      expect(output).not.toContain('rnstorybook');
+    });
+
+    it('does not strip verbose console calls outside production mode', () => {
+      const input = "console.log('debug');console.error('error');";
+      const output = transform(input);
+
+      expect(output).toBe("console.log('debug');console.error('error');");
     });
   });
 });

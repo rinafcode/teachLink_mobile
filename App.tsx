@@ -3,8 +3,6 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef } from 'react';
 import { Alert, AppState, AppStateStatus, InteractionManager, LogBox } from 'react-native';
 
-
-import StorybookUI from './.rnstorybook';
 import './global.css';
 
 import * as Font from 'expo-font';
@@ -21,6 +19,8 @@ import { handleCacheVersionUpdate } from './src/utils/cacheVersioning';
 import { appLogger } from './src/utils/logger';
 import { prefetchExternalResources } from './src/utils/resourceHints';
 import { mobileAnalyticsService } from './src/services/mobileAnalytics';
+import { sentryContextService } from './src/services/sentryContext';
+import { flushLogQueue } from './src/config/logging';
 import { AnalyticsEvent, PerformanceMetric } from './src/utils/trackingEvents';
 import { batteryService } from './src/services/batteryService';
 import { startupProgressService } from './src/services/startupProgressService';
@@ -30,10 +30,6 @@ const appStartTime = Date.now();
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
-
-// SHOW_STORYBOOK flag based on environment variable
-const SHOW_STORYBOOK = process.env.EXPO_PUBLIC_STORYBOOK === 'true';
-
 
 // Centralized structured logging initialized lazily in services bootstrap useEffect
 // requireEnvVariables();
@@ -120,6 +116,10 @@ const App = () => {
           launch_type: 'cold',
         });
         appLogger.infoSync(`[App] Cold start completed in ${coldStartDuration}ms`);
+
+        // Record app launch breadcrumb so every Sentry event has launch context
+        sentryContextService.trackAppLifecycle('launch');
+        sentryContextService.trackAction('app_cold_start', { durationMs: coldStartDuration });
       }
     }
 
@@ -201,9 +201,17 @@ const App = () => {
     const appStateSubscription = AppState.addEventListener('change', nextAppState => {
       const wasInBackground = appStateRef.current.match(/inactive|background/);
       const isForegrounded = nextAppState === 'active';
+      const isBackgrounded = appStateRef.current === 'active' && nextAppState.match(/inactive|background/);
 
       if (wasInBackground && isForegrounded) {
+        sentryContextService.trackAppLifecycle('foreground');
         void checkSessionOnForeground();
+      }
+
+      if (isBackgrounded) {
+        sentryContextService.trackAppLifecycle('background');
+        // Flush queued logs before going to background so nothing is lost
+        void flushLogQueue();
       }
 
       appStateRef.current = nextAppState;
@@ -229,4 +237,9 @@ const App = () => {
   );
 };
 
-export default SHOW_STORYBOOK ? StorybookUI : App;
+const AppEntry = __DEV__ && process.env.EXPO_PUBLIC_STORYBOOK === 'true'
+  ? // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require('./.rnstorybook').default
+  : App;
+
+export default AppEntry;

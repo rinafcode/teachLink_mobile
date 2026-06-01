@@ -354,13 +354,30 @@ class AppLogger {
   }
 
   warnSync(message: string, meta?: any): void {
+    if (LogLevel.WARN > this.minLevel) {
+      return;
+    }
+
     const entry = this.buildEntry(LogLevel.WARN, message, meta);
     this.outputToConsole(LogLevel.WARN, message, entry);
   }
 
   infoSync(message: string, meta?: any): void {
+    if (LogLevel.INFO > this.minLevel) {
+      return;
+    }
+
     const entry = this.buildEntry(LogLevel.INFO, message, meta);
     this.outputToConsole(LogLevel.INFO, message, entry);
+  }
+
+  debugSync(message: string, meta?: any): void {
+    if (LogLevel.DEBUG > this.minLevel) {
+      return;
+    }
+
+    const entry = this.buildEntry(LogLevel.DEBUG, message, meta);
+    this.outputToConsole(LogLevel.DEBUG, message, entry);
   }
 }
 

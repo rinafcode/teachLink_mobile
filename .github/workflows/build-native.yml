@@ -1,0 +1,263 @@
+name: Native Build (iOS & Android) with Caching
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - 'src/**'
+      - 'android/**'
+      - 'ios/**'
+      - 'package.json'
+      - 'eas.json'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - 'src/**'
+      - 'android/**'
+      - 'ios/**'
+      - 'package.json'
+      - 'eas.json'
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to build (all, android, ios)'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - android
+          - ios
+      profile:
+        description: 'Build profile'
+        required: true
+        default: 'preview'
+        type: choice
+        options:
+          - development
+          - preview
+          - production
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event.inputs.platform || 'all' }}
+  cancel-in-progress: true
+
+jobs:
+  # ==============================
+  # 🤖 ANDROID BUILD WITH CACHING
+  # ==============================
+  build-android:
+    name: Build Android
+    runs-on: ubuntu-latest
+    if: github.event.inputs.platform == 'android' || github.event.inputs.platform == 'all' || github.event.inputs.platform == null
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # ==============================
+      # 📦 DEPENDENCY CACHING
+      # ==============================
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline
+
+      # ==============================
+      # 🤖 GRADLE CACHING
+      # ==============================
+      - name: Cache Gradle wrapper
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-wrapper-${{ hashFiles('android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-wrapper-
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/daemon
+          key: ${{ runner.os }}-gradle-${{ hashFiles('android/**/*.gradle*', 'android/**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Cache Android build output
+        uses: actions/cache@v4
+        with:
+          path: |
+            android/app/build
+            android/build
+          key: ${{ runner.os }}-android-build-${{ hashFiles('android/**/*.gradle*', 'android/app/src/**', 'src/**') }}
+          restore-keys: |
+            ${{ runner.os }}-android-build-
+
+      # ==============================
+      # 🏗️ EXPO/EAS CACHING
+      # ==============================
+      - name: Setup Expo and EAS
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Cache EAS build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.eas
+            .eas
+          key: ${{ runner.os }}-eas-${{ hashFiles('eas.json', 'app.json') }}
+          restore-keys: |
+            ${{ runner.os }}-eas-
+
+      # ==============================
+      # 🚀 BUILD
+      # ==============================
+      - name: Build Android APK/AAB
+        run: |
+          PROFILE=${{ github.event.inputs.profile || 'preview' }}
+          eas build --platform android --profile $PROFILE --non-interactive --local --output ./build-output
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Upload Android artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-build-${{ github.event.inputs.profile || 'preview' }}
+          path: build-output/*
+          retention-days: 30
+
+  # ==============================
+  # 🍎 iOS BUILD WITH CACHING
+  # ==============================
+  build-ios:
+    name: Build iOS
+    runs-on: macos-14
+    if: github.event.inputs.platform == 'ios' || github.event.inputs.platform == 'all' || github.event.inputs.platform == null
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # ==============================
+      # 📦 DEPENDENCY CACHING
+      # ==============================
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline
+
+      # ==============================
+      # 🍎 COCOAPODS CACHING
+      # ==============================
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: |
+            ios/Pods
+            ~/Library/Caches/CocoaPods
+            ~/.cocoapods
+          key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
+      # ==============================
+      # 🏗️ XCODE DERIVED DATA CACHE
+      # ==============================
+      - name: Cache Xcode DerivedData
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Developer/Xcode/DerivedData
+            ios/build
+          key: ${{ runner.os }}-xcode-${{ hashFiles('ios/**/*.xcodeproj/**', 'ios/**/*.xcworkspace/**', 'ios/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-xcode-
+
+      # ==============================
+      # 📱 EXPO/EAS CACHING
+      # ==============================
+      - name: Setup Expo and EAS
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Cache EAS build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.eas
+            .eas
+          key: ${{ runner.os }}-eas-${{ hashFiles('eas.json', 'app.json') }}
+          restore-keys: |
+            ${{ runner.os }}-eas-
+
+      # ==============================
+      # 🚀 BUILD
+      # ==============================
+      - name: Build iOS IPA
+        run: |
+          PROFILE=${{ github.event.inputs.profile || 'preview' }}
+          eas build --platform ios --profile $PROFILE --non-interactive --local --output ./build-output
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Upload iOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-${{ github.event.inputs.profile || 'preview' }}
+          path: build-output/*
+          retention-days: 30
+
+  # ==============================
+  # 📊 BUILD METRICS
+  # ==============================
+  report-metrics:
+    name: Report Build Metrics
+    needs: [build-android, build-ios]
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate build report
+        run: |
+          echo "## 🏗️ Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Platform | Status | Duration |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------|----------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Android | ${{ needs.build-android.result == 'success' && '✅ Success' || needs.build-android.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} | - |" >> $GITHUB_STEP_SUMMARY
+          echo "| iOS | ${{ needs.build-ios.result == 'success' && '✅ Success' || needs.build-ios.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} | - |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Profile:** ${{ github.event.inputs.profile || 'preview' }}" >> $GITHUB_STEP_SUMMARY

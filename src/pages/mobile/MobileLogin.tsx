@@ -1,30 +1,30 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import {
-  AlertCircle,
-  Apple,
-  BookOpen,
-  Chrome,
-  Eye,
-  EyeOff,
-  Lock,
-  LogIn,
-  Mail,
+    AlertCircle,
+    Apple,
+    BookOpen,
+    Chrome,
+    Eye,
+    EyeOff,
+    Lock,
+    LogIn,
+    Mail,
 } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
+
 
 import { BiometricInlineButton, BiometricPrompt } from '../../components/mobile/BiometricPrompt';
 import { MobileFormInput } from '../../components/mobile/MobileFormInput';
@@ -176,7 +176,7 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
-      <KeyboardAvoidingView
+      <DelegatedKeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.kav}
       >
@@ -427,7 +427,7 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
             </View>
           )}
         </ScrollView>
-      </KeyboardAvoidingView>
+      </DelegatedKeyboardAvoidingView>
 
       {/* Biometric modal */}
       <BiometricPrompt

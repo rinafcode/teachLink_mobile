@@ -52,7 +52,10 @@
     "perf:regression": "node scripts/checkPerfRegression.js",
     "perf:update-baseline": "node scripts/updatePerfBaseline.js",
     "size-limit": "size-limit",
-    "build": "npx expo export --platform all"
+    "build": "npx expo export --platform all",
+    "ci:monitor": "node scripts/monitorCIBuildTimes.js",
+    "ci:monitor:report": "node scripts/monitorCIBuildTimes.js --report",
+    "ci:monitor:json": "node scripts/monitorCIBuildTimes.js --json"
   },
   "size-limit": [
     {

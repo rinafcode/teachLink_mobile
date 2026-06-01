@@ -2,7 +2,7 @@ import apiClient from './axios.config';
 import logger from '../../utils/logger';
 
 export interface BatchRequest {
-  method: 'POST' | 'PUT' | 'DELETE';
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE';
   url: string;
   body?: any;
 }
@@ -45,6 +45,13 @@ class BatchClient {
       maxBatchSize: 20,
       ...config,
     };
+  }
+
+  get(url: string, params?: any): Promise<any> {
+    const urlWithParams = params
+      ? `${url}?${new URLSearchParams(params).toString()}`
+      : url;
+    return this.mutate('GET', urlWithParams);
   }
 
   mutate(method: BatchRequest['method'], url: string, body?: any): Promise<any> {
@@ -139,6 +146,7 @@ class BatchClient {
     const results = await Promise.allSettled(
       entries.map(entry => {
         const { method, url, body } = entry.request;
+        if (method === 'GET') return apiClient.get(url);
         if (method === 'POST') return apiClient.post(url, body);
         if (method === 'PUT') return apiClient.put(url, body);
         return apiClient.delete(url);

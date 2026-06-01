@@ -212,6 +212,31 @@ appLogger.infoSync('Quick log');
 appLogger.errorSync('Error', error);
 ```
 
+### Cursor-based API pagination
+The app now supports cursor-based list pagination for backend endpoints such as `/courses`.
+
+- `limit` — number of records per page
+- `cursor` — opaque token returned by the previous page
+- `orderBy` — stable sort field (`id`)
+- `direction` — `asc` or `desc`
+
+Response shape:
+
+```json
+{
+  "items": [/* Course[] */],
+  "nextCursor": "string | null",
+  "hasMore": true
+}
+```
+
+Cursor format:
+
+- URI-safe encoded JSON
+- contains `{ lastId, orderBy, direction }`
+
+Use `courseApi.getCoursesPage({ limit, cursor, orderBy, direction })` to fetch each page.
+
 ### Retrieve Logs (Development)
 
 ```typescript

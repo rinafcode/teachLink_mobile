@@ -1,15 +1,16 @@
-import { Stack, useRouter, usePathname, useSegments } from 'expo-router';
+import { Stack, usePathname, useRouter, useSegments } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import React, { useCallback, useEffect, useRef } from 'react';
 import { Alert } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
-import '../global.css'; // NativeWind CSS
 import { MemoryProfilerOverlay } from '../components/DevTools';
 import { RetryErrorBoundary } from '../components/ErrorBoundary/RetryErrorBoundary';
+import '../global.css'; // NativeWind CSS
+
 import { AnalyticsProvider, ErrorBoundary, OfflineIndicatorProvider } from '../src/components';
-import { ModalPortalProvider } from '../src/components/common/ModalPortal';
+import { KeyboardDelegateProvider } from '../src/components/common/KeyboardDelegateProvider';
 import { useAnalytics } from '../src/hooks';
 import { useDeepLink } from '../src/hooks/useDeepLink';
 import { preloadService } from '../src/services/preloadService';
@@ -133,23 +134,24 @@ const RootLayout = () => {
   return (
     <ErrorBoundary boundaryName="RootLayout">
       <RetryErrorBoundary>
-        {/* ModalPortalProvider lifts modal rendering to the root, isolating modals
-            from parent re-renders. All AccessibleModal instances use this by default. */}
-        <ModalPortalProvider>
+        {/*
+         * KeyboardDelegateProvider mounts exactly ONE pair of Keyboard
+         * listeners (show + hide) for the entire app.  All screens read
+         * keyboard state via useKeyboardState() / DelegatedKeyboardAvoidingView
+         * without registering their own listeners.
+         */}
+        <KeyboardDelegateProvider>
           <AnalyticsProvider>
-            <OfflineIndicatorProvider>
-              <GestureHandlerRootView style={{ flex: 1 }}>
-                <ScreenTracker />
-                <ThemeSync />
-                <Stack>
-                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                  <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-                </Stack>
-                <MemoryProfilerOverlay />
-              </GestureHandlerRootView>
-            </OfflineIndicatorProvider>
+            <ScreenTracker />
+            <ThemeSync />
+            <GestureHandlerRootView style={{ flex: 1 }}>
+              <OfflineIndicatorProvider>
+                <Stack screenOptions={{ headerShown: false }} />
+              </OfflineIndicatorProvider>
+            </GestureHandlerRootView>
+            {__DEV__ && <MemoryProfilerOverlay />}
           </AnalyticsProvider>
-        </ModalPortalProvider>
+        </KeyboardDelegateProvider>
       </RetryErrorBoundary>
     </ErrorBoundary>
   );

@@ -6,20 +6,41 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "channel": "development"
+      "channel": "development",
+      "cache": {
+        "key": "development-cache",
+        "paths": ["node_modules", ".expo", "android/app/build", "ios/build"]
+      }
     },
     "preview": {
       "distribution": "internal",
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease",
+        "cache": {
+          "key": "android-preview-cache"
+        }
       },
-      "channel": "preview"
+      "ios": {
+        "cache": {
+          "key": "ios-preview-cache"
+        }
+      },
+      "channel": "preview",
+      "cache": {
+        "key": "preview-cache",
+        "paths": ["node_modules", ".expo"]
+      }
     },
     "production": {
       "ios": {
         "autoIncrement": true,
         "buildConfiguration": "Release",
         "xcodeVersion": "latest",
+        "cache": {
+          "key": "ios-production-cache",
+          "paths": ["ios/Pods", "ios/build"]
+        },
         "env": {
           "SWIFT_OPTIMIZATION_LEVEL": "-O",
           "GCC_OPTIMIZATION_LEVEL": "3",
@@ -36,9 +57,19 @@
         }
       },
       "android": {
-        "autoIncrement": true
+        "autoIncrement": true,
+        "gradleCommand": ":app:bundleRelease",
+        "cache": {
+          "key": "android-production-cache",
+          "paths": ["android/.gradle", "android/app/build"]
+        }
       },
-      "channel": "production"
+      "channel": "production",
+      "cache": {
+        "key": "production-cache-v1",
+        "paths": ["node_modules", ".expo", ".metro-cache"],
+        "cacheDefaultPaths": true
+      }
     }
   },
   "submit": {

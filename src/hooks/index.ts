@@ -4,7 +4,9 @@ export * from './useAnalytics';
 export { AuthProvider, useAuth } from './useAuth';
 export * from './useBiometricAuth';
 export * from './useCamera';
+export * from './useCoursePagination';
 export * from './useCourseProgress';
+export * from './useDebounce';
 export * from './useDynamicFontSize';
 export * from './useFormCache';
 export * from './useFormValidation';
@@ -33,11 +35,6 @@ export { OptimizedLongPressView, useOptimizedLongPress } from './useOptimizedLon
 export { OptimizedPinchZoomView, useOptimizedPinchZoom } from './useOptimizedPinchZoom';
 export { OptimizedSwipeView, useOptimizedSwipe } from './useOptimizedSwipe';
 export { OptimizedVideoGesturesView, useOptimizedVideoGestures } from './useOptimizedVideoGestures';
-
-export * from './useDebounce';
 export * from './useHealthDashboard';
 export * from './usePredictivePreload';
 export * from './useReactProfiler';
-
-// Re-export modal portal hook for convenience
-export { useModalPortal } from '../components/common/ModalPortal';
