@@ -23,7 +23,7 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
+        
       - name: Check for high/critical vulnerabilities
         run: npm run audit
 
