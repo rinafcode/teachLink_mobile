@@ -9,6 +9,7 @@ import { MemoryProfilerOverlay } from '../components/DevTools';
 import { RetryErrorBoundary } from '../components/ErrorBoundary/RetryErrorBoundary';
 import '../global.css'; // NativeWind CSS
 import { AnalyticsProvider, ErrorBoundary, OfflineIndicatorProvider } from '../src/components';
+import { KeyboardDelegateProvider } from '../src/components/common/KeyboardDelegateProvider';
 import { useAnalytics } from '../src/hooks';
 import { useDeepLink } from '../src/hooks/useDeepLink';
 import { preloadService } from '../src/services/preloadService';
@@ -134,16 +135,24 @@ const RootLayout = () => {
     <ErrorBoundary boundaryName="RootLayout">
       {/* ✅ Wrap with RetryErrorBoundary */}
       <RetryErrorBoundary>
-        <AnalyticsProvider>
-          <ScreenTracker />
-          <ThemeSync />
-          <GestureHandlerRootView style={{ flex: 1 }}>
-            <OfflineIndicatorProvider>
-              <Stack />
-            </OfflineIndicatorProvider>
-          </GestureHandlerRootView>
-          <MemoryProfilerOverlay />
-        </AnalyticsProvider>
+        {/*
+         * KeyboardDelegateProvider mounts exactly ONE pair of Keyboard
+         * listeners (show + hide) for the entire app.  All screens read
+         * keyboard state via useKeyboardState() / DelegatedKeyboardAvoidingView
+         * without registering their own listeners.
+         */}
+        <KeyboardDelegateProvider>
+          <AnalyticsProvider>
+            <ScreenTracker />
+            <ThemeSync />
+            <GestureHandlerRootView style={{ flex: 1 }}>
+              <OfflineIndicatorProvider>
+                <Stack screenOptions={{ headerShown: false }} />
+              </OfflineIndicatorProvider>
+            </GestureHandlerRootView>
+            {__DEV__ && <MemoryProfilerOverlay />}
+          </AnalyticsProvider>
+        </KeyboardDelegateProvider>
       </RetryErrorBoundary>
     </ErrorBoundary>
   );
