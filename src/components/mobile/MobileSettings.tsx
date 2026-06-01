@@ -13,9 +13,11 @@ import {
     Sun,
     Trash2,
     User,
-    Wifi
+    Wifi,
+    Zap,
 } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
+
 import {
     ActivityIndicator,
     Alert,
@@ -422,6 +424,16 @@ export const MobileSettings = ({
               icon={<RefreshCw size={18} />}
               label="Manual Sync"
               onPress={handleManualSync}
+            />
+          </SettingsSection>
+
+          {/* PERFORMANCE & UTILITIES */}
+          <SettingsSection title="Performance & Utilities">
+            <SettingRow
+              icon={<Zap size={18} color="#06b6d4" />}
+              label="Clipboard Optimizer"
+              description="Test & profile asynchronous clipboard operations"
+              onPress={() => router.push('/clipboard-demo')}
             />
           </SettingsSection>
         </>
