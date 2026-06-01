@@ -1,3 +1,15 @@
+# [1.13.0](https://github.com/rinafcode/teachLink_mobile/compare/v1.12.0...v1.13.0) (2026-06-01)
+
+
+### Features
+
+* implement TopicFeed UI/UX enhancement ([5e49d20](https://github.com/rinafcode/teachLink_mobile/commit/5e49d20d90059b6d9c48f0465f0acb324b2f0c84))
+
+
+### Performance Improvements
+
+* add removeClippedSubviews to FlatList components ([1dc4ca3](https://github.com/rinafcode/teachLink_mobile/commit/1dc4ca31f6aadc5aecd1c63a20a81727b4d85e51))
+
 # [1.12.0](https://github.com/rinafcode/teachLink_mobile/compare/v1.11.0...v1.12.0) (2026-06-01)
 
 
