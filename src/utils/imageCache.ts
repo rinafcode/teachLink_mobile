@@ -1,3 +1,4 @@
+import { backgroundScheduler } from '../services/backgroundTaskScheduler';
 import { Image } from 'expo-image';
 
 import logger from './logger';

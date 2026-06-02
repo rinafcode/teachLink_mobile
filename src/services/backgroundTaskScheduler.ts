@@ -1,9 +1,8 @@
 import { InteractionManager } from 'react-native';
-
 import { logger } from '../utils/logger';
 
 class BackgroundTaskScheduler {
-  private taskQueue: (() => Promise<void>)[] = [];
+  private taskQueue: Array<() => Promise<void>> = [];
   private isProcessing = false;
 
   public runAfterUI(task: () => void) {
@@ -35,4 +34,4 @@ class BackgroundTaskScheduler {
   }
 }
 
-export const _backgroundScheduler = new BackgroundTaskScheduler();
+export const backgroundScheduler = new BackgroundTaskScheduler();
