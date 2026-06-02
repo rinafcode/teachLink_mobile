@@ -22,6 +22,18 @@ useReactProfiler (hook)
 
 ## Metrics Definitions
 
+### Image Delivery Metrics
+
+| Metric | Key | Description |
+|---|---|---|
+| Image load time | `image_load_time` | End-to-end image render time from request start to display |
+| Image fallback rate | `used_fallback` | Indicates when PNG fallback was required instead of WebP |
+| Device density | `dpr` | Captured 1x/2x/3x to validate adaptive image variants |
+| Optimization pipeline | `optimization` | Labels progressive image pipeline (`lqip_webp_progressive`) |
+
+Image metrics are emitted from the shared `CachedImage` component so all user-facing
+surfaces that use it contribute to the same monitoring stream.
+
 ### React Profiler Metrics
 
 | Metric | Definition | Unit |

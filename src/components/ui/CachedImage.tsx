@@ -1,16 +1,20 @@
+// eslint-disable-next-line import/no-unresolved
 import { Image as ExpoImage, ImageProps as ExpoImageProps } from 'expo-image';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  ImageStyle,
+  PixelRatio,
+  StyleProp,
+  StyleSheet,
+  View,
+} from 'react-native';
 
+import { imagePerformanceService } from '../../services/imagePerformance';
 import { useSettingsStore } from '../../store/settingsStore';
 import { ImageCache } from '../../utils/imageCache';
-import { 
-  detectImageDimensions, 
-  ImageDimensions, 
-  dimensionsCache,
-  calculateAspectRatioStyle 
-} from '../../utils/imageDimensions';
-import logger from '../../utils/logger';
+import { buildOptimizedImageSources } from '../../utils/imageOptimization';
+import { logger } from '../../utils/logger';
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
@@ -18,16 +22,16 @@ export function getLowQualityImageUrl(uri: string): string {
   if (!uri) return uri;
   // Replace @2x or @3x with @1x
   let optimized = uri.replace(/@[23]x\b/g, '@1x');
-  
+
   if (optimized.startsWith('http://') || optimized.startsWith('https://')) {
     const hashParts = optimized.split('#');
     let baseAndQuery = hashParts[0];
     const hash = hashParts[1] ? `#${hashParts[1]}` : '';
-    
+
     const queryParts = baseAndQuery.split('?');
     let baseUrl = queryParts[0];
     let query = queryParts[1] || '';
-    
+
     const params = new Map<string, string>();
     if (query) {
       query.split('&').forEach(pair => {
@@ -35,14 +39,14 @@ export function getLowQualityImageUrl(uri: string): string {
         if (k) params.set(decodeURIComponent(k), v ? decodeURIComponent(v) : '');
       });
     }
-    
+
     params.set('quality', 'low');
     params.set('q', '30');
-    
+
     const newQuery = Array.from(params.entries())
       .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
       .join('&');
-      
+
     optimized = `${baseUrl}?${newQuery}${hash}`;
   }
   return optimized;
@@ -65,12 +69,19 @@ interface CachedImageProps extends Omit<ExpoImageProps, 'source'> {
   onLoadError?: (error: Error) => void;
   /** Loading indicator color */
   loadingIndicatorColor?: string;
-  /** Pre-known image dimensions (from API) */
-  knownDimensions?: ImageDimensions;
-  /** Enable automatic dimension detection to prevent layout shift */
-  enableDimensionDetection?: boolean;
-  /** Container width for aspect ratio calculation */
-  containerWidth?: number;
+  /** Desired image width in layout units for adaptive 1x/2x/3x variants */
+  targetWidth?: number;
+  /** Desired image height in layout units for adaptive 1x/2x/3x variants */
+  targetHeight?: number;
+}
+
+function resolveStyleDimension(
+  style: StyleProp<ImageStyle>,
+  key: 'width' | 'height'
+): number | undefined {
+  const flattened = StyleSheet.flatten(style) as ImageStyle | undefined;
+  const value = flattened?.[key];
+  return typeof value === 'number' ? value : undefined;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -110,82 +121,78 @@ export const CachedImage: React.FC<CachedImageProps> = ({
   onLoadComplete,
   onLoadError,
   loadingIndicatorColor = '#2c8aec',
-  knownDimensions,
-  enableDimensionDetection = false,
-  containerWidth,
+  targetWidth,
+  targetHeight,
   style,
   ...expoImageProps
 }) => {
   const dataSaverEnabled = useSettingsStore(state => state.dataSaverEnabled);
+  const startedAtRef = useRef<number | null>(null);
+  const usingFallbackRef = useRef(false);
+
+  const styleWidth = resolveStyleDimension(style as StyleProp<ImageStyle>, 'width');
+  const styleHeight = resolveStyleDimension(style as StyleProp<ImageStyle>, 'height');
+
   const resolvedUri = dataSaverEnabled && uri ? getLowQualityImageUrl(uri) : uri;
+  const optimizedSources = useMemo(() => {
+    if (!resolvedUri) {
+      return null;
+    }
+
+    return buildOptimizedImageSources(resolvedUri, {
+      width: targetWidth ?? styleWidth,
+      height: targetHeight ?? styleHeight,
+      pixelRatio: PixelRatio.get(),
+      quality: dataSaverEnabled ? 45 : 72,
+      lqipQuality: dataSaverEnabled ? 12 : 18,
+      preferWebp: true,
+    });
+  }, [resolvedUri, targetWidth, targetHeight, styleWidth, styleHeight, dataSaverEnabled]);
 
   const [isLoading, setIsLoading] = useState(!!resolvedUri);
-  const [error, setError] = useState<Error | null>(null);
-  const [detectedDimensions, setDetectedDimensions] = useState<ImageDimensions | null>(knownDimensions || null);
-  const [aspectRatioStyle, setAspectRatioStyle] = useState<{ width: number; height: number } | null>(null);
-
-  // ─── Detect dimensions if enabled and not already known ─────────────────────
-
-  useEffect(() => {
-    if (!resolvedUri || !enableDimensionDetection || detectedDimensions) {
-      return;
-    }
-
-    // Check cache first
-    if (dimensionsCache.has(resolvedUri)) {
-      const cached = dimensionsCache.get(resolvedUri);
-      if (cached) {
-        setDetectedDimensions(cached);
-        if (containerWidth) {
-          setAspectRatioStyle(calculateAspectRatioStyle(cached, containerWidth));
-        }
-        return;
-      }
-
-      // Detect dimensions
-      detectImageDimensions(resolvedUri).then(dimensions => {
-        if (dimensions) {
-          setDetectedDimensions(dimensions);
-          dimensionsCache.set(resolvedUri, dimensions);
-          if (containerWidth) {
-            setAspectRatioStyle(calculateAspectRatioStyle(dimensions, containerWidth));
-          }
-        }
-      });
-    }
-  }, [resolvedUri, enableDimensionDetection, detectedDimensions, containerWidth]);
+  const [, setError] = useState<Error | null>(null);
 
   // ─── Prefetch image on mount or when URI changes ──────────────────────────
 
   useEffect(() => {
-    if (!resolvedUri) {
+    if (!optimizedSources) {
       setIsLoading(false);
       return;
     }
 
     if (autoPrefetch && !dataSaverEnabled) {
       setIsLoading(true);
-      ImageCache.prefetchImages([resolvedUri])
+      ImageCache.prefetchImages([optimizedSources.primaryUri])
         .then(() => {
-          logger.debug(`✅ Image prefetched: ${resolvedUri}`);
+          logger.debug(`✅ Image prefetched: ${optimizedSources.primaryUri}`);
         })
         .catch(e => {
-          logger.warn(`Failed to prefetch image: ${resolvedUri}`, e);
+          logger.warn(`Failed to prefetch image: ${optimizedSources.primaryUri}`, e);
           setError(e instanceof Error ? e : new Error(String(e)));
           onLoadError?.(e instanceof Error ? e : new Error(String(e)));
         });
     } else {
       setIsLoading(true);
     }
-  }, [resolvedUri, autoPrefetch, dataSaverEnabled, onLoadError]);
+  }, [optimizedSources, autoPrefetch, dataSaverEnabled, onLoadError]);
 
   // ─── Handle loading complete ───────────────────────────────────────────────
 
   const handleLoadingComplete = () => {
     setIsLoading(false);
     setError(null);
+
+    const startedAt = startedAtRef.current;
+    if (startedAt) {
+      imagePerformanceService.recordImageLoad({
+        loadTimeMs: Date.now() - startedAt,
+        usedFallback: usingFallbackRef.current,
+        dpr: optimizedSources?.dpr ?? 1,
+      });
+    }
+
     onLoadComplete?.();
-    logger.debug(`✅ CachedImage rendered: ${resolvedUri}`);
+    logger.debug(`✅ CachedImage rendered: ${optimizedSources?.primaryUri}`);
   };
 
   // ─── Handle loading error ──────────────────────────────────────────────────
@@ -195,7 +202,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
     setIsLoading(false);
     setError(error);
     onLoadError?.(error);
-    logger.warn(`Failed to load image: ${resolvedUri}`, error);
+    logger.warn(`Failed to load image: ${optimizedSources?.primaryUri}`, error);
   };
 
   // ─── Calculate container style with aspect ratio ─────────────────────────
@@ -216,20 +223,30 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 
   // ─── Render ────────────────────────────────────────────────────────────────
 
-  if (!resolvedUri) {
+  if (!optimizedSources) {
     return null;
   }
 
   return (
     <View style={getContainerStyle()}>
       <ExpoImage
-        source={{ uri: resolvedUri }}
+        source={[{ uri: optimizedSources.primaryUri }, { uri: optimizedSources.fallbackUri }]}
+        placeholder={{ uri: optimizedSources.lqipUri }}
+        transition={250}
+        onLoadStart={() => {
+          startedAtRef.current = Date.now();
+          usingFallbackRef.current = false;
+        }}
         onLoadingComplete={handleLoadingComplete}
         onError={handleError}
         accessibilityLabel={alt}
         accessibilityRole="image"
         {...expoImageProps}
-        style={[styles.image, aspectRatioStyle ? { aspectRatio: detectedDimensions?.aspectRatio } : null, style]}
+        style={[
+          styles.image,
+          aspectRatioStyle ? { aspectRatio: detectedDimensions?.aspectRatio } : null,
+          style,
+        ]}
       />
 
       {/* Loading indicator overlay */}

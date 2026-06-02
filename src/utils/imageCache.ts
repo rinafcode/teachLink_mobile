@@ -1,5 +1,8 @@
+// eslint-disable-next-line import/no-unresolved
 import { Image } from 'expo-image';
-import logger from './logger';
+
+import { buildOptimizedImageSources } from './imageOptimization';
+import { logger } from './logger';
 
 export class ImageCache {
   /**
@@ -12,11 +15,19 @@ export class ImageCache {
   static async prefetchImages(urls: string[]): Promise<boolean[]> {
     try {
       if (!urls || urls.length === 0) return [];
-      
-      const promises = urls.map(async (url) => {
+
+      const promises = urls.map(async url => {
         if (!url) return false;
+
+        const optimized = buildOptimizedImageSources(url);
+
         try {
-          return await Image.prefetch(url);
+          const candidates = optimized.prefetchCandidates.length
+            ? optimized.prefetchCandidates
+            : [url];
+          const results = await Promise.all(candidates.map(candidate => Image.prefetch(candidate)));
+
+          return results.some(Boolean);
         } catch (e) {
           logger.warn(`Failed to prefetch image: ${url}`, e);
           return false;

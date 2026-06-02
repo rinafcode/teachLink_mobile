@@ -3,8 +3,8 @@ import React from 'react';
 
 import { CachedImage } from '../../components/ui/CachedImage';
 import { usePrefetchImages } from '../../hooks/usePrefetchImages';
-import { ImageCache } from '../../utils/imageCache';
 import { useSettingsStore } from '../../store/settingsStore';
+import { ImageCache } from '../../utils/imageCache';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -178,14 +178,31 @@ describe('Image Cache Integration - Issue #143', () => {
       );
 
       const image = getByTestId('cached-image');
-      expect(image.props.source.uri).toContain('image@1x.jpg');
-      expect(image.props.source.uri).toContain('quality=low');
-      expect(image.props.source.uri).toContain('q=30');
+      expect(Array.isArray(image.props.source)).toBe(true);
+      expect(image.props.source[0].uri).toContain('format=webp');
+      expect(image.props.source[1].uri).toContain('format=png');
+      expect(image.props.placeholder.uri).toContain('lqip=1');
 
       expect(prefetchSpy).not.toHaveBeenCalled();
 
       // Restore settings
       useSettingsStore.setState({ dataSaverEnabled: false });
+    });
+
+    it('should build progressive image sources with LQIP placeholder', () => {
+      const testUri = 'https://example.com/avatar.jpg';
+
+      const { getByTestId } = render(
+        <CachedImage uri={testUri} targetWidth={100} targetHeight={100} testID="cached-image" />
+      );
+
+      const image = getByTestId('cached-image');
+      expect(image.props.source[0].uri).toContain('format=webp');
+      expect(image.props.source[0].uri).toContain('dpr=2');
+      expect(image.props.source[0].uri).toContain('w=200');
+      expect(image.props.source[1].uri).toContain('format=png');
+      expect(image.props.placeholder.uri).toContain('lqip=1');
+      expect(image.props.transition).toBe(250);
     });
   });
 
