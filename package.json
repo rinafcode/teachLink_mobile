@@ -13,6 +13,7 @@
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
     "lint:staged": "lint-staged",
     "test": "jest",
+    "build": "expo export",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:perf": "jest --testPathPattern=perf --runInBand",
@@ -30,7 +31,7 @@
     "deploy:preview": "bash ./scripts/deploy-preview.sh",
     "prepare": "husky",
     "audit": "npm audit --audit-level=high",
-    "depcheck": "depcheck --config .depcheckrc",
+    "depcheck": "depcheck",
     "audit:performance": "tsx src/audit/cli.ts",
     "audit:performance:html": "tsx src/audit/cli.ts --format html --output ./reports/audit-report",
     "audit:performance:all": "tsx src/audit/cli.ts --format all --output ./reports/audit-report",
@@ -54,7 +55,7 @@
     "@react-navigation/native": "^7.1.8",
     "@react-navigation/native-stack": "^7.3.16",
     "@sentry/react-native": "^5.29.2",
-    "axios": "^1.16.1",
+    "axios": "^1.7.9",
     "clsx": "^2.1.1",
     "expo": "~54.0.33",
     "expo-asset": "~12.0.12",
@@ -113,9 +114,9 @@
     "@types/babel__generator": "^7.27.0",
     "@types/babel__template": "^7.4.4",
     "@types/babel__traverse": "^7.28.0",
-    "@types/jest": "29.5.14",
+    "@types/jest": "^30.0.0",
     "@types/node": "^25.0.10",
-    "@types/react": "~19.0.0",
+    "@types/react": "~19.1.0",
     "babel-preset-expo": "^54.0.10",
     "depcheck": "^1.4.7",
     "eslint": "^9.25.0",
@@ -127,10 +128,12 @@
     "js-yaml": "^4.2.0",
     "lint-staged": "^16.4.0",
     "metro": "^0.83.7",
+    "postcss": "^8.5.12",
     "prettier": "^3.8.3",
     "react-test-renderer": "19.1.0",
     "storybook": "^10.4.1",
-    "tailwindcss": "^3.4.19"
+    "tailwindcss": "^3.4.19",
+    "tsx": "^4.19.2"
   },
   "overrides": {
     "@tootallnate/once": "^3.0.1",
@@ -138,7 +141,7 @@
     "postcss": "^8.5.12",
     "tmp": "^0.2.6",
     "ws": "^8.21.0",
-    "uuid": "^14.0.0"
+    "uuid": "^11.0.3"
   },
   "private": true,
   "lint-staged": {
@@ -152,6 +155,11 @@
   },
   "depcheck": {
     "ignoreMatches": [
+      "@storybook/react-native",
+      "@storybook/addon-ondevice-controls",
+      "@storybook/addon-ondevice-actions",
+      "storybook",
+      "@storybook/react",
       "expo-asset",
       "expo-speech-recognition",
       "prettier-plugin-tailwindcss",
