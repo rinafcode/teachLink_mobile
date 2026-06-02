@@ -1,6 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { AlertCircle, BookOpen, Lock, Mail, User } from 'lucide-react-native';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import {
     ActivityIndicator,
     Platform,
@@ -43,7 +44,6 @@ export const MobileRegister: React.FC<MobileRegisterProps> = ({
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const nameRef = useRef<TextInput>(null);
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
   const confirmRef = useRef<TextInput>(null);
@@ -61,11 +61,6 @@ export const MobileRegister: React.FC<MobileRegisterProps> = ({
   });
 
   const { scale } = useDynamicFontSize();
-  const {
-    applyPrefillToFields,
-    isLoading: formCacheLoading,
-    prefillValues,
-  } = useFormCache(['fullName', 'email']);
   const styles = createStyles(scale);
   const bg = isDark ? '#0f172a' : '#f8fafc';
   const cardBg = isDark ? '#1e293b' : '#fff';
@@ -86,9 +81,8 @@ export const MobileRegister: React.FC<MobileRegisterProps> = ({
     if (!validateAll({ name, email, password, confirmPassword })) return;
     setIsLoading(true);
     try {
-      // Registration API call would go here
       await new Promise(resolve => setTimeout(resolve, 1000));
-      await cacheFormValues({ fullName: name.trim(), email: email.trim().toLowerCase() });
+      await cacheFormValues({ fullName: data.name.trim(), email: data.email.trim().toLowerCase() });
       onRegisterSuccess?.();
     } finally {
       setIsLoading(false);
@@ -200,7 +194,7 @@ export const MobileRegister: React.FC<MobileRegisterProps> = ({
               {password.length > 0 && !errors.password && (
                 <PasswordStrengthBar strength={passwordStrength} scale={scale} />
               )}
-            </View>
+            />
 
             {/* Confirm Password */}
             <View style={styles.fieldWrap}>
@@ -235,11 +229,11 @@ export const MobileRegister: React.FC<MobileRegisterProps> = ({
               {errors.confirmPassword && (
                 <FieldError message={errors.confirmPassword} scale={scale} />
               )}
-            </View>
+            />
 
             <TouchableOpacity
               style={[styles.registerBtn, { opacity: isLoading ? 0.7 : 1 }]}
-              onPress={handleRegister}
+              onPress={handleSubmit(onSubmit)}
               disabled={isLoading}
               activeOpacity={0.85}
             >

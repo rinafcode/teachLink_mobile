@@ -37,6 +37,11 @@ import { AvatarCamera } from './AvatarCamera';
 import { MobileFormInput } from './MobileFormInput';
 import { StatisticsDisplay } from './StatisticsDisplay';
 
+// Enable LayoutAnimation on Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 /**
@@ -247,55 +252,23 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
   isLoading = false,
 }) => {
   const [profile, setProfile] = useState<ProfileData>(MOCK_PROFILE);
-  const {
-    applyPrefillToFields,
-    persistFields,
-    prefillValues,
-    isLoading: formCacheLoading,
-  } = useFormCache(PROFILE_FORM_CACHE_KEYS);
   const unlockedCount = profile.achievements.filter(a => !a.isLocked).length;
   const [activeTab, setActiveTab] = useState<ProfileTab>('overview');
   const [isEditing, setIsEditing] = useState(false);
   const [isCameraVisible, setIsCameraVisible] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Edit form state
-  const [editName, setEditName] = useState('');
-  const [editBio, setEditBio] = useState('');
-  const [editEmail, setEditEmail] = useState('');
-  const [editLocation, setEditLocation] = useState('');
-  const [editWebsite, setEditWebsite] = useState('');
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors: formErrors },
+  } = useForm({
+    defaultValues: { name: '', email: '', bio: '', location: '', website: '' },
+  });
 
-  useEffect(() => {
-    if (!isEditing || formCacheLoading) return;
-    applyPrefillToFields(
-      {
-        fullName: editName,
-        email: editEmail,
-        bio: editBio,
-        location: editLocation,
-        website: editWebsite,
-      },
-      {
-        fullName: setEditName,
-        email: setEditEmail,
-        bio: setEditBio,
-        location: setEditLocation,
-        website: setEditWebsite,
-      }
-    );
-  }, [
-    applyPrefillToFields,
-    editBio,
-    editEmail,
-    editLocation,
-    editName,
-    editWebsite,
-    formCacheLoading,
-    isEditing,
-    prefillValues,
-  ]);
+  // Progressive disclosure: advanced profile fields collapsed by default
+  const [showAdvancedFields, setShowAdvancedFields] = useState(false);
 
   if (isLoading) {
     const bg = isDark ? '#0f172a' : '#f8fafc';
@@ -336,9 +309,6 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
       </SafeAreaView>
     );
   }
-  // Progressive disclosure: advanced profile fields collapsed by default
-  const [showAdvancedFields, setShowAdvancedFields] = useState(false);
-
   // Theme tokens
   const bg = isDark ? '#0f172a' : '#f8fafc';
   const cardBg = isDark ? '#1e293b' : '#fff';
@@ -404,22 +374,21 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
       return;
     }
     setIsSaving(true);
-    // Simulate API call — replace with actual service call
     await new Promise(resolve => setTimeout(resolve, 800));
     setProfile(prev => ({
       ...prev,
-      name: editName.trim(),
-      bio: editBio.trim(),
-      email: editEmail.trim(),
-      location: editLocation.trim(),
-      website: editWebsite.trim(),
+      name: data.name.trim(),
+      bio: data.bio.trim(),
+      email: data.email.trim(),
+      location: data.location.trim(),
+      website: data.website.trim(),
     }));
-    await persistFields({
-      fullName: editName.trim(),
-      email: editEmail.trim(),
-      bio: editBio.trim(),
-      location: editLocation.trim(),
-      website: editWebsite.trim(),
+    await cacheFormValues({
+      fullName: data.name.trim(),
+      email: data.email.trim(),
+      bio: data.bio.trim(),
+      location: data.location.trim(),
+      website: data.website.trim(),
     });
     setIsSaving(false);
     setIsEditing(false);
@@ -548,7 +517,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.saveBtn}
-                  onPress={handleSave}
+                  onPress={() => void handleSave()}
                   disabled={isSaving}
                   accessibilityRole="button"
                   accessibilityLabel="Save profile changes"
@@ -674,38 +643,61 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                   <Text style={[styles.cardTitle, { color: textPrimary }]}>Edit Profile</Text>
 
                   {/* ── Basic Fields (always visible) ── */}
-                  <MobileFormInput
-                    label="Full Name"
-                    value={editName}
-                    onChangeText={setEditName}
-                    placeholder="Your full name"
-                    required
-                    error={formErrors?.name}
-                    isDark={isDark}
-                    cacheKey="fullName"
-                    leftIcon={<User size={18} color="#94a3b8" />}
+                  <Controller
+                    control={control}
+                    name="name"
+                    rules={{ required: 'Name is required' }}
+                    render={({ field: { onChange, value } }) => (
+                      <MobileFormInput
+                        label="Full Name"
+                        value={value}
+                        onChangeText={onChange}
+                        placeholder="Your full name"
+                        required
+                        error={formErrors.name?.message}
+                        isDark={isDark}
+                        cacheKey="fullName"
+                        leftIcon={<User size={18} color="#94a3b8" />}
+                      />
+                    )}
                   />
-                  <MobileFormInput
-                    label="Email"
-                    value={editEmail}
-                    onChangeText={setEditEmail}
-                    placeholder="your@email.com"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    required
-                    error={formErrors?.email}
-                    isDark={isDark}
-                    cacheKey="email"
-                    leftIcon={<Mail size={18} color="#94a3b8" />}
+                  <Controller
+                    control={control}
+                    name="email"
+                    rules={{
+                      required: 'Email is required',
+                      pattern: { value: /\S+@\S+\.\S+/, message: 'Enter a valid email address' },
+                    }}
+                    render={({ field: { onChange, value } }) => (
+                      <MobileFormInput
+                        label="Email"
+                        value={value}
+                        onChangeText={onChange}
+                        placeholder="your@email.com"
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        required
+                        error={formErrors.email?.message}
+                        isDark={isDark}
+                        cacheKey="email"
+                        leftIcon={<Mail size={18} color="#94a3b8" />}
+                      />
+                    )}
                   />
-                  <MobileFormInput
-                    label="Bio"
-                    value={editBio}
-                    onChangeText={setEditBio}
-                    placeholder="Tell us about yourself..."
-                    multiline
-                    isDark={isDark}
-                    cacheKey="bio"
+                  <Controller
+                    control={control}
+                    name="bio"
+                    render={({ field: { onChange, value } }) => (
+                      <MobileFormInput
+                        label="Bio"
+                        value={value}
+                        onChangeText={onChange}
+                        placeholder="Tell us about yourself..."
+                        multiline
+                        isDark={isDark}
+                        cacheKey="bio"
+                      />
+                    )}
                   />
 
                   {/* ── Progressive Disclosure: Advanced Details ── */}
@@ -735,25 +727,37 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                   {/* ── Advanced Fields (expandable) ── */}
                   {showAdvancedFields && (
                     <View style={styles.disclosureContent}>
-                      <MobileFormInput
-                        label="Location"
-                        value={editLocation}
-                        onChangeText={setEditLocation}
-                        placeholder="City, Country"
-                        isDark={isDark}
-                        cacheKey="location"
-                        leftIcon={<MapPin size={18} color="#94a3b8" />}
+                      <Controller
+                        control={control}
+                        name="location"
+                        render={({ field: { onChange, value } }) => (
+                          <MobileFormInput
+                            label="Location"
+                            value={value}
+                            onChangeText={onChange}
+                            placeholder="City, Country"
+                            isDark={isDark}
+                            cacheKey="location"
+                            leftIcon={<MapPin size={18} color="#94a3b8" />}
+                          />
+                        )}
                       />
-                      <MobileFormInput
-                        label="Website"
-                        value={editWebsite}
-                        onChangeText={setEditWebsite}
-                        placeholder="yourwebsite.com"
-                        keyboardType="url"
-                        autoCapitalize="none"
-                        isDark={isDark}
-                        cacheKey="website"
-                        leftIcon={<Globe size={18} color="#94a3b8" />}
+                      <Controller
+                        control={control}
+                        name="website"
+                        render={({ field: { onChange, value } }) => (
+                          <MobileFormInput
+                            label="Website"
+                            value={value}
+                            onChangeText={onChange}
+                            placeholder="yourwebsite.com"
+                            keyboardType="url"
+                            autoCapitalize="none"
+                            isDark={isDark}
+                            cacheKey="website"
+                            leftIcon={<Globe size={18} color="#94a3b8" />}
+                          />
+                        )}
                       />
                     </View>
                   )}
