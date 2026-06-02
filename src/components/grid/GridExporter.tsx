@@ -1,6 +1,6 @@
-import { Download } from 'lucide-react-native';
+import { _Download } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { _ActivityIndicator, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { BatchProgress } from '../../services/batchDataProcessor';
 import { ExportFormat } from '../../utils/gridUtils';
@@ -71,7 +71,7 @@ export const GridExporter = ({
 
   return (
     <View style={styles.container}>
-      <Download size={14} color="#6B7280" />
+      <_Download size={14} color="#6B7280" />
       <Text style={styles.label}>Export:</Text>
       {(['csv', 'json'] as ExportFormat[]).map(format => {
         const isLoading = activeFormat === format;
@@ -89,7 +89,7 @@ export const GridExporter = ({
             accessibilityState={{ disabled: isDisabled, busy: isLoading }}
           >
             {isLoading ? (
-              <ActivityIndicator size="small" color="#19c3e6" />
+              <_ActivityIndicator size="small" color="#19c3e6" />
             ) : (
               <Text style={[styles.btnText, isDisabled && styles.btnTextDisabled]}>
                 {LABEL[format]}

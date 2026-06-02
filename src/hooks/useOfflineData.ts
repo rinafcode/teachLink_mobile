@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { offlineStorage } from '../services/offlineStorage';
+
 import { useNetworkStatus } from './useNetworkStatus';
+import { offlineStorage } from '../services/offlineStorage';
 import logger from '../utils/logger';
 
 // Data sync status
@@ -19,7 +20,7 @@ export interface OfflineDataItem<T> {
 // Hook options
 interface UseOfflineDataOptions {
   autoSync?: boolean;
-  maxSyncAttempts?: number;
+  _maxSyncAttempts?: number;
   conflictResolutionStrategy?: 'serverWins' | 'clientWins' | 'merge';
 }
 
@@ -32,7 +33,7 @@ export function useOfflineData<T>(
 ) {
   const {
     autoSync = true,
-    maxSyncAttempts = 3,
+    _maxSyncAttempts = 3,
     conflictResolutionStrategy = 'serverWins'
   } = options;
 

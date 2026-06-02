@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-import type { CourseProgress } from '../types/course';
 import { asyncStorageJSONStorage } from './persistence';
+
+import type { CourseProgress } from '../types/course';
 
 interface CourseProgressState {
   // keyed by courseId

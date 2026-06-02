@@ -17,6 +17,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { useAdaptiveFrameRate } from '../../hooks/useAdaptiveFrameRate';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 
@@ -71,14 +72,14 @@ export interface FilterSheetProps {
   onReset?: () => void;
 }
 
-export function FilterSheet({
+export const FilterSheet = ({
   visible,
   onClose,
   filters,
   values,
   onApply,
   onReset,
-}: FilterSheetProps) {
+}: FilterSheetProps) => {
   const insets = useSafeAreaInsets();
   const translateY = useSharedValue(SHEET_HEIGHT);
   const overlayOpacity = useSharedValue(0);
@@ -198,7 +199,7 @@ interface FilterSectionProps {
   onSelect: (value: string) => void;
 }
 
-function FilterSection({ label, options, selectedValue, onSelect }: FilterSectionProps) {
+const FilterSection = ({ label, options, selectedValue, onSelect }: FilterSectionProps) => {
   return (
     <View style={styles.section}>
       <Text style={styles.sectionLabel}>{label}</Text>

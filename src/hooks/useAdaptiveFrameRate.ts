@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
-import * as Device from 'expo-device';
 import { useLowPowerMode } from 'expo-battery';
+import * as Device from 'expo-device';
+import { useMemo } from 'react';
 
 /** Devices made before this year are classified as low-end. */
 const LOW_END_YEAR_CLASS = 2018;

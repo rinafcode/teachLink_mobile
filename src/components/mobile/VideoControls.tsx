@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+
 import type { QualityOption } from '../../services/videoQuality';
 
 type VideoControlsProps = {

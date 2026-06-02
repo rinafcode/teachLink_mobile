@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
+
 import { getInitialDeepLink, subscribeToDeepLinks } from '../services/deepLinking';
+
 import type { ParsedDeepLink } from '../utils/linkParser';
 
 export function useDeepLink(

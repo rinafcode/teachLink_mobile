@@ -2,7 +2,7 @@ import { Audio, AVPlaybackStatus, AVPlaybackStatusToSet, ResizeMode, Video } fro
 import * as Network from 'expo-network';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
+  _ActivityIndicator,
   Modal,
   Pressable,
   StyleProp,
@@ -516,7 +516,7 @@ const MobileVideoPlayer = ({
 
         {(isLoading || isBuffering || isSwitchingQuality) && (
           <View style={styles.loadingOverlay} pointerEvents="none">
-            <ActivityIndicator size="small" color="#fff" />
+            <_ActivityIndicator size="small" color="#fff" />
           </View>
         )}
 

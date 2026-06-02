@@ -1,9 +1,10 @@
 import React from 'react';
 import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+import { OfflineIndicator } from './OfflineIndicator';
 import { useNetworkStatus } from '../../hooks';
 import { useAdaptiveFrameRate } from '../../hooks/useAdaptiveFrameRate';
 import logger from '../../utils/logger';
-import { OfflineIndicator } from './OfflineIndicator';
 
 interface Toast {
   id: string;

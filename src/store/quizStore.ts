@@ -1,8 +1,9 @@
-import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from 'zustand';
+
+import { isRecord } from './persistence';
 import { Quiz, QuizProgress } from '../types/course';
 import logger from '../utils/logger';
-import { isRecord } from './persistence';
 
 const QUIZ_SESSION_KEY = '@teachlink_quiz_session';
 const QUIZ_PROGRESS_KEY = '@teachlink_quiz_progress';

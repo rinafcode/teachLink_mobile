@@ -17,7 +17,7 @@ import {
   DEFAULT_RESOURCE_HINTS,
   prefetchExternalResources,
   ResourceHint,
-} from '@/utils/resourceHints';
+} from '../utils/resourceHints';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

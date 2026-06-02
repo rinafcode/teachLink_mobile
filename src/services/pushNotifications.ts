@@ -2,6 +2,7 @@ import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+
 import { NotificationData, NotificationType } from '../types/notifications';
 import logger from '../utils/logger';
 import apiClient from './api/axios.config';

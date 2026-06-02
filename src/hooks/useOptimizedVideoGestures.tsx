@@ -6,6 +6,7 @@
  */
 
 import React, { useCallback, useRef } from 'react';
+import { View, ViewStyle } from 'react-native';
 import {
   Gesture,
   GestureDetector,
@@ -18,7 +19,6 @@ import Animated, {
   interpolate,
   Extrapolate,
 } from 'react-native-reanimated';
-import { View, ViewStyle } from 'react-native';
 
 export interface UseOptimizedVideoGesturesOptions {
   currentPositionMillis: number;
@@ -29,8 +29,8 @@ export interface UseOptimizedVideoGesturesOptions {
   onSeekEnd?: () => void;
   onSeekPreview?: (positionMillis: number) => void;
   onTogglePlayPause: () => void;
-  edgeSlop?: number;
-  deadZonePx?: number;
+  _edgeSlop?: number;
+  _deadZonePx?: number;
   seekSensitivity?: number;
   tapDebounceMs?: number;
   children?: React.ReactNode;
@@ -56,8 +56,8 @@ export function useOptimizedVideoGestures(
     onSeekEnd,
     onSeekPreview,
     onTogglePlayPause,
-    edgeSlop = 24,
-    deadZonePx = 12,
+    _edgeSlop = 24,
+    _deadZonePx = 12,
     seekSensitivity = 0.9,
     tapDebounceMs = 280,
   } = options;
@@ -154,7 +154,7 @@ export function useOptimizedVideoGestures(
 /**
  * Wrapper component for easy integration with video-enabled views
  */
-export function OptimizedVideoGesturesView({
+export const OptimizedVideoGesturesView = ({
   options,
   children,
   style,
@@ -162,7 +162,7 @@ export function OptimizedVideoGesturesView({
   options: UseOptimizedVideoGesturesOptions;
   children?: React.ReactNode;
   style?: ViewStyle;
-}) {
+}) => {
   const { gesture, animatedStyle } = useOptimizedVideoGestures(options);
 
   return (

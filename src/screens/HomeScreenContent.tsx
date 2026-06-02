@@ -3,10 +3,10 @@ import { useRouter } from 'expo-router';
 import React, { useRef } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
-import { AppText as Text } from '@/components/common/AppText';
-import { sampleCourse } from '@/data/sampleCourse';
-import { useDynamicFontSize, useAnalytics } from '@/hooks';
-import { AnalyticsEvent } from '@/utils/trackingEvents';
+import { AppText as Text } from '../components/common/AppText';
+import { sampleCourse } from '../data/sampleCourse';
+import { useDynamicFontSize, useAnalytics } from '../hooks';
+import { AnalyticsEvent } from '../utils/trackingEvents';
 
 export const HomeScreenContent = () => {
   const router = useRouter();

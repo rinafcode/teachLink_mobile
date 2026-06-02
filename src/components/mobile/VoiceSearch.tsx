@@ -1,6 +1,6 @@
 import { Mic, Square } from 'lucide-react-native';
 import React, { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { _ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import * as hooks from '../../hooks';
 
@@ -118,7 +118,7 @@ export const VoiceSearch = ({
       </TouchableOpacity>
       {isListening && (
         <View style={styles.listeningBar}>
-          <ActivityIndicator size="small" color="#19c3e6" />
+          <_ActivityIndicator size="small" color="#19c3e6" />
           <Text style={styles.listeningText} numberOfLines={1}>
             {transcript || 'Listening...'}
           </Text>

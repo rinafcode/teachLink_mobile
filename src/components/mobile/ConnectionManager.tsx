@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ListRenderItemInfo,
 } from 'react-native';
+
 import { useMemoryMonitor } from '../../hooks';
 
 interface Connection {

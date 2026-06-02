@@ -1,5 +1,5 @@
-import { Course } from '../types/course';
 import { getQuizzesForSection } from './sampleQuizzes';
+import { Course } from '../types/course';
 
 /**
  * Sample course data for demoing the Mobile Course Viewer.

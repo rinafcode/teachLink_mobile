@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { Question } from '../../../types/course';
+
 import { useHapticFeedback } from '../../../hooks';
+import { Question } from '../../../types/course';
 
 interface MobileQuestionCardProps {
   /** The question data to display */

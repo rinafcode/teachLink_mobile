@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { AccessibilityInfo } from 'react-native';
+
 import type { GestureResponderEvent, ViewProps } from 'react-native';
 
 /**
@@ -160,7 +161,7 @@ export function useDoubleTap(options: UseDoubleTapOptions) {
     });
     return () => {
       mounted = false;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       (sub as any)?.remove?.();
     };
   }, []);

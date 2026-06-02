@@ -6,6 +6,7 @@ import {
   ViewStyle,
   StyleProp,
 } from 'react-native';
+
 import { getAccessibilityProps } from '../../utils/accessibility';
 
 /**

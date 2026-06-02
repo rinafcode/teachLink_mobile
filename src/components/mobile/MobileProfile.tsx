@@ -19,7 +19,7 @@ import {
 } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
+  _ActivityIndicator,
   Animated,
   LayoutAnimation,
   Platform,
@@ -30,20 +30,21 @@ import {
   UIManager,
   View,
 } from 'react-native';
+
+import { Achievement, AchievementBadges } from './AchievementBadges';
+import { AvatarCamera } from './AvatarCamera';
+import { MobileFormInput } from './MobileFormInput';
+import { StatisticsDisplay } from './StatisticsDisplay';
 import { useFormCache } from '../../hooks/useFormCache';
 import { PROFILE_FORM_CACHE_KEYS } from '../../services/formCache';
+import { AppText as Text } from '../common/AppText';
+import { CachedImage } from '../ui/CachedImage';
+import { Skeleton } from '../ui/Skeleton';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
-import { Achievement, AchievementBadges } from './AchievementBadges';
-import { AvatarCamera } from './AvatarCamera';
-import { MobileFormInput } from './MobileFormInput';
-import { StatisticsDisplay } from './StatisticsDisplay';
-import { AppText as Text } from '../common/AppText';
-import { CachedImage } from '../ui/CachedImage';
-import { Skeleton } from '../ui/Skeleton';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -555,7 +556,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                   accessibilityState={{ disabled: isSaving, busy: isSaving }}
                 >
                   {isSaving ? (
-                    <ActivityIndicator size="small" color="#fff" />
+                    <_ActivityIndicator size="small" color="#fff" />
                   ) : (
                     <>
                       <Save size={14} color="#fff" />

@@ -1,5 +1,6 @@
 import React, { createContext, ReactNode, useContext, useEffect, useRef } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
+
 import { crashReportingService } from '../../services/crashReporting';
 import { mobileAnalyticsService } from '../../services/mobileAnalytics';
 import logger from '../../utils/logger';

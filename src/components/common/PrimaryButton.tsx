@@ -1,14 +1,15 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import {
   TouchableOpacity,
   Text,
-  ActivityIndicator,
+  _ActivityIndicator,
   View,
   ViewStyle,
   TextStyle,
   StyleSheet,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import { useDynamicFontSize } from '../../hooks';
 
 /**
@@ -104,7 +105,7 @@ export default function PrimaryButton({
           ]}
         >
           {loading ? (
-            <ActivityIndicator color="white" size="small" />
+            <_ActivityIndicator color="white" size="small" />
           ) : (
             <>
               {icon}
@@ -148,7 +149,7 @@ export default function PrimaryButton({
         ]}
       >
         {loading ? (
-          <ActivityIndicator color="white" size="small" />
+          <_ActivityIndicator color="white" size="small" />
         ) : (
           <>
             {icon}
@@ -193,7 +194,7 @@ export default function PrimaryButton({
       ]}
     >
       {loading ? (
-        <ActivityIndicator color="#19c3e6" size="small" />
+        <_ActivityIndicator color="#19c3e6" size="small" />
       ) : (
         <>
           {icon}

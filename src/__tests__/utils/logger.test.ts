@@ -11,7 +11,6 @@
  * - Sync vs async methods
  */
 
-import { appLogger, logger } from '../../utils/logger';
 import {
   LogLevel,
   getLogContext,
@@ -21,6 +20,7 @@ import {
   popLogContext,
   LogContext,
 } from '../../config/logging';
+import { appLogger, logger } from '../../utils/logger';
 
 describe('AppLogger - Production Logging System', () => {
   // ─── SETUP ──────────────────────────────────────────────────────────────

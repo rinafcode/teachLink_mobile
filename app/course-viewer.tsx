@@ -1,11 +1,11 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
-import { CourseViewerSkeleton } from '@/components/mobile/CourseViewerSkeleton';
-import { sampleCourse } from '@/data/sampleCourse';
-import { createLazyRoute } from '@/utils/lazyRoute';
+import { } from '../../components/mobile/CourseViewerSkeleton';
+import { } from '../../data/sampleCourse';
+import { } from '../../utils/lazyRoute';
 
 const LazyMobileCourseViewer = createLazyRoute({
-  importFn: () => import('@/components/mobile/MobileCourseViewer'),
+  importFn: () => import('../components/mobile/MobileCourseViewer'),
   LoadingFallback: CourseViewerSkeleton,
   boundaryName: 'CourseViewerRoute',
 });

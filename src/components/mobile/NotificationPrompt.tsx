@@ -1,5 +1,6 @@
 import React from 'react';
 import { Modal, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
+
 import { useNotificationPermission } from '../../hooks';
 import { useNotificationStore } from '../../store/notificationStore';
 import { ErrorBoundary } from '../common/ErrorBoundary';
@@ -24,7 +25,7 @@ interface NotificationTypeItemProps {
   description: string;
 }
 
-function NotificationTypeItem({ icon, title, description }: NotificationTypeItemProps) {
+const NotificationTypeItem = ({ icon, title, description }: NotificationTypeItemProps) => {
   return (
     <View className="mb-4 flex-row items-start">
       <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-indigo-100">
@@ -38,12 +39,12 @@ function NotificationTypeItem({ icon, title, description }: NotificationTypeItem
   );
 }
 
-export function NotificationPrompt({
+export const NotificationPrompt = ({
   visible,
   onClose,
   onPermissionGranted,
   onPermissionDenied,
-}: NotificationPromptProps) {
+}: NotificationPromptProps) => {
   const { requestPermission, isLoading, isDevice, openSettings, permissionStatus } =
     useNotificationPermission();
   const { setHasPromptedForPermission, setPermissionDeniedAt } = useNotificationStore();

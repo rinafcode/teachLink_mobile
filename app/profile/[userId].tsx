@@ -1,13 +1,13 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 
-import { ProfileSkeleton } from '@/components/mobile/ProfileSkeleton';
-import { useAppStore } from '@/store';
-import { createLazyRoute } from '@/utils/lazyRoute';
+import { } from '../../components/mobile/ProfileSkeleton';
+import { } from '../../store';
+import { } from '../../utils/lazyRoute';
 
 const LazyMobileProfile = createLazyRoute({
   importFn: () =>
-    import('@/components/mobile/MobileProfile').then(m => ({ default: m.MobileProfile })),
+    import('../components/mobile/MobileProfile').then(m => ({ default: m.MobileProfile })),
   LoadingFallback: ProfileSkeleton,
   boundaryName: 'ProfileRoute',
 });

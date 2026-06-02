@@ -1,15 +1,15 @@
 import { useEffect } from 'react';
 import { Alert, View } from 'react-native';
 
-import { HomeScreenSkeleton } from '@/components/mobile/HomeScreenSkeleton';
-import { useAnalytics } from '@/hooks';
-import { useAppStore } from '@/store';
-import { createLazyRoute } from '@/utils/lazyRoute';
-import { ScreenName } from '@/utils/trackingEvents';
+import { } from '../../components/mobile/HomeScreenSkeleton';
+import { } from '../../hooks';
+import { } from '../../store';
+import { } from '../../utils/lazyRoute';
+import { } from '../../utils/trackingEvents';
 
 const LazyHomeScreenContent = createLazyRoute({
   importFn: () =>
-    import('@/screens/HomeScreenContent').then((m) => ({ default: m.HomeScreenContent })),
+    import('../screens/HomeScreenContent').then((m) => ({ default: m.HomeScreenContent })),
   LoadingFallback: HomeScreenSkeleton,
   boundaryName: 'HomeRoute',
 });

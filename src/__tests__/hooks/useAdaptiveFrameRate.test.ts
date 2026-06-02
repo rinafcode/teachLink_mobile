@@ -1,5 +1,6 @@
 import { renderHook } from '@testing-library/react-native';
 import * as Battery from 'expo-battery';
+
 import { useAdaptiveFrameRate } from '../../hooks/useAdaptiveFrameRate';
 
 const mockUseLowPowerMode = Battery.useLowPowerMode as jest.Mock;

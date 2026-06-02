@@ -1,7 +1,7 @@
 import React from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { _ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { AppText as Text } from '@/components/common/AppText';
+import { AppText as Text } from '../components/common/AppText';
 
 export const QRScannerSkeleton = () => {
   return (
@@ -10,7 +10,7 @@ export const QRScannerSkeleton = () => {
       accessibilityRole="progressbar"
       accessibilityLabel="Opening camera scanner"
     >
-      <ActivityIndicator size="large" color="#19c3e6" />
+      <_ActivityIndicator size="large" color="#19c3e6" />
       <Text style={styles.label}>Preparing scanner…</Text>
     </View>
   );

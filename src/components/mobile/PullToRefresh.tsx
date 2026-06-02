@@ -1,7 +1,7 @@
 import * as React from 'react';
 import {
   AccessibilityInfo,
-  ActivityIndicator,
+  _ActivityIndicator,
   Animated,
   Easing,
   Pressable,
@@ -10,6 +10,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
+
 import { useAdaptiveFrameRate } from '../../hooks/useAdaptiveFrameRate';
 
 type AnyScrollComponent = React.ComponentType<any>;
@@ -58,7 +59,7 @@ function clamp(v: number, min: number, max: number): number {
  * - Avoids re-renders during drag by updating Animated.Value directly.
  * - Provides a screen-reader friendly button fallback (optional).
  */
-export function PullToRefresh(props: PullToRefreshProps) {
+export const PullToRefresh = (props: PullToRefreshProps) => {
   const {
     ScrollComponent = Animated.ScrollView,
     scrollProps,
@@ -98,7 +99,7 @@ export function PullToRefresh(props: PullToRefreshProps) {
     return () => {
       mounted = false;
       // RN types vary by version; guard-remove.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       (sub as any)?.remove?.();
     };
   }, []);
@@ -241,7 +242,7 @@ export function PullToRefresh(props: PullToRefreshProps) {
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
       >
-        <ActivityIndicator animating={refreshing} />
+        <_ActivityIndicator animating={refreshing} />
       </Animated.View>
 
       <Animated.View style={{ transform: [{ translateY: pullY }] }}>

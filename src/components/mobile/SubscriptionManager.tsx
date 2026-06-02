@@ -1,3 +1,5 @@
+import { LinearGradient } from 'expo-linear-gradient';
+import { Crown, Zap, Check, RefreshCw, _ChevronRight, Star, Shield } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -7,15 +9,14 @@ import {
   StyleSheet,
   SafeAreaView,
   Alert,
-  ActivityIndicator,
+  _ActivityIndicator,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Crown, Zap, Check, RefreshCw, ChevronRight, Star, Shield } from 'lucide-react-native';
+
 import { PurchaseButton } from './PurchaseButton';
 import { SubscriptionSkeleton } from './SubscriptionSkeleton';
 import { useInAppPurchase } from '../../hooks';
 import {
-  SUBSCRIPTION_PLANS,
+  _SUBSCRIPTION_PLANS,
   SubscriptionPlan,
   SubscriptionTier,
 } from '../../services/mobilePayments';
@@ -219,7 +220,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
         <View style={styles.planCTA}>
           {isActivating ? (
             <View style={styles.activatingRow}>
-              <ActivityIndicator color={meta.colors[0]} />
+              <_ActivityIndicator color={meta.colors[0]} />
               <Text style={[styles.activatingText, { color: meta.colors[0] }]}>
                 Opening payment…
               </Text>
@@ -351,7 +352,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
             disabled={isRestoring}
           >
             {isRestoring ? (
-              <ActivityIndicator size="small" color="#19c3e6" />
+              <_ActivityIndicator size="small" color="#19c3e6" />
             ) : (
               <RefreshCw size={14} color="#19c3e6" />
             )}

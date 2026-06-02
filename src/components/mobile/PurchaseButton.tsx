@@ -1,7 +1,7 @@
-import React from 'react';
-import { TouchableOpacity, Text, View, ActivityIndicator, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Check, Zap, Lock } from 'lucide-react-native';
+import React from 'react';
+import { TouchableOpacity, Text, View, _ActivityIndicator, StyleSheet } from 'react-native';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -49,7 +49,7 @@ export const PurchaseButton: React.FC<PurchaseButtonProps> = ({
     if (isLoading) {
       return (
         <View style={styles.contentRow}>
-          <ActivityIndicator size="small" color={variant === 'outline' ? '#19c3e6' : '#fff'} />
+          <_ActivityIndicator size="small" color={variant === 'outline' ? '#19c3e6' : '#fff'} />
           <Text style={[styles.label, { color: variant === 'outline' ? '#19c3e6' : '#fff' }]}>
             Processing…
           </Text>

@@ -83,7 +83,7 @@ export const LazyQRScanner = createLazyComponent<any>(
   'LazyQRScanner',
 );
 
-// Download Manager
+// _Download Manager
 export const LazyDownloadQueue = createLazyComponent<any>(
   'DownloadQueue',
   () => import('../components/mobile/DownloadQueue'),
@@ -176,7 +176,7 @@ export const lazyComponentRegistry = {
     name: 'DownloadQueue',
     category: 'media',
     estimatedSize: '70KB',
-    description: 'Download queue manager',
+    description: '_Download queue manager',
   },
   virtualList: {
     component: LazyVirtualList,
@@ -193,7 +193,7 @@ export const lazyComponentRegistry = {
 export function getEstimatedBundleSavings(): {
   totalSavings: number;
   totalSavingsPercent: number;
-  components: Array<{ name: string; sizeSaved: string }>;
+  components: { name: string; sizeSaved: string }[];
 } {
   const components = Object.values(lazyComponentRegistry);
   let totalSavings = 0;

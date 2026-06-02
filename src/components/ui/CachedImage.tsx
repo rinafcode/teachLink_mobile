@@ -1,6 +1,7 @@
 import { Image as ExpoImage, ImageProps as ExpoImageProps } from 'expo-image';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { _ActivityIndicator, StyleSheet, View } from 'react-native';
+
 import { ImageCache } from '../../utils/imageCache';
 import logger from '../../utils/logger';
 
@@ -125,7 +126,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
       {/* Loading indicator overlay */}
       {isLoading && showLoadingIndicator && (
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color={loadingIndicatorColor} />
+          <_ActivityIndicator size="large" color={loadingIndicatorColor} />
         </View>
       )}
     </View>

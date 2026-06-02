@@ -1,7 +1,7 @@
 import { Eye, FingerprintPattern, KeyRound, ScanFace } from 'lucide-react-native';
 import React from 'react';
 import {
-  ActivityIndicator,
+  _ActivityIndicator,
   Modal,
   Pressable,
   StyleSheet,
@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+
 import { BiometricType } from '../../services/mobileAuth';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 
@@ -38,7 +39,7 @@ interface BiometricPromptProps {
 
 // ─── Biometric icon helper ────────────────────────────────────────────────────
 
-function BiometricIcon({
+const BiometricIcon = ({
   type,
   size = 52,
   color,
@@ -46,7 +47,7 @@ function BiometricIcon({
   type: BiometricType;
   size?: number;
   color: string;
-}) {
+}) => {
   switch (type) {
     case 'face':
       return <ScanFace size={size} color={color} />;
@@ -107,7 +108,7 @@ export const BiometricPrompt: React.FC<BiometricPromptProps> = ({
             {/* Icon */}
             <View style={[styles.iconBg, { backgroundColor: iconBg }]}>
               {isLoading ? (
-                <ActivityIndicator size="large" color={accentColor} />
+                <_ActivityIndicator size="large" color={accentColor} />
               ) : (
                 <BiometricIcon type={biometricType} color={accentColor} />
               )}
@@ -196,7 +197,7 @@ export const BiometricInlineButton: React.FC<BiometricInlineButtonProps> = ({
       activeOpacity={0.7}
     >
       {isLoading ? (
-        <ActivityIndicator size="small" color={accentColor} />
+        <_ActivityIndicator size="small" color={accentColor} />
       ) : (
         <BiometricIcon type={biometricType} size={22} color={accentColor} />
       )}

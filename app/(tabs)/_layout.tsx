@@ -1,11 +1,11 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 
-import { ErrorBoundary } from '@/components/common/ErrorBoundary';
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { } from '../../components/common/ErrorBoundary';
+import { } from '../../components/haptic-tab';
+import { } from '../../components/ui/icon-symbol';
+import { } from '../../constants/theme';
+import { } from '../../hooks/use-color-scheme';
 
 const TabLayout = () => {
   const colorScheme = useColorScheme();

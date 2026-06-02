@@ -2,7 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Camera, Check, ImageIcon, RefreshCw, X } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
+  _ActivityIndicator,
   Modal,
   SafeAreaView,
   StyleSheet,
@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+
 import { useCamera } from '../../hooks';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 import { CachedImage } from '../ui/CachedImage';
@@ -140,7 +141,7 @@ export const AvatarCamera: React.FC<AvatarCameraProps> = ({
 
                 {isLoading && (
                   <View style={styles.loadingOverlay}>
-                    <ActivityIndicator size="large" color="#19c3e6" />
+                    <_ActivityIndicator size="large" color="#19c3e6" />
                   </View>
                 )}
 

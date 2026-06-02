@@ -1,9 +1,9 @@
 import { render, waitFor } from '@testing-library/react-native';
 import React from 'react';
 
-import { CachedImage } from '@/components/ui/CachedImage';
-import { usePrefetchImages } from '@/hooks/usePrefetchImages';
-import { ImageCache } from '@/utils/imageCache';
+import { CachedImage } from '../components/ui/CachedImage';
+import { usePrefetchImages } from '../hooks/usePrefetchImages';
+import { ImageCache } from '../utils/imageCache';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -14,7 +14,7 @@ jest.mock('expo-image', () => ({
   clearDiskCache: jest.fn(() => Promise.resolve()),
 }));
 
-jest.mock('@/utils/logger', () => ({
+jest.mock('../utils/logger', () => ({
   debug: jest.fn(),
   info: jest.fn(),
   warn: jest.fn(),

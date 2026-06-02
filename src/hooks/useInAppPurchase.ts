@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
-import logger from '../utils/logger';
+
 import {
   mobilePaymentsService,
   SubscriptionPlan,
   PurchaseRecord,
   SubscriptionTier,
-  SUBSCRIPTION_PLANS,
+  _SUBSCRIPTION_PLANS,
   PRODUCT_IDS,
 } from '../services/mobilePayments';
+import logger from '../utils/logger';
 
 // ─── State shape ──────────────────────────────────────────────────────────────
 
@@ -50,7 +51,7 @@ export type UseInAppPurchase = UseInAppPurchaseState & UseInAppPurchaseActions;
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export const useInAppPurchase = (): UseInAppPurchase => {
-  const [plans, setPlans] = useState<SubscriptionPlan[]>(SUBSCRIPTION_PLANS);
+  const [plans, setPlans] = useState<SubscriptionPlan[]>(_SUBSCRIPTION_PLANS);
   const [purchaseHistory, setPurchaseHistory] = useState<PurchaseRecord[]>([]);
   const [currentTier, setCurrentTier] = useState<SubscriptionTier>('free');
   const [isLoading, setIsLoading] = useState(false);
@@ -95,7 +96,7 @@ export const useInAppPurchase = (): UseInAppPurchase => {
     try {
       const productIds = Object.values(PRODUCT_IDS);
       const loaded = await mobilePaymentsService.getProducts(productIds);
-      setPlans(loaded.length > 0 ? loaded : SUBSCRIPTION_PLANS);
+      setPlans(loaded.length > 0 ? loaded : _SUBSCRIPTION_PLANS);
     } catch {
       setError('Could not load plans. Please check your connection and retry.');
     } finally {
@@ -112,7 +113,7 @@ export const useInAppPurchase = (): UseInAppPurchase => {
       try {
         const record =
           await mobilePaymentsService.purchaseSubscription(productId);
-        const plan = SUBSCRIPTION_PLANS.find((p) => p.productId === productId);
+        const plan = _SUBSCRIPTION_PLANS.find((p) => p.productId === productId);
         if (plan) setCurrentTier(plan.tier);
         setPurchaseHistory((prev) => [record, ...prev]);
         setPurchaseSuccess(true);

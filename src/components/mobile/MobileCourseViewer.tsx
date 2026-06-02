@@ -9,19 +9,20 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { AppText as Text } from '../common/AppText';
-import { useCourseProgress, useDynamicFontSize } from '../../hooks';
 import { SafeAreaView } from "react-native-safe-area-context";
-import logger from "../../utils/logger";
-import PrimaryButton from "../common/PrimaryButton";
+
 import BookmarkButton from "./BookmarkButton";
+import { CourseViewerSkeleton } from "./CourseViewerSkeleton";
 import LessonCarousel from "./LessonCarousel";
 import MobileSyllabus from "./MobileSyllabus";
+import { useCourseProgress, useDynamicFontSize } from '../../hooks';
 import { useAnalytics } from "../../hooks/useAnalytics";
 import { Course, Lesson, Note } from "../../types/course";
+import logger from "../../utils/logger";
 import { AnalyticsEvent, ScreenName } from "../../utils/trackingEvents";
+import { AppText as Text } from '../common/AppText';
 import { ErrorBoundary } from "../common/ErrorBoundary";
-import { CourseViewerSkeleton } from "./CourseViewerSkeleton";
+import PrimaryButton from "../common/PrimaryButton";
 
 /**
  * Props for the MobileCourseViewer component

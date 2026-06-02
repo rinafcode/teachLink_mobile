@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
-import { CourseProgress, LessonProgress, Note, Course } from '../types/course';
 import apiClient from '../services/api/axios.config';
 import { useCourseProgressStore } from '../store/courseProgressStore';
+import { CourseProgress, LessonProgress, Note, Course } from '../types/course';
 import logger from '../utils/logger';
 
 const PROGRESS_STORAGE_KEY = 'course_progress';

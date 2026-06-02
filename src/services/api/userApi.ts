@@ -1,6 +1,6 @@
-import { User } from "../../store";
 import apiClient from "./axios.config";
 import { fetchWithSWR, invalidateCache } from "./cache";
+import { User } from "../../store";
 
 const userKey = (id: string) => `users:${id}`;
 

@@ -8,6 +8,7 @@ import {
   UIManager,
   View,
 } from 'react-native';
+
 import { CourseProgress, Lesson, Section } from '../../types/course';
 
 // Enable LayoutAnimation on Android

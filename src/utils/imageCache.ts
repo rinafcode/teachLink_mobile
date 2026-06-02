@@ -1,5 +1,7 @@
 import { Image } from 'expo-image';
+
 import logger from './logger';
+import { _backgroundScheduler } from '../services/backgroundTaskScheduler';
 
 export class ImageCache {
   /**

@@ -1,13 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
-import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
+import * as Notifications from 'expo-notifications';
+import { useState, useEffect, useCallback } from 'react';
 import { Platform, Linking } from 'react-native';
-import logger from '../utils/logger';
+
 import {
   registerForPushNotifications,
   registerTokenWithBackend,
 } from '../services/pushNotifications';
 import { useNotificationStore } from '../store/notificationStore';
+import logger from '../utils/logger';
 
 export type PermissionStatus = 'undetermined' | 'granted' | 'denied';
 

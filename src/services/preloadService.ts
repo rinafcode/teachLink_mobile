@@ -1,14 +1,15 @@
 import * as Network from 'expo-network';
+
+import { mobileAnalyticsService } from './mobileAnalytics';
 import { offlineStorage } from './offlineStorage';
-import { useSettingsStore } from '../store/settingsStore';
 import { useCourseProgressStore } from '../store/courseProgressStore';
 import { useAppStore } from '../store/index';
 import { useQuizStore } from '../store/quizStore';
+import { useSettingsStore } from '../store/settingsStore';
 import { courseApi } from './api/courseApi';
 import { userApi } from './api/userApi';
 import { ImageCache } from '../utils/imageCache';
 import logger from '../utils/logger';
-import { mobileAnalyticsService } from './mobileAnalytics';
 
 // Default navigation transitions to use when no history is available
 const STATIC_DEFAULTS: Record<string, string[]> = {

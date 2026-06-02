@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
+
 import { useNetworkStatus } from '../../hooks';
 import logger from '../../utils/logger';
 
@@ -24,7 +25,7 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
   onPress = () => {},
   showDetails = false,
 }) => {
-  const { isOnline, isOffline, networkStatus, refresh } = useNetworkStatus();
+  const { isOnline, isOffline, _networkStatus, refresh } = useNetworkStatus();
 
   // Don't show when online unless explicitly requested
   if (isOnline && !showWhenOnline) {

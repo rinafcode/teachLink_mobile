@@ -1,17 +1,3 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  Alert,
-  ActivityIndicator,
-  RefreshControl,
-} from 'react-native';
-import { AppText as Text } from '../../components/common/AppText';
-import { useDynamicFontSize, useInAppPurchase } from '../../hooks';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
     ArrowLeft,
@@ -25,6 +11,21 @@ import {
     TrendingUp,
     XCircle,
 } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  Alert,
+  _ActivityIndicator,
+  RefreshControl,
+} from 'react-native';
+
+import { AppText as Text } from '../../components/common/AppText';
+import { useDynamicFontSize, useInAppPurchase } from '../../hooks';
 import {
     PurchaseRecord,
     PurchaseStatus,
@@ -412,7 +413,7 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
           style={styles.restoreBtn}
         >
           {isRestoring ? (
-            <ActivityIndicator size="small" color="#19c3e6" />
+            <_ActivityIndicator size="small" color="#19c3e6" />
           ) : (
             <RefreshCw size={scale(18)} color="#19c3e6" />
           )}

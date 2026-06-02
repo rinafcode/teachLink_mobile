@@ -1,21 +1,9 @@
-import React, { useState } from 'react';
-import {
-  Alert,
-  ActivityIndicator,
-  LayoutAnimation,
-  Platform,
-  ScrollView,
-  TouchableOpacity,
-  UIManager,
-  View,
-} from 'react-native';
-
 import {
   BarChart2,
   Bell,
   ChevronDown,
   ChevronUp,
-  Download,
+  _Download,
   Eye,
   Globe,
   HardDrive,
@@ -34,17 +22,28 @@ import {
   RefreshCw,
   Fingerprint as FingerprintPattern,
 } from 'lucide-react-native';
+import React, { useState } from 'react';
+import {
+  Alert,
+  _ActivityIndicator,
+  LayoutAnimation,
+  Platform,
+  ScrollView,
+  TouchableOpacity,
+  UIManager,
+  View,
+} from 'react-native';
 
-import { useTheme, useAppStore } from '../../store';
-import { useNotificationStore } from '../../store/notificationStore';
-import { useSettingsStore, ProfileVisibility, DownloadQuality } from '../../store/settingsStore';
-import { useDynamicFontSize } from '../../hooks';
-import { useBiometricAuth } from '../../hooks/useBiometricAuth';
-import { useFormCache } from '../../hooks/useFormCache';
 
 import { NativeToggle } from './NativeToggle';
 import { PickerOption, SettingsPicker } from './SettingsPicker';
 import { SettingsSection } from './SettingsSection';
+import { useDynamicFontSize } from '../../hooks';
+import { useBiometricAuth } from '../../hooks/useBiometricAuth';
+import { useFormCache } from '../../hooks/useFormCache';
+import { useTheme, useAppStore } from '../../store';
+import { useNotificationStore } from '../../store/notificationStore';
+import { useSettingsStore, ProfileVisibility, DownloadQuality } from '../../store/settingsStore';
 import { AppText } from '../common/AppText';
 
 // Enable LayoutAnimation on Android
@@ -66,7 +65,7 @@ interface SettingRowProps {
   destructive?: boolean;
 }
 
-function SettingRow({
+const SettingRow = ({
   icon,
   iconBg = 'bg-gray-100 dark:bg-gray-700',
   label,
@@ -74,7 +73,7 @@ function SettingRow({
   right,
   onPress,
   destructive = false,
-}: SettingRowProps) {
+}: SettingRowProps) => {
   const Row = onPress ? TouchableOpacity : View;
   const { scale } = useDynamicFontSize();
 
@@ -154,7 +153,7 @@ interface AdvancedToggleProps {
   onToggle: () => void;
 }
 
-function AdvancedToggle({ expanded, onToggle }: AdvancedToggleProps) {
+const AdvancedToggle = ({ expanded, onToggle }: AdvancedToggleProps) => {
   return (
     <TouchableOpacity
       onPress={onToggle}
@@ -183,11 +182,11 @@ function AdvancedToggle({ expanded, onToggle }: AdvancedToggleProps) {
 // Component
 // ─────────────────────────────────────────────────────────────
 
-export function MobileSettings({
+export const MobileSettings = ({
   onSignOut,
   onChangePassword,
   onLinkedAccounts,
-}: any) {
+}: any) => {
   const theme = useTheme();
   const setTheme = useAppStore(state => state.setTheme);
   const { preferences, setPreference } = useNotificationStore();
@@ -330,7 +329,7 @@ export function MobileSettings({
           <SettingRow
             icon={
               biometricLoading ? (
-                <ActivityIndicator />
+                <_ActivityIndicator />
               ) : (
                 <FingerprintPattern size={18} color="#06b6d4" />
               )
@@ -402,7 +401,7 @@ export function MobileSettings({
             />
 
             <SettingRow
-              icon={<Download size={18} />}
+              icon={<_Download size={18} />}
               label="Quality"
               right={
                 <SettingsPicker

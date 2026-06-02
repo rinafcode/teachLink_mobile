@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
+
 import downloadManager, { DownloadTask } from '../services/downloadManager';
 
 /**
- * Hook for components to interact with the Download Manager
+ * Hook for components to interact with the _Download Manager
  */
 export function useDownloads() {
   const [tasks, setTasks] = useState<DownloadTask[]>([]);

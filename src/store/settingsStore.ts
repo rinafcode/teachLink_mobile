@@ -1,6 +1,6 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type ProfileVisibility = 'public' | 'private' | 'friends_only';
 export type DownloadQuality = 'low' | 'medium' | 'high';
@@ -57,7 +57,7 @@ interface SettingsState {
   resetSettings: () => void;
 }
 
-const DEFAULT_SETTINGS: Omit<SettingsState, keyof Omit<SettingsState, ProfileVisibility | DownloadQuality | StorageLimit | AppLanguage | FontSize | boolean>> = {
+const _DEFAULT_SETTINGS: Omit<SettingsState, keyof Omit<SettingsState, ProfileVisibility | DownloadQuality | StorageLimit | AppLanguage | FontSize | boolean>> = {
   profileVisibility: 'public' as ProfileVisibility,
   twoFactorEnabled: false,
   dataSharing: true,

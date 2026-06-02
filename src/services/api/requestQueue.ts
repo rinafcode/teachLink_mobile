@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { InternalAxiosRequestConfig } from 'axios';
 import * as Network from 'expo-network';
+
 import logger from '../../utils/logger';
 
 // Queued request interface

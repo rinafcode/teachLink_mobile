@@ -1,6 +1,6 @@
-import { Course } from "../../types/course";
 import apiClient from "./axios.config";
 import { fetchWithSWR, invalidateCache } from "./cache";
+import { Course } from "../../types/course";
 
 const COURSES_KEY = "courses:list";
 const courseKey = (id: string) => `courses:${id}`;

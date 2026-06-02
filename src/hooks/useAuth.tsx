@@ -1,4 +1,5 @@
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+
 import mobileAuth, { AuthUser } from '../services/mobileAuth';
 import { appLogger } from '../utils/logger';
 
@@ -21,7 +22,7 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-export function AuthProvider({ children }: AuthProviderProps): React.ReactElement {
+export const AuthProvider = ({ children }: AuthProviderProps): React.ReactElement => {
   const [state, setState] = useState<AuthState>({
     isAuthenticated: false,
     isLoading: true,

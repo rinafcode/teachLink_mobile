@@ -11,9 +11,9 @@
 import { render } from '@testing-library/react-native';
 import React from 'react';
 
-import LessonCarousel from '@/components/mobile/LessonCarousel';
-import QuizCarousel from '@/components/mobile/MobileQuizManager/QuizCarousel';
-import { Lesson, Question } from '@/types/course';
+import LessonCarousel from '../components/mobile/LessonCarousel';
+import QuizCarousel from '../components/mobile/MobileQuizManager/QuizCarousel';
+import { Lesson, Question } from '../types/course';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -21,9 +21,9 @@ jest.mock('expo-linear-gradient', () => ({
   LinearGradient: 'LinearGradient',
 }));
 
-jest.mock('@/components/mobile/MobileQuizManager/MobileQuestionCard', () => 'MobileQuestionCard');
+jest.mock('../components/mobile/MobileQuizManager/MobileQuestionCard', () => 'MobileQuestionCard');
 
-jest.mock('@/hooks', () => ({
+jest.mock('../hooks', () => ({
   useHapticFeedback: () => ({ trigger: jest.fn() }),
 }));
 

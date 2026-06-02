@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { BarCodeScanner, BarCodeScannerResult } from 'expo-barcode-scanner';
+import React, { useEffect, useState } from 'react';
+import { _ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface QRScannerProps {
   onLinkScanned: (value: string) => void;
@@ -50,7 +50,7 @@ export default function QRScanner({ onLinkScanned }: QRScannerProps) {
   if (hasPermission === null) {
     return (
       <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" />
+        <_ActivityIndicator size="large" />
         <Text style={styles.statusText}>Requesting camera permission...</Text>
       </View>
     );

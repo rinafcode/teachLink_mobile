@@ -1,9 +1,9 @@
 import { Link } from 'expo-router';
 import { StyleSheet } from 'react-native';
 
-import { ErrorBoundary } from '@/components/common/ErrorBoundary';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { } from '../../components/common/ErrorBoundary';
+import { } from '../../components/themed-text';
+import { } from '../../components/themed-view';
 
 const ModalScreen = () => (
   <ErrorBoundary boundaryName="ModalRoute">

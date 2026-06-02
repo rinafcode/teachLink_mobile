@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
+
 import logger from '../utils/logger';
 
 interface MemoryMonitorOptions {

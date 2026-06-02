@@ -1,12 +1,14 @@
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
 import {
   DrawerContentComponentProps,
   DrawerContentScrollView,
   DrawerItemList,
 } from '@react-navigation/drawer';
-import { useSafeArea } from '../../hooks';
 import { Settings, LogOut, Sun, Moon } from 'lucide-react-native';
+import React from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
+
+import { useSafeArea } from '../../hooks';
+
 
 /**
  * Props for the MobileDrawer component

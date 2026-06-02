@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useReducer } from 'react';
 
+import { BatchProgress, batchExportData } from '../services/batchDataProcessor';
 import {
   ColumnDef,
   EditingCell,
@@ -18,7 +19,6 @@ import {
   toggleSortDirection,
   validateCellValue,
 } from '../utils/gridUtils';
-import { BatchProgress, batchExportData } from '../services/batchDataProcessor';
 import { logger } from '../utils/logger';
 
 // ─── State shape ─────────────────────────────────────────────────────────────

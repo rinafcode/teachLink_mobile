@@ -10,7 +10,7 @@
  *  - Edge cases: empty strings, duplicates, single-char prefixes
  */
 
-import { buildTrie, Trie } from '@/utils/trie';
+import { buildTrie, Trie } from '../utils/trie';
 
 describe('Trie', () => {
   // ─── insert & search ──────────────────────────────────────────────────────

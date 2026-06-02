@@ -1,10 +1,10 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
-import { QuizSkeleton } from '@/components/mobile/QuizSkeleton';
-import { createLazyRoute } from '@/utils/lazyRoute';
+import { } from '../../components/mobile/QuizSkeleton';
+import { } from '../../utils/lazyRoute';
 
 const LazyMobileQuizManager = createLazyRoute({
-  importFn: () => import('@/components/mobile/MobileQuizManager'),
+  importFn: () => import('../components/mobile/MobileQuizManager'),
   LoadingFallback: QuizSkeleton,
   boundaryName: 'QuizRoute',
 });

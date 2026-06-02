@@ -1,7 +1,7 @@
 import { activateKeepAwake, deactivateKeepAwake } from 'expo-keep-awake';
 import { useVideoPlayer, VideoPlayerStatus, VideoSource, VideoView } from 'expo-video';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, StyleProp, Text, View, ViewStyle } from 'react-native';
+import { _ActivityIndicator, StyleProp, Text, View, ViewStyle } from 'react-native';
 
 import { useVideoMetrics } from '../../hooks/useVideoMetrics';
 import { appLogger } from '../../utils/logger';
@@ -137,7 +137,7 @@ const OptimizedVideoPlayer = ({
       <VideoView className="h-full w-full" player={player} nativeControls={true} />
       {isBuffering && !playbackError ? (
         <View className="absolute inset-0 items-center justify-center bg-black/40">
-          <ActivityIndicator size="large" color="#ffffff" testID="video-buffering-indicator" />
+          <_ActivityIndicator size="large" color="#ffffff" testID="video-buffering-indicator" />
         </View>
       ) : null}
       {renderError()}

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-import { createLazyRoute } from '@/utils/lazyRoute';
+import { createLazyRoute } from '../utils/lazyRoute';
 
 describe('createLazyRoute', () => {
   it('returns a component function with a display name', () => {

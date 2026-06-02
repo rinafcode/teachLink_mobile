@@ -10,8 +10,8 @@ type UseVideoGesturesParams = {
   onSeekEnd?: () => void;
   onSeekPreview?: (positionMillis: number) => void;
   onTogglePlayPause: () => void;
-  edgeSlop?: number;
-  deadZonePx?: number;
+  _edgeSlop?: number;
+  _deadZonePx?: number;
   seekSensitivity?: number;
   tapDebounceMs?: number;
 };
@@ -30,8 +30,8 @@ export function useVideoGestures({
   onSeekEnd,
   onSeekPreview,
   onTogglePlayPause,
-  edgeSlop = DEFAULT_EDGE_SLOP,
-  deadZonePx = DEFAULT_DEAD_ZONE,
+  _edgeSlop = DEFAULT_EDGE_SLOP,
+  _deadZonePx = DEFAULT_DEAD_ZONE,
   seekSensitivity = DEFAULT_SEEK_SENSITIVITY,
   tapDebounceMs = DEFAULT_TAP_DEBOUNCE,
 }: UseVideoGesturesParams) {
@@ -70,10 +70,10 @@ export function useVideoGestures({
             return false;
           }
           const isHorizontal = Math.abs(gesture.dx) > Math.abs(gesture.dy);
-          if (!isHorizontal || Math.abs(gesture.dx) < deadZonePx) {
+          if (!isHorizontal || Math.abs(gesture.dx) < _deadZonePx) {
             return false;
           }
-          if (gesture.x0 < edgeSlop || gesture.x0 > containerWidth - edgeSlop) {
+          if (gesture.x0 < _edgeSlop || gesture.x0 > containerWidth - _edgeSlop) {
             return false;
           }
           return true;
@@ -102,7 +102,7 @@ export function useVideoGestures({
         onPanResponderRelease: finishScrub,
         onPanResponderTerminate: finishScrub,
       }),
-    [containerWidth, deadZonePx, edgeSlop, seekSensitivity, onSeekPreview, onSeekStart, finishScrub]
+    [containerWidth, _deadZonePx, _edgeSlop, seekSensitivity, onSeekPreview, onSeekStart, finishScrub]
   );
 
   const onTap = useCallback(() => {

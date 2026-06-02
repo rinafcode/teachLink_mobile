@@ -7,13 +7,13 @@ import {
   SearchResultItem,
   SearchScreenSkeleton,
   Skeleton,
-} from '@/components';
-import { sampleCourse } from '@/data/sampleCourse';
-import { createLazyRoute } from '@/utils/lazyRoute';
+} from '../components';
+import { } from '../../data/sampleCourse';
+import { } from '../../utils/lazyRoute';
 
 const LazyMobileSearch = createLazyRoute({
   importFn: () =>
-    import('@/components/mobile/MobileSearch').then((m) => ({ default: m.MobileSearch })),
+    import('../components/mobile/MobileSearch').then((m) => ({ default: m.MobileSearch })),
   LoadingFallback: SearchScreenSkeleton,
   boundaryName: 'SearchRoute',
 });

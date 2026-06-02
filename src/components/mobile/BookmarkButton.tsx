@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, ActivityIndicator, View, StyleSheet } from 'react-native';
+import { TouchableOpacity, Text, _ActivityIndicator, View, StyleSheet } from 'react-native';
 
 import { useBookmarkStore, BookmarkItem } from '../../store/bookmarkStore';
 
@@ -52,7 +52,7 @@ export default function BookmarkButton({
       ]}
     >
       {isLoading ? (
-        <ActivityIndicator color={bookmarked ? '#F59E0B' : '#19c3e6'} size="small" />
+        <_ActivityIndicator color={bookmarked ? '#F59E0B' : '#19c3e6'} size="small" />
       ) : (
         <View style={styles.content}>
           <Text style={{ fontSize: config.iconSize }}>{bookmarked ? '⭐' : '☆'}</Text>

@@ -12,7 +12,7 @@ import {
 } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
+  _ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -317,7 +317,7 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
                 style={styles.loginBtnGradient}
               >
                 {isLoading ? (
-                  <ActivityIndicator color="#fff" />
+                  <_ActivityIndicator color="#fff" />
                 ) : (
                   <>
                     <LogIn size={scale(18)} color="#fff" />

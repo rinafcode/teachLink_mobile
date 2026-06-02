@@ -2,7 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { AlertCircle, BookOpen, Lock, Mail, User } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
+  _ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
@@ -262,7 +262,7 @@ export const MobileRegister: React.FC<MobileRegisterProps> = ({
                 style={styles.registerBtnGradient}
               >
                 {isLoading ? (
-                  <ActivityIndicator color="#fff" />
+                  <_ActivityIndicator color="#fff" />
                 ) : (
                   <Text allowFontScaling={false} style={styles.registerBtnText}>
                     Create Account

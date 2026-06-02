@@ -14,8 +14,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import * as IAP from 'react-native-iap';
-import { appLogger } from '../utils/logger';
+
 import { apiService } from './api';
+import { appLogger } from '../utils/logger';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -78,7 +79,7 @@ export const PRODUCT_IDS = {
 
 export type ProductId = (typeof PRODUCT_IDS)[keyof typeof PRODUCT_IDS];
 
-export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
+export const _SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
     id: 'pro_monthly',
     productId: PRODUCT_IDS.PRO_MONTHLY,
@@ -206,13 +207,13 @@ class MobilePaymentsService {
 
   /**
    * Fetches localised product info from the App Store / Play Store.
-   * Falls back to the static SUBSCRIPTION_PLANS catalogue when not connected.
+   * Falls back to the static _SUBSCRIPTION_PLANS catalogue when not connected.
    */
   async getProducts(productIds: string[]): Promise<SubscriptionPlan[]> {
     try {
       const storeProducts = await IAP.getSubscriptions({ skus: productIds });
       return storeProducts.map((sp) => {
-        const plan = SUBSCRIPTION_PLANS.find((p) => p.productId === sp.productId);
+        const plan = _SUBSCRIPTION_PLANS.find((p) => p.productId === sp.productId);
         return {
           id: plan?.id ?? sp.productId,
           productId: sp.productId,
@@ -228,7 +229,7 @@ class MobilePaymentsService {
       });
     } catch (error) {
       log.error('[Payments] getProducts error:', error);
-      return SUBSCRIPTION_PLANS.filter((p) => productIds.includes(p.productId));
+      return _SUBSCRIPTION_PLANS.filter((p) => productIds.includes(p.productId));
     }
   }
 
@@ -237,7 +238,7 @@ class MobilePaymentsService {
    * On real devices, IAP.requestSubscription opens the iOS/Android payment UI.
    */
   async purchaseSubscription(productId: string): Promise<PurchaseRecord> {
-    const plan = SUBSCRIPTION_PLANS.find((p) => p.productId === productId);
+    const plan = _SUBSCRIPTION_PLANS.find((p) => p.productId === productId);
     if (!plan) throw new Error(`Unknown product: ${productId}`);
 
     try {
@@ -358,7 +359,7 @@ class MobilePaymentsService {
           )[0];
 
         if (activeSub) {
-          const plan = SUBSCRIPTION_PLANS.find(
+          const plan = _SUBSCRIPTION_PLANS.find(
             (p) => p.productId === activeSub.productId,
           );
           if (plan) await this._setTier(plan.tier);

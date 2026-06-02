@@ -1,6 +1,6 @@
 import React, { ComponentType, lazy, Suspense } from 'react';
 
-import { ErrorBoundary } from '@/components/common/ErrorBoundary';
+import { ErrorBoundary } from '../components/common/ErrorBoundary';
 
 type DynamicImport<T extends ComponentType<any>> = () => Promise<{ default: T }>;
 

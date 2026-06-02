@@ -1,11 +1,12 @@
 import { Trash2 } from 'lucide-react-native';
 import React from 'react';
 import { FlatList, TouchableOpacity, View } from 'react-native';
+
 import { useDownloads } from '../../hooks/useDownloads';
 import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
 import { AppText } from '../common/AppText';
 
-export function DownloadQueue() {
+export const DownloadQueue = () => {
   const { tasks, removeDownload } = useDownloads();
   const { scale } = useDynamicFontSize();
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, DimensionValue, StyleSheet, View, ViewStyle } from 'react-native';
+
 import { useAdaptiveFrameRate } from '../../hooks/useAdaptiveFrameRate';
 
 /**

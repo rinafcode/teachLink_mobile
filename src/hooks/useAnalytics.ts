@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+
 import { useAnalyticsContext } from '../components/mobile/AnalyticsProvider';
 import { AnalyticsEvent, EventProperties, PerformanceMetric } from '../utils/trackingEvents';
 

@@ -1,13 +1,13 @@
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { SettingsSkeleton } from '@/components/mobile/SettingsSkeleton';
-import { mobileAuthService } from '@/services/mobileAuth';
-import { useAppStore } from '@/store';
-import { createLazyRoute } from '@/utils/lazyRoute';
+import { } from '../../components/mobile/SettingsSkeleton';
+import { } from '../../services/mobileAuth';
+import { } from '../../store';
+import { } from '../../utils/lazyRoute';
 
 const LazyMobileSettings = createLazyRoute({
-  importFn: () => import('@/components/mobile/MobileSettings'),
+  importFn: () => import('../components/mobile/MobileSettings'),
   LoadingFallback: SettingsSkeleton,
   boundaryName: 'SettingsRoute',
 });

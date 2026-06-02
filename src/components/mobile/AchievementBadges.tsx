@@ -10,6 +10,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+
+import { AccessibleButton } from './AccessibleButton';
 import {
   announceToScreenReader,
   combineAriaLabels,
@@ -17,7 +19,6 @@ import {
 } from '../../utils/accessibility';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 import { CachedImage } from '../ui/CachedImage';
-import { AccessibleButton } from './AccessibleButton';
 
 /**
  * Rarity levels for achievement badges

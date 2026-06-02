@@ -2,9 +2,10 @@ import { io, Socket } from 'socket.io-client';
 
 import { decodeBinaryMessage, encodeBinaryMessage } from './binaryProtocol';
 import { getEnv } from '../../config';
-import syncEntityManager from '../sync/syncEntityManager';
-import type { ConflictResolutionStrategy, VersionedSyncMessage } from '../sync/types';
 import { appLogger } from '../../utils/logger';
+import syncEntityManager from '../sync/syncEntityManager';
+
+import type { ConflictResolutionStrategy, VersionedSyncMessage } from '../sync/types';
 
 const RECONNECTION_ATTEMPTS = 10;
 const RECONNECTION_DELAY_MS = 1_000;

@@ -1,12 +1,12 @@
 import { useRouter } from 'expo-router';
 import { Alert, StyleSheet, View } from 'react-native';
 
-import { QRScannerSkeleton } from '@/components/mobile/QRScannerSkeleton';
-import { createLazyRoute } from '@/utils/lazyRoute';
-import { getPathFromDeepLink, parseDeepLinkUrl } from '@/utils/linkParser';
+import { } from '../../components/mobile/QRScannerSkeleton';
+import { } from '../../utils/lazyRoute';
+import { } from '../../utils/linkParser';
 
 const LazyQRScanner = createLazyRoute({
-  importFn: () => import('@/components/mobile/QRScanner'),
+  importFn: () => import('../components/mobile/QRScanner'),
   LoadingFallback: QRScannerSkeleton,
   boundaryName: 'QRScannerRoute',
 });

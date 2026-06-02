@@ -6,7 +6,7 @@ import React, { ComponentType, lazy, Suspense } from 'react';
  * of heavy screens or non-critical components until they are actually rendered.
  *
  * @param factory A function that dynamically imports a component
- * @param FallbackComponent Optional component to show while loading (e.g. ActivityIndicator)
+ * @param FallbackComponent Optional component to show while loading (e.g. _ActivityIndicator)
  * @returns A lazily loaded component wrapped in a Suspense boundary
  */
 export function createLazyComponent<T extends ComponentType<any>>(

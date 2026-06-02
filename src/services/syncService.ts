@@ -1,12 +1,14 @@
 import * as Network from 'expo-network';
+
 import apiService from './api';
 import { offlineStorage, SyncOperation, SyncOperationInput } from './offlineStorage';
 import syncEntityManager from './sync/syncEntityManager';
+import logger from '../utils/logger';
+
 import type {
   ConflictResolutionStrategy as VersionedConflictResolutionStrategy,
   VersionedEntity,
 } from './sync/types';
-import logger from '../utils/logger';
 
 // Sync service configuration
 interface SyncConfig {
