@@ -10,6 +10,7 @@ jest.mock('react-native', () => ({
   View: 'View',
   Text: 'Text',
   TouchableOpacity: 'TouchableOpacity',
+  KeyboardAvoidingView: 'KeyboardAvoidingView',
   Modal: 'Modal',
   SafeAreaView: 'SafeAreaView',
   KeyboardAvoidingView: 'KeyboardAvoidingView',
@@ -18,6 +19,8 @@ jest.mock('react-native', () => ({
   TextInput: 'TextInput',
   ActivityIndicator: 'ActivityIndicator',
   Image: 'Image',
+  Pressable: 'Pressable',
+  TouchableWithoutFeedback: 'TouchableWithoutFeedback',
   StyleSheet: {
     create: styles => styles,
     flatten: style => (style ? (Array.isArray(style) ? Object.assign({}, ...style) : style) : {}),
@@ -54,6 +57,10 @@ jest.mock('react-native', () => ({
       stopAnimation: jest.fn(),
     })),
     timing: jest.fn(() => ({
+      start: jest.fn(callback => callback && callback({ finished: true })),
+      stop: jest.fn(),
+    })),
+    spring: jest.fn(() => ({
       start: jest.fn(callback => callback && callback({ finished: true })),
       stop: jest.fn(),
     })),
@@ -118,6 +125,21 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   multiSet: jest.fn(() => Promise.resolve()),
 }));
 
+// Mock Sentry for native-less Jest environment
+jest.mock('@sentry/react-native', () => ({
+  init: jest.fn(),
+  captureException: jest.fn(),
+  captureMessage: jest.fn(),
+  addBreadcrumb: jest.fn(),
+  setTag: jest.fn(),
+  setUser: jest.fn(),
+  configureScope: jest.fn(fn => fn && fn({})),
+  withScope: jest.fn(fn => fn && fn({})),
+  NativeModules: {
+    RNSentry: {},
+  },
+}));
+
 // Mock expo-secure-store to avoid ESM issues
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(() => Promise.resolve(null)),
@@ -163,6 +185,7 @@ jest.mock('expo-network', () => ({
       type: 'WIFI',
     })
   ),
+  addNetworkStateListener: jest.fn(() => ({ remove: jest.fn() })),
   NetworkStateType: {
     UNKNOWN: 0,
     NONE: 1,

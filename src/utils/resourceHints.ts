@@ -14,6 +14,7 @@
  */
 
 import { Platform } from 'react-native';
+import { requireEnvVariables } from '../config';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -54,6 +55,24 @@ export const DEFAULT_RESOURCE_HINTS: ResourceHint[] = [
   // Sentry error reporting
   { url: 'https://o0.ingest.sentry.io', type: 'preconnect' },
 ];
+
+/**
+ * Get resource hints including API and socket hosts.
+ */
+export function getResourceHints(): ResourceHint[] {
+  const hints = [...DEFAULT_RESOURCE_HINTS];
+  try {
+    const env = requireEnvVariables();
+    const apiUrl = new URL(env.EXPO_PUBLIC_API_BASE_URL);
+    hints.push({ url: `${apiUrl.protocol}//${apiUrl.host}`, type: 'preconnect', crossOrigin: true });
+    const socketUrl = new URL(env.EXPO_PUBLIC_SOCKET_URL);
+    const socketOrigin = `${socketUrl.protocol.replace('ws', 'http')}//${socketUrl.host}`;
+    hints.push({ url: socketOrigin, type: 'preconnect' });
+  } catch {
+    // Ignore if env variables aren't available yet (shouldn't happen after requireEnvVariables())
+  }
+  return hints;
+}
 
 // ─── Web implementation ───────────────────────────────────────────────────────
 
@@ -123,10 +142,10 @@ async function warmUpNative(url: string): Promise<boolean> {
  * This function never throws; failures are collected in the returned result.
  *
  * @param hints - Array of resource hints to apply.
- *                Defaults to `DEFAULT_RESOURCE_HINTS`.
+ *                Defaults to `DEFAULT_RESOURCE_HINTS` plus API hosts.
  */
 export async function applyResourceHints(
-  hints: ResourceHint[] = DEFAULT_RESOURCE_HINTS
+  hints: ResourceHint[] = getResourceHints()
 ): Promise<ResourceHintsResult> {
   const result: ResourceHintsResult = { succeeded: [], failed: [] };
 
@@ -174,7 +193,7 @@ export async function applyResourceHints(
  * in development. Safe to call at app startup without awaiting.
  */
 export function prefetchExternalResources(): void {
-  applyResourceHints(DEFAULT_RESOURCE_HINTS).then(result => {
+  applyResourceHints(getResourceHints()).then(result => {
     if (__DEV__) {
       console.log(
         `[ResourceHints] preconnect/dns-prefetch: ` +

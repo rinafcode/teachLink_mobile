@@ -9,11 +9,7 @@ import { DependencyAnalyzer, NetworkAnalyzer } from './analyzers/NetworkAnalyzer
 import { AssetAnalyzer, RuntimeAnalyzer } from './analyzers/RuntimeAnalyzer';
 import { RecommendationEngine } from './RecommendationEngine';
 import { ReportGenerator } from './ReportGenerator';
-import type {
-    AuditOptions,
-    ExecutiveSummary,
-    PerformanceAuditReport,
-} from './types';
+import type { AuditOptions, ExecutiveSummary, PerformanceAuditReport } from './types';
 
 export class PerformanceAuditor {
   private projectRoot: string;
@@ -116,9 +112,11 @@ export class PerformanceAuditor {
    */
   async auditAndReport(formats?: ('json' | 'html' | 'markdown')[]): Promise<string[]> {
     const report = await this.runAudit();
-    const targetFormats = formats || (this.options.format === 'all'
-      ? ['json', 'html', 'markdown']
-      : [this.options.format as 'json' | 'html' | 'markdown']);
+    const targetFormats =
+      formats ||
+      (this.options.format === 'all'
+        ? ['json', 'html', 'markdown']
+        : [this.options.format as 'json' | 'html' | 'markdown']);
 
     const files: string[] = [];
 
@@ -263,7 +261,9 @@ export class PerformanceAuditor {
       keyFindings.push(`Found ${bundleAnalysis.duplicateModules.length} duplicate modules`);
     }
     if (memoryAnalysis.estimatedMemoryLeaks.length > 0) {
-      keyFindings.push(`${memoryAnalysis.estimatedMemoryLeaks.length} potential memory leaks detected`);
+      keyFindings.push(
+        `${memoryAnalysis.estimatedMemoryLeaks.length} potential memory leaks detected`
+      );
     }
     if (renderAnalysis.slowComponents.length > 0) {
       keyFindings.push(`${renderAnalysis.slowComponents.length} slow rendering components`);
@@ -295,9 +295,9 @@ export class PerformanceAuditor {
       keyFindings,
       topPriorities,
       estimatedImpact: {
-        bundleReduction: `${Math.round(bundleAnalysis.totalSize * 0.15 / 1000)}KB`,
+        bundleReduction: `${Math.round((bundleAnalysis.totalSize * 0.15) / 1000)}KB`,
         performanceGain: `${Math.round(runtimeAnalysis.startupTime * 0.2)}ms`,
-        memoryImprovement: `${Math.round(memoryAnalysis.heapUsed * 0.1 / 1000000)}MB`,
+        memoryImprovement: `${Math.round((memoryAnalysis.heapUsed * 0.1) / 1000000)}MB`,
         networkOptimization: `${Math.round(networkAnalysis.averageLatency * 0.2)}ms`,
       },
       nextSteps: [
@@ -350,4 +350,3 @@ export class PerformanceAuditor {
 // Export for easy importing
 export { RecommendationEngine, ReportGenerator };
 export type { AuditOptions, PerformanceAuditReport };
-

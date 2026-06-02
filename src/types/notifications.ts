@@ -38,6 +38,12 @@ export interface StoredNotification {
   data?: NotificationData;
   receivedAt: string;
   read: boolean;
+  groupCount?: number;
+}
+
+export interface NotificationHistoryEntry {
+  fingerprint: string;
+  receivedAt: string;
 }
 
 export interface PushTokenState {

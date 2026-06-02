@@ -1,14 +1,24 @@
-import { CourseCardSkeleton, SearchResultItem, Skeleton } from '@/src/components';
-import { sampleCourse } from '@/src/data/sampleCourse';
 import { useRouter } from 'expo-router';
-import React, { lazy, Suspense, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 
-const MobileSearch = lazy(() =>
-  import('@/src/components/mobile/MobileSearch').then(m => ({ default: m.MobileSearch }))
-);
+import {
+  CourseCardSkeleton,
+  SearchResultItem,
+  SearchScreenSkeleton,
+  Skeleton,
+} from '@/components';
+import { sampleCourse } from '@/data/sampleCourse';
+import { createLazyRoute } from '@/utils/lazyRoute';
 
-export default function SearchTab() {
+const LazyMobileSearch = createLazyRoute({
+  importFn: () =>
+    import('@/components/mobile/MobileSearch').then((m) => ({ default: m.MobileSearch })),
+  LoadingFallback: SearchScreenSkeleton,
+  boundaryName: 'SearchRoute',
+});
+
+const SearchTab = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
 
@@ -36,6 +46,7 @@ export default function SearchTab() {
   useEffect(() => {
     const cleanup = fetchSearchData();
     return cleanup;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- simulated search fetch runs once on mount
   }, []);
 
   const handleResultPress = (item: SearchResultItem) => {
@@ -66,12 +77,12 @@ export default function SearchTab() {
 
   return (
     <View style={styles.container}>
-      <Suspense fallback={null}>
-        <MobileSearch onResultPress={handleResultPress} placeholder="Search courses..." />
-      </Suspense>
+      <LazyMobileSearch onResultPress={handleResultPress} placeholder="Search courses..." />
     </View>
   );
-}
+};
+
+export default SearchTab;
 
 const styles = StyleSheet.create({
   container: {

@@ -11,7 +11,6 @@
  * - Sync vs async methods
  */
 
-import { appLogger, logger } from '../../utils/logger';
 import {
   LogLevel,
   getLogContext,
@@ -20,7 +19,11 @@ import {
   pushLogContext,
   popLogContext,
   LogContext,
+  logBatchQueue,
+  enqueueLogEntry,
+  StructuredLogEntry,
 } from '../../config/logging';
+import { appLogger, logger } from '../../utils/logger';
 
 describe('AppLogger - Production Logging System', () => {
   // ─── SETUP ──────────────────────────────────────────────────────────────
@@ -439,5 +442,122 @@ describe('AppLogger - Production Logging System', () => {
       mockError.mockRestore();
       mockLog.mockRestore();
     });
+  });
+});
+
+// ─── BATCH QUEUE TESTS ───────────────────────────────────────────────────
+
+describe('BatchQueue — async batched logging (#362)', () => {
+  const makeEntry = (msg = 'test'): StructuredLogEntry => ({
+    timestamp: new Date().toISOString(),
+    level: 'INFO',
+    app: 'teachlink_mobile',
+    version: '1.0.0',
+    environment: 'development',
+    pid: '0',
+    message: msg,
+  });
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+    // Drain any buffered entries from previous tests
+    logBatchQueue.flush();
+  });
+
+  afterEach(() => {
+    logBatchQueue.flush();
+    jest.useRealTimers();
+  });
+
+  it('buffers entries without immediate I/O', () => {
+    const flushSpy = jest.spyOn(logBatchQueue, 'flush');
+
+    enqueueLogEntry(makeEntry('buffered'));
+
+    // flush should NOT have been called yet (buffer < 100, timer not elapsed)
+    expect(flushSpy).not.toHaveBeenCalled();
+    expect(logBatchQueue.size).toBe(1);
+
+    flushSpy.mockRestore();
+  });
+
+  it('flushes automatically after 5 seconds', async () => {
+    const flushSpy = jest.spyOn(logBatchQueue, 'flush');
+
+    enqueueLogEntry(makeEntry('delayed'));
+    expect(logBatchQueue.size).toBe(1);
+
+    jest.advanceTimersByTime(5000);
+
+    expect(flushSpy).toHaveBeenCalled();
+    expect(logBatchQueue.size).toBe(0);
+
+    flushSpy.mockRestore();
+  });
+
+  it('flushes immediately when buffer reaches 100 entries', () => {
+    const flushSpy = jest.spyOn(logBatchQueue, 'flush');
+
+    for (let i = 0; i < 100; i++) {
+      enqueueLogEntry(makeEntry(`entry-${i}`));
+    }
+
+    expect(flushSpy).toHaveBeenCalled();
+    expect(logBatchQueue.size).toBe(0);
+
+    flushSpy.mockRestore();
+  });
+
+  it('does not flush before 100 entries without timer', () => {
+    const flushSpy = jest.spyOn(logBatchQueue, 'flush');
+
+    for (let i = 0; i < 99; i++) {
+      enqueueLogEntry(makeEntry(`entry-${i}`));
+    }
+
+    expect(flushSpy).not.toHaveBeenCalled();
+    expect(logBatchQueue.size).toBe(99);
+
+    flushSpy.mockRestore();
+  });
+
+  it('resets timer after manual flush', () => {
+    enqueueLogEntry(makeEntry('a'));
+    logBatchQueue.flush();
+    expect(logBatchQueue.size).toBe(0);
+
+    // New entry after flush should start a fresh timer
+    enqueueLogEntry(makeEntry('b'));
+    expect(logBatchQueue.size).toBe(1);
+
+    jest.advanceTimersByTime(5000);
+    expect(logBatchQueue.size).toBe(0);
+  });
+
+  it('appLogger.info enqueues rather than blocking', async () => {
+    const enqueueSpy = jest.spyOn(logBatchQueue, 'enqueue');
+    const mockLog = jest.spyOn(console, 'log').mockImplementation();
+
+    appLogger.setMinLevel(LogLevel.INFO);
+    await appLogger.info('non-blocking log');
+
+    expect(enqueueSpy).toHaveBeenCalled();
+
+    enqueueSpy.mockRestore();
+    mockLog.mockRestore();
+  });
+
+  it('heavy logging (1000 entries) flushes in batches of 100', () => {
+    const flushSpy = jest.spyOn(logBatchQueue, 'flush');
+
+    for (let i = 0; i < 1000; i++) {
+      enqueueLogEntry(makeEntry(`heavy-${i}`));
+    }
+
+    // 1000 entries / 100 per batch = 10 auto-flushes
+    expect(flushSpy).toHaveBeenCalledTimes(10);
+    expect(logBatchQueue.size).toBe(0);
+
+    flushSpy.mockRestore();
   });
 });

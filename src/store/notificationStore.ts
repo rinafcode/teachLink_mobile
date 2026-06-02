@@ -1,11 +1,13 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import {
-  NotificationPreferences,
-  StoredNotification,
-  DEFAULT_NOTIFICATION_PREFERENCES,
-  NotificationType,
+    DEFAULT_NOTIFICATION_PREFERENCES,
+    NotificationData,
+    NotificationHistoryEntry,
+    NotificationPreferences,
+    NotificationType,
+    StoredNotification,
 } from '../types/notifications';
 
 interface NotificationState {
@@ -24,6 +26,7 @@ interface NotificationState {
   // Received notifications
   notifications: StoredNotification[];
   unreadCount: number;
+  notificationHistory: NotificationHistoryEntry[];
   lastEngagedAt: string | null;
   lastNotificationSentAtByType: Partial<Record<NotificationType, string>>;
 
@@ -67,18 +70,18 @@ export const useNotificationStore = create<NotificationState>()(
       preferences: DEFAULT_NOTIFICATION_PREFERENCES,
       notifications: [],
       unreadCount: 0,
+      notificationHistory: [],
       lastEngagedAt: null,
       lastNotificationSentAtByType: {},
 
       // Push token actions
-      setPushToken: (token) =>
+      setPushToken: token =>
         set({
           pushToken: token,
           tokenLastUpdated: token ? new Date().toISOString() : null,
         }),
 
-      setTokenRegistered: (registered) =>
-        set({ isTokenRegistered: registered }),
+      setTokenRegistered: registered => set({ isTokenRegistered: registered }),
 
       clearPushToken: () =>
         set({
@@ -88,50 +91,102 @@ export const useNotificationStore = create<NotificationState>()(
         }),
 
       // Permission actions
-      setHasPromptedForPermission: (prompted) =>
-        set({ hasPromptedForPermission: prompted }),
+      setHasPromptedForPermission: prompted => set({ hasPromptedForPermission: prompted }),
 
-      setPermissionDeniedAt: (date) =>
-        set({ permissionDeniedAt: date }),
+      setPermissionDeniedAt: date => set({ permissionDeniedAt: date }),
 
       // Preference actions
       setPreference: (key, value) =>
-        set((state) => ({
+        set(state => ({
           preferences: {
             ...state.preferences,
             [key]: value,
           },
         })),
 
-      setAllPreferences: (preferences) =>
-        set({ preferences }),
+      setAllPreferences: preferences => set({ preferences }),
 
-      resetPreferences: () =>
-        set({ preferences: DEFAULT_NOTIFICATION_PREFERENCES }),
+      resetPreferences: () => set({ preferences: DEFAULT_NOTIFICATION_PREFERENCES }),
 
       // Notification actions
-      addNotification: (notification) =>
-        set((state) => {
-          const newNotification: StoredNotification = {
-            ...notification,
-            id: generateId(),
-            receivedAt: new Date().toISOString(),
-            read: false,
-          };
+      addNotification: notification =>
+        set(state => {
+          const now = new Date().toISOString();
+          const fingerprint = buildNotificationFingerprint(notification);
+          const dedupeWindowMinutes = 10;
+          const cutoff = new Date(Date.now() - dedupeWindowMinutes * 60 * 1000);
+
+          const recentHistory = state.notificationHistory.filter(
+            entry => new Date(entry.receivedAt).getTime() >= cutoff.getTime()
+          );
+
+          const isDuplicate = recentHistory.some(entry => entry.fingerprint === fingerprint);
+          if (isDuplicate) {
+            return {};
+          }
+
+          const groupKey = buildNotificationGroupKey(notification.type, notification.data);
+          const existingIndex = state.notifications.findIndex(
+            item => buildNotificationGroupKey(item.type, item.data) === groupKey
+          );
+
+          let notifications: StoredNotification[];
+
+          if (existingIndex >= 0) {
+            const existing = state.notifications[existingIndex];
+            const groupCount = (existing.groupCount ?? 1) + 1;
+            const title = formatGroupedTitle(
+              notification.type,
+              groupCount,
+              existing.title,
+              notification.title
+            );
+            const body = formatGroupedBody(existing.body, notification.body, groupCount);
+
+            const updatedNotification: StoredNotification = {
+              ...existing,
+              title,
+              body,
+              groupCount,
+              read: false,
+              receivedAt: now,
+            };
+
+            notifications = [
+              updatedNotification,
+              ...state.notifications.filter((_, index) => index !== existingIndex),
+            ];
+          } else {
+            const newNotification: StoredNotification = {
+              ...notification,
+              id: generateId(),
+              receivedAt: now,
+              read: false,
+              groupCount: 1,
+            };
+
+            notifications = [newNotification, ...state.notifications].slice(0, 100);
+          }
+
+          const notificationHistory = [
+            { fingerprint, receivedAt: now },
+            ...recentHistory,
+          ].slice(0, 200);
 
           return {
-            notifications: [newNotification, ...state.notifications].slice(0, 100), // Keep last 100
+            notifications,
             unreadCount: state.unreadCount + 1,
+            notificationHistory,
           };
         }),
 
-      markAsRead: (notificationId) =>
-        set((state) => {
-          const notification = state.notifications.find((n) => n.id === notificationId);
+      markAsRead: notificationId =>
+        set(state => {
+          const notification = state.notifications.find(n => n.id === notificationId);
           if (!notification || notification.read) return state;
 
           return {
-            notifications: state.notifications.map((n) =>
+            notifications: state.notifications.map(n =>
               n.id === notificationId ? { ...n, read: true } : n
             ),
             unreadCount: Math.max(0, state.unreadCount - 1),
@@ -139,18 +194,18 @@ export const useNotificationStore = create<NotificationState>()(
         }),
 
       markAllAsRead: () =>
-        set((state) => ({
-          notifications: state.notifications.map((n) => ({ ...n, read: true })),
+        set(state => ({
+          notifications: state.notifications.map(n => ({ ...n, read: true })),
           unreadCount: 0,
         })),
 
-      removeNotification: (notificationId) =>
-        set((state) => {
-          const notification = state.notifications.find((n) => n.id === notificationId);
+      removeNotification: notificationId =>
+        set(state => {
+          const notification = state.notifications.find(n => n.id === notificationId);
           const wasUnread = notification && !notification.read;
 
           return {
-            notifications: state.notifications.filter((n) => n.id !== notificationId),
+            notifications: state.notifications.filter(n => n.id !== notificationId),
             unreadCount: wasUnread ? Math.max(0, state.unreadCount - 1) : state.unreadCount,
           };
         }),
@@ -159,6 +214,7 @@ export const useNotificationStore = create<NotificationState>()(
         set({
           notifications: [],
           unreadCount: 0,
+          notificationHistory: [],
         }),
 
       recordEngagement: () =>
@@ -172,8 +228,7 @@ export const useNotificationStore = create<NotificationState>()(
         const lastSentAt = state.lastNotificationSentAtByType[type];
 
         if (lastSentAt) {
-          const elapsedMinutes =
-            (now.getTime() - new Date(lastSentAt).getTime()) / (1000 * 60);
+          const elapsedMinutes = (now.getTime() - new Date(lastSentAt).getTime()) / (1000 * 60);
           if (elapsedMinutes < thresholdMinutes) {
             return true;
           }
@@ -203,7 +258,7 @@ export const useNotificationStore = create<NotificationState>()(
       },
 
       // Helpers
-      isNotificationTypeEnabled: (type) => {
+      isNotificationTypeEnabled: type => {
         const { preferences } = get();
         switch (type) {
           case NotificationType.COURSE_UPDATE:
@@ -224,7 +279,7 @@ export const useNotificationStore = create<NotificationState>()(
     {
       name: 'notification-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({
+      partialize: state => ({
         // Only persist these fields
         pushToken: state.pushToken,
         isTokenRegistered: state.isTokenRegistered,
@@ -234,12 +289,86 @@ export const useNotificationStore = create<NotificationState>()(
         preferences: state.preferences,
         notifications: state.notifications,
         unreadCount: state.unreadCount,
+        notificationHistory: state.notificationHistory,
         lastEngagedAt: state.lastEngagedAt,
         lastNotificationSentAtByType: state.lastNotificationSentAtByType,
       }),
     }
   )
 );
+
+function normalizeText(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function getNotificationTargetKey(type: NotificationType, data?: NotificationData): string {
+  if (!data) return 'global';
+
+  switch (type) {
+    case NotificationType.COURSE_UPDATE:
+      return data.courseId ? `course:${data.courseId}` : 'course:all';
+    case NotificationType.MESSAGE:
+      return data.conversationId ? `message:${data.conversationId}` : 'message:all';
+    case NotificationType.LEARNING_REMINDER:
+      return 'learning_reminder';
+    case NotificationType.ACHIEVEMENT_UNLOCK:
+      return data.achievementId ? `achievement:${data.achievementId}` : 'achievement:all';
+    case NotificationType.COMMUNITY_ACTIVITY:
+      return data.postId ? `community:${data.postId}` : 'community:all';
+    default:
+      return 'global';
+  }
+}
+
+function buildNotificationGroupKey(type: NotificationType, data?: NotificationData): string {
+  return `${type}|${getNotificationTargetKey(type, data)}`;
+}
+
+function buildNotificationFingerprint(
+  notification: Omit<StoredNotification, 'id' | 'receivedAt' | 'read'>
+): string {
+  return [
+    notification.type,
+    getNotificationTargetKey(notification.type, notification.data),
+    normalizeText(notification.title),
+    normalizeText(notification.body),
+  ].join('|');
+}
+
+function formatGroupedTitle(
+  type: NotificationType,
+  count: number,
+  existingTitle: string,
+  incomingTitle: string
+): string {
+  if (count <= 1) {
+    return incomingTitle;
+  }
+
+  switch (type) {
+    case NotificationType.MESSAGE:
+      return `${count} new messages`;
+    case NotificationType.COURSE_UPDATE:
+      return `${count} course updates`;
+    case NotificationType.ACHIEVEMENT_UNLOCK:
+      return `${count} achievements unlocked`;
+    case NotificationType.COMMUNITY_ACTIVITY:
+      return `${count} community updates`;
+    case NotificationType.LEARNING_REMINDER:
+      return `${count} learning reminders`;
+    default:
+      return `${count} new notifications`;
+  }
+}
+
+function formatGroupedBody(existingBody: string, incomingBody: string, count: number): string {
+  if (count <= 1 || existingBody === incomingBody) {
+    return incomingBody;
+  }
+
+  const merged = [existingBody, incomingBody].filter(Boolean).join('\n');
+  return merged.length > 250 ? `${merged.slice(0, 250)}...` : merged;
+}
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;

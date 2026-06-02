@@ -41,10 +41,20 @@ export enum AnalyticsEvent {
 
   // Performance & Infrastructure
   PERFORMANCE_METRIC = 'performance_metric',
+  REACT_PROFILER_RENDER = 'react_profiler_render',
+  REACT_PROFILER_SLOW_RENDER = 'react_profiler_slow_render',
   AB_ASSIGNMENT = 'ab_assignment',
   AB_EXPOSURE = 'ab_exposure',
   API_ERROR = 'api_error',
   CRASH_REPORT = 'crash_report',
+
+  // Core Web Vitals
+  WEB_VITALS_LCP = 'web_vitals_lcp',
+  WEB_VITALS_FID = 'web_vitals_fid',
+  WEB_VITALS_CLS = 'web_vitals_cls',
+  WEB_VITALS_FCP = 'web_vitals_fcp',
+  WEB_VITALS_TTFB = 'web_vitals_ttfb',
+  WEB_VITALS_REGRESSION = 'web_vitals_regression',
 }
 
 /**
@@ -79,4 +89,29 @@ export enum PerformanceMetric {
   APP_LOAD_TIME = 'app_load_time',
   SCREEN_TRANSITION_TIME = 'screen_transition_time',
   API_RESPONSE_TIME = 'api_response_time',
+
+  // React Profiler
+  RENDER_DURATION = 'render_duration',
+  NAVIGATION_LATENCY = 'navigation_latency',
+
+  // Core Web Vitals
+  LCP = 'lcp',
+  FID = 'fid',
+  CLS = 'cls',
+  FCP = 'fcp',
+  TTFB = 'ttfb',
+}
+
+/**
+ * Resource timing metric names for structured reporting.
+ */
+export enum ResourceTimingMetric {
+  API_DURATION = 'api_duration',
+  IMAGE_LOAD_DURATION = 'image_load_duration',
+  API_P50 = 'api_p50',
+  API_P95 = 'api_p95',
+  IMAGE_P50 = 'image_p50',
+  IMAGE_P95 = 'image_p95',
+  API_ERROR_RATE = 'api_error_rate',
+  IMAGE_ERROR_RATE = 'image_error_rate',
 }

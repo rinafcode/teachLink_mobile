@@ -4,10 +4,10 @@
  */
 
 import type {
-    PerformanceAuditReport,
-    Recommendation,
-    RecommendationCategory,
-    SeverityLevel,
+  PerformanceAuditReport,
+  Recommendation,
+  RecommendationCategory,
+  SeverityLevel,
 } from './types';
 
 export class RecommendationEngine {
@@ -32,7 +32,9 @@ export class RecommendationEngine {
 
     // Memory recommendations
     if (report.memoryAnalysis.estimatedMemoryLeaks.length > 0) {
-      recommendations.push(this.createMemoryLeakRec(report.memoryAnalysis.estimatedMemoryLeaks.length));
+      recommendations.push(
+        this.createMemoryLeakRec(report.memoryAnalysis.estimatedMemoryLeaks.length)
+      );
     }
 
     if (report.memoryAnalysis.largeObjects.length > 0) {
@@ -54,11 +56,15 @@ export class RecommendationEngine {
     }
 
     if (report.networkAnalysis.redundantRequests.length > 0) {
-      recommendations.push(this.createDeduplicationRec(report.networkAnalysis.redundantRequests.length));
+      recommendations.push(
+        this.createDeduplicationRec(report.networkAnalysis.redundantRequests.length)
+      );
     }
 
     if (report.networkAnalysis.unoptimizedAssets.length > 0) {
-      recommendations.push(this.createAssetOptimizationRec(report.networkAnalysis.unoptimizedAssets));
+      recommendations.push(
+        this.createAssetOptimizationRec(report.networkAnalysis.unoptimizedAssets)
+      );
     }
 
     // Dependency recommendations
@@ -67,20 +73,28 @@ export class RecommendationEngine {
     }
 
     if (report.dependencyAnalysis.outdatedDependencies.length > 0) {
-      recommendations.push(this.createDependencyUpdateRec(report.dependencyAnalysis.outdatedDependencies.length));
+      recommendations.push(
+        this.createDependencyUpdateRec(report.dependencyAnalysis.outdatedDependencies.length)
+      );
     }
 
     if (report.dependencyAnalysis.unusedDependencies.length > 0) {
-      recommendations.push(this.createRemoveUnusedRec(report.dependencyAnalysis.unusedDependencies.length));
+      recommendations.push(
+        this.createRemoveUnusedRec(report.dependencyAnalysis.unusedDependencies.length)
+      );
     }
 
     // Asset recommendations
     if (report.assetAnalysis.images.formatOpportunities.length > 0) {
-      recommendations.push(this.createImageFormatRec(report.assetAnalysis.images.formatOpportunities));
+      recommendations.push(
+        this.createImageFormatRec(report.assetAnalysis.images.formatOpportunities)
+      );
     }
 
     if (report.assetAnalysis.images.unusedImages.length > 0) {
-      recommendations.push(this.createUnusedAssetsRec(report.assetAnalysis.images.unusedImages.length));
+      recommendations.push(
+        this.createUnusedAssetsRec(report.assetAnalysis.images.unusedImages.length)
+      );
     }
 
     // Runtime recommendations
@@ -220,7 +234,10 @@ export class RecommendationEngine {
     return {
       id: 'render-001',
       title: `Optimize ${components.length} Slow Components`,
-      description: `Components are rendering slowly: ${components.slice(0, 3).map((c: any) => c.name).join(', ')}`,
+      description: `Components are rendering slowly: ${components
+        .slice(0, 3)
+        .map((c: any) => c.name)
+        .join(', ')}`,
       severity: 'MEDIUM' as SeverityLevel,
       category: 'rendering-performance' as RecommendationCategory,
       impact: 'Improve frame rate and user experience',
@@ -295,7 +312,7 @@ export class RecommendationEngine {
       description: `Detected ${count} redundant API requests being made`,
       severity: 'MEDIUM' as SeverityLevel,
       category: 'network-optimization' as RecommendationCategory,
-      impact: `Reduce data usage and improve latency by ${(count * 30)}ms average`,
+      impact: `Reduce data usage and improve latency by ${count * 30}ms average`,
       effort: 'MEDIUM',
       estimatedSavings: { latency: count * 30 },
       implementation: `

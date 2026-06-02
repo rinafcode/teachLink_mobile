@@ -39,6 +39,7 @@ export function SettingsPicker<T extends string = string>({
   const selectedLabel = options.find(o => o.value === value)?.label ?? value;
 
   const handleSelect = (optionValue: T) => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     useHapticFeedback('light');
     onValueChange(optionValue);
     setIsOpen(false);

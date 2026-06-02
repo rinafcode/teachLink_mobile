@@ -1,7 +1,8 @@
-import { mobileAnalyticsService } from "./mobileAnalytics";
-import { sessionRestorationService } from "./sessionRestoration";
 import logger from "../utils/logger";
 import { AnalyticsEvent } from "../utils/trackingEvents";
+import { mobileAnalyticsService } from "./mobileAnalytics";
+import { sessionRestorationService } from "./sessionRestoration";
+import { sentryContextService } from "./sentryContext";
 
 /**
  * CrashReportingService manages global error tracking and exception handling.
@@ -27,16 +28,14 @@ class CrashReportingService {
         const originalHandler = global.ErrorUtils.getGlobalHandler();
 
         // @ts-ignore
-        global.ErrorUtils.setGlobalHandler(
-          (error: Error, isFatal?: boolean) => {
-            this.captureCrash(error, isFatal);
+        global.ErrorUtils.setGlobalHandler((error: Error, isFatal?: boolean) => {
+          this.captureCrash(error, isFatal);
 
-            // Re-throw if a handler was registered or if we want standard behavior
-            if (originalHandler) {
-              originalHandler(error, isFatal);
-            }
-          },
-        );
+          // Re-throw if a handler was registered or if we want standard behavior
+          if (originalHandler) {
+            originalHandler(error, isFatal);
+          }
+        });
       }
 
       // 2. Handle unhandled promise rejections
@@ -47,8 +46,7 @@ class CrashReportingService {
 
         // @ts-ignore
         global.onunhandledrejection = (reason: any) => {
-          const error =
-            reason instanceof Error ? reason : new Error(String(reason));
+          const error = reason instanceof Error ? reason : new Error(String(reason));
           this.captureCrash(error, false);
 
           if (originalRejectionHandler) {
@@ -61,9 +59,9 @@ class CrashReportingService {
       // crashlytics().setCrashlyticsCollectionEnabled(true);
 
       this.isInitialized = true;
-      logger.info("CrashReporting: Initialized global error handlers");
+      logger.info('CrashReporting: Initialized global error handlers');
     } catch (error) {
-      logger.error("CrashReporting: Failed to initialize handlers", error);
+      logger.error('CrashReporting: Failed to initialize handlers', error);
     }
   }
 
@@ -83,28 +81,39 @@ class CrashReportingService {
 
     // Log for development
     logger.error(
-      `❌ [Crash] ${isFatal ? "FATAL" : "Non-Fatal"} Crash: ${error.message}`,
-      errorDetails,
+      `❌ [Crash] ${isFatal ? 'FATAL' : 'Non-Fatal'} Crash: ${error.message}`,
+      errorDetails
     );
 
+    // Record in health metrics service
+    healthMetricsService.recordError();
+
     // Record as analytics event
-    mobileAnalyticsService.trackEvent(
-      AnalyticsEvent.CRASH_REPORT,
-      errorDetails,
-    );
+    mobileAnalyticsService.trackEvent(AnalyticsEvent.CRASH_REPORT, errorDetails);
+
+    // Send to Sentry with full session context
+    sentryContextService.captureException(error, {
+      tags: {
+        crash_type: isFatal ? 'fatal' : 'non_fatal',
+        error_count: String(this.unhandledErrorCount),
+      },
+      extra: {
+        isFatal: !!isFatal,
+        unhandledErrorCount: this.unhandledErrorCount,
+      },
+      ...(isFatal ? { fingerprint: ['fatal-crash', error.message] } : {}),
+    });
 
     // Preserve session state so next launch can offer restoration
     if (isFatal) {
       sessionRestorationService.captureOnCrash();
+      sentryContextService.trackAppLifecycle('crash');
     }
 
     // Alert if threshold is exceeded (production alert)
     if (this.unhandledErrorCount >= this.MAX_ERRORS_THRESHOLD) {
       this.alertProductionIssue(errorDetails);
     }
-
-    // In a real implementation:
-    // crashlytics().recordError(error);
   }
 
   /**
@@ -123,13 +132,10 @@ class CrashReportingService {
   /**
    * Manually report an error that was caught (e.g., in a try-catch block).
    */
-  public reportError(
-    error: Error | any,
-    context?: string,
-    extraData?: any,
-  ): void {
+  public reportError(error: Error | any, context?: string, extraData?: any): void {
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorStack = error instanceof Error ? error.stack : undefined;
+    const errorObj = error instanceof Error ? error : new Error(errorMessage);
 
     const payload = {
       context,
@@ -138,23 +144,24 @@ class CrashReportingService {
       ...extraData,
     };
 
-    logger.error(
-      `⚠️ [ErrorReport] ${context ? `[${context}] ` : ""}${errorMessage}`,
-      payload,
-    );
+    logger.error(`⚠️ [ErrorReport] ${context ? `[${context}] ` : ''}${errorMessage}`, payload);
 
     mobileAnalyticsService.trackEvent(AnalyticsEvent.API_ERROR, payload);
 
-    // In a real implementation:
-    // crashlytics().recordError(error);
+    // Capture with Sentry, attaching extra context data
+    sentryContextService.captureException(errorObj, {
+      tags: { error_context: context ?? 'unknown' },
+      extra: { context, ...extraData },
+    });
   }
 
   /**
    * Tag the current crash report with user ID to help debugging specific user issues.
+   * Delegates to sentryContextService so the Sentry scope is also updated.
    */
-  public setUser(userId: string): void {
+  public setUser(userId: string, email?: string, role?: string): void {
     logger.debug(`CrashReporting: Bound to user ${userId}`);
-    // crashlytics().setUserId(userId);
+    sentryContextService.setUser({ id: userId, email, role });
   }
 
   /**
@@ -162,7 +169,7 @@ class CrashReportingService {
    */
   public resetErrorCount(): void {
     this.unhandledErrorCount = 0;
-    logger.debug("CrashReporting: Error count reset");
+    logger.debug('CrashReporting: Error count reset');
   }
 
   /**

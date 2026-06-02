@@ -4,6 +4,7 @@ import { AppState, type AppStateStatus } from 'react-native';
 
 import { useAppStore } from '../store';
 import { useSettingsStore } from '../store/settingsStore';
+import { useTheme } from '../store';
 
 export const DARK_LUX_THRESHOLD = 25;
 export const LIGHT_LUX_THRESHOLD = 75;
@@ -60,8 +61,8 @@ export function advanceDebounce(
 }
 
 export function useAdaptiveTheme(): void {
-  const adaptiveThemeEnabled = useSettingsStore((s) => s.adaptiveThemeEnabled);
-  const setTheme = useAppStore((s) => s.setTheme);
+  const adaptiveThemeEnabled = useSettingsStore(s => s.adaptiveThemeEnabled);
+  const setTheme = useAppStore(s => s.setTheme);
 
   const debounceRef = useRef<DebounceState>({ candidate: null, consecutiveCount: 0 });
   const subscriptionRef = useRef<{ remove: () => void } | null>(null);
@@ -77,7 +78,7 @@ export function useAdaptiveTheme(): void {
     };
 
     const handleReading = (lux: number) => {
-      const currentTheme = useAppStore.getState().theme;
+      const currentTheme = useTheme(); // Changed from useAppStore.getState().theme
       const { state, confirmedTheme } = advanceDebounce(debounceRef.current, lux, currentTheme);
       debounceRef.current = state;
       if (confirmedTheme) {
@@ -95,8 +96,7 @@ export function useAdaptiveTheme(): void {
       });
     };
 
-    const shouldSubscribe =
-      adaptiveThemeEnabled && appStateRef.current === 'active';
+    const shouldSubscribe = adaptiveThemeEnabled && appStateRef.current === 'active';
 
     if (shouldSubscribe) {
       void subscribe();
@@ -104,7 +104,7 @@ export function useAdaptiveTheme(): void {
       removeSubscription();
     }
 
-    const appStateSubscription = AppState.addEventListener('change', (nextState) => {
+    const appStateSubscription = AppState.addEventListener('change', nextState => {
       const wasBackground = appStateRef.current.match(/inactive|background/);
       const isActive = nextState === 'active';
       appStateRef.current = nextState;

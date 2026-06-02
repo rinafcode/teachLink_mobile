@@ -1,3 +1,8 @@
+Here is the complete resolved `tsconfig.json`. I have merged the path mappings from both branches so that any existing imports from either branch (whether they use the `@services/` style or the `@/components/` style) will continue to work perfectly.
+
+Copy and paste this exact code:
+
+```json
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
@@ -8,19 +13,24 @@
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
       "@components/*": ["src/components/*"],
       "@hooks/*": ["src/hooks/*"],
       "@services/*": ["src/services/*"],
       "@store/*": ["src/store/*"],
-      "@utils/*": ["src/utils/*"]
+      "@utils/*": ["src/utils/*"],
+      "@/components/*": ["./src/components/*", "./components/*"],
+      "@/hooks/*": ["./src/hooks/*", "./hooks/*"],
+      "@/constants/*": ["./constants/*"],
+      "@/*": ["./src/*", "./*"]
     },
     "lib": ["ESNext", "DOM"],
     "noEmit": true,
     "resolveJsonModule": true,
     "moduleResolution": "bundler",
+    "ignoreDeprecations": "5.0",
     "types": ["jest", "node"]
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts", "nativewind-env.d.ts"],
   "exclude": ["node_modules"]
 }
+```

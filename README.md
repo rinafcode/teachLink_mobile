@@ -212,6 +212,31 @@ appLogger.infoSync('Quick log');
 appLogger.errorSync('Error', error);
 ```
 
+### Cursor-based API pagination
+The app now supports cursor-based list pagination for backend endpoints such as `/courses`.
+
+- `limit` — number of records per page
+- `cursor` — opaque token returned by the previous page
+- `orderBy` — stable sort field (`id`)
+- `direction` — `asc` or `desc`
+
+Response shape:
+
+```json
+{
+  "items": [/* Course[] */],
+  "nextCursor": "string | null",
+  "hasMore": true
+}
+```
+
+Cursor format:
+
+- URI-safe encoded JSON
+- contains `{ lastId, orderBy, direction }`
+
+Use `courseApi.getCoursesPage({ limit, cursor, orderBy, direction })` to fetch each page.
+
 ### Retrieve Logs (Development)
 
 ```typescript
@@ -297,6 +322,8 @@ Notification delivery now adapts to recent engagement to reduce fatigue and batt
 - **Inactive users** (72+ hours or no engagement history): ~180 minute minimum gap per notification type.
 
 Engagement is currently recorded when users open notifications. Throttling is enforced per notification type before storing foreground notifications.
+
+For details on the notification deduplication and batching strategy, see `docs/NOTIFICATION_STRATEGY.md`.
 
 ## Resources
 
@@ -391,3 +418,19 @@ Protocol shape:
 - unknown events fallback:
   - `field 3` (string): event name
   - `field 4` (string): JSON payload
+
+## Battery-Aware Performance Throttling
+
+The application monitors the device battery level and automatically throttles performance-intensive features when the battery falls below **20%** to extend battery life.
+
+#### Throttling Behaviors (<20% Battery)
+
+1.  **Reduced Animation Frame Rate**: Core animations are capped at **30 FPS** (down from 60 FPS), and animation durations are doubled via the `useAdaptiveFrameRate` hook to maintain visual consistency.
+2.  **Disabled Image Prefetching**: Automatic image preloading is disabled in the `usePrefetchImages` hook to reduce background radio and CPU activity.
+3.  **Reduced Sync Frequency**: The background synchronization interval is increased from **30 seconds** to **2 minutes** in the `SyncService`.
+
+#### Implementation Details
+
+- **Device Store**: Battery state is managed globally in `src/store/deviceStore.ts`.
+- **Battery Service**: Real-time monitoring is handled by `src/services/batteryService.ts` using the `expo-battery` library.
+- **Auto-Adjustment**: The system automatically resumes normal performance once the device is charged above 20%.

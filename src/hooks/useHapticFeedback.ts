@@ -1,15 +1,44 @@
-import * as Haptics from 'expo-haptics';
+import { ImpactFeedbackStyle, impactAsync } from 'expo-haptics';
 
 type HapticType = 'light' | 'medium' | 'heavy';
 
-export const useHapticFeedback = (intensity: HapticType = 'medium') => {
-  const impactMap = {
-    light: Haptics.ImpactFeedbackStyle.Light,
-    medium: Haptics.ImpactFeedbackStyle.Medium,
-    heavy: Haptics.ImpactFeedbackStyle.Heavy,
-  };
+const impactMap = {
+  light: ImpactFeedbackStyle.Light,
+  medium: ImpactFeedbackStyle.Medium,
+  heavy: ImpactFeedbackStyle.Heavy,
+};
 
-  return Haptics.impactAsync(impactMap[intensity]);
+const intensityWeights = {
+  light: 1,
+  medium: 2,
+  heavy: 3,
+};
+
+let pendingHaptic: HapticType | null = null;
+let hapticTimeout: ReturnType<typeof setTimeout> | null = null;
+const BATCH_WINDOW_MS = 50;
+
+const flushHaptics = () => {
+  if (pendingHaptic) {
+    impactAsync(impactMap[pendingHaptic]).catch(() => {
+      // Ignore haptic failures silently
+    });
+    pendingHaptic = null;
+  }
+  hapticTimeout = null;
+};
+
+export const useHapticFeedback = (intensity: HapticType = 'medium') => {
+  if (!pendingHaptic || intensityWeights[intensity] > intensityWeights[pendingHaptic]) {
+    pendingHaptic = intensity;
+  }
+
+  if (!hapticTimeout) {
+    hapticTimeout = setTimeout(flushHaptics, BATCH_WINDOW_MS);
+  }
+
+  // Return a resolved promise to maintain backward compatibility
+  return Promise.resolve();
 };
 
 /**

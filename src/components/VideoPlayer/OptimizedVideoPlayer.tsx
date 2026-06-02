@@ -3,8 +3,8 @@ import { useVideoPlayer, VideoPlayerStatus, VideoSource, VideoView } from 'expo-
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, StyleProp, Text, View, ViewStyle } from 'react-native';
 
-import { useVideoMetrics } from '@/hooks/useVideoMetrics';
-import { appLogger } from '@/utils/logger';
+import { useVideoMetrics } from '../../hooks/useVideoMetrics';
+import { appLogger } from '../../utils/logger';
 
 export interface OptimizedVideoPlayerProps {
   uri: string;

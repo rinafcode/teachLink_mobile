@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { AccessibilityInfo } from 'react-native';
 import type { GestureResponderEvent, ViewProps } from 'react-native';
+import { AccessibilityInfo } from 'react-native';
 
 /**
  * A tiny gesture "arbiter" to prevent recognizers (swipe/pinch/long-press/etc.)
@@ -167,14 +167,23 @@ export function useDoubleTap(options: UseDoubleTapOptions) {
 
   const tap1Ref = React.useRef<{ t: number; x: number; y: number } | null>(null);
   const startRef = React.useRef<{ x: number; y: number } | null>(null);
-  const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timerRef = React.useRef<ReturnType<typeof setTimeout> | number | null>(null);
+  const rafRef = React.useRef<number | null>(null);
+  const startTimeRef = React.useRef<number | null>(null);
   const movedTooFarRef = React.useRef(false);
 
   const clearTimer = React.useCallback(() => {
     if (timerRef.current) {
-      clearTimeout(timerRef.current);
+      if (typeof timerRef.current === 'number') {
+        clearTimeout(timerRef.current);
+      }
       timerRef.current = null;
     }
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    startTimeRef.current = null;
   }, []);
 
   const reset = React.useCallback(() => {
@@ -226,11 +235,23 @@ export function useDoubleTap(options: UseDoubleTapOptions) {
         // First tap: wait for the second.
         tap1Ref.current = { t: now, x, y };
         clearTimer();
-        timerRef.current = setTimeout(() => {
-          const stored = tap1Ref.current;
-          tap1Ref.current = null;
-          if (stored) onSingleTap?.({ pageX: stored.x, pageY: stored.y });
-        }, maxDelayMs);
+        startTimeRef.current = performance.now();
+        
+        // Use requestAnimationFrame for frame-synced timing
+        const checkDuration = (timestamp: number) => {
+          const elapsed = timestamp - (startTimeRef.current ?? timestamp);
+          if (elapsed >= maxDelayMs) {
+            // Duration elapsed, trigger single tap
+            const stored = tap1Ref.current;
+            tap1Ref.current = null;
+            if (stored) onSingleTap?.({ pageX: stored.x, pageY: stored.y });
+          } else {
+            // Continue checking
+            rafRef.current = requestAnimationFrame(checkDuration);
+          }
+        };
+        
+        rafRef.current = requestAnimationFrame(checkDuration);
       },
       onResponderTerminate: () => reset(),
     };

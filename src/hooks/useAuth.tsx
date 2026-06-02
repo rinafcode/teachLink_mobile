@@ -1,8 +1,10 @@
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+
 import mobileAuth, { AuthUser } from '../services/mobileAuth';
 import { appLogger } from '../utils/logger';
 
 interface AuthState {
+  isOffline?: boolean; // optional property if needed
   isAuthenticated: boolean;
   isLoading: boolean;
   user: AuthUser | null;
@@ -21,7 +23,7 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-export function AuthProvider({ children }: AuthProviderProps): React.ReactElement {
+export const AuthProvider = ({ children }: AuthProviderProps): React.ReactElement => {
   const [state, setState] = useState<AuthState>({
     isAuthenticated: false,
     isLoading: true,
@@ -106,25 +108,24 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
     restoreSession();
   }, []);
 
-  return (
-    <AuthContext.Provider
-      value={{
-        ...state,
-        login,
-        loginWithBiometrics,
-        logout,
-        restoreSession,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const value = React.useMemo(
+    () => ({
+      ...state,
+      login,
+      loginWithBiometrics,
+      logout,
+      restoreSession,
+    }),
+    [state]
   );
-}
 
-export function useAuth(): AuthContextType {
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}
+};

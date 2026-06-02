@@ -16,7 +16,12 @@ export const QuizSkeleton = () => {
         <Skeleton width={100} height={14} />
         <Skeleton width={80} height={14} />
       </View>
-      <Skeleton width={SCREEN_WIDTH - 32} height={180} borderRadius={16} style={styles.questionCard} />
+      <Skeleton
+        width={SCREEN_WIDTH - 32}
+        height={180}
+        borderRadius={16}
+        style={styles.questionCard}
+      />
       <View style={styles.optionsBlock}>
         <Skeleton width="100%" height={52} borderRadius={12} style={styles.option} />
         <Skeleton width="100%" height={52} borderRadius={12} style={styles.option} />

@@ -1,7 +1,8 @@
-const { getDefaultConfig } = require('expo/metro-config');
-const { withNativeWind } = require('nativewind/metro');
 const fs = require('fs');
 const path = require('path');
+
+const { getDefaultConfig } = require('expo/metro-config');
+const { withNativeWind } = require('nativewind/metro');
 
 // ---------------------------------------------------------------------------
 // Auto code-splitting: route size threshold
@@ -153,7 +154,100 @@ function wrapWithRouteSizeAnalyzer(existingSerializer) {
 // Compose the final Metro config
 // ---------------------------------------------------------------------------
 
-const config = getDefaultConfig(__dirname);
+const projectRoot = __dirname;
+
+const config = getDefaultConfig(projectRoot);
+
+// ---------------------------------------------------------------------------
+// Tree-shaking configuration for bundle size optimization (Issue #217)
+// ---------------------------------------------------------------------------
+// Enable tree-shaking optimizations for better bundle size
+config.transformer.minifierConfig = {
+  ...config.transformer.minifierConfig,
+  keep_classnames: true,
+  keep_fnames: true,
+  mangle: {
+    ...config.transformer.minifierConfig?.mangle,
+    keep_classnames: true,
+    keep_fnames: true,
+  },
+};
+
+// Enable inline requires for better dead code elimination
+config.transformer.inlineRequires = true;
+
+// Enable additional optimization in production
+if (process.env.NODE_ENV === 'production') {
+  config.transformer.minifierConfig = {
+    ...config.transformer.minifierConfig,
+    compress: {
+      ...config.transformer.minifierConfig?.compress,
+      dead_code: true,
+      unused: true,
+      conditionals: true,
+      evaluate: true,
+      booleans: true,
+      loops: true,
+      if_return: true,
+      join_vars: true,
+      drop_console: true,
+    },
+  };
+}
+
+const defaultResolveRequest = config.resolver.resolveRequest;
+
+const tryResolve = (context, candidate, platform) => {
+  try {
+    return context.resolveRequest(context, candidate, platform);
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * @/* maps to src/* in tsconfig, but Expo template files live at repo root
+ * (components/, hooks/, constants/). Resolve both locations.
+ */
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (moduleName.startsWith('@/src/')) {
+    const subpath = moduleName.slice('@/src/'.length);
+    const fromSrc = tryResolve(context, path.join(projectRoot, 'src', subpath), platform);
+    if (fromSrc) return fromSrc;
+  }
+
+  if (moduleName.startsWith('@/hooks/')) {
+    const subpath = moduleName.slice('@/hooks/'.length);
+    const fromRoot = tryResolve(context, path.join(projectRoot, 'hooks', subpath), platform);
+    if (fromRoot) return fromRoot;
+    const fromSrc = tryResolve(context, path.join(projectRoot, 'src/hooks', subpath), platform);
+    if (fromSrc) return fromSrc;
+  }
+
+  if (moduleName.startsWith('@/constants/')) {
+    const subpath = moduleName.slice('@/constants/'.length);
+    const fromRoot = tryResolve(context, path.join(projectRoot, 'constants', subpath), platform);
+    if (fromRoot) return fromRoot;
+  }
+
+  if (moduleName.startsWith('@/components/')) {
+    const subpath = moduleName.slice('@/components/'.length);
+    const fromSrc = tryResolve(
+      context,
+      path.join(projectRoot, 'src/components', subpath),
+      platform
+    );
+    if (fromSrc) return fromSrc;
+    const fromRoot = tryResolve(context, path.join(projectRoot, 'components', subpath), platform);
+    if (fromRoot) return fromRoot;
+  }
+
+  if (defaultResolveRequest) {
+    return defaultResolveRequest(context, moduleName, platform);
+  }
+
+  return context.resolveRequest(context, moduleName, platform);
+};
 
 // Apply NativeWind first so we capture its serializer (if any) before wrapping.
 const nativewindConfig = withNativeWind(config, { input: './global.css' });
@@ -164,4 +258,12 @@ nativewindConfig.serializer.customSerializer = wrapWithRouteSizeAnalyzer(
   nativewindConfig.serializer.customSerializer,
 );
 
+// Register Metro asset inlining plugin for Issue #369
+nativewindConfig.transformer ??= {};
+nativewindConfig.transformer.assetPlugins = [
+  ...(nativewindConfig.transformer.assetPlugins || []),
+  require.resolve('./tools/metro-plugins/imageInlinePlugin.js'),
+];
+
 module.exports = nativewindConfig;
+

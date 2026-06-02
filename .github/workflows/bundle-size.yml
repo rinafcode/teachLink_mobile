@@ -173,10 +173,13 @@ jobs:
                 body += `\n⚠️ **Warning**: Bundle size increased by more than 10%!\n`;
               }
             }
-            
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: body
-            });
+            try {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+              });
+            } catch (error) {
+              console.warn('Skipping PR commenting due to permission limits (e.g. fork PRs):', error.message);
+            }

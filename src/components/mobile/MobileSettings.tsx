@@ -1,55 +1,43 @@
-import React, { useState } from 'react';
 import {
-  Alert,
-  ActivityIndicator,
-  LayoutAnimation,
-  Platform,
-  ScrollView,
-  TouchableOpacity,
-  UIManager,
-  View,
+    BarChart2,
+    ChevronDown,
+    ChevronUp,
+    Database,
+    Download,
+    Eye,
+    Fingerprint as FingerprintPattern,
+    Lock,
+    LogOut,
+    RefreshCw,
+    Settings2,
+    Sun,
+    Trash2,
+    User,
+    Wifi,
+    Zap,
+} from 'lucide-react-native';
+import React, { useCallback, useState } from 'react';
+
+import {
+    ActivityIndicator,
+    Alert,
+    ScrollView,
+    TouchableOpacity,
+    View
 } from 'react-native';
 
-import {
-  BarChart2,
-  Bell,
-  ChevronDown,
-  ChevronUp,
-  Download,
-  Eye,
-  Globe,
-  HardDrive,
-  Lock,
-  LogOut,
-  MapPin,
-  Play,
-  Settings2,
-  Shield,
-  Sun,
-  Trash2,
-  Type,
-  User,
-  Vibrate,
-  Wifi,
-  RefreshCw,
-  Fingerprint as FingerprintPattern,
-} from 'lucide-react-native';
-
-import { useTheme, useAppStore } from '../../store';
-import { useNotificationStore } from '../../store/notificationStore';
-import { useSettingsStore, ProfileVisibility, DownloadQuality } from '../../store/settingsStore';
-import { useBiometricAuth } from '../../hooks/useBiometricAuth';
 import { useDynamicFontSize } from '../../hooks';
+import { useBiometricAuth } from '../../hooks/useBiometricAuth';
+import { useFormCache } from '../../hooks/useFormCache';
+import { useAppStore, useTheme } from '../../store';
+import { useNotificationStore } from '../../store/notificationStore';
+import { DownloadQuality, ProfileVisibility, useSettingsStore } from '../../store/settingsStore';
+import { configureNext } from '../../utils/layoutAnimation';
 
+import { AppText } from '../common/AppText';
 import { NativeToggle } from './NativeToggle';
 import { PickerOption, SettingsPicker } from './SettingsPicker';
 import { SettingsSection } from './SettingsSection';
-import { AppText } from '../common/AppText';
-
-// Enable LayoutAnimation on Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 // ─────────────────────────────────────────────────────────────
 // Shared Row
@@ -65,7 +53,7 @@ interface SettingRowProps {
   destructive?: boolean;
 }
 
-function SettingRow({
+const SettingRow = ({
   icon,
   iconBg = 'bg-gray-100 dark:bg-gray-700',
   label,
@@ -73,7 +61,7 @@ function SettingRow({
   right,
   onPress,
   destructive = false,
-}: SettingRowProps) {
+}: SettingRowProps) => {
   const Row = onPress ? TouchableOpacity : View;
   const { scale } = useDynamicFontSize();
 
@@ -153,7 +141,7 @@ interface AdvancedToggleProps {
   onToggle: () => void;
 }
 
-function AdvancedToggle({ expanded, onToggle }: AdvancedToggleProps) {
+const AdvancedToggle = ({ expanded, onToggle }: AdvancedToggleProps) => {
   return (
     <TouchableOpacity
       onPress={onToggle}
@@ -182,11 +170,11 @@ function AdvancedToggle({ expanded, onToggle }: AdvancedToggleProps) {
 // Component
 // ─────────────────────────────────────────────────────────────
 
-export function MobileSettings({
+export const MobileSettings = ({
   onSignOut,
   onChangePassword,
   onLinkedAccounts,
-}: any) {
+}: any) => {
   const theme = useTheme();
   const setTheme = useAppStore(state => state.setTheme);
   const { preferences, setPreference } = useNotificationStore();
@@ -221,6 +209,8 @@ export function MobileSettings({
     setAutoplay,
     hapticFeedback,
     setHapticFeedback,
+    dataSaverEnabled,
+    setDataSaverEnabled,
   } = useSettingsStore();
 
   const {
@@ -233,8 +223,27 @@ export function MobileSettings({
   } = useBiometricAuth();
 
   const { scale } = useDynamicFontSize();
+  const { clearCache: clearStoredFormFields } = useFormCache([]);
 
-  const handleBiometricToggle = async (value: boolean) => {
+  const handleClearFormCache = useCallback(() => {
+    Alert.alert(
+      'Clear Cached Form Data',
+      'Remove saved names, emails, and addresses from this device?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear',
+          style: 'destructive',
+          onPress: async () => {
+            await clearStoredFormFields();
+            Alert.alert('Cleared', 'Cached form data has been removed.');
+          },
+        },
+      ]
+    );
+  }, [clearStoredFormFields]);
+
+  const handleBiometricToggle = useCallback(async (value: boolean) => {
     if (value) {
       const ok = await enableBiometric();
       if (!ok) {
@@ -243,16 +252,16 @@ export function MobileSettings({
     } else {
       await disableBiometric();
     }
-  };
+  }, [enableBiometric, disableBiometric]);
 
-  const handleSignOut = () => {
+  const handleSignOut = useCallback(() => {
     Alert.alert('Sign Out', 'Are you sure?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Sign Out', style: 'destructive', onPress: onSignOut },
     ]);
-  };
+  }, [onSignOut]);
 
-  const handleManualSync = async () => {
+  const handleManualSync = useCallback(async () => {
     Alert.alert('Sync', 'Sync data with server?', [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -268,23 +277,22 @@ export function MobileSettings({
         },
       },
     ]);
-  };
+  }, []);
 
-  const handleClearDownloads = () => {
+  const handleClearDownloads = useCallback(() => {
     Alert.alert('Clear Downloads', 'Remove all downloads?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Clear', style: 'destructive' },
     ]);
-  };
+  }, []);
 
-  const handleToggleAdvanced = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  const handleToggleAdvanced = useCallback(() => {
+    configureNext();
     setShowAdvancedSettings(prev => !prev);
-  };
+  }, []);
 
   return (
     <ScrollView className="flex-1 bg-gray-50 dark:bg-gray-900">
-
       {/* ── ESSENTIAL: ACCOUNT ─────────────────────────────── */}
       <SettingsSection title="Account">
         <SettingRow
@@ -344,6 +352,13 @@ export function MobileSettings({
             />
           }
         />
+
+        <SettingRow
+          icon={<Database size={18} color="#eab308" />}
+          label="Data Saver"
+          description="Reduces bandwidth by disabling prefetch and lowering image quality"
+          right={<NativeToggle value={dataSaverEnabled} onValueChange={setDataSaverEnabled} />}
+        />
       </SettingsSection>
 
       {/* ── PROGRESSIVE DISCLOSURE: ADVANCED SETTINGS ──────── */}
@@ -357,6 +372,14 @@ export function MobileSettings({
               icon={<BarChart2 size={18} />}
               label="Analytics"
               right={<NativeToggle value={analyticsEnabled} onValueChange={setAnalyticsEnabled} />}
+            />
+
+            <SettingRow
+              icon={<Trash2 size={18} color="red" />}
+              label="Clear Cached Form Data"
+              description="Remove saved autofill values from this device"
+              onPress={handleClearFormCache}
+              destructive
             />
           </SettingsSection>
 
@@ -400,6 +423,16 @@ export function MobileSettings({
               icon={<RefreshCw size={18} />}
               label="Manual Sync"
               onPress={handleManualSync}
+            />
+          </SettingsSection>
+
+          {/* PERFORMANCE & UTILITIES */}
+          <SettingsSection title="Performance & Utilities">
+            <SettingRow
+              icon={<Zap size={18} color="#06b6d4" />}
+              label="Clipboard Optimizer"
+              description="Test & profile asynchronous clipboard operations"
+              onPress={() => router.push('/clipboard-demo')}
             />
           </SettingsSection>
         </>

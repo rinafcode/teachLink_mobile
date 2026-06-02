@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
+
 import { useNetworkStatus } from '../../hooks';
-import logger from '../../utils/logger';
+import defaultLogger from '../../utils/logger';
 
 // Props interface
 interface OfflineIndicatorProps {
@@ -24,7 +25,7 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
   onPress = () => {},
   showDetails = false,
 }) => {
-  const { isOnline, isOffline, networkStatus, refresh } = useNetworkStatus();
+  const { isOnline, isOffline, refresh } = useNetworkStatus();
 
   // Don't show when online unless explicitly requested
   if (isOnline && !showWhenOnline) {
@@ -62,7 +63,7 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
         onPress();
       }
     } catch (error) {
-      logger.error('Error refreshing network status:', error);
+      defaultLogger.error('Error refreshing network status:', error);
     }
   };
 
@@ -94,14 +95,35 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
 
 // Export simplified versions
 export const OfflineBanner = OfflineIndicator;
-export const OnlineIndicator = (props: any) =>
+export const OnlineIndicator = ({
+  position = 'top',
+  backgroundColor = '#4CAF50',
+  textColor,
+  onPress,
+  showDetails,
+}: OfflineIndicatorProps) =>
   React.createElement(OfflineIndicator, {
-    ...props,
+    position,
+    backgroundColor,
+    textColor,
+    onPress,
+    showDetails,
     showWhenOnline: true,
-    backgroundColor: '#4CAF50',
   });
-export const ConnectionQualityIndicator = (props: any) =>
-  React.createElement(OfflineIndicator, { ...props, position: 'bottom' });
-export const OfflineFAB = (props: any) => null; // Disabled due to configuration issues
+export const ConnectionQualityIndicator = ({
+  position = 'bottom',
+  backgroundColor = '#FF5722',
+  textColor,
+  onPress,
+  showDetails,
+}: OfflineIndicatorProps) =>
+  React.createElement(OfflineIndicator, {
+    position,
+    backgroundColor,
+    textColor,
+    onPress,
+    showDetails,
+  });
+export const OfflineFAB = (_props: OfflineIndicatorProps) => null; // Disabled due to configuration issues
 
 export default OfflineIndicator;

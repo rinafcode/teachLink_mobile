@@ -1,6 +1,11 @@
 import { Course } from "../../types/course";
-import apiClient from "./axios.config";
+import { batchClient } from "./batchClient";
 import { fetchWithSWR, invalidateCache } from "./cache";
+import {
+    buildCursorCacheKey,
+    CursorPageRequest,
+    CursorPageResponse,
+} from "./cursorPagination";
 
 const COURSES_KEY = "courses:list";
 const courseKey = (id: string) => `courses:${id}`;
@@ -13,7 +18,39 @@ export const courseApi = {
   getCourses(): Promise<Course[]> {
     return fetchWithSWR(
       COURSES_KEY,
-      () => apiClient.get<Course[]>("/courses").then((r) => r.data),
+      () => batchClient.get("/courses"),
+      TTL,
+      STALE_TTL,
+    );
+  },
+
+  getCoursesPage(request: CursorPageRequest = {}): Promise<CursorPageResponse<Course>> {
+    const { limit = 20, cursor, orderBy = 'id', direction = 'asc' } = request;
+    const cacheKey = buildCursorCacheKey({ limit, cursor, orderBy, direction });
+
+    return fetchWithSWR(
+      cacheKey,
+      () => apiClient
+        .get<CursorPageResponse<Course>>("/courses", {
+          params: { limit, cursor, orderBy, direction },
+        })
+        .then((r) => r.data),
+      TTL,
+      STALE_TTL,
+    );
+  },
+
+  getCoursesPage(request: CursorPageRequest = {}): Promise<CursorPageResponse<Course>> {
+    const { limit = 20, cursor, orderBy = 'id', direction = 'asc' } = request;
+    const cacheKey = buildCursorCacheKey({ limit, cursor, orderBy, direction });
+
+    return fetchWithSWR(
+      cacheKey,
+      () => apiClient
+        .get<CursorPageResponse<Course>>("/courses", {
+          params: { limit, cursor, orderBy, direction },
+        })
+        .then((r) => r.data),
       TTL,
       STALE_TTL,
     );
@@ -22,7 +59,7 @@ export const courseApi = {
   getCourse(id: string): Promise<Course> {
     return fetchWithSWR(
       courseKey(id),
-      () => apiClient.get<Course>(`/courses/${id}`).then((r) => r.data),
+      () => batchClient.get(`/courses/${id}`),
       TTL,
       STALE_TTL,
     );

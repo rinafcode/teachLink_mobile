@@ -1,7 +1,7 @@
 import { act, render, screen } from '@testing-library/react-native';
 import * as ExpoVideo from 'expo-video';
 
-import { OptimizedVideoPlayer } from '@/components/VideoPlayer';
+import { OptimizedVideoPlayer } from '../../components/VideoPlayer';
 
 jest.mock('expo-video', () => {
   const statusListeners: {
@@ -41,7 +41,7 @@ jest.mock('expo-keep-awake', () => ({
   deactivateKeepAwake: jest.fn(),
 }));
 
-jest.mock('@/components/VideoPlayer/VideoPlayerMetrics', () => ({
+jest.mock('../../components/VideoPlayer/VideoPlayerMetrics', () => ({
   __esModule: true,
   default: jest.fn(() => null),
 }));

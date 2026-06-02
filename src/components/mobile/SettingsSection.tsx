@@ -38,7 +38,7 @@ export function SettingsSection({ title, footer, children }: SettingsSectionProp
 
       <View className="mx-4 overflow-hidden rounded-2xl bg-white dark:bg-gray-800">
         {childArray.map((child, index) => (
-          <View key={index}>
+          <View key={`settings-child-${index}`}>
             {child}
             {index < childArray.length - 1 ? (
               <View className="ml-4 h-px bg-gray-100 dark:bg-gray-700" />

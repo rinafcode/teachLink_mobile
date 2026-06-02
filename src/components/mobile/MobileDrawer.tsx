@@ -1,17 +1,18 @@
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
 import {
   DrawerContentComponentProps,
   DrawerContentScrollView,
   DrawerItemList,
 } from '@react-navigation/drawer';
-import { useSafeArea } from '../../hooks';
 import { Settings, LogOut, Sun, Moon } from 'lucide-react-native';
+import React from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
+
+import { useSafeArea } from '../../hooks';
 
 /**
  * Props for the MobileDrawer component
  */
-export const MobileDrawer = (props: DrawerContentComponentProps) => {
+export const MobileDrawer = ({ state, navigation, descriptors }: DrawerContentComponentProps) => {
   const { top, bottom } = useSafeArea();
   const [isDark, setIsDark] = React.useState(false);
 
@@ -41,8 +42,13 @@ export const MobileDrawer = (props: DrawerContentComponentProps) => {
         </View>
       </View>
 
-      <DrawerContentScrollView {...props} contentContainerStyle={{ paddingTop: 0 }}>
-        <DrawerItemList {...props} />
+      <DrawerContentScrollView
+        state={state}
+        navigation={navigation}
+        descriptors={descriptors}
+        contentContainerStyle={{ paddingTop: 0 }}
+      >
+        <DrawerItemList state={state} navigation={navigation} descriptors={descriptors} />
 
         <View className="mt-4 border-t border-gray-100 px-4 pt-4">
           <TouchableOpacity

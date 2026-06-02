@@ -1,4 +1,9 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+Here is the completely resolved `QuizCarousel.tsx`. It keeps the improved typing and `activeIndex` state from `main`, while successfully preserving the analytics tracking from your feature branch.
+
+Copy and paste this entire code block:
+
+```tsx
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Dimensions, FlatList, StyleSheet, View } from 'react-native';
 
 import MobileQuestionCard from './MobileQuestionCard';
@@ -9,15 +14,10 @@ import { AnalyticsEvent } from '../../../utils/trackingEvents';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface QuizCarouselProps {
-  /** Array of quiz questions to display */
   questions: Question[];
-  /** Index of the currently visible question */
   currentQuestionIndex: number;
-  /** Map of question IDs to selected answers */
   selectedAnswers: Record<string, string | number | (string | number)[]>;
-  /** Callback when the current question changes */
   onQuestionChange: (index: number) => void;
-  /** Callback when an answer is selected */
   onAnswerSelect: (questionId: string, answer: string | number, isMultiSelect?: boolean) => void;
 }
 
@@ -29,24 +29,18 @@ const QuizCarousel = ({
   onAnswerSelect,
 }: QuizCarouselProps) => {
   const { trackEvent } = useAnalytics();
-  const flatListRef = useRef<FlatList>(null);
+  const flatListRef = useRef<FlatList<Question>>(null);
+  const [activeIndex, setActiveIndex] = useState(currentQuestionIndex);
   const isScrollingRef = useRef(false);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const getItemLayout = useCallback(
-    (_: any, index: number) => ({
-      length: SCREEN_WIDTH,
-      offset: SCREEN_WIDTH * index,
-      index,
-    }),
-    []
-  );
 
   useEffect(() => {
-    if (flatListRef.current && !isScrollingRef.current) {
-      flatListRef.current.scrollToIndex({ index: currentQuestionIndex, animated: true });
+    if (currentQuestionIndex !== activeIndex) {
+      setActiveIndex(currentQuestionIndex);
+      if (!isScrollingRef.current) {
+        flatListRef.current?.scrollToIndex({ index: currentQuestionIndex, animated: true });
+      }
     }
-  }, [currentQuestionIndex]);
+  }, [activeIndex, currentQuestionIndex]);
 
   const trackScrollAnalytics = (event: any) => {
     const offsetX = event.nativeEvent.contentOffset.x;
@@ -59,36 +53,28 @@ const QuizCarousel = ({
       index,
     });
 
-    // Clear any existing timeout
-    if (scrollTimeoutRef.current) {
-      clearTimeout(scrollTimeoutRef.current);
-    }
-
-    // Mark as scrolling
     isScrollingRef.current = true;
   };
 
-  const handleMomentumScrollEnd = (event: any) => {
-    const index = Math.round(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
-    isScrollingRef.current = false;
-    if (index !== currentQuestionIndex && index >= 0 && index < questions.length) {
-      onQuestionChange(index);
-    }
-  };
+  const getItemLayout = useCallback(
+    (_: ArrayLike<Question> | null | undefined, index: number) => ({
+      length: SCREEN_WIDTH,
+      offset: SCREEN_WIDTH * index,
+      index,
+    }),
+    []
+  );
 
-  const renderItem = useCallback(
-    ({ item, index }: { item: Question; index: number }) => (
-      <View style={styles.cardContainer}>
-        <MobileQuestionCard
-          question={item}
-          questionNumber={index + 1}
-          totalQuestions={questions.length}
-          selectedAnswer={selectedAnswers[item.id]}
-          onAnswerSelect={onAnswerSelect}
-        />
-      </View>
-    ),
-    [questions.length, selectedAnswers, onAnswerSelect]
+  const handleMomentumScrollEnd = useCallback(
+    (event: { nativeEvent: { contentOffset: { x: number } } }) => {
+      isScrollingRef.current = false;
+      const index = Math.round(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+      if (index < 0 || index >= questions.length || index === activeIndex) return;
+
+      setActiveIndex(index);
+      onQuestionChange(index);
+    },
+    [activeIndex, onQuestionChange, questions.length]
   );
 
   if (questions.length === 0) return null;
@@ -98,7 +84,17 @@ const QuizCarousel = ({
       <FlatList
         ref={flatListRef}
         data={questions}
-        renderItem={renderItem}
+        renderItem={({ item, index }) => (
+          <View style={styles.cardContainer}>
+            <MobileQuestionCard
+              question={item}
+              questionNumber={index + 1}
+              totalQuestions={questions.length}
+              selectedAnswer={selectedAnswers[item.id]}
+              onAnswerSelect={onAnswerSelect}
+            />
+          </View>
+        )}
         keyExtractor={item => item.id}
         horizontal
         pagingEnabled
@@ -137,3 +133,4 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
 });
+```
