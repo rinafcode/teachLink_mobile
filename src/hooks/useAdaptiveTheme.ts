@@ -2,7 +2,6 @@ import { LightSensor } from 'expo-sensors';
 import { useEffect, useRef } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 
-import { useAppStore } from '../store';
 import { useSettingsStore } from '../store/settingsStore';
 import { useTheme } from '../store';
 

@@ -23,7 +23,6 @@ interface AppState {
   refreshToken: string | null;
   sessionExpiresAt: number | null;
   sessionExpiringSoon: boolean;
-  theme: 'light' | 'dark';
   isLoading: boolean;
   error: string | null;
   setUser: (user: User | null) => void;
@@ -66,7 +65,6 @@ export const useAppStore = create<AppState>()(
         refreshToken: null,
         sessionExpiresAt: null,
         sessionExpiringSoon: false,
-        theme: 'light',
         isLoading: false,
         error: null,
         setUser: (user) => {
