@@ -1,8 +1,8 @@
-// eslint-disable-next-line import/no-unresolved
+import { backgroundScheduler } from '../services/backgroundTaskScheduler';
 import { Image } from 'expo-image';
 
-import { buildOptimizedImageSources } from './imageOptimization';
-import { logger } from './logger';
+import logger from './logger';
+import { _backgroundScheduler } from '../services/backgroundTaskScheduler';
 
 export class ImageCache {
   /**
@@ -15,19 +15,11 @@ export class ImageCache {
   static async prefetchImages(urls: string[]): Promise<boolean[]> {
     try {
       if (!urls || urls.length === 0) return [];
-
-      const promises = urls.map(async url => {
+      
+      const promises = urls.map(async (url) => {
         if (!url) return false;
-
-        const optimized = buildOptimizedImageSources(url);
-
         try {
-          const candidates = optimized.prefetchCandidates.length
-            ? optimized.prefetchCandidates
-            : [url];
-          const results = await Promise.all(candidates.map(candidate => Image.prefetch(candidate)));
-
-          return results.some(Boolean);
+          return await Image.prefetch(url);
         } catch (e) {
           logger.warn(`Failed to prefetch image: ${url}`, e);
           return false;
