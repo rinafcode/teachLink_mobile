@@ -124,7 +124,7 @@
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "husky": "^9.1.7",
     "jest": "^30.0.0",
-    "jest-expo": "~54.0.19",
+    "jest-expo": "54.0.17",
     "js-yaml": "^4.2.0",
     "lint-staged": "^16.4.0",
     "metro": "^0.83.7",
