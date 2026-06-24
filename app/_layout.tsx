@@ -18,6 +18,7 @@ import { scrollPositionService } from '../src/services/scrollPositionService';
 import { useAppStore } from '../src/store';
 import { getPathFromDeepLink } from '../src/utils/linkParser';
 import { prefetchExternalResources } from '../src/utils/resourceHints';
+import AppLifecycleManager from '../src/components/AppLifecycleManager';
 
 // Kick off resource hints early
 prefetchExternalResources();
@@ -151,6 +152,7 @@ const RootLayout = () => {
           <AnalyticsProvider>
             <ScreenTracker />
             <ThemeSync />
+            <AppLifecycleManager />
             <GestureHandlerRootView style={{ flex: 1 }}>
               <OfflineIndicatorProvider>
                 <Stack screenOptions={{ headerShown: false }} />

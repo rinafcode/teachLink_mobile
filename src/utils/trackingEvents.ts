@@ -50,6 +50,9 @@ export enum AnalyticsEvent {
 
   // Device capability
   DEVICE_COMPLEXITY_ASSIGNED = 'device_complexity_assigned',
+  // App lifecycle
+  APP_BACKGROUND = 'app_background',
+  APP_FOREGROUND = 'app_foreground',
 
   // Core Web Vitals
   WEB_VITALS_LCP = 'web_vitals_lcp',

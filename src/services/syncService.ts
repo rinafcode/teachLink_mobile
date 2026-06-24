@@ -79,6 +79,15 @@ class SyncService {
     };
 
     // Subscribe to battery status changes to adjust sync frequency
+    useDeviceStore.subscribe(
+      (state: any, prevState: any) => {
+        // react to low battery toggles
+        if (state.isLowBattery !== prevState.isLowBattery) {
+          logger.info(`SyncService: Low battery status changed to ${state.isLowBattery}, restarting auto-sync`);
+          if (this.syncIntervalId) {
+            this.stopAutoSync();
+            this.startAutoSync();
+          }
     useDeviceStore.subscribe((state: any, prevState: any) => {
       if (state.isLowBattery !== prevState.isLowBattery) {
         logger.info(
@@ -87,6 +96,19 @@ class SyncService {
         if (this.syncIntervalId) {
           this.stopAutoSync();
           this.startAutoSync();
+        }
+
+        // If the app goes to background, stop auto-sync to conserve CPU/battery.
+        if (state.isInBackground !== prevState.isInBackground) {
+          logger.info(`SyncService: App background state changed to ${state.isInBackground}`);
+          if (state.isInBackground) {
+            this.stopAutoSync();
+            // also clear listeners to reduce memory usage while backgrounded
+            this.removeAllEventListeners();
+          } else {
+            // resumed to foreground
+            this.startAutoSync();
+          }
         }
       }
     });
