@@ -1,3 +1,5 @@
+import React, { memo } from 'react';
+import { Text as RNText, TextProps, StyleSheet } from 'react-native';
 import React from 'react';
 import { Text as RNText, StyleSheet } from 'react-native';
 import type {
@@ -55,6 +57,7 @@ export interface AppTextProps {
  * A wrapper around React Native's Text component that uses the useDynamicFontSize hook
  * to ensure consistent scaling across the application.
  */
+const AppTextComponent: React.FC<AppTextProps> = ({ style, fixed = false, ...props }) => {
 export const AppText: React.FC<AppTextProps> = ({
   style,
   fixed = false,
@@ -109,3 +112,5 @@ export const AppText: React.FC<AppTextProps> = ({
     </RNText>
   );
 };
+
+export const AppText = memo(AppTextComponent);

@@ -122,6 +122,21 @@ export interface MobileSearchProps {
   placeholder?: string;
 }
 
+const SuggestionItem = memo(function SuggestionItem({
+  suggestion,
+  onPress,
+}: {
+  suggestion: string;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity style={styles.suggestItem} onPress={onPress}>
+      <Search size={16} color="#9CA3AF" />
+      <Text style={styles.suggestText}>{suggestion}</Text>
+    </TouchableOpacity>
+  );
+});
+
 export const MobileSearch = ({
   onResultPress,
   placeholder = 'Search courses...',
@@ -176,6 +191,11 @@ export const MobileSearch = ({
       setSuggestionsVisible(false);
     },
     [filterValues, trackEvent]
+  );
+
+  const handleResultPress = useCallback(
+    (item: SearchResultItem) => onResultPress?.(item),
+    [onResultPress]
   );
 
   React.useEffect(() => {
@@ -302,6 +322,8 @@ export const MobileSearch = ({
       {showSuggestions && query.length > 0 && suggestions.length > 0 && !showResults && (
         <View style={styles.suggestSection}>
           <Text style={styles.suggestLabel}>Suggestions</Text>
+          {suggestions.map(s => (
+            <SuggestionItem key={s} suggestion={s} onPress={() => handleSelectSuggestion(s)} />
           {suggestions.map((s: string) => (
             <TouchableOpacity
               key={s}
@@ -325,6 +347,8 @@ export const MobileSearch = ({
           <FlatList
             data={results}
             keyExtractor={item => item.id}
+            renderItem={({ item }) => (
+              <SearchResultCard item={item} onPress={() => handleResultPress(item)} />
             renderItem={({ item }: { item: SearchResultItem }) => (
               <SearchResultCard item={item} onPress={() => onResultPress?.(item)} />
             )}

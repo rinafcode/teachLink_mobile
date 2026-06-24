@@ -149,14 +149,19 @@ const LessonCarousel = ({
         )}
       </View>
 
-      <FlatList
-        ref={flatListRef}
-        data={lessons}
-        renderItem={({ item }) => (
+      const renderItem = useCallback(
+        ({ item }: { item: Lesson }) => (
           <View style={[styles.lessonContainer, { width: SCREEN_WIDTH }]}>
             <View style={styles.lessonContent}>{renderLessonContent(item)}</View>
           </View>
-        )}
+        ),
+        [renderLessonContent]
+      );
+
+      <FlatList
+        ref={flatListRef}
+        data={lessons}
+        renderItem={renderItem}
         keyExtractor={item => item.id}
         horizontal
         pagingEnabled

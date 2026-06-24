@@ -69,6 +69,30 @@ export function SearchHistory({ onSelectQuery, maxItems = 10 }: SearchHistoryPro
     );
   }
 
+  const renderItem = useCallback(
+    ({ item }: { item: SearchHistoryItem }) => (
+      <View style={styles.row}>
+        <TouchableOpacity
+          style={styles.itemTouch}
+          onPress={() => handleSelect(item.query)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.query} numberOfLines={1}>
+            {item.query}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => handleRemove(item.query)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.removeBtn}
+        >
+          <Trash2 size={16} color="#9CA3AF" />
+        </TouchableOpacity>
+      </View>
+    ),
+    [handleSelect, handleRemove]
+  );
+
   if (items.length === 0) return null;
 
   return (
@@ -86,26 +110,7 @@ export function SearchHistory({ onSelectQuery, maxItems = 10 }: SearchHistoryPro
         data={items}
         keyExtractor={item => `${item.query}-${item.timestamp}`}
         scrollEnabled={false}
-        renderItem={({ item }) => (
-          <View style={styles.row}>
-            <TouchableOpacity
-              style={styles.itemTouch}
-              onPress={() => handleSelect(item.query)}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.query} numberOfLines={1}>
-                {item.query}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => handleRemove(item.query)}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              style={styles.removeBtn}
-            >
-              <Trash2 size={16} color="#9CA3AF" />
-            </TouchableOpacity>
-          </View>
-        )}
+        renderItem={renderItem}
       />
     </View>
   );

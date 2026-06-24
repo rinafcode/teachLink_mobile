@@ -1,3 +1,4 @@
+import React, { memo, useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
@@ -21,7 +22,7 @@ interface SettingRowProps {
   disabled?: boolean;
 }
 
-function SettingRow({
+const SettingRow = memo(function SettingRow({
   icon,
   title,
   description,
@@ -48,7 +49,7 @@ function SettingRow({
       />
     </View>
   );
-}
+});
 
 export function NotificationSettings() {
   const { permissionStatus, requestPermission, openSettings, isLoading } =
