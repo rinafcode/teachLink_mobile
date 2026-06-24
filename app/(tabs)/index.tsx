@@ -3,7 +3,7 @@ import { Alert, View } from 'react-native';
 
 import { HomeScreenSkeleton } from '@/components/mobile/HomeScreenSkeleton';
 import { useAnalytics } from '@/hooks';
-import { useAppStore } from '@/store';
+import { useIsLoading, useAppActions } from '@/store/selectors';
 import { createLazyRoute } from '@/utils/lazyRoute';
 import { ScreenName } from '@/utils/trackingEvents';
 
@@ -15,7 +15,8 @@ const LazyHomeScreenContent = createLazyRoute({
 });
 
 const HomeScreen = () => {
-  const { isLoading, setLoading } = useAppStore();
+  const isLoading = useIsLoading();
+  const { setLoading } = useAppActions();
   const { trackScreen } = useAnalytics();
 
   useEffect(() => {

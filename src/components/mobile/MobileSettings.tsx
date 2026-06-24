@@ -1,3 +1,4 @@
+import React, { memo, useCallback, useState } from 'react';
 import {
     BarChart2,
     ChevronDown,
@@ -53,6 +54,7 @@ interface SettingRowProps {
   destructive?: boolean;
 }
 
+const SettingRow = memo(function SettingRow({
 const SettingRow = ({
   icon,
   iconBg = 'bg-gray-100 dark:bg-gray-700',
@@ -90,7 +92,7 @@ const SettingRow = ({
       {right ?? (onPress ? <ChevronDown size={scale(16)} color="#9CA3AF" /> : null)}
     </Row>
   );
-}
+});
 
 // ─────────────────────────────────────────────────────────────
 // Options

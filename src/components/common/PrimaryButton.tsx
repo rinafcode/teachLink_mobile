@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import {
   TouchableOpacity,
   Text,
@@ -36,7 +36,7 @@ interface PrimaryButtonProps {
   accessibilityLabel?: string;
 }
 
-export default function PrimaryButton({
+function PrimaryButton({
   onPress,
   title,
   loading = false,
@@ -209,3 +209,23 @@ export default function PrimaryButton({
   );
 }
 
+export default memo(PrimaryButton);
+
+const styles = StyleSheet.create({
+  button: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  gradientButton: {
+    shadowColor: '#20afe7',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  buttonText: {
+    fontWeight: '600',
+  },
+});

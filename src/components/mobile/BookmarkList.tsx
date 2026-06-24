@@ -1,19 +1,70 @@
 import { useRouter } from 'expo-router';
-import React from 'react';
-import { ScrollView, Text, TouchableOpacity, View, StyleSheet, Alert } from 'react-native';
+import React, { memo, useCallback } from 'react';
+import { FlatList, Text, TouchableOpacity, View, StyleSheet, Alert } from 'react-native';
 
 import { SwipeableRow } from './SwipeableRow';
 import { useBookmarkStore } from '../../store/bookmarkStore';
+
+interface BookmarkItemProps {
+  item: { itemId: string; title: string; itemType: string; url: string };
+  onPress: () => void;
+  onDelete: () => void;
+  onArchive: () => void;
+}
+
+const BookmarkItem = memo(function BookmarkItem({
+  item,
+  onPress,
+  onDelete,
+  onArchive,
+}: BookmarkItemProps) {
+  return (
+    <SwipeableRow
+      id={item.itemId}
+      onDelete={onDelete}
+      onArchive={onArchive}
+      deleteLabel="Delete"
+      archiveLabel="Archive"
+    >
+      <TouchableOpacity
+        testID={`bookmark-item-${item.itemId}`}
+        style={styles.card}
+        onPress={onPress}
+        activeOpacity={0.75}
+        accessibilityRole="link"
+        accessibilityLabel={item.title}
+      >
+        <Text style={styles.cardTitle}>{item.title}</Text>
+        <Text style={styles.cardType}>{item.itemType}</Text>
+      </TouchableOpacity>
+    </SwipeableRow>
+  );
+});
 
 export const BookmarkList = () => {
   const { bookmarks, removeBookmark } = useBookmarkStore();
   const router = useRouter();
 
-  const handleArchive = (itemId: string) => {
-    Alert.alert('Archive Bookmark', 'Bookmark has been successfully archived.', [
-      { text: 'OK', onPress: () => removeBookmark(itemId) },
-    ]);
-  };
+  const handleArchive = useCallback(
+    (itemId: string) => {
+      Alert.alert('Archive Bookmark', 'Bookmark has been successfully archived.', [
+        { text: 'OK', onPress: () => removeBookmark(itemId) },
+      ]);
+    },
+    [removeBookmark]
+  );
+
+  const renderItem = useCallback(
+    ({ item }: { item: (typeof bookmarks)[number] }) => (
+      <BookmarkItem
+        item={item}
+        onPress={() => router.push(item.url as any)}
+        onDelete={() => removeBookmark(item.itemId)}
+        onArchive={() => handleArchive(item.itemId)}
+      />
+    ),
+    [router, removeBookmark, handleArchive]
+  );
 
   if (bookmarks.length === 0) {
     return (
@@ -26,6 +77,12 @@ export const BookmarkList = () => {
   }
 
   return (
+    <FlatList
+      data={bookmarks}
+      renderItem={renderItem}
+      keyExtractor={item => item.itemId}
+      contentContainerStyle={styles.list}
+    />
     <ScrollView contentContainerStyle={styles.list} removeClippedSubviews={true}>
       {bookmarks.map(item => (
         <SwipeableRow

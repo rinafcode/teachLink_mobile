@@ -123,6 +123,22 @@ apiClient.interceptors.request.use(
   error => Promise.reject(error)
 );
 
+// ─── Image format request interceptor ──────────────────────────────────────
+// Negotiate WebP format via Accept header for image-serving API endpoints.
+
+const IMAGE_PATH_PATTERNS = [/\/images?\//, /\/uploads?\//, /\/avatars?\//, /\/media\//, /\.(png|jpg|jpeg|gif|webp|avif)/i];
+
+apiClient.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    const url = config.url ?? '';
+    if (IMAGE_PATH_PATTERNS.some((pattern) => pattern.test(url))) {
+      config.headers.Accept = 'image/avif,image/webp,image/png,image/jpeg,*/*;q=0.8';
+    }
+    return config;
+  },
+  (error) => Promise.reject(error),
+);
+
 // ─── Response interceptor ───────────────────────────────────────────────────
 
 apiClient.interceptors.response.use(

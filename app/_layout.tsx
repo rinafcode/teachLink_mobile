@@ -14,12 +14,18 @@ import { useAnalytics } from '../src/hooks';
 import { useDeepLink } from '../src/hooks/useDeepLink';
 import { preloadService } from '../src/services/preloadService';
 import { sessionRestorationService } from '../src/services/sessionRestoration';
+import { scrollPositionService } from '../src/services/scrollPositionService';
 import { useAppStore } from '../src/store';
 import { getPathFromDeepLink } from '../src/utils/linkParser';
 import { prefetchExternalResources } from '../src/utils/resourceHints';
 
 // Kick off resource hints early
 prefetchExternalResources();
+
+// Clear old scroll positions on app startup
+scrollPositionService.clearOldPositions().catch(() => {
+  // Silently handle cleanup errors
+});
 
 const ScreenTracker = () => {
   const pathname = usePathname();

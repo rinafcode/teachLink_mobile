@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import {
   TouchableOpacity,
   StyleSheet,
@@ -30,6 +30,11 @@ interface AccessibleButtonProps {
   testID?: string;
 }
 
+/**
+ * A reusable accessible button component for TeachLink mobile.
+ * Ensures a minimum touch target of 44x44 and provides consistent accessibility props.
+ */
+const AccessibleButtonComponent: React.FC<AccessibleButtonProps> = ({
 export const AccessibleButton: React.FC<AccessibleButtonProps> = ({
   label,
   hint,
@@ -61,6 +66,8 @@ export const AccessibleButton: React.FC<AccessibleButtonProps> = ({
     </TouchableOpacity>
   );
 };
+
+export const AccessibleButton = memo(AccessibleButtonComponent);
 
 const styles = StyleSheet.create({
   base: {
