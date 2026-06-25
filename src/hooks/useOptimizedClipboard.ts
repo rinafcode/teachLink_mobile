@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { InteractionManager } from 'react-native';
+
 import { clipboardService, ClipboardOperationMetrics } from '../services/clipboardService';
 
 export interface UseOptimizedClipboardResult {

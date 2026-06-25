@@ -1,7 +1,8 @@
 import { useCallback, useRef } from 'react';
+
 import { mobileAnalyticsService } from '../services/mobileAnalytics';
-import { AnalyticsEvent, PerformanceMetric } from '../utils/trackingEvents';
 import { appLogger } from '../utils/logger';
+import { AnalyticsEvent, PerformanceMetric } from '../utils/trackingEvents';
 
 export interface ProfilerMetrics {
   componentName: string;

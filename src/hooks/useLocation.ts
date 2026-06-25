@@ -6,6 +6,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+
 import locationService, { 
   LocationData, 
   LocationSourceType, 
@@ -13,8 +14,8 @@ import locationService, {
   Position 
 } from '../services/locationService'; // Standardized service import target
 import { useDegradationStore } from '../store/degradationStore';
-import { appLogger } from '../utils/logger';
 import { Coordinates, LocationPrecision } from '../utils/geoUtils';
+import { appLogger } from '../utils/logger';
 
 interface UseLocationReturn {
   /** Native geographic position details (lat, lng, timestamp) */

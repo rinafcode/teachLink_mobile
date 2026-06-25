@@ -66,7 +66,7 @@ const RARITY_LABELS: Record<BadgeRarity, string> = {
   legendary: 'Legendary',
 };
 
-export const AchievementBadges: React.FC<AchievementBadgesProps> = React.memo(({
+const AchievementBadgesComponent: React.FC<AchievementBadgesProps> = ({
   achievements,
   isDark = false,
 }) => {
@@ -335,7 +335,10 @@ export const AchievementBadges: React.FC<AchievementBadgesProps> = React.memo(({
       </AccessibleModal>
     </View>
   );
-});
+};
+
+AchievementBadgesComponent.displayName = 'AchievementBadges';
+export const AchievementBadges = React.memo(AchievementBadgesComponent);
 
 const styles = StyleSheet.create({
   container: {

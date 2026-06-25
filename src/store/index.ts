@@ -2,9 +2,10 @@ import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist, subscribeWithSelector } from 'zustand/middleware';
 
-import type { StateStorage } from 'zustand/middleware';
 import { toUnixMs } from './persistence';
 import { sentryContextService } from '../services/sentryContext';
+
+import type { StateStorage } from 'zustand/middleware';
 
 export interface User {
   id: string;

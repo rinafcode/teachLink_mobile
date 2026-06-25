@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+
 import logger from './logger';
 
 export interface ImageDimensions {

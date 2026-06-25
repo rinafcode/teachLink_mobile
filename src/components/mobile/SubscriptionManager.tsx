@@ -1,3 +1,5 @@
+import { LinearGradient } from 'expo-linear-gradient';
+import { Crown, Zap, Check, RefreshCw, ChevronRight, Star, Shield } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -9,8 +11,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Crown, Zap, Check, RefreshCw, ChevronRight, Star, Shield } from 'lucide-react-native';
+
 import { PurchaseButton } from './PurchaseButton';
 import { SubscriptionSkeleton } from './SubscriptionSkeleton';
 import { useInAppPurchase } from '../../hooks';

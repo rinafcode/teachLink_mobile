@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { memo } from 'react';
 import {
   TouchableOpacity,
@@ -7,7 +8,7 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import { useDynamicFontSize } from '../../hooks';
 
 /**
@@ -36,7 +37,7 @@ interface PrimaryButtonProps {
   accessibilityLabel?: string;
 }
 
-function PrimaryButton({
+const PrimaryButton = ({
   onPress,
   title,
   loading = false,
@@ -48,7 +49,7 @@ function PrimaryButton({
   icon,
   accessibilityHint,
   accessibilityLabel,
-}: PrimaryButtonProps) {
+}: PrimaryButtonProps) => {
   const isDisabled = loading || disabled;
   const { scale } = useDynamicFontSize();
   const buttonLabel = accessibilityLabel ?? title;

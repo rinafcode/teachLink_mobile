@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Animated,
 } from 'react-native';
+
 import { useRequestTimeout, REQUEST_TIMEOUT_MS } from '../../hooks/useRequestTimeout';
 
 export interface RequestTimeoutOverlayProps {
@@ -23,12 +24,12 @@ export interface RequestTimeoutOverlayProps {
  * Shows a countdown progress bar while a request is in-flight.
  * When the timeout is reached, displays a Retry button.
  */
-export function RequestTimeoutOverlay({
+export const RequestTimeoutOverlay = ({
   loading,
   onRetry,
   timeoutMs = REQUEST_TIMEOUT_MS,
   message = 'Waiting for response…',
-}: RequestTimeoutOverlayProps) {
+}: RequestTimeoutOverlayProps) => {
   const { progress, remaining, isTimedOut, start, reset } =
     useRequestTimeout(timeoutMs);
 

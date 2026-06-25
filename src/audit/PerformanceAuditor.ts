@@ -23,6 +23,7 @@ import { DependencyAnalyzer, NetworkAnalyzer } from './analyzers/NetworkAnalyzer
 import { AssetAnalyzer, RuntimeAnalyzer } from './analyzers/RuntimeAnalyzer';
 import { RecommendationEngine } from './RecommendationEngine';
 import { ReportGenerator } from './ReportGenerator';
+
 import type {
   AuditOptions,
   AssetAnalysis,

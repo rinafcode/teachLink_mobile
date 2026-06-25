@@ -2,10 +2,11 @@ import Constants from 'expo-constants';
 import { isDevice } from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+
+import { featureCapabilities, FeatureStatus, FeatureType } from './featureCapabilities';
 import { useDegradationStore } from '../store/degradationStore';
 import { NotificationData, NotificationType } from '../types/notifications';
 import logger from '../utils/logger';
-import { featureCapabilities, FeatureStatus, FeatureType } from './featureCapabilities';
 
 // Configure how notifications are handled when app is in foreground
 Notifications.setNotificationHandler({

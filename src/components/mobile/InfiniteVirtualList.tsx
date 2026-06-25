@@ -10,6 +10,7 @@ import {
     View,
     ViewStyle,
 } from 'react-native';
+
 import { useMemoryMonitor } from '../../hooks';
 
 /**
@@ -21,7 +22,7 @@ import { useMemoryMonitor } from '../../hooks';
  */
 export interface InfiniteVirtualListProps<T> extends Omit<FlatListProps<T>, 'renderItem'> {
   /** The data items to display. */
-  data: ReadonlyArray<T> | null | undefined;
+  data: readonly T[] | null | undefined;
   /** Custom renderer for list items. */
   renderItem: FlatListProps<T>['renderItem'];
   /** Extract a unique key for a given item. */

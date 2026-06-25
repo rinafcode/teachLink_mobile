@@ -18,24 +18,28 @@ import {
     X,
 } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import {
     ActivityIndicator,
+    Platform,
     SafeAreaView,
     ScrollView,
     StyleSheet,
     TouchableOpacity,
+    UIManager,
     View
 } from 'react-native';
+
+import { Achievement, AchievementBadges } from './AchievementBadges';
+import { AvatarCamera } from './AvatarCamera';
+import { MobileFormInput } from './MobileFormInput';
+import { StatisticsDisplay } from './StatisticsDisplay';
 import { useFormCache } from '../../hooks/useFormCache';
 import { PROFILE_FORM_CACHE_KEYS } from '../../services/formCache';
 import { configureNext } from '../../utils/layoutAnimation';
 import { AppText as Text } from '../common/AppText';
 import { CachedImage } from '../ui/CachedImage';
 import { Skeleton } from '../ui/Skeleton';
-import { Achievement, AchievementBadges } from './AchievementBadges';
-import { AvatarCamera } from './AvatarCamera';
-import { MobileFormInput } from './MobileFormInput';
-import { StatisticsDisplay } from './StatisticsDisplay';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {

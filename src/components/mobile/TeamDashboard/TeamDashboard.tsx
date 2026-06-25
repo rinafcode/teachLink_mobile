@@ -17,14 +17,16 @@ import {
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useDashboardMetrics } from '../../../hooks/useDashboardMetrics';
-import type { DashboardAlert } from '../../../services/metricsService';
-import type { DashboardView } from '../../../store/metricsStore';
-import { AppText as Text } from '../../common/AppText';
+
 import { AlertBanner } from './AlertBanner';
 import { DashboardSkeleton } from './DashboardSkeleton';
 import { HealthScoreRing } from './HealthScoreRing';
 import { MetricCard } from './MetricCard';
+import { useDashboardMetrics } from '../../../hooks/useDashboardMetrics';
+import { AppText as Text } from '../../common/AppText';
+
+import type { DashboardAlert } from '../../../services/metricsService';
+import type { DashboardView } from '../../../store/metricsStore';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

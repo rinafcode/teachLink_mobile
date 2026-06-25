@@ -267,7 +267,7 @@ class SentryContextService {
     this.actionCount = 0;
     this.previousScreen = null;
     this.currentScreen = null;
-    Sentry.clearBreadcrumbs();
+    Sentry.getCurrentScope().clearBreadcrumbs();
   }
 }
 

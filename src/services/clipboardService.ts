@@ -1,6 +1,7 @@
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
+
 import { logger } from '../utils/logger';
 
 export interface ClipboardOperationMetrics {

@@ -1,8 +1,8 @@
+import { mobileAnalyticsService } from "./mobileAnalytics";
+import { sentryContextService } from "./sentryContext";
+import { sessionRestorationService } from "./sessionRestoration";
 import logger from "../utils/logger";
 import { AnalyticsEvent } from "../utils/trackingEvents";
-import { mobileAnalyticsService } from "./mobileAnalytics";
-import { sessionRestorationService } from "./sessionRestoration";
-import { sentryContextService } from "./sentryContext";
 
 /**
  * CrashReportingService manages global error tracking and exception handling.

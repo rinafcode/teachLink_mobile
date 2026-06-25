@@ -80,6 +80,8 @@ const apiClient = axios.create({
   },
 });
 
+export const UPLOAD_TIMEOUT_MS = 30_000;
+
 // ─── Refresh queue ─────────────────────────────────────────────────────────
 
 let isRefreshing = false;
@@ -183,6 +185,12 @@ apiClient.interceptors.response.use(
     // ── Log non-network errors ────────────────────────────────────────────
     if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
       appLogger.warnSync('API not available (running in offline mode)');
+    } else if (error.code === 'ECONNABORTED') {
+      appLogger.warnSync('Request timed out', {
+        endpoint: originalRequest.url,
+        method: originalRequest.method,
+        timeout: originalRequest.timeout,
+      });
     } else if (error.response?.status !== 401) {
       appLogger.errorSync('API Error', error as Error, {
         status: error.response?.status,
@@ -353,6 +361,21 @@ apiClient.interceptors.response.use(
       return Promise.reject({
         message: 'Server error. Please try again later.',
         status,
+      });
+    }
+
+    // ─── ECONNABORTED: Timeout — user-friendly message ──────────────────────
+
+    if (error.code === 'ECONNABORTED') {
+      const isUpload = originalRequest.method?.toUpperCase() === 'POST' &&
+        originalRequest.data instanceof FormData;
+      return Promise.reject({
+        message: isUpload
+          ? 'Upload timed out. Please check your connection and try again.'
+          : 'Request timed out. Please check your connection and try again.',
+        status: 0,
+        code: 'ECONNABORTED',
+        timeout: originalRequest.timeout,
       });
     }
 

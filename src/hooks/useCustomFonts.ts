@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { loadAsync } from 'expo-font';
 import { Asset } from 'expo-asset';
+import { loadAsync } from 'expo-font';
+import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 
 // Font configuration

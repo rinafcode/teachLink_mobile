@@ -13,6 +13,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+
 import type { AlertThresholds } from '../../../services/healthMetrics';
 
 interface ThresholdEditorProps {

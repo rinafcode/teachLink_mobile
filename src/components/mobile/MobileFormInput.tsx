@@ -1,3 +1,4 @@
+import { Eye, EyeOff, AlertCircle } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
@@ -11,7 +12,7 @@ import {
   TextInputSubmitEditingEventData,
   TextInputProps,
 } from 'react-native';
-import { Eye, EyeOff, AlertCircle } from 'lucide-react-native';
+
 import { useDynamicFontSize } from '../../hooks';
 import {
   formCacheService,

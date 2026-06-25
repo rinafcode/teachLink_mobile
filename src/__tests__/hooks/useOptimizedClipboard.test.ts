@@ -1,8 +1,9 @@
 import { renderHook, act } from '@testing-library/react-native';
-import { useOptimizedClipboard } from '../../hooks/useOptimizedClipboard';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { InteractionManager } from 'react-native';
+
+import { useOptimizedClipboard } from '../../hooks/useOptimizedClipboard';
 
 // Mock expo-clipboard explicitly for these tests since it's not globally mocked
 jest.mock('expo-clipboard', () => ({

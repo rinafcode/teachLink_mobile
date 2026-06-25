@@ -3,11 +3,12 @@
  * Issue #361: Verify SVG components don't re-render on parent updates
  */
 
-import { DownloadButton } from '@/src/components/mobile/DownloadButton';
-import { MemoizedSortIcon, createMemoizedIcon } from '@/src/components/ui/MemoizedIcon';
 import { render } from '@testing-library/react-native';
 import { Download } from 'lucide-react-native';
 import React from 'react';
+
+import { DownloadButton } from '@/src/components/mobile/DownloadButton';
+import { MemoizedSortIcon, createMemoizedIcon } from '@/src/components/ui/MemoizedIcon';
 
 describe('MemoizedIcon — SVG Memoization (#361)', () => {
   describe('MemoizedSortIcon', () => {

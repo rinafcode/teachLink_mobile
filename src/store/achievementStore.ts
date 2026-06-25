@@ -1,8 +1,3 @@
-Here is the complete resolved file for `achievementStore.ts`. I kept the cleaner, syntax-error-free implicit return from the `main` branch. 
-
-Copy and paste this exact code:
-
-```typescript
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -18,38 +13,20 @@ const triggerAchievementReview = () => {
   });
 };
 
-/**
- * Rarity levels for achievement badges
- */
 export type BadgeRarity = 'common' | 'rare' | 'epic' | 'legendary';
 
-/**
- * Achievement data structure
- */
 export interface Achievement {
-  /** Unique identifier for the achievement */
   id: string;
-  /** Display name of the achievement */
   name: string;
-  /** Description of what the achievement represents */
   description?: string;
-  /** URL to an icon image for the achievement */
   iconUrl?: string;
-  /** Emoji to display as the achievement icon */
   emoji?: string;
-  /** Rarity level of the achievement */
   rarity?: BadgeRarity;
-  /** Date when the achievement was unlocked */
   unlockedAt?: string;
-  /** Whether the achievement is locked/not yet earned */
   isLocked?: boolean;
-  /** Progress towards unlocking the achievement */
   progress?: { current: number; total: number };
 }
 
-/**
- * Achievement type definitions for tracking
- */
 export enum AchievementType {
   FIRST_LESSON = 'first_lesson',
   WEEK_STREAK = 'week_streak',
@@ -62,27 +39,15 @@ export enum AchievementType {
 }
 
 interface AchievementState {
-  /** Array of all achievements (both locked and unlocked) */
   achievements: Achievement[];
-  /** Persisted unlock/progress data keyed by achievement ID */
   achievementProgress: Record<string, AchievementProgress>;
-  /** Number of unlocked achievements */
   unlockedCount: number;
-
-  // Actions
-  /** Load achievements — initializes with defaults if not yet persisted */
   loadAchievements: () => void;
-  /** Unlock an achievement by ID */
   unlockAchievement: (id: string) => void;
-  /** Update progress on an achievement */
   updateProgress: (id: string, current: number) => void;
-  /** Check if an achievement is unlocked */
   isAchievementUnlocked: (id: string) => boolean;
-  /** Get all unlocked achievements */
   getUnlockedAchievements: () => Achievement[];
-  /** Reset all achievements (for testing) */
   resetAchievements: () => void;
-  /** Initialize achievements with default set */
   initializeAchievements: (achievements: Achievement[]) => void;
 }
 
@@ -92,14 +57,11 @@ interface AchievementProgress {
   progress?: { current: number; total: number };
 }
 
-/**
- * Default achievements available in the app
- */
 export const DEFAULT_ACHIEVEMENTS: Achievement[] = [
   {
     id: AchievementType.FIRST_LESSON,
     name: 'First Steps',
-    emoji: '👣',
+    emoji: '\u{1F9E3}',
     rarity: 'common',
     description: 'Completed your very first lesson.',
     isLocked: true,
@@ -107,7 +69,7 @@ export const DEFAULT_ACHIEVEMENTS: Achievement[] = [
   {
     id: AchievementType.WEEK_STREAK,
     name: 'Week Warrior',
-    emoji: '🔥',
+    emoji: '\u{1F525}',
     rarity: 'rare',
     description: 'Maintained a 7-day learning streak.',
     isLocked: true,
@@ -115,7 +77,7 @@ export const DEFAULT_ACHIEVEMENTS: Achievement[] = [
   {
     id: AchievementType.TEN_COURSES,
     name: 'Course Champion',
-    emoji: '🏆',
+    emoji: '\u{1F3C6}',
     rarity: 'epic',
     description: 'Successfully completed 10 courses.',
     isLocked: true,
@@ -124,7 +86,7 @@ export const DEFAULT_ACHIEVEMENTS: Achievement[] = [
   {
     id: AchievementType.FIFTY_CONNECTIONS,
     name: 'Social Star',
-    emoji: '⭐',
+    emoji: '\u{2B50}',
     rarity: 'rare',
     description: 'Built a network of 50 connections.',
     isLocked: true,
@@ -133,7 +95,7 @@ export const DEFAULT_ACHIEVEMENTS: Achievement[] = [
   {
     id: AchievementType.HUNDRED_HOURS,
     name: 'Deep Diver',
-    emoji: '🤿',
+    emoji: '\u{1F93F}',
     rarity: 'common',
     description: 'Accumulated 100+ hours of learning.',
     isLocked: true,
@@ -142,7 +104,7 @@ export const DEFAULT_ACHIEVEMENTS: Achievement[] = [
   {
     id: AchievementType.TOP_ONE_PERCENT,
     name: 'Legend',
-    emoji: '👑',
+    emoji: '\u{1F451}',
     rarity: 'legendary',
     description: 'Reach the top 1% of all learners.',
     isLocked: true,
@@ -151,7 +113,7 @@ export const DEFAULT_ACHIEVEMENTS: Achievement[] = [
   {
     id: AchievementType.MENTOR,
     name: 'Mentor',
-    emoji: '🎓',
+    emoji: '\u{1F393}',
     rarity: 'epic',
     description: 'Help 20 other learners succeed.',
     isLocked: true,
@@ -160,7 +122,7 @@ export const DEFAULT_ACHIEVEMENTS: Achievement[] = [
   {
     id: AchievementType.SPEED_RUN,
     name: 'Speed Run',
-    emoji: '⚡',
+    emoji: '\u26A1}',
     rarity: 'rare',
     description: 'Complete an entire course in one day.',
     isLocked: true,
@@ -309,7 +271,6 @@ export const useAchievementStore = create<AchievementState>()(
       loadAchievements: () => {
         const { isLoaded, achievements } = get();
         if (isLoaded) return;
-        // If persisted achievements exist, keep them; otherwise seed defaults
         set({
           achievements: achievements.length > 0 ? achievements : DEFAULT_ACHIEVEMENTS,
           isLoaded: true,
@@ -353,7 +314,6 @@ export const useAchievementStore = create<AchievementState>()(
 
             const progress = a.progress ? { ...a.progress, current } : { current, total: 1 };
 
-            // Auto-unlock if progress is complete
             if (progress.current >= progress.total) {
               setTimeout(triggerAchievementReview, 500);
               return {
@@ -420,4 +380,3 @@ export const useAchievementStore = create<AchievementState>()(
     }
   )
 );
-```

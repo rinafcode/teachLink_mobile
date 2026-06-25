@@ -59,13 +59,13 @@ export interface DelegatedKeyboardAvoidingViewProps extends ViewProps {
  * Keyboard-avoiding container backed by the delegated root listener.
  * Registers **zero** additional Keyboard event listeners.
  */
-export function DelegatedKeyboardAvoidingView({
+export const DelegatedKeyboardAvoidingView = ({
   behavior = Platform.OS === 'ios' ? 'padding' : 'height',
   keyboardVerticalOffset = 0,
   style,
   children,
   ...rest
-}: DelegatedKeyboardAvoidingViewProps) {
+}: DelegatedKeyboardAvoidingViewProps) => {
   const { isVisible, height } = useKeyboardState();
 
   const avoidingStyle = useMemo<ViewStyle>(() => {

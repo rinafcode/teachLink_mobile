@@ -10,6 +10,7 @@
  */
 
 import * as Sentry from '@sentry/react-native';
+
 import { sentryContextService } from '../../services/sentryContext';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────

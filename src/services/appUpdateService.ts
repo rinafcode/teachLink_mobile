@@ -1,9 +1,9 @@
 import Constants from 'expo-constants';
 import { Linking, Platform } from 'react-native';
 
+import mobileAnalyticsService from './mobileAnalytics';
 import { appLogger } from '../utils/logger';
 import { AnalyticsEvent } from '../utils/trackingEvents';
-import mobileAnalyticsService from './mobileAnalytics';
 
 export type UpdateType = 'ota' | 'store' | 'none';
 

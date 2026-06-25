@@ -1,6 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useCallback, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
+
 import { appLogger } from '../utils/logger';
 
 export enum CameraFallbackType {

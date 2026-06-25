@@ -11,9 +11,10 @@
  */
 
 import * as Location from 'expo-location';
+
+import { featureCapabilities, FeatureStatus, FeatureType } from './featureCapabilities';
 import { useDegradationStore } from '../store/degradationStore';
 import { appLogger } from '../utils/logger';
-import { featureCapabilities, FeatureStatus, FeatureType } from './featureCapabilities';
 
 export enum LocationSourceType {
   GPS = 'gps',

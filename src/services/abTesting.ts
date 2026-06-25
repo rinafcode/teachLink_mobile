@@ -347,7 +347,7 @@ class ABTestingService {
    */
   public async trackMetrics(
     experimentId: string,
-    metrics: Array<{ name: string; value: number; properties?: EventProperties }>,
+    metrics: { name: string; value: number; properties?: EventProperties }[],
     assignmentKey = 'anonymous'
   ): Promise<VariantMetric[]> {
     const assignment = await this.getAssignment(experimentId, assignmentKey);

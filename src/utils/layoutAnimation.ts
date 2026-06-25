@@ -28,7 +28,7 @@ export function getDeviceCapabilities(): DeviceCapabilities {
   }
 
   const totalMemory = Device.totalMemory || 4 * 1024 * 1024 * 1024; // Default to 4GB
-  const deviceYear = Device.deviceYear ?? 2020;
+  const deviceYear = (Device as any).deviceYear ?? 2020;
   const isLowEnd = totalMemory < 3 * 1024 * 1024 * 1024 || deviceYear < 2020;
 
   let deviceClass: 'low' | 'mid' | 'high' = 'mid';

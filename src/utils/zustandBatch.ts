@@ -1,6 +1,6 @@
 // React Native environment typically provides unstable_batchedUpdates via react-native.
 // In case typings are unavailable, we fall back to the global React batching.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const unstable_batchedUpdates: ((fn: () => void) => void) | undefined = (globalThis as any)
   ?.unstable_batchedUpdates;
 

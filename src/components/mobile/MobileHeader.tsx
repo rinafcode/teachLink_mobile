@@ -3,6 +3,7 @@ import { useNavigation } from '@react-navigation/native';
 import { ArrowLeft, Bell, Menu } from 'lucide-react-native';
 import React from 'react';
 import { TouchableOpacity, View, StyleSheet } from 'react-native';
+
 import { useDynamicFontSize, usePendingRequests, useSafeArea } from '../../hooks';
 import { AppText } from '../common/AppText';
 

@@ -1,5 +1,5 @@
-import { create } from 'zustand';
 import * as Battery from 'expo-battery';
+import { create } from 'zustand';
 
 interface DeviceState {
   batteryLevel: number;

@@ -1,4 +1,5 @@
 import { checksum } from './checksum';
+
 import type { VersionedEntity } from './types';
 
 type EntityKey = string;

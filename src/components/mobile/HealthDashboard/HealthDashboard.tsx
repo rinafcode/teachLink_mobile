@@ -18,13 +18,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useHealthDashboard } from '../../../hooks/useHealthDashboard';
-import type { AlertSeverity, HealthSnapshot } from '../../../services/healthMetrics';
 import { AlertBanner } from './AlertBanner';
 import { DashboardHeader } from './DashboardHeader';
 import { LatencyBar } from './LatencyBar';
 import { MetricCard } from './MetricCard';
 import { ThresholdEditor } from './ThresholdEditor';
+import { useHealthDashboard } from '../../../hooks/useHealthDashboard';
+
+import type { AlertSeverity, HealthSnapshot } from '../../../services/healthMetrics';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

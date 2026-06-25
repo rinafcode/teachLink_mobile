@@ -1,5 +1,5 @@
-import { useReviewStore } from '../../store/reviewStore';
 import { ReviewTrigger } from '../../services/inAppReview';
+import { useReviewStore } from '../../store/reviewStore';
 
 describe('ReviewStore', () => {
   beforeEach(() => {

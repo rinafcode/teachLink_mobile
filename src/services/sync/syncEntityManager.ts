@@ -7,6 +7,7 @@ import {
   resolveConflict,
 } from './conflictResolver';
 import versionStore from './versionStore';
+
 import type {
   ConflictResolutionResult,
   ConflictResolutionStrategy,

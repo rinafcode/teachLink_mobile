@@ -1,6 +1,6 @@
+import { BookOpen, Clock } from 'lucide-react-native';
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { BookOpen, Clock } from 'lucide-react-native';
 
 export interface SearchResultItem {
   id: string;

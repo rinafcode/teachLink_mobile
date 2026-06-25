@@ -9,18 +9,18 @@ import { CacheStatusOverlay, MemoryProfilerOverlay } from '../components/DevTool
 import { RetryErrorBoundary } from '../components/ErrorBoundary/RetryErrorBoundary';
 import '../global.css'; // NativeWind CSS
 import { AnalyticsProvider, ErrorBoundary, OfflineIndicatorProvider } from '../src/components';
+import AppLifecycleManager from '../src/components/AppLifecycleManager';
 import { KeyboardDelegateProvider } from '../src/components/common/KeyboardDelegateProvider';
 import { UpdateNotificationModal } from '../src/components/common/UpdateNotificationModal';
 import { useAnalytics } from '../src/hooks';
 import { useAppUpdate } from '../src/hooks/useAppUpdate';
 import { useDeepLink } from '../src/hooks/useDeepLink';
 import { preloadService } from '../src/services/preloadService';
-import { sessionRestorationService } from '../src/services/sessionRestoration';
 import { scrollPositionService } from '../src/services/scrollPositionService';
+import { sessionRestorationService } from '../src/services/sessionRestoration';
 import { useAppStore } from '../src/store';
 import { getPathFromDeepLink } from '../src/utils/linkParser';
 import { prefetchExternalResources } from '../src/utils/resourceHints';
-import AppLifecycleManager from '../src/components/AppLifecycleManager';
 
 // Kick off resource hints early
 prefetchExternalResources();

@@ -1,6 +1,6 @@
 import { useAppStore } from '../store';
-import logger from '../utils/logger';
 import mobileAuthService from './mobileAuth';
+import logger from '../utils/logger';
 
 export type { AuthResult, AuthTokens, AuthUser, LoginCredentials } from './mobileAuth';
 

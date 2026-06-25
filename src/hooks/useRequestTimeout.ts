@@ -3,6 +3,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 /** Axios default timeout in ms — keep in sync with axios.config.ts */
 export const REQUEST_TIMEOUT_MS = 10_000;
 
+/** Upload request timeout in ms */
+export const UPLOAD_TIMEOUT_MS = 30_000;
+
 const TICK_MS = 100;
 
 export interface UseRequestTimeoutReturn {

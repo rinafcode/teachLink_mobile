@@ -1,9 +1,9 @@
 import { useLowPowerMode } from 'expo-battery';
 import * as Device from 'expo-device';
 import { useEffect, useMemo } from 'react';
-import { useDeviceStore } from '../store/deviceStore';
 
 import { mobileAnalyticsService } from '../services/mobileAnalytics';
+import { useDeviceStore } from '../store/deviceStore';
 import { AnalyticsEvent } from '../utils/trackingEvents';
 
 export type UiComplexityLevel = 'low' | 'mid' | 'high';

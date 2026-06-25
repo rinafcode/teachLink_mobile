@@ -1,9 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { InternalAxiosRequestConfig } from 'axios';
 import * as Network from 'expo-network';
+
+import logger from '../../utils/logger';
 import { healthMetricsService } from '../healthMetrics';
 import { mobileAnalyticsService } from '../mobileAnalytics';
-import logger from '../../utils/logger';
 
 export type RequestPriority = 'critical' | 'high' | 'normal' | 'low';
 

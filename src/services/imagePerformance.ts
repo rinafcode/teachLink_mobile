@@ -1,6 +1,6 @@
+import { mobileAnalyticsService } from './mobileAnalytics';
 import { logger } from '../utils/logger';
 
-import { mobileAnalyticsService } from './mobileAnalytics';
 
 interface ImageMetricSample {
   loadTimeMs: number;

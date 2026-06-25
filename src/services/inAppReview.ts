@@ -1,9 +1,9 @@
 import * as StoreReview from 'expo-store-review';
 import { Platform } from 'react-native';
 
+import mobileAnalyticsService from './mobileAnalytics';
 import { appLogger } from '../utils/logger';
 import { AnalyticsEvent } from '../utils/trackingEvents';
-import mobileAnalyticsService from './mobileAnalytics';
 
 /**
  * Optimal moments to request app store reviews.

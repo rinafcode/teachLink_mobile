@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import PerformanceSearchDashboard from "../PerformanceSearchDashboard";
-import { ISplitTransactionRecord } from "@/types/search";
+import { ISplitTransactionRecord } from "../../../types/search";
 
 const MOCK_DATA: ISplitTransactionRecord[] = [
   { id: "1", title: "Escrow Grant Finalization", amount: "5000", assetSymbol: "XLM", senderAddress: "GABC123", timestamp: "2026-01-01", category: "escrow" },

@@ -10,13 +10,13 @@ export type ThemedTextProps = TextProps & {
   type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link';
 };
 
-function ThemedTextComponent({
+const ThemedTextComponent = ({
   style,
   lightColor,
   darkColor,
   type = 'default',
   ...rest
-}: ThemedTextProps) {
+}: ThemedTextProps) => {
   const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
   const { scale } = useDynamicFontSize();
 

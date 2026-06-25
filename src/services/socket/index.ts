@@ -2,16 +2,27 @@ import { io, Socket } from 'socket.io-client';
 
 import { decodeBinaryMessage, encodeBinaryMessage } from './binaryProtocol';
 import { getEnv } from '../../config';
-import syncEntityManager from '../sync/syncEntityManager';
-import type { ConflictResolutionStrategy, VersionedSyncMessage } from '../sync/types';
 import { appLogger } from '../../utils/logger';
+import syncEntityManager from '../sync/syncEntityManager';
+
+import type { ConflictResolutionStrategy, VersionedSyncMessage } from '../sync/types';
 
 const RECONNECTION_ATTEMPTS = 10;
 const RECONNECTION_DELAY_MS = 1_000;
 const RECONNECTION_DELAY_MAX_MS = 30_000;
 
+const HEARTBEAT_INTERVAL_MS = 30_000;
+const HEARTBEAT_TIMEOUT_MS = 5_000;
+
+const BACKOFF_DELAYS = [1_000, 2_000, 4_000, 8_000, 16_000, 32_000, 60_000];
+
 class SocketService {
   private socket: Socket | null = null;
+  private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+  private pongTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
+  private backoffIndex = 0;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private intentionalDisconnect = false;
 
   connect() {
     if (this.socket?.connected) return this.socket;
@@ -22,11 +33,7 @@ class SocketService {
       this.socket = io(socketUrl, {
         transports: ['websocket'],
         autoConnect: true,
-        reconnection: true,
-        reconnectionAttempts: RECONNECTION_ATTEMPTS,
-        reconnectionDelay: RECONNECTION_DELAY_MS,
-        reconnectionDelayMax: RECONNECTION_DELAY_MAX_MS,
-        randomizationFactor: 0.5,
+        reconnection: false,
         perMessageDeflate: true,
       });
 
@@ -36,12 +43,15 @@ class SocketService {
         if (transport) {
           appLogger.debug(`Socket active transport: ${transport.name}`);
         }
+        this.backoffIndex = 0;
+        this.startHeartbeat();
       });
 
       this.socket.on('disconnect', (reason: string) => {
         appLogger.warn('Socket disconnected:', reason);
-        if (reason === 'io server disconnect') {
-          this.socket?.connect();
+        this.stopHeartbeat();
+        if (!this.intentionalDisconnect && reason !== 'io client disconnect') {
+          this.scheduleReconnect();
         }
       });
 
@@ -49,20 +59,8 @@ class SocketService {
         appLogger.error('Socket error:', error);
       });
 
-      this.socket.on('reconnect_attempt', (attempt: number) => {
-        appLogger.info(`Socket reconnection attempt #${attempt}`);
-      });
-
-      this.socket.on('reconnect', (attempt: number) => {
-        appLogger.info(`Socket reconnected after ${attempt} attempt(s)`);
-      });
-
-      this.socket.on('reconnect_error', (error: unknown) => {
-        appLogger.warn('Socket reconnection error:', error);
-      });
-
-      this.socket.on('reconnect_failed', () => {
-        appLogger.error(`Socket failed to reconnect after ${RECONNECTION_ATTEMPTS} attempts`);
+      this.socket.on('pong', () => {
+        this.clearPongTimeout();
       });
 
       this.registerRealtimeHandlers();
@@ -72,9 +70,68 @@ class SocketService {
   }
 
   disconnect() {
+    this.intentionalDisconnect = true;
+    this.stopHeartbeat();
+    this.clearReconnectTimer();
     if (this.socket) {
+      this.socket.removeAllListeners();
       this.socket.disconnect();
       this.socket = null;
+    }
+  }
+
+  private startHeartbeat(): void {
+    this.stopHeartbeat();
+    this.heartbeatTimer = setInterval(() => {
+      if (this.socket?.connected) {
+        this.socket.emit('ping');
+        this.pongTimeoutTimer = setTimeout(() => {
+          appLogger.warn('Socket heartbeat: pong not received, disconnecting');
+          if (this.socket) {
+            this.socket.disconnect();
+          }
+        }, HEARTBEAT_TIMEOUT_MS);
+      }
+    }, HEARTBEAT_INTERVAL_MS);
+  }
+
+  private stopHeartbeat(): void {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+    }
+    this.clearPongTimeout();
+  }
+
+  private clearPongTimeout(): void {
+    if (this.pongTimeoutTimer) {
+      clearTimeout(this.pongTimeoutTimer);
+      this.pongTimeoutTimer = null;
+    }
+  }
+
+  private scheduleReconnect(): void {
+    this.clearReconnectTimer();
+    const delay = BACKOFF_DELAYS[this.backoffIndex] ?? BACKOFF_DELAYS[BACKOFF_DELAYS.length - 1];
+    const jitter = 0.9 + Math.random() * 0.2;
+    const actualDelay = Math.round(delay * jitter);
+
+    appLogger.info(`Socket reconnecting in ${actualDelay}ms (backoff index: ${this.backoffIndex})`);
+
+    this.reconnectTimer = setTimeout(() => {
+      if (this.socket) {
+        this.socket.connect();
+      }
+      if (this.backoffIndex < BACKOFF_DELAYS.length - 1) {
+        this.backoffIndex++;
+      }
+    }, actualDelay);
+  }
+
+  private clearReconnectTimer(): void {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
     }
   }
 

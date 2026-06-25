@@ -8,8 +8,8 @@ import {
   View,
 } from 'react-native';
 
-import { UpdateCheckResult, UpdateType } from '../../services/appUpdateService';
 import { AccessibleModal } from './AccessibleModal';
+import { UpdateCheckResult, UpdateType } from '../../services/appUpdateService';
 
 interface UpdateNotificationModalProps {
   visible: boolean;

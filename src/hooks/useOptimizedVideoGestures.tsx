@@ -6,6 +6,7 @@
  */
 
 import React, { useCallback, useRef } from 'react';
+import { View, ViewStyle } from 'react-native';
 import { Gesture, GestureDetector, gestureHandlerRootHOC } from 'react-native-gesture-handler';
 import Animated, {
   useAnimatedStyle,
@@ -14,7 +15,6 @@ import Animated, {
   interpolate,
   Extrapolate,
 } from 'react-native-reanimated';
-import { View, ViewStyle } from 'react-native';
 
 export interface UseOptimizedVideoGesturesOptions {
   currentPositionMillis: number;
@@ -144,7 +144,7 @@ export function useOptimizedVideoGestures(options: UseOptimizedVideoGesturesOpti
 /**
  * Wrapper component for easy integration with video-enabled views
  */
-export function OptimizedVideoGesturesView({
+export const OptimizedVideoGesturesView = ({
   options,
   children,
   style,
@@ -152,7 +152,7 @@ export function OptimizedVideoGesturesView({
   options: UseOptimizedVideoGesturesOptions;
   children?: React.ReactNode;
   style?: ViewStyle;
-}) {
+}) => {
   const { gesture, animatedStyle } = useOptimizedVideoGestures(options);
 
   return (

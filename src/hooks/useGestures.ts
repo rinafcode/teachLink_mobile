@@ -1,6 +1,7 @@
 import * as React from 'react';
-import type { GestureResponderEvent, ViewProps } from 'react-native';
 import { AccessibilityInfo } from 'react-native';
+
+import type { GestureResponderEvent, ViewProps } from 'react-native';
 
 /**
  * A tiny gesture "arbiter" to prevent recognizers (swipe/pinch/long-press/etc.)
@@ -160,7 +161,7 @@ export function useDoubleTap(options: UseDoubleTapOptions) {
     });
     return () => {
       mounted = false;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       (sub as any)?.remove?.();
     };
   }, []);

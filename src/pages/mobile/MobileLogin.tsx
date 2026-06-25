@@ -28,6 +28,7 @@ import {
 
 
 import { BiometricInlineButton, BiometricPrompt } from '../../components/mobile/BiometricPrompt';
+import { DelegatedKeyboardAvoidingView } from '../../components/common/DelegatedKeyboardAvoidingView';
 import { MobileFormInput } from '../../components/mobile/MobileFormInput';
 import { useBiometricAuth, useDynamicFontSize, useFormValidation } from '../../hooks';
 import authService, { AuthResult } from '../../services/mobileAuth';

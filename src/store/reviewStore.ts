@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-import { ReviewTrigger } from '../services/inAppReview';
 import { asyncStorageJSONStorage } from './persistence';
+import { ReviewTrigger } from '../services/inAppReview';
 
 /**
  * Review request history entry

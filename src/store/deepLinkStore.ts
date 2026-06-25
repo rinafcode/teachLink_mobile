@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+
 import { Course } from '../types/course';
 
 interface DeepLinkState {

@@ -193,7 +193,7 @@ export const lazyComponentRegistry = {
 export function getEstimatedBundleSavings(): {
   totalSavings: number;
   totalSavingsPercent: number;
-  components: Array<{ name: string; sizeSaved: string }>;
+  components: { name: string; sizeSaved: string }[];
 } {
   const components = Object.values(lazyComponentRegistry);
   let totalSavings = 0;

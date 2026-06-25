@@ -1,5 +1,5 @@
-import { Platform } from 'react-native';
 import * as Device from 'expo-device';
+import { Platform } from 'react-native';
 
 /**
  * Device tier detection for performance-based animation decisions
@@ -42,7 +42,7 @@ export function getDeviceTier(): DeviceTier {
 
   const totalMemory = Device.totalMemory || 4 * 1024 * 1024 * 1024; // Default to 4GB
   const totalMemoryMB = totalMemory / (1024 * 1024);
-  const deviceYear = Device.deviceYear ?? 2020;
+  const deviceYear = (Device as any).deviceYear ?? 2020;
   const platformVersion = Platform.Version as number;
 
   // Android API level check
@@ -84,7 +84,7 @@ export function getDeviceCapabilities(): DeviceCapabilities {
   const tier = getDeviceTier();
   const totalMemory = Device.totalMemory || 4 * 1024 * 1024 * 1024;
   const totalMemoryMB = totalMemory / (1024 * 1024);
-  const deviceYear = Device.deviceYear ?? 2020;
+  const deviceYear = (Device as any).deviceYear ?? 2020;
 
   return {
     tier,

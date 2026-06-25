@@ -6,6 +6,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+
 import { CourseProgress, Lesson, Section } from '../../types/course';
 
 /**

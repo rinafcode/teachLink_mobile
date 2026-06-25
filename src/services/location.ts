@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { logger } from '../utils/logger';
 import {
   Coordinates,
   LocationPrecision,
@@ -8,6 +7,7 @@ import {
   isWithinPrecision,
   roundCoordinates,
 } from '../utils/geoUtils';
+import { logger } from '../utils/logger';
 
 /**
  * Location data optimization service.
@@ -56,8 +56,8 @@ const CACHE_KEY = 'last_location_v1';
 interface PendingBatchEntry<T = unknown> {
   coords: Coordinates;
   query: LocationQueryFn<T>;
-  resolvers: Array<(value: T) => void>;
-  rejecters: Array<(reason: unknown) => void>;
+  resolvers: ((value: T) => void)[];
+  rejecters: ((reason: unknown) => void)[];
 }
 
 /**
@@ -68,7 +68,7 @@ interface PendingBatchEntry<T = unknown> {
 const expoPositionReader: PositionReader = async (highAccuracy) => {
   let ExpoLocation: typeof import('expo-location') | null = null;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+     
     ExpoLocation = require('expo-location');
   } catch {
     throw new Error('expo-location is not available');

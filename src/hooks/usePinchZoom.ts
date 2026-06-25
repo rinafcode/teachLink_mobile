@@ -1,7 +1,8 @@
 import * as React from 'react';
 import { Animated, Easing } from 'react-native';
-import type { GestureResponderEvent, ViewProps } from 'react-native';
+
 import type { GestureCoordinator } from './useGestures';
+import type { GestureResponderEvent, ViewProps } from 'react-native';
 
 export interface UsePinchZoomOptions {
   /** Minimum allowed zoom scale. */

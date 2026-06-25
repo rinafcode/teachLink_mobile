@@ -13,8 +13,9 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import logger from '../utils/logger';
+
 import { crashReportingService } from './crashReporting';
+import logger from '../utils/logger';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 

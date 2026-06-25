@@ -13,8 +13,8 @@
  *  - Network status
  */
 
-import { appLogger } from '../utils/logger';
 import { crashReportingService } from './crashReporting';
+import { appLogger } from '../utils/logger';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

@@ -10,10 +10,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Text, TouchableOpacity, View } from 'react-native';
+
+import { useThemeColor } from './themed-view';
 import { FeatureType, featureCapabilities } from '../services/featureCapabilities';
 import { useDegradationStore } from '../store/degradationStore';
 import { appLogger } from '../utils/logger';
-import { useThemeColor } from './themed-view';
 
 interface DegradationBannerProps {
   feature: FeatureType;

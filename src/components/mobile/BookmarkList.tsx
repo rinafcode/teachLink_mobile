@@ -77,13 +77,13 @@ export const BookmarkList = () => {
   }
 
   return (
-    <FlatList
-      data={bookmarks}
-      renderItem={renderItem}
-      keyExtractor={item => item.itemId}
-      contentContainerStyle={styles.list}
-    />
-    <ScrollView contentContainerStyle={styles.list} removeClippedSubviews={true}>
+    <>
+      <FlatList
+        data={bookmarks}
+        renderItem={renderItem}
+        keyExtractor={item => item.itemId}
+        contentContainerStyle={styles.list}
+      />
       {bookmarks.map(item => (
         <SwipeableRow
           key={item.itemId}
@@ -106,7 +106,7 @@ export const BookmarkList = () => {
           </TouchableOpacity>
         </SwipeableRow>
       ))}
-    </ScrollView>
+    </>
   );
 };
 

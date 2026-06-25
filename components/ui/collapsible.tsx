@@ -7,7 +7,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useTheme } from '@/store';
 
-export function Collapsible({ children, title }: PropsWithChildren & { title: string }) {
+export const Collapsible = ({ children, title }: PropsWithChildren & { title: string }) => {
   const [isOpen, setIsOpen] = useState(false);
   const theme = useTheme();
 

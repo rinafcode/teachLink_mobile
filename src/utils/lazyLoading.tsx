@@ -156,12 +156,12 @@ class LazyLoadErrorBoundary extends React.Component<
 /**
  * Wrapper for Suspense with error boundary and fallback UI
  */
-export function SuspenseWithFallback({
+export const SuspenseWithFallback = ({
   children,
   fallback,
   componentName,
   onError,
-}: SuspenseWithFallbackProps) {
+}: SuspenseWithFallbackProps) => {
   return (
     <LazyLoadErrorBoundary componentName={componentName} onError={onError}>
       <Suspense fallback={fallback || <LazyLoadingFallback componentName={componentName} />}>
@@ -174,7 +174,7 @@ export function SuspenseWithFallback({
 /**
  * Default loading fallback component
  */
-export function LazyLoadingFallback({ componentName }: { componentName?: string }) {
+export const LazyLoadingFallback = ({ componentName }: { componentName?: string }) => {
   return (
     <div
       style={{

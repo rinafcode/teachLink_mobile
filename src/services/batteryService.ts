@@ -1,4 +1,5 @@
 import * as Battery from 'expo-battery';
+
 import { useDeviceStore } from '../store/deviceStore';
 import logger from '../utils/logger';
 

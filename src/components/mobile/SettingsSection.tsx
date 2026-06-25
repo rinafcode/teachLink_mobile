@@ -1,5 +1,6 @@
 import React from 'react';
 import { View } from 'react-native';
+
 import { AppText } from '../common/AppText';
 
 interface SettingsSectionProps {
@@ -22,7 +23,7 @@ interface SettingsSectionProps {
  * </SettingsSection>
  * ```
  */
-export function SettingsSection({ title, footer, children }: SettingsSectionProps) {
+export const SettingsSection = ({ title, footer, children }: SettingsSectionProps) => {
   const childArray = React.Children.toArray(children).filter(Boolean);
 
   return (

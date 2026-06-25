@@ -1,3 +1,7 @@
+import { useRouter } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
+import React, { useEffect, useState } from 'react';
+
 import { useDeepLinkStore } from '@/src/store/deepLinkStore';
 import {
   getDeepLinkPath,
@@ -6,15 +10,12 @@ import {
   prewarmDeepLinkData,
 } from '@/src/utils/deepLinkPrewarm';
 import logger from '@/src/utils/logger';
-import { useRouter } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import React, { useEffect, useState } from 'react';
 
 interface DeepLinkPrewarmProviderProps {
   children: React.ReactNode;
 }
 
-export function DeepLinkPrewarmProvider({ children }: DeepLinkPrewarmProviderProps) {
+export const DeepLinkPrewarmProvider = ({ children }: DeepLinkPrewarmProviderProps) => {
   const router = useRouter();
   const setPrewarmedCourse = useDeepLinkStore(state => state.setPrewarmedCourse);
   const [ready, setReady] = useState(false);

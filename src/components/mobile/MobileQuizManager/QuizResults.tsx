@@ -1,5 +1,6 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
 import { Quiz } from '../../../types/course';
 import PrimaryButton from '../../common/PrimaryButton';
 

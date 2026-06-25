@@ -1,10 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { SearchResultItem } from '../components/mobile/SearchResultCard';
 import { FilterValues } from '../components/mobile/FilterSheet';
+import { SearchResultItem } from '../components/mobile/SearchResultCard';
 import { Course } from '../types/course';
-import { buildTrie, Trie } from '../utils/trie';
 import { appLogger } from '../utils/logger';
+import { buildTrie, Trie } from '../utils/trie';
 
 const INDEX_STORAGE_KEY = '@teachlink_search_index';
 // Bump this when the index schema changes to force a rebuild on existing installs.
@@ -237,7 +237,7 @@ class SearchIndexService {
       }
     }
 
-    const results: Array<{ item: SearchResultItem; score: number }> = [];
+    const results: { item: SearchResultItem; score: number }[] = [];
 
     for (const [docId, matched] of matchedTokens) {
       // AND gate — every query token must be satisfied.

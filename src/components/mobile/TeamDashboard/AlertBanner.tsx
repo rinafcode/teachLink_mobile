@@ -4,8 +4,10 @@
 
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import type { DashboardAlert } from '../../../services/metricsService';
+
 import { AppText as Text } from '../../common/AppText';
+
+import type { DashboardAlert } from '../../../services/metricsService';
 
 interface AlertBannerProps {
   alert: DashboardAlert;

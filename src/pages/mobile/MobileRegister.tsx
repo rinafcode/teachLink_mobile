@@ -14,6 +14,7 @@ import {
     View,
 } from 'react-native';
 
+import { DelegatedKeyboardAvoidingView } from '../../components/common/DelegatedKeyboardAvoidingView';
 import { MobileFormInput } from '../../components/mobile/MobileFormInput';
 import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
 import { useFormCache } from '../../hooks/useFormCache';
@@ -195,7 +196,7 @@ export const MobileRegister: React.FC<MobileRegisterProps> = ({
               {password.length > 0 && !errors.password && (
                 <PasswordStrengthBar strength={passwordStrength} scale={scale} />
               )}
-            />
+            </View>
 
             {/* Confirm Password */}
             <View style={styles.fieldWrap}>
@@ -230,7 +231,7 @@ export const MobileRegister: React.FC<MobileRegisterProps> = ({
               {errors.confirmPassword && (
                 <FieldError message={errors.confirmPassword} scale={scale} />
               )}
-            />
+            </View>
 
             <TouchableOpacity
               style={[styles.registerBtn, { opacity: isLoading ? 0.7 : 1 }]}

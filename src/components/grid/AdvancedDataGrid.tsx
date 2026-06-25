@@ -1,3 +1,5 @@
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
 import { ArrowDown, ArrowUp, ArrowUpDown, Filter, FilterX, Upload } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
@@ -12,18 +14,16 @@ import {
     View,
 } from 'react-native';
 
+import { GridExporter } from './GridExporter';
+import { GridFiltering } from './GridFiltering';
+import { InlineEditing } from './InlineEditing';
 import { useDataGrid, UseDataGridOptions } from '../../hooks/useDataGrid';
 import { batchImportCSV, BatchProgress } from '../../services/batchDataProcessor';
 import { ColumnDef, ExportFormat, GridRow, SortConfig, SortDirection } from '../../utils/gridUtils';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 import { Skeleton } from '../ui/Skeleton';
-import { GridExporter } from './GridExporter';
-import { GridFiltering } from './GridFiltering';
-import { InlineEditing } from './InlineEditing';
 
 // Import for document picking (web and native)
-import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 

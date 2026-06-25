@@ -1,6 +1,7 @@
 import { Check, ChevronRight } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
 import { useHapticFeedback } from '../../hooks';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 
@@ -25,7 +26,7 @@ interface SettingsPickerProps<T extends string = string> {
  * showing all available options. The selected option gets a cyan checkmark.
  * Matches the iOS-style grouped settings aesthetic used throughout the app.
  */
-export function SettingsPicker<T extends string = string>({
+export const SettingsPicker = <T extends string = string>({
   value,
   options,
   onValueChange,
@@ -33,13 +34,13 @@ export function SettingsPicker<T extends string = string>({
   description,
   icon,
   disabled = false,
-}: SettingsPickerProps<T>) {
+}: SettingsPickerProps<T>) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const selectedLabel = options.find(o => o.value === value)?.label ?? value;
 
   const handleSelect = (optionValue: T) => {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
+     
     useHapticFeedback('light');
     onValueChange(optionValue);
     setIsOpen(false);

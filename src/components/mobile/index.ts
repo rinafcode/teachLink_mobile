@@ -33,7 +33,5 @@ export * from './SwipeableRow';
 export * from './TeamDashboard';
 export * from './VirtualList';
 export * from './VoiceSearch';
-export * from './VirtualList';
-export * from './VoiceSearch';
 export * from './ProfiledScreen';
 

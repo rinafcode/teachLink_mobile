@@ -1,14 +1,3 @@
-import React, { useState, useCallback, useRef } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import {
   ArrowLeft,
@@ -24,10 +13,21 @@ import {
   XCircle,
   Clock,
 } from 'lucide-react-native';
+import React, { useState, useCallback, useRef } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Animated,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/common/AppText';
-import { useOptimizedClipboard } from '@/hooks/useOptimizedClipboard';
 import { useDynamicFontSize } from '@/hooks/useDynamicFontSize';
+import { useOptimizedClipboard } from '@/hooks/useOptimizedClipboard';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -43,7 +43,7 @@ interface BenchmarkEntry {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function MetricRow({
+const MetricRow = ({
   label,
   value,
   accent,
@@ -53,7 +53,7 @@ function MetricRow({
   value: string;
   accent?: boolean;
   last?: boolean;
-}) {
+}) => {
   return (
     <View
       className={`flex-row items-center justify-between py-2.5 ${
@@ -72,7 +72,7 @@ function MetricRow({
   );
 }
 
-function BenchmarkRow({ entry }: { entry: BenchmarkEntry }) {
+const BenchmarkRow = ({ entry }: { entry: BenchmarkEntry }) => {
   const sizeLabel =
     entry.sizeKb >= 1000
       ? `${(entry.sizeKb / 1000).toFixed(1)} MB`

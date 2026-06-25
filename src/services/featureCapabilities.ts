@@ -21,6 +21,7 @@
 import * as Device from 'expo-device';
 import * as ImagePicker from 'expo-image-picker';
 import * as Notifications from 'expo-notifications';
+
 import { appLogger } from '../utils/logger';
 
 export enum FeatureType {

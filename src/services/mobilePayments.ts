@@ -14,8 +14,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import * as IAP from 'react-native-iap';
-import { appLogger } from '../utils/logger';
+
 import { apiService } from './api';
+import { appLogger } from '../utils/logger';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

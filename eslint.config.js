@@ -9,7 +9,7 @@ const jsxA11yPlugin = require('eslint-plugin-jsx-a11y');
 module.exports = defineConfig([
   expoConfig,
   {
-    ignores: ['dist/*', '.rnstorybook/storybook.requires.ts', 'scripts/**'],
+    ignores: ['dist/*', '.rnstorybook/storybook.requires.ts', 'scripts/**', '**/_tests_/**'],
   },
   {
     files: ['**/*.{js,jsx,ts,tsx}'],

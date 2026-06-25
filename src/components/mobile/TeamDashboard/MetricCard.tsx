@@ -4,6 +4,7 @@
 
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
+
 import { AppText as Text } from '../../common/AppText';
 
 export type MetricCardStatus = 'healthy' | 'warning' | 'critical' | 'neutral';

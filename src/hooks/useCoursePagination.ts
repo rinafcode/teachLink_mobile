@@ -1,7 +1,8 @@
+import { useCallback, useEffect, useState } from 'react';
+
 import { courseApi } from '@/services/api/courseApi';
 import { CursorPageRequest } from '@/services/api/cursorPagination';
 import { Course } from '@/types/course';
-import { useCallback, useEffect, useState } from 'react';
 
 export interface UseCoursePaginationOptions {
   initialLimit?: number;

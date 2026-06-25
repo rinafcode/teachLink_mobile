@@ -1,7 +1,8 @@
 import * as Notifications from 'expo-notifications';
+
+import logger from './logger';
 import { useNotificationStore } from '../store/notificationStore';
 import { NotificationData, NotificationType } from '../types/notifications';
-import logger from './logger';
 
 type NavigationRef = {
   navigate: (screen: string, params?: Record<string, unknown>) => void;

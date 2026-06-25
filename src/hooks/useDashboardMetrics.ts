@@ -6,8 +6,10 @@
  */
 
 import { useEffect } from 'react';
-import type { DashboardAlert, DashboardSnapshot } from '../services/metricsService';
+
 import { DashboardView, useMetricsStore } from '../store/metricsStore';
+
+import type { DashboardAlert, DashboardSnapshot } from '../services/metricsService';
 
 export interface UseDashboardMetricsResult {
   snapshot: DashboardSnapshot | null;

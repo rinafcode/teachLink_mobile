@@ -6,7 +6,7 @@ type FieldType = 'string' | 'double' | 'bool';
 
 type EventSchema = {
   typeId: number;
-  fields: Array<{ key: string; type: FieldType }>;
+  fields: { key: string; type: FieldType }[];
 };
 
 const EVENT_SCHEMAS: Record<string, EventSchema> = {
