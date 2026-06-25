@@ -11,8 +11,8 @@ import {
 } from 'react-native';
 
 import { useDeviceUiComplexity } from '../../hooks/useDeviceUiComplexity';
-import { CourseProgress, Lesson } from '../../types/course';
 import { useSettingsStore } from '../../store/settingsStore';
+import { CourseProgress, Lesson } from '../../types/course';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -91,6 +91,15 @@ const LessonCarousel = ({
 
   const currentLesson = lessons[currentIndex];
 
+  const renderItem = useCallback(
+    ({ item }: { item: Lesson }) => (
+      <View style={[styles.lessonContainer, { width: SCREEN_WIDTH }]}>
+        <View style={styles.lessonContent}>{renderLessonContent(item)}</View>
+      </View>
+    ),
+    [renderLessonContent]
+  );
+
   if (lessons.length === 0) {
     return (
       <View style={styles.emptyContainer}>
@@ -148,15 +157,6 @@ const LessonCarousel = ({
           </View>
         )}
       </View>
-
-      const renderItem = useCallback(
-        ({ item }: { item: Lesson }) => (
-          <View style={[styles.lessonContainer, { width: SCREEN_WIDTH }]}>
-            <View style={styles.lessonContent}>{renderLessonContent(item)}</View>
-          </View>
-        ),
-        [renderLessonContent]
-      );
 
       <FlatList
         ref={flatListRef}

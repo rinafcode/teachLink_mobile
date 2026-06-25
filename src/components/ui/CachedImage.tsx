@@ -1,7 +1,5 @@
 import { Image as ExpoImage, ImageProps as ExpoImageProps } from 'expo-image';
-import React, { memo, useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   ImageStyle,

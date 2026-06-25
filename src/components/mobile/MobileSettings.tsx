@@ -1,44 +1,34 @@
-import React, { memo, useCallback, useState } from 'react';
 import {
-    BarChart2,
-    ChevronDown,
-    ChevronUp,
-    Database,
-    Download,
-    Eye,
-    Fingerprint as FingerprintPattern,
-    Lock,
-    LogOut,
-    RefreshCw,
-    Settings2,
-    Sun,
-    Trash2,
-    User,
-    Wifi,
-    Zap,
+  BarChart2,
+  ChevronDown,
+  ChevronUp,
+  Database,
+  Download,
+  Eye,
+  Fingerprint as FingerprintPattern,
+  Lock,
+  LogOut,
+  RefreshCw,
+  Settings2,
+  Sun,
+  Trash2,
+  User,
+  Wifi,
+  Zap,
 } from 'lucide-react-native';
-import React, { useCallback, useState } from 'react';
+import React, { memo, useCallback, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, TouchableOpacity, View } from 'react-native';
 
-import {
-    ActivityIndicator,
-    Alert,
-    ScrollView,
-    TouchableOpacity,
-    View
-} from 'react-native';
-
+import { NativeToggle } from './NativeToggle';
+import { PickerOption, SettingsPicker } from './SettingsPicker';
+import { SettingsSection } from './SettingsSection';
 import { useDynamicFontSize } from '../../hooks';
 import { useBiometricAuth } from '../../hooks/useBiometricAuth';
 import { useFormCache } from '../../hooks/useFormCache';
 import { useAppStore, useTheme } from '../../store';
-import { useNotificationStore } from '../../store/notificationStore';
 import { DownloadQuality, ProfileVisibility, useSettingsStore } from '../../store/settingsStore';
 import { configureNext } from '../../utils/layoutAnimation';
-
 import { AppText } from '../common/AppText';
-import { NativeToggle } from './NativeToggle';
-import { PickerOption, SettingsPicker } from './SettingsPicker';
-import { SettingsSection } from './SettingsSection';
 
 // ─────────────────────────────────────────────────────────────
 // Shared Row
@@ -55,7 +45,6 @@ interface SettingRowProps {
 }
 
 const SettingRow = memo(function SettingRow({
-const SettingRow = ({
   icon,
   iconBg = 'bg-gray-100 dark:bg-gray-700',
   label,
@@ -63,7 +52,7 @@ const SettingRow = ({
   right,
   onPress,
   destructive = false,
-}: SettingRowProps) => {
+}: SettingRowProps) {
   const Row = onPress ? TouchableOpacity : View;
   const { scale } = useDynamicFontSize();
 
@@ -115,25 +104,6 @@ const QUALITY_OPTIONS: PickerOption<DownloadQuality>[] = [
   { label: 'High', value: 'high' },
 ];
 
-const STORAGE_OPTIONS: PickerOption[] = [
-  { label: '1 GB', value: '1GB' },
-  { label: '2 GB', value: '2GB' },
-  { label: '5 GB', value: '5GB' },
-  { label: 'Unlimited', value: 'unlimited' },
-];
-
-const LANGUAGE_OPTIONS: PickerOption[] = [
-  { label: 'English', value: 'english' },
-  { label: 'Spanish', value: 'spanish' },
-  { label: 'French', value: 'french' },
-];
-
-const FONT_SIZE_OPTIONS: PickerOption[] = [
-  { label: 'Small', value: 'small' },
-  { label: 'Medium', value: 'medium' },
-  { label: 'Large', value: 'large' },
-];
-
 // ─────────────────────────────────────────────────────────────
 // AdvancedToggle – pill button for expanding advanced settings
 // ─────────────────────────────────────────────────────────────
@@ -166,21 +136,15 @@ const AdvancedToggle = ({ expanded, onToggle }: AdvancedToggleProps) => {
       )}
     </TouchableOpacity>
   );
-}
+};
 
 // ─────────────────────────────────────────────────────────────
 // Component
 // ─────────────────────────────────────────────────────────────
 
-export const MobileSettings = ({
-  onSignOut,
-  onChangePassword,
-  onLinkedAccounts,
-}: any) => {
+export const MobileSettings = ({ onSignOut, onChangePassword, onLinkedAccounts }: any) => {
   const theme = useTheme();
   const setTheme = useAppStore(state => state.setTheme);
-  const { preferences, setPreference } = useNotificationStore();
-
   // Progressive disclosure: advanced settings collapsed by default
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
 
@@ -189,28 +153,12 @@ export const MobileSettings = ({
     setProfileVisibility,
     twoFactorEnabled,
     setTwoFactorEnabled,
-    dataSharing,
-    setDataSharing,
     analyticsEnabled,
     setAnalyticsEnabled,
-    locationServices,
-    setLocationServices,
     downloadOverWifiOnly,
     setDownloadOverWifiOnly,
-    autoDownload,
-    setAutoDownload,
     downloadQuality,
     setDownloadQuality,
-    storageLimit,
-    setStorageLimit,
-    language,
-    setLanguage,
-    fontSize,
-    setFontSize,
-    autoplay,
-    setAutoplay,
-    hapticFeedback,
-    setHapticFeedback,
     dataSaverEnabled,
     setDataSaverEnabled,
   } = useSettingsStore();
@@ -218,13 +166,11 @@ export const MobileSettings = ({
   const {
     isAvailable: biometricAvailable,
     isEnabled: biometricEnabled,
-    biometricType,
     enable: enableBiometric,
     disable: disableBiometric,
     isLoading: biometricLoading,
   } = useBiometricAuth();
 
-  const { scale } = useDynamicFontSize();
   const { clearCache: clearStoredFormFields } = useFormCache([]);
 
   const handleClearFormCache = useCallback(() => {
@@ -245,16 +191,19 @@ export const MobileSettings = ({
     );
   }, [clearStoredFormFields]);
 
-  const handleBiometricToggle = useCallback(async (value: boolean) => {
-    if (value) {
-      const ok = await enableBiometric();
-      if (!ok) {
-        Alert.alert('Biometric Login', 'Enable failed. Check device settings.');
+  const handleBiometricToggle = useCallback(
+    async (value: boolean) => {
+      if (value) {
+        const ok = await enableBiometric();
+        if (!ok) {
+          Alert.alert('Biometric Login', 'Enable failed. Check device settings.');
+        }
+      } else {
+        await disableBiometric();
       }
-    } else {
-      await disableBiometric();
-    }
-  }, [enableBiometric, disableBiometric]);
+    },
+    [enableBiometric, disableBiometric]
+  );
 
   const handleSignOut = useCallback(() => {
     Alert.alert('Sign Out', 'Are you sure?', [
@@ -434,7 +383,6 @@ export const MobileSettings = ({
               icon={<Zap size={18} color="#06b6d4" />}
               label="Clipboard Optimizer"
               description="Test & profile asynchronous clipboard operations"
-              onPress={() => router.push('/clipboard-demo')}
             />
           </SettingsSection>
         </>
@@ -451,6 +399,6 @@ export const MobileSettings = ({
       </SettingsSection>
     </ScrollView>
   );
-}
+};
 
 export default MobileSettings;

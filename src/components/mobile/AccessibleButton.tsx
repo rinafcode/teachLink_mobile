@@ -6,6 +6,7 @@ import {
   ViewStyle,
   GestureResponderEvent,
 } from 'react-native';
+
 import { getAccessibilityProps } from '../../utils/accessibility';
 
 /**
@@ -35,7 +36,6 @@ interface AccessibleButtonProps {
  * Ensures a minimum touch target of 44x44 and provides consistent accessibility props.
  */
 const AccessibleButtonComponent: React.FC<AccessibleButtonProps> = ({
-export const AccessibleButton: React.FC<AccessibleButtonProps> = ({
   label,
   hint,
   role = 'button',

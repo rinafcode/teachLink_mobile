@@ -1,14 +1,9 @@
 import React, { memo } from 'react';
-import { Text as RNText, TextProps, StyleSheet } from 'react-native';
-import React from 'react';
 import { Text as RNText, StyleSheet } from 'react-native';
-import type {
-  StyleProp,
-  TextStyle,
-  AccessibilityRole,
-  AccessibilityState,
-} from 'react-native';
+
 import { useDynamicFontSize } from '../../hooks';
+
+import type { StyleProp, TextStyle, AccessibilityRole, AccessibilityState } from 'react-native';
 
 /**
  * Explicit subset of React Native TextProps that AppText consumers may pass.
@@ -57,8 +52,7 @@ export interface AppTextProps {
  * A wrapper around React Native's Text component that uses the useDynamicFontSize hook
  * to ensure consistent scaling across the application.
  */
-const AppTextComponent: React.FC<AppTextProps> = ({ style, fixed = false, ...props }) => {
-export const AppText: React.FC<AppTextProps> = ({
+const AppTextComponent: React.FC<AppTextProps> = ({
   style,
   fixed = false,
   children,

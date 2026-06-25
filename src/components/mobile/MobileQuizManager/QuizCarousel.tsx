@@ -1,8 +1,3 @@
-Here is the completely resolved `QuizCarousel.tsx`. It keeps the improved typing and `activeIndex` state from `main`, while successfully preserving the analytics tracking from your feature branch.
-
-Copy and paste this entire code block:
-
-```tsx
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Dimensions, FlatList, StyleSheet, View } from 'react-native';
 
@@ -103,7 +98,6 @@ const QuizCarousel = ({
         keyExtractor={item => item.id}
         horizontal
         pagingEnabled
-        removeClippedSubviews={true}
         showsHorizontalScrollIndicator={false}
         onScroll={trackScrollAnalytics}
         onScrollBeginDrag={() => {
@@ -139,4 +133,3 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
 });
-```
