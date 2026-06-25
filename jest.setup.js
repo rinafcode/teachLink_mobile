@@ -13,7 +13,6 @@ jest.mock('react-native', () => ({
   KeyboardAvoidingView: 'KeyboardAvoidingView',
   Modal: 'Modal',
   SafeAreaView: 'SafeAreaView',
-  KeyboardAvoidingView: 'KeyboardAvoidingView',
   ScrollView: 'ScrollView',
   Switch: 'Switch',
   TextInput: 'TextInput',
@@ -300,6 +299,12 @@ jest.mock('expo-notifications', () => ({
 
 // Mock expo-battery
 jest.mock('expo-battery', () => ({
+  BatteryState: {
+    UNKNOWN: 0,
+    UNPLUGGED: 1,
+    CHARGING: 2,
+    FULL: 3,
+  },
   useLowPowerMode: jest.fn(() => false),
   isLowPowerModeEnabledAsync: jest.fn(() => Promise.resolve(false)),
   getBatteryLevelAsync: jest.fn(() => Promise.resolve(1)),
@@ -307,21 +312,31 @@ jest.mock('expo-battery', () => ({
     Promise.resolve({ batteryLevel: 1, batteryState: 1, lowPowerMode: false })
   ),
   addLowPowerModeListener: jest.fn(() => ({ remove: jest.fn() })),
+  BatteryState: {
+    UNKNOWN: 0,
+    UNPLUGGED: 1,
+    CHARGING: 2,
+    FULL: 3,
+  },
 }));
 
 // Lightweight mock for expo-router to avoid pulling in navigation internals during tests
-jest.mock('expo-router', () => ({
-  useRouter: () => ({
-    push: jest.fn(),
-    replace: jest.fn(),
-    back: jest.fn(),
-    prefetch: jest.fn(),
+jest.mock(
+  'expo-router',
+  () => ({
+    useRouter: () => ({
+      push: jest.fn(),
+      replace: jest.fn(),
+      back: jest.fn(),
+      prefetch: jest.fn(),
+    }),
+    Link: ({ children }) => children,
+    useLocalSearchParams: () => ({}),
+    usePathname: () => '/',
+    useSegments: () => [],
   }),
-  Link: ({ children }) => children,
-  useLocalSearchParams: () => ({}),
-  usePathname: () => '/',
-  useSegments: () => [],
-}), { virtual: true });
+  { virtual: true }
+);
 
 // Mock expo-document-picker and expo-file-system used by components/tests
 jest.mock(

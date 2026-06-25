@@ -1,10 +1,18 @@
-import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import React, {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 import mobileAuth, { AuthUser } from '../services/mobileAuth';
 import { appLogger } from '../utils/logger';
 
 interface AuthState {
-  isOffline?: boolean; // optional property if needed
+  isOffline?: boolean;
   isAuthenticated: boolean;
   isLoading: boolean;
   user: AuthUser | null;
@@ -30,7 +38,12 @@ export const AuthProvider = ({ children }: AuthProviderProps): React.ReactElemen
     user: null,
   });
 
-  const restoreSession = async () => {
+  // ✅ useCallback gives each function a stable reference.
+  // They only change if their own dependencies change — and since
+  // they only call mobileAuth (external) and setState (stable),
+  // their deps array is empty: they are created exactly once.
+
+  const restoreSession = useCallback(async () => {
     try {
       setState(prev => ({ ...prev, isLoading: true }));
       const result = await mobileAuth.restoreSession();
@@ -56,24 +69,27 @@ export const AuthProvider = ({ children }: AuthProviderProps): React.ReactElemen
         user: null,
       });
     }
-  };
+  }, []); // stable: only uses setState (stable) and mobileAuth (module-level)
 
-  const login = async (credentials: { email: string; password: string; rememberMe?: boolean }) => {
-    try {
-      setState(prev => ({ ...prev, isLoading: true }));
-      const result = await mobileAuth.login(credentials);
-      setState({
-        isAuthenticated: true,
-        isLoading: false,
-        user: result.user,
-      });
-    } catch (error) {
-      setState(prev => ({ ...prev, isLoading: false }));
-      throw error;
-    }
-  };
+  const login = useCallback(
+    async (credentials: { email: string; password: string; rememberMe?: boolean }) => {
+      try {
+        setState(prev => ({ ...prev, isLoading: true }));
+        const result = await mobileAuth.login(credentials);
+        setState({
+          isAuthenticated: true,
+          isLoading: false,
+          user: result.user,
+        });
+      } catch (error) {
+        setState(prev => ({ ...prev, isLoading: false }));
+        throw error;
+      }
+    },
+    [] // stable: credentials come in as an argument, not a dep
+  );
 
-  const loginWithBiometrics = async () => {
+  const loginWithBiometrics = useCallback(async () => {
     try {
       setState(prev => ({ ...prev, isLoading: true }));
       const result = await mobileAuth.loginWithBiometrics();
@@ -86,9 +102,9 @@ export const AuthProvider = ({ children }: AuthProviderProps): React.ReactElemen
       setState(prev => ({ ...prev, isLoading: false }));
       throw error;
     }
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       setState(prev => ({ ...prev, isLoading: true }));
       await mobileAuth.logout();
@@ -101,14 +117,15 @@ export const AuthProvider = ({ children }: AuthProviderProps): React.ReactElemen
       setState(prev => ({ ...prev, isLoading: false }));
       throw error;
     }
-  };
-
-  // Restore session on mount
-  useEffect(() => {
-    restoreSession();
   }, []);
 
-  const value = React.useMemo(
+  useEffect(() => {
+    restoreSession();
+  }, [restoreSession]); // ✅ restoreSession is now stable, so this runs only once
+
+  // ✅ useMemo now actually works: callbacks are stable references,
+  // so this only re-computes when auth state (isAuthenticated, isLoading, user) changes.
+  const value = useMemo(
     () => ({
       ...state,
       login,
@@ -116,7 +133,7 @@ export const AuthProvider = ({ children }: AuthProviderProps): React.ReactElemen
       logout,
       restoreSession,
     }),
-    [state]
+    [state, login, loginWithBiometrics, logout, restoreSession]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

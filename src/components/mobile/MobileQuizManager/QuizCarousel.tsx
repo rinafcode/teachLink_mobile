@@ -1,8 +1,3 @@
-Here is the completely resolved `QuizCarousel.tsx`. It keeps the improved typing and `activeIndex` state from `main`, while successfully preserving the analytics tracking from your feature branch.
-
-Copy and paste this entire code block:
-
-```tsx
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Dimensions, FlatList, StyleSheet, View } from 'react-native';
 
@@ -77,6 +72,21 @@ const QuizCarousel = ({
     [activeIndex, onQuestionChange, questions.length]
   );
 
+  const renderItem = useCallback(
+    ({ item, index }: { item: Question; index: number }) => (
+      <View style={styles.cardContainer}>
+        <MobileQuestionCard
+          question={item}
+          questionNumber={index + 1}
+          totalQuestions={questions.length}
+          selectedAnswer={selectedAnswers[item.id]}
+          onAnswerSelect={onAnswerSelect}
+        />
+      </View>
+    ),
+    [questions.length, selectedAnswers, onAnswerSelect]
+  );
+
   if (questions.length === 0) return null;
 
   return (
@@ -84,21 +94,10 @@ const QuizCarousel = ({
       <FlatList
         ref={flatListRef}
         data={questions}
-        renderItem={({ item, index }) => (
-          <View style={styles.cardContainer}>
-            <MobileQuestionCard
-              question={item}
-              questionNumber={index + 1}
-              totalQuestions={questions.length}
-              selectedAnswer={selectedAnswers[item.id]}
-              onAnswerSelect={onAnswerSelect}
-            />
-          </View>
-        )}
+        renderItem={renderItem}
         keyExtractor={item => item.id}
         horizontal
         pagingEnabled
-        removeClippedSubviews={true}
         showsHorizontalScrollIndicator={false}
         onScroll={trackScrollAnalytics}
         onScrollBeginDrag={() => {
@@ -134,4 +133,3 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
 });
-```

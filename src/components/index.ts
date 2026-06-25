@@ -9,3 +9,4 @@ export { KeyboardDelegateProvider, useKeyboardState } from './common/KeyboardDel
 export { default as PrimaryButton } from './common/PrimaryButton';
 
 export { Skeleton } from './ui/Skeleton';
+export { UpdateNotificationModal } from './common/UpdateNotificationModal';

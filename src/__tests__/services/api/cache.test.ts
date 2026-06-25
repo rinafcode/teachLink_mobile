@@ -1,14 +1,28 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import {
-  clearCache,
-  getCache,
-  invalidateCacheByDataVersion,
-  setCache,
-  setMaxCacheSize,
-  getCacheStats,
-  resetCacheStats,
+    clearCache,
+    fetchWithSWR,
+    getCache,
+    getCacheStats,
+    getCacheStatus,
+    invalidateCacheByDataVersion,
+    invalidateCacheByTags,
+    invalidateCacheForBatchRequests,
+    invalidateCacheForMutation,
+    resetCacheStats,
+    setCache,
+    setMaxCacheSize,
 } from '../../../services/api/cache';
 
+const mockedAsyncStorage = AsyncStorage as jest.Mocked<typeof AsyncStorage>;
+const DEFAULT_MAX_CACHE_SIZE = 100 * 1024 * 1024;
+
 beforeEach(() => {
+  jest.clearAllMocks();
+  mockedAsyncStorage.getAllKeys.mockResolvedValue([]);
+  mockedAsyncStorage.getItem.mockResolvedValue(null);
+  setMaxCacheSize(DEFAULT_MAX_CACHE_SIZE);
   clearCache();
   resetCacheStats();
 });
@@ -59,21 +73,20 @@ describe('LRU cache eviction and stats', () => {
     expect(getCache('k2')).toBe('val2');
     expect(getCache('k3')).toBe('val3');
 
-    // Add 4th item, k1 should be evicted since it's the oldest (though we accessed it,
-    // getCache('k1') moved it to the end! So the order from oldest to newest after the reads:
-    // k2 (oldest), k3, k1 (newest).
-    // So k2 should be evicted!
+    // Add 4th item. The reads above touched k1, k2, then k3, so the order is:
+    // k1 (oldest), k2, k3 (newest).
+    // k1 should be evicted.
     setCache('k4', 'val4', 60_000, 300_000);
 
-    expect(getCache('k2')).toBeNull();
-    expect(getCache('k1')).toBe('val1');
+    expect(getCache('k1')).toBeNull();
+    expect(getCache('k2')).toBe('val2');
     expect(getCache('k3')).toBe('val3');
     expect(getCache('k4')).toBe('val4');
   });
 
   it('correctly tracks hits and misses stats', () => {
     resetCacheStats();
-    
+
     // Miss
     expect(getCache('non_existent')).toBeNull();
     let stats = getCacheStats();
@@ -84,7 +97,7 @@ describe('LRU cache eviction and stats', () => {
     // Hit
     setCache('k1', 'val1', 60_000, 300_000);
     expect(getCache('k1')).toBe('val1');
-    
+
     stats = getCacheStats();
     expect(stats.hits).toBe(1);
     expect(stats.misses).toBe(1);
@@ -99,3 +112,170 @@ describe('LRU cache eviction and stats', () => {
   });
 });
 
+describe('three-tier cache behavior', () => {
+  it('persists network results with cache metadata for the AsyncStorage tier', async () => {
+    setCache('users:u1', { id: 'u1', name: 'Ada' }, 60_000, 300_000, {
+      dataType: 'user-profile',
+      tags: ['users', 'user:u1'],
+      critical: true,
+    });
+
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(mockedAsyncStorage.setItem).toHaveBeenCalledWith(
+      '@teachlink/api-cache:users%3Au1',
+      expect.any(String)
+    );
+
+    const [, rawEnvelope] = mockedAsyncStorage.setItem.mock.calls[0];
+    const envelope = JSON.parse(rawEnvelope);
+
+    expect(envelope.key).toBe('users:u1');
+    expect(envelope.entry.data).toEqual({ id: 'u1', name: 'Ada' });
+    expect(envelope.entry.tags).toEqual(['users', 'user:u1']);
+    expect(envelope.entry.dataType).toBe('user-profile');
+    expect(envelope.entry.critical).toBe(true);
+  });
+
+  it('hydrates from AsyncStorage before hitting the network', async () => {
+    mockedAsyncStorage.getItem.mockResolvedValueOnce(
+      JSON.stringify({
+        schemaVersion: 1,
+        key: 'users:u1',
+        entry: {
+          data: { id: 'u1', name: 'Grace' },
+          cachedAt: Date.now(),
+          ttl: 60_000,
+          staleTtl: 300_000,
+          tags: ['users', 'user:u1'],
+          dataType: 'user-profile',
+          critical: true,
+          sizeBytes: 180,
+        },
+      })
+    );
+
+    const fetcher = jest.fn().mockResolvedValue({ id: 'u1', name: 'Network' });
+
+    const result = await fetchWithSWR('users:u1', fetcher, 60_000, 300_000, {
+      tags: ['users', 'user:u1'],
+      dataType: 'user-profile',
+    });
+
+    expect(result).toEqual({ id: 'u1', name: 'Grace' });
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(getCacheStats()).toMatchObject({
+      hits: 1,
+      misses: 0,
+      storageHits: 1,
+      networkFetches: 0,
+    });
+  });
+
+  it('records a network fetch when both local tiers miss', async () => {
+    const fetcher = jest.fn().mockResolvedValue({ id: 'course-1' });
+
+    const result = await fetchWithSWR('courses:course-1', fetcher, 60_000, 300_000, {
+      tags: ['courses', 'course:course-1'],
+      dataType: 'course-detail',
+    });
+
+    expect(result).toEqual({ id: 'course-1' });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(getCacheStats()).toMatchObject({
+      hits: 0,
+      misses: 1,
+      networkFetches: 1,
+    });
+  });
+
+  it('tracks revalidation state while stale data is being refreshed', async () => {
+    setCache('users:u1', { id: 'u1', name: 'Ada' }, 60_000, 30_000);
+    await new Promise(resolve => setTimeout(resolve, 5));
+
+    const fetcher = jest.fn().mockImplementation(
+      () => new Promise(resolve => setTimeout(() => resolve({ id: 'u1', name: 'Grace' }), 10))
+    );
+
+    const responsePromise = fetchWithSWR('users:u1', fetcher, 1, 30_000);
+
+    expect(getCacheStatus('users:u1')).toMatchObject({
+      isCached: true,
+      isStale: true,
+      isRevalidating: true,
+    });
+
+    const response = await responsePromise;
+    expect(response).toEqual({ id: 'u1', name: 'Ada' });
+    await Promise.resolve();
+
+    expect(getCacheStatus('users:u1')).toMatchObject({
+      isCached: true,
+      isStale: false,
+      isRevalidating: false,
+    });
+  });
+
+  it('invalidates memory entries by data tags', () => {
+    setCache('courses:list', [{ id: 'c1' }], 60_000, 300_000, {
+      tags: ['courses'],
+      dataType: 'course-list',
+    });
+    setCache('users:u1', { id: 'u1' }, 60_000, 300_000, {
+      tags: ['users', 'user:u1'],
+      dataType: 'user-profile',
+    });
+
+    invalidateCacheByTags(['courses']);
+
+    expect(getCache('courses:list')).toBeNull();
+    expect(getCache('users:u1')).toEqual({ id: 'u1' });
+  });
+
+  it('maps direct course and user mutations to targeted invalidation tags', () => {
+    setCache('courses:list', [{ id: 'c1' }], 60_000, 300_000, {
+      tags: ['courses'],
+      dataType: 'course-list',
+    });
+    setCache('users:u1', { id: 'u1' }, 60_000, 300_000, {
+      tags: ['users', 'user:u1'],
+      dataType: 'user-profile',
+    });
+
+    invalidateCacheForMutation('PUT', '/users/u1');
+
+    expect(getCache('courses:list')).toEqual([{ id: 'c1' }]);
+    expect(getCache('users:u1')).toBeNull();
+  });
+
+  it('does not invalidate read-only batch requests', () => {
+    setCache('courses:list', [{ id: 'c1' }], 60_000, 300_000, {
+      tags: ['courses'],
+      dataType: 'course-list',
+    });
+
+    invalidateCacheForBatchRequests(JSON.stringify([{ method: 'GET', url: '/courses' }]));
+
+    expect(getCache('courses:list')).toEqual([{ id: 'c1' }]);
+  });
+
+  it('invalidates only mutation operations inside a batch request', () => {
+    setCache('courses:list', [{ id: 'c1' }], 60_000, 300_000, {
+      tags: ['courses'],
+      dataType: 'course-list',
+    });
+    setCache('users:u1', { id: 'u1' }, 60_000, 300_000, {
+      tags: ['users', 'user:u1'],
+      dataType: 'user-profile',
+    });
+
+    invalidateCacheForBatchRequests([
+      { method: 'GET', url: '/courses' },
+      { method: 'DELETE', url: '/users/u1' },
+    ]);
+
+    expect(getCache('courses:list')).toEqual([{ id: 'c1' }]);
+    expect(getCache('users:u1')).toBeNull();
+  });
+});

@@ -30,6 +30,9 @@
       "cache": {
         "key": "preview-cache",
         "paths": ["node_modules", ".expo"]
+      },
+      "env": {
+        "NODE_ENV": "production"
       }
     },
     "production": {
@@ -69,6 +72,9 @@
         "key": "production-cache-v1",
         "paths": ["node_modules", ".expo", ".metro-cache"],
         "cacheDefaultPaths": true
+      },
+      "env": {
+        "NODE_ENV": "production"
       }
     }
   },

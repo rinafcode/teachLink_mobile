@@ -1,11 +1,17 @@
 import { useRouter } from 'expo-router';
+<<<<<<< HEAD
 import React, { useCallback } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+=======
+import React, { memo, useCallback } from 'react';
+import { FlatList, Text, TouchableOpacity, View, StyleSheet, Alert } from 'react-native';
+>>>>>>> upstream/main
 
 import { SwipeableRow } from './SwipeableRow';
 import { VirtualList } from './VirtualList';
 import { useBookmarkStore } from '../../store/bookmarkStore';
 
+<<<<<<< HEAD
 import type { ListRenderItemInfo } from 'react-native';
 
 /**
@@ -29,6 +35,44 @@ type Bookmark = ReturnType<typeof useBookmarkStore>['bookmarks'][number];
  * the viewport and recycles them on scroll. This keeps memory flat and holds
  * ~60fps regardless of how many bookmarks the user has saved.
  */
+=======
+interface BookmarkItemProps {
+  item: { itemId: string; title: string; itemType: string; url: string };
+  onPress: () => void;
+  onDelete: () => void;
+  onArchive: () => void;
+}
+
+const BookmarkItem = memo(function BookmarkItem({
+  item,
+  onPress,
+  onDelete,
+  onArchive,
+}: BookmarkItemProps) {
+  return (
+    <SwipeableRow
+      id={item.itemId}
+      onDelete={onDelete}
+      onArchive={onArchive}
+      deleteLabel="Delete"
+      archiveLabel="Archive"
+    >
+      <TouchableOpacity
+        testID={`bookmark-item-${item.itemId}`}
+        style={styles.card}
+        onPress={onPress}
+        activeOpacity={0.75}
+        accessibilityRole="link"
+        accessibilityLabel={item.title}
+      >
+        <Text style={styles.cardTitle}>{item.title}</Text>
+        <Text style={styles.cardType}>{item.itemType}</Text>
+      </TouchableOpacity>
+    </SwipeableRow>
+  );
+});
+
+>>>>>>> upstream/main
 export const BookmarkList = () => {
   const { bookmarks, removeBookmark } = useBookmarkStore();
   const router = useRouter();
@@ -41,6 +85,21 @@ export const BookmarkList = () => {
     },
     [removeBookmark]
   );
+<<<<<<< HEAD
+=======
+
+  const renderItem = useCallback(
+    ({ item }: { item: (typeof bookmarks)[number] }) => (
+      <BookmarkItem
+        item={item}
+        onPress={() => router.push(item.url as any)}
+        onDelete={() => removeBookmark(item.itemId)}
+        onArchive={() => handleArchive(item.itemId)}
+      />
+    ),
+    [router, removeBookmark, handleArchive]
+  );
+>>>>>>> upstream/main
 
   // Stable key per row so FlatList can recycle rows efficiently.
   const keyExtractor = useCallback((item: Bookmark) => item.itemId, []);
@@ -75,6 +134,7 @@ export const BookmarkList = () => {
   );
 
   return (
+<<<<<<< HEAD
     <VirtualList<Bookmark>
       data={bookmarks}
       keyExtractor={keyExtractor}
@@ -91,6 +151,38 @@ export const BookmarkList = () => {
         </View>
       }
     />
+=======
+    <FlatList
+      data={bookmarks}
+      renderItem={renderItem}
+      keyExtractor={item => item.itemId}
+      contentContainerStyle={styles.list}
+    />
+    <ScrollView contentContainerStyle={styles.list} removeClippedSubviews={true}>
+      {bookmarks.map(item => (
+        <SwipeableRow
+          key={item.itemId}
+          id={item.itemId}
+          onDelete={() => removeBookmark(item.itemId)}
+          onArchive={() => handleArchive(item.itemId)}
+          deleteLabel="Delete"
+          archiveLabel="Archive"
+        >
+          <TouchableOpacity
+            testID={`bookmark-item-${item.itemId}`}
+            style={styles.card}
+            onPress={() => router.push(item.url as any)}
+            activeOpacity={0.75}
+            accessibilityRole="link"
+            accessibilityLabel={item.title}
+          >
+            <Text style={styles.cardTitle}>{item.title}</Text>
+            <Text style={styles.cardType}>{item.itemType}</Text>
+          </TouchableOpacity>
+        </SwipeableRow>
+      ))}
+    </ScrollView>
+>>>>>>> upstream/main
   );
 };
 

@@ -5,10 +5,12 @@ import { syncService } from '../../src/services/syncService';
 import { useSettingsStore } from '../../src/store/settingsStore';
 
 jest.mock('expo-network', () => ({
-  getNetworkStateAsync: jest.fn(() => Promise.resolve({
-    isConnected: true,
-    isInternetReachable: true,
-  })),
+  getNetworkStateAsync: jest.fn(() =>
+    Promise.resolve({
+      isConnected: true,
+      isInternetReachable: true,
+    })
+  ),
 }));
 
 jest.mock('../../src/services/offlineStorage', () => ({
@@ -28,6 +30,7 @@ jest.mock('../../src/utils/logger', () => {
   };
   return {
     __esModule: true,
+    logger: mockLogger,
     default: mockLogger,
   };
 });

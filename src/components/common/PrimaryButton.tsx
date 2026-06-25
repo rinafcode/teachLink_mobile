@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import {
   TouchableOpacity,
   Text,
@@ -36,7 +36,7 @@ interface PrimaryButtonProps {
   accessibilityLabel?: string;
 }
 
-export default function PrimaryButton({
+function PrimaryButton({
   onPress,
   title,
   loading = false,
@@ -92,7 +92,7 @@ export default function PrimaryButton({
           colors={['#20afe7', '#2c8aec', '#586ce9']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
-          className="flex-row items-center justify-center gap-2 shadow-sm shadow-[#20afe7]/30 elevation-4"
+          className="elevation-4 flex-row items-center justify-center gap-2 shadow-sm shadow-[#20afe7]/30"
           style={{
             paddingHorizontal: config.paddingHorizontal,
             paddingVertical: config.paddingVertical,
@@ -107,10 +107,7 @@ export default function PrimaryButton({
               <Text
                 allowFontScaling={false}
                 className="font-semibold"
-                style={[
-                  { fontSize: config.fontSize, color: '#ffffff' },
-                  textStyle,
-                ]}
+                style={[{ fontSize: config.fontSize, color: '#ffffff' }, textStyle]}
               >
                 {title}
               </Text>
@@ -151,10 +148,7 @@ export default function PrimaryButton({
             <Text
               allowFontScaling={false}
               className="font-semibold"
-              style={[
-                { fontSize: config.fontSize, color: '#ffffff' },
-                textStyle,
-              ]}
+              style={[{ fontSize: config.fontSize, color: '#ffffff' }, textStyle]}
             >
               {title}
             </Text>
@@ -196,10 +190,7 @@ export default function PrimaryButton({
           <Text
             allowFontScaling={false}
             className="font-semibold"
-            style={[
-              { fontSize: config.fontSize, color: '#19c3e6' },
-              textStyle,
-            ]}
+            style={[{ fontSize: config.fontSize, color: '#19c3e6' }, textStyle]}
           >
             {title}
           </Text>
@@ -209,3 +200,4 @@ export default function PrimaryButton({
   );
 }
 
+export default memo(PrimaryButton);

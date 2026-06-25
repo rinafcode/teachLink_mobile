@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import logger from '../utils/logger';
+
+import { logger } from '../utils/logger';
 
 // Storage keys
 const STORAGE_KEYS = {
@@ -21,6 +22,7 @@ interface StorageItem<T> {
 
 // Sync operation types
 export type SyncOperationType = 'CREATE' | 'UPDATE' | 'DELETE' | 'READ';
+export type SyncConflictResolutionStrategy = 'server-wins' | 'client-wins' | 'manual';
 
 // Sync operation interface
 export interface SyncOperation {
@@ -28,6 +30,10 @@ export interface SyncOperation {
   type: SyncOperationType;
   endpoint: string;
   data?: any;
+  localVersion?: number;
+  lastModified?: number;
+  baseData?: any;
+  conflictStrategy?: SyncConflictResolutionStrategy;
   timestamp: number;
   retries: number;
   maxRetries: number;
@@ -66,7 +72,7 @@ class OfflineStorage {
     try {
       const itemStr = await AsyncStorage.getItem(key);
       if (!itemStr) return null;
-      
+
       const item: StorageItem<T> = JSON.parse(itemStr);
       return item.data;
     } catch (error) {
@@ -121,14 +127,14 @@ class OfflineStorage {
     try {
       const keys = await AsyncStorage.getAllKeys();
       let totalSize = 0;
-      
+
       for (const key of keys) {
         const value = await AsyncStorage.getItem(key);
         if (value) {
           totalSize += value.length;
         }
       }
-      
+
       return totalSize;
     } catch (error) {
       logger.error('Error getting storage size:', error);
@@ -152,7 +158,7 @@ class OfflineStorage {
     try {
       const keys = await AsyncStorage.getAllKeys();
       const courseKeys = keys.filter(key => key.startsWith(STORAGE_KEYS.COURSE_DATA));
-      
+
       const courses = [];
       for (const key of courseKeys) {
         const course = await this.retrieve(key);
@@ -160,7 +166,7 @@ class OfflineStorage {
           courses.push(course);
         }
       }
-      
+
       return courses;
     } catch (error) {
       logger.error('Error getting all courses:', error);
@@ -211,17 +217,27 @@ class OfflineStorage {
   async addToSyncQueue(operation: SyncOperationInput): Promise<string> {
     try {
       const queue = await this.getSyncQueue();
-      
+      const existingIndex = queue.findIndex(
+        op =>
+          op.endpoint === operation.endpoint &&
+          op.type === operation.type &&
+          op.retries < op.maxRetries
+      );
+
       const syncOp: SyncOperation = {
-        id: this.generateOperationId(),
+        id: existingIndex >= 0 ? queue[existingIndex].id : this.generateOperationId(),
         ...operation,
         timestamp: Date.now(),
         retries: 0,
         maxRetries: this.MAX_RETRIES,
       };
 
-      queue.push(syncOp);
-      
+      if (existingIndex >= 0) {
+        queue[existingIndex] = syncOp;
+      } else {
+        queue.push(syncOp);
+      }
+
       // Sort by priority and timestamp
       queue.sort((a, b) => {
         const priorityOrder = { high: 0, medium: 1, low: 2 };
@@ -232,8 +248,8 @@ class OfflineStorage {
       });
 
       await this.store(STORAGE_KEYS.SYNC_QUEUE, queue);
-      logger.info(`Added operation to sync queue: ${syncOp.type} ${syncOp.endpoint}`);
-      
+      logger.info(`Queued operation for sync: ${syncOp.type} ${syncOp.endpoint}`);
+
       return syncOp.id;
     } catch (error) {
       logger.error('Error adding to sync queue:', error);
@@ -261,7 +277,7 @@ class OfflineStorage {
     try {
       const queue = await this.getSyncQueue();
       const operation = queue.find(op => op.id === operationId);
-      
+
       if (operation) {
         operation.retries += 1;
         await this.store(STORAGE_KEYS.SYNC_QUEUE, queue);

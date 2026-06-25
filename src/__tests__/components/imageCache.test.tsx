@@ -15,12 +15,24 @@ jest.mock('expo-image', () => ({
   clearDiskCache: jest.fn(() => Promise.resolve()),
 }));
 
-jest.mock('@/utils/logger', () => ({
-  debug: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-}));
+jest.mock('@/utils/logger', () => {
+  const methods = {
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debugSync: jest.fn(),
+    infoSync: jest.fn(),
+    warnSync: jest.fn(),
+    errorSync: jest.fn(),
+  };
+  return {
+    __esModule: true,
+    default: methods,
+    appLogger: methods,
+    logger: methods,
+  };
+});
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
@@ -60,7 +72,10 @@ describe('Image Cache Integration - Issue #143', () => {
       render(<CachedImage uri={testUri} autoPrefetch={true} />);
 
       await waitFor(() => {
-        expect(prefetchSpy).toHaveBeenCalledWith([testUri]);
+        // CachedImage prefetches the optimized WebP URI, not the raw URI
+        expect(prefetchSpy).toHaveBeenCalledWith(
+          expect.arrayContaining([expect.stringContaining('example.com/image.jpg')])
+        );
       });
     });
 
@@ -144,7 +159,9 @@ describe('Image Cache Integration - Issue #143', () => {
       const { rerender } = render(<CachedImage uri={firstUri} autoPrefetch={true} />);
 
       await waitFor(() => {
-        expect(prefetchSpy).toHaveBeenCalledWith([firstUri]);
+        expect(prefetchSpy).toHaveBeenCalledWith(
+          expect.arrayContaining([expect.stringContaining('image1.jpg')])
+        );
       });
 
       prefetchSpy.mockClear();
@@ -152,7 +169,9 @@ describe('Image Cache Integration - Issue #143', () => {
       rerender(<CachedImage uri={secondUri} autoPrefetch={true} />);
 
       await waitFor(() => {
-        expect(prefetchSpy).toHaveBeenCalledWith([secondUri]);
+        expect(prefetchSpy).toHaveBeenCalledWith(
+          expect.arrayContaining([expect.stringContaining('image2.jpg')])
+        );
       });
     });
 
@@ -434,7 +453,8 @@ describe('Image Cache Integration - Issue #143', () => {
       const prefetchSpy = jest.spyOn(ImageCache, 'prefetchImages');
 
       const TestComponent = () => {
-        usePrefetchImages(imageUrls, { auto: true });
+        // Explicitly pass limit: 10 so all images are fetched (default limit is 5)
+        usePrefetchImages(imageUrls, { auto: true, limit: 10 });
         return null;
       };
 
@@ -556,7 +576,10 @@ describe('Image Cache Integration - Issue #143', () => {
       // Advance time to delay
       jest.advanceTimersByTime(1000);
 
-      expect(prefetchSpy).toHaveBeenCalled();
+      // Hook's network check is async, so we need waitFor to flush microtasks
+      await waitFor(() => {
+        expect(prefetchSpy).toHaveBeenCalled();
+      });
 
       jest.useRealTimers();
     });

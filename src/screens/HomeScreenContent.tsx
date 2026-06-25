@@ -1,4 +1,3 @@
-import { useScrollToTop } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import React, { useRef } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -6,6 +5,7 @@ import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { AppText as Text } from '@/components/common/AppText';
 import { sampleCourse } from '@/data/sampleCourse';
 import { useDynamicFontSize, useAnalytics } from '@/hooks';
+import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import { AnalyticsEvent } from '@/utils/trackingEvents';
 
 export const HomeScreenContent = () => {
@@ -13,11 +13,13 @@ export const HomeScreenContent = () => {
   const { scale } = useDynamicFontSize();
   const { trackEvent } = useAnalytics();
   const scrollRef = useRef<ScrollView>(null);
-  useScrollToTop(scrollRef);
+  const { onScroll } = useScrollRestoration(scrollRef, { screenId: 'home' });
 
   return (
     <ScrollView
       ref={scrollRef}
+      onScroll={onScroll}
+      scrollEventThrottle={16}
       className="flex-1 bg-gray-50 dark:bg-slate-800"
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}

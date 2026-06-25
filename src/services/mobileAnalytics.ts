@@ -61,7 +61,7 @@ class MobileAnalyticsService {
    */
   public configureDifferentialPrivacy(config: Partial<DPConfig>): void {
     this.dpConfig = { ...this.dpConfig, ...config };
-    logger.info('MobileAnalytics: DP config updated', this.dpConfig);
+    appLogger.info('MobileAnalytics: DP config updated', this.dpConfig);
   }
 
   /** Return the current DP configuration (read-only). */

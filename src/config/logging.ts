@@ -57,6 +57,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
+
 import { sentryContextService } from '../services/sentryContext';
 
 // ─── CONFIGURATION ─────────────────────────────────────────────────────────
@@ -135,8 +136,8 @@ export interface StructuredLogEntry {
 
 // ─── BATCH QUEUE ──────────────────────────────────────────────────────────
 
-const BATCH_MAX_SIZE = 20;
-const BATCH_FLUSH_INTERVAL_MS = 2000;
+const BATCH_MAX_SIZE = 100;
+const BATCH_FLUSH_INTERVAL_MS = 5000;
 const LOG_STORAGE_PREFIX = '@teachlink/logs';
 const MAX_LOG_FILES = 10;
 const MAX_LOG_SIZE = 5 * 1024 * 1024; // 5MB per file
@@ -146,7 +147,6 @@ class BatchQueue {
   private timer: ReturnType<typeof setTimeout> | null = null;
 
   enqueue(entry: StructuredLogEntry): void {
-    if (isDev && !process.env.LOG_TO_STORAGE) return;
     this.buffer.push(entry);
     if (this.buffer.length >= BATCH_MAX_SIZE) {
       this.flush();
@@ -184,9 +184,10 @@ export function enqueueLogEntry(entry: StructuredLogEntry): void {
 /** Persist a batch of entries to AsyncStorage in a single operation */
 async function persistBatch(entries: StructuredLogEntry[]): Promise<void> {
   if (entries.length === 0) return;
+  if (isDev && !process.env.LOG_TO_STORAGE) return;
   try {
     const logData = entries.map(entry => JSON.stringify(entry)).join('\n');
-    
+
     const storageKey = `${LOG_STORAGE_PREFIX}/current`;
     const currentLog = await AsyncStorage.getItem(storageKey);
     const currentSize = currentLog ? currentLog.length : 0;
@@ -282,7 +283,7 @@ export function sendToRemoteLogging(entry: StructuredLogEntry, error?: Error): v
     Sentry.addBreadcrumb({
       category: 'log',
       message: entry.message,
-      level: (entry.level.toLowerCase() as Sentry.SeverityLevel),
+      level: entry.level.toLowerCase() as Sentry.SeverityLevel,
       data: {
         component: entry.component,
         action: entry.action,

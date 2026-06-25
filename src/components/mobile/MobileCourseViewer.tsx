@@ -11,9 +11,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppText as Text } from '../common/AppText';
-import { ErrorBoundary } from '../common/ErrorBoundary';
-import PrimaryButton from '../common/PrimaryButton';
 import BookmarkButton from './BookmarkButton';
 import { CourseViewerSkeleton } from './CourseViewerSkeleton';
 import LessonCarousel from './LessonCarousel';
@@ -21,11 +18,15 @@ import MobileSyllabus from './MobileSyllabus';
 import { useCourseProgress, useDynamicFontSize } from '../../hooks';
 import { useAnalytics } from '../../hooks/useAnalytics';
 import { useInAppReview, useReviewMetrics } from '../../hooks/useInAppReview';
+import { usePrefetchImages } from '../../hooks/usePrefetchImages';
 import { ReviewTrigger } from '../../services/inAppReview';
 import { useReviewStore } from '../../store/reviewStore';
 import { Course, Lesson, Note } from '../../types/course';
-import logger from '../../utils/logger';
+import { logger } from '../../utils/logger';
 import { AnalyticsEvent, ScreenName } from '../../utils/trackingEvents';
+import { AppText as Text } from '../common/AppText';
+import { ErrorBoundary } from '../common/ErrorBoundary';
+import PrimaryButton from '../common/PrimaryButton';
 
 /**
  * Props for the MobileCourseViewer component
@@ -45,13 +46,13 @@ interface MobileCourseViewerProps {
 
 type ViewMode = 'lesson' | 'syllabus' | 'notes';
 
-export default function MobileCourseViewer({
+const MobileCourseViewer = ({
   course,
   initialLessonId,
   initialViewMode,
   onBack,
   navigation,
-}: MobileCourseViewerProps) {
+}: MobileCourseViewerProps) => {
   const { scale } = useDynamicFontSize();
   const { trackEvent, trackScreen } = useAnalytics();
   const { requestReview } = useInAppReview();
@@ -70,7 +71,6 @@ export default function MobileCourseViewer({
   const {
     progress,
     isLoading,
-    updateLessonProgress,
     markLessonComplete,
     setCurrentLesson,
     addBookmark,
@@ -126,6 +126,26 @@ export default function MobileCourseViewer({
     return currentSection?.quizzes?.[0] || null;
   }, [currentSectionId, course]);
 
+  // Collect image URLs for upcoming lessons so we can warm the cache during idle
+  const upcomingImageUrls = useMemo(() => {
+    const currentIndex = allLessons.findIndex(l => l.id === currentLessonId);
+    const nextLessons = allLessons.slice(currentIndex + 1, currentIndex + 6);
+    const urls: string[] = [];
+
+    if (course.thumbnail) urls.push(course.thumbnail);
+    if (course.instructor.avatar) urls.push(course.instructor.avatar);
+
+    nextLessons.forEach(lesson => {
+      lesson.resources?.forEach(resource => {
+        if (resource.type === 'image' && resource.url) urls.push(resource.url);
+      });
+    });
+
+    return urls;
+  }, [course, allLessons, currentLessonId]);
+
+  usePrefetchImages(upcomingImageUrls, { auto: true, limit: 5 });
+
   // Resume from last position
   useEffect(() => {
     if (progress && currentLessonId) {
@@ -147,6 +167,7 @@ export default function MobileCourseViewer({
     } catch (error) {
       logger.error('Error in MobileCourseViewer:', error);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [course.id]);
 
   // Track course completion
@@ -170,7 +191,15 @@ export default function MobileCourseViewer({
         }
       }
     }
-  }, [progress, course.id, course.title, calculateOverallProgress, trackEvent, trackCourseComplete, requestReview]);
+  }, [
+    progress,
+    course.id,
+    course.title,
+    calculateOverallProgress,
+    trackEvent,
+    trackCourseComplete,
+    requestReview,
+  ]);
 
   const handleLessonChange = useCallback(
     async (lessonId: string, index: number) => {
@@ -293,7 +322,11 @@ export default function MobileCourseViewer({
 
       return (
         <View style={styles.lessonContentWrapper}>
-          <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} removeClippedSubviews={true}>
+          <ScrollView
+            style={styles.scrollView}
+            showsVerticalScrollIndicator={false}
+            removeClippedSubviews={true}
+          >
             {/* Lesson Content */}
             <View style={styles.lessonSection}>
               <Text style={styles.lessonText}>{lesson.content}</Text>
@@ -350,6 +383,7 @@ export default function MobileCourseViewer({
         </View>
       );
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [progress, handleAddNote, handleEditNote, handleDeleteNote]
   );
 
@@ -584,7 +618,9 @@ export default function MobileCourseViewer({
       </Modal>
     </SafeAreaView>
   );
-}
+};
+
+export default MobileCourseViewer;
 
 const styles = StyleSheet.create({
   container: {

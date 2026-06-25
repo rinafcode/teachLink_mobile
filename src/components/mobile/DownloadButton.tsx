@@ -1,7 +1,8 @@
-import clsx from 'clsx';
+import { clsx } from 'clsx';
 import { CheckCircle2, Clock, Download, XCircle } from 'lucide-react-native';
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { ActivityIndicator, TouchableOpacity, View } from 'react-native';
+
 import { useDownloads } from '../../hooks/useDownloads';
 import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
 import { AppText } from '../common/AppText';
@@ -56,7 +57,7 @@ const DownloadIconRenderer = React.memo(
 
 DownloadIconRenderer.displayName = 'DownloadIconRenderer';
 
-export function DownloadButton({ id, title, url, size, className }: DownloadButtonProps) {
+export const DownloadButton = ({ id, title, url, size, className }: DownloadButtonProps) => {
   const { tasks, startDownload, removeDownload } = useDownloads();
   const { scale } = useDynamicFontSize();
 
@@ -66,7 +67,7 @@ export function DownloadButton({ id, title, url, size, className }: DownloadButt
     if (!task) {
       try {
         await startDownload(id, title, url, size);
-      } catch (e: any) {
+      } catch {
         // Error handled in manager/toast
       }
     } else if (task.status === 'completed') {
@@ -80,7 +81,7 @@ export function DownloadButton({ id, title, url, size, className }: DownloadButt
     if (task.status === 'queued') return 'Queued';
     if (task.status === 'completed') return 'Offline';
     return 'Retry';
-  }, [task]);
+  };
 
   return (
     <TouchableOpacity
@@ -109,4 +110,4 @@ export function DownloadButton({ id, title, url, size, className }: DownloadButt
       </AppText>
     </TouchableOpacity>
   );
-}
+};

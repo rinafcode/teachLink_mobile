@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import {
   TouchableOpacity,
   StyleSheet,
@@ -6,6 +6,7 @@ import {
   ViewStyle,
   GestureResponderEvent,
 } from 'react-native';
+
 import { getAccessibilityProps } from '../../utils/accessibility';
 
 /**
@@ -30,7 +31,11 @@ interface AccessibleButtonProps {
   testID?: string;
 }
 
-export const AccessibleButton: React.FC<AccessibleButtonProps> = ({
+/**
+ * A reusable accessible button component for TeachLink mobile.
+ * Ensures a minimum touch target of 44x44 and provides consistent accessibility props.
+ */
+const AccessibleButtonComponent: React.FC<AccessibleButtonProps> = ({
   label,
   hint,
   role = 'button',
@@ -61,6 +66,8 @@ export const AccessibleButton: React.FC<AccessibleButtonProps> = ({
     </TouchableOpacity>
   );
 };
+
+export const AccessibleButton = memo(AccessibleButtonComponent);
 
 const styles = StyleSheet.create({
   base: {

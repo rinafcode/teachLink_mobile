@@ -9,6 +9,8 @@ export * from './useCoursePagination';
 export * from './useCourseProgress';
 export * from './useDebounce';
 export * from './useDynamicFontSize';
+export * from './useFormCache';
+export * from './useFormValidation';
 export * from './useFeatureFlags';
 export * from './useGestures';
 export * from './useHapticFeedback';
@@ -31,14 +33,24 @@ export * from './useVideoGestures';
 export * from './useVoiceRecognition';
 export * from './useFocusRestore';
 export * from './useFocusTrap';
+export * from './useHealthDashboard';
+export * from './usePredictivePreload';
+export * from './useOptimizedClipboard';
+export * from './useReactProfiler';
+
+// Scroll restoration hooks
+export { useScrollRestoration } from '../../hooks/useScrollRestoration';
+export { useFlatListScrollRestoration } from '../../hooks/useFlatListScrollRestoration';
 
 // Optimized gesture handlers (named exports avoid duplicate SwipeDirection/SwipeInfo types)
 export { OptimizedLongPressView, useOptimizedLongPress } from './useOptimizedLongPress';
 export { OptimizedPinchZoomView, useOptimizedPinchZoom } from './useOptimizedPinchZoom';
 export { OptimizedSwipeView, useOptimizedSwipe } from './useOptimizedSwipe';
+export * from './useDashboardMetrics';
 export { OptimizedVideoGesturesView, useOptimizedVideoGestures } from './useOptimizedVideoGestures';
+export * from './useTouchDeduplication';
+export { useSearchIndex } from './useSearchIndex';
+export type { UseSearchIndexResult } from './useSearchIndex';
+export { useAppUpdate } from './useAppUpdate';
+export type { UseAppUpdateResult, UseAppUpdateState, UseAppUpdateActions } from './useAppUpdate';
 
-export * from './useHealthDashboard';
-export * from './usePredictivePreload';
-export * from './useOptimizedClipboard';
-export * from './useReactProfiler';

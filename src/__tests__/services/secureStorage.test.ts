@@ -42,6 +42,7 @@ jest.mock('../../utils/logger', () => {
     errorSync: jest.fn(),
   };
   return {
+    __esModule: true,
     appLogger: mockLog,
     default: mockLog,
   };
@@ -50,7 +51,6 @@ jest.mock('../../utils/logger', () => {
 let loggedCriticalError = false;
 let loggedSuccess = false;
 
-const logger = appLogger;
 const mockSecureStore = SecureStore as jest.Mocked<typeof SecureStore>;
 const mockAsyncStorage = AsyncStorage as jest.Mocked<typeof AsyncStorage>;
 const mockLogger = logger as jest.Mocked<typeof defaultLogger>;
@@ -82,12 +82,12 @@ describe('SecureStorage - Keychain/Keystore Verification #140', () => {
 
     loggedCriticalError = false;
     loggedSuccess = false;
-    mockLogger.error.mockImplementation((msg) => {
+    mockLogger.error.mockImplementation(msg => {
       if (typeof msg === 'string' && msg.includes('❌ CRITICAL')) {
         loggedCriticalError = true;
       }
     });
-    mockLogger.info.mockImplementation((msg) => {
+    mockLogger.info.mockImplementation(msg => {
       if (typeof msg === 'string' && msg.includes('✅')) {
         loggedSuccess = true;
       }
@@ -414,8 +414,7 @@ describe('SecureStorage - Keychain/Keystore Verification #140', () => {
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('❌ CRITICAL'),
-        expect.any(Object),
-        undefined
+        expect.any(Object)
       );
       expect(loggedCriticalError).toBe(true);
     });

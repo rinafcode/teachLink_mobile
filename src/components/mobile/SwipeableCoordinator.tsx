@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useRef, useCallback } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useRef } from 'react';
 
 interface SwipeableCoordinatorContextType {
   registerRow: (id: string, closeFn: () => void) => void;
@@ -35,8 +35,13 @@ export const SwipeableCoordinatorProvider: React.FC<{ children: React.ReactNode 
     activeRowIdRef.current = id;
   }, []);
 
+  const value = useMemo(
+    () => ({ registerRow, unregisterRow, onRowSwipeStart }),
+    [registerRow, unregisterRow, onRowSwipeStart]
+  );
+
   return (
-    <SwipeableCoordinatorContext.Provider value={{ registerRow, unregisterRow, onRowSwipeStart }}>
+    <SwipeableCoordinatorContext.Provider value={value}>
       {children}
     </SwipeableCoordinatorContext.Provider>
   );

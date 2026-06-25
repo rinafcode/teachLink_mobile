@@ -13,18 +13,21 @@ On app start, the user historically had to wait for critical data (user profile,
    During the app startup sequence (`prepareApp` in `App.tsx`), we fetch the critical resources in parallel.
    - User Profile (if authenticated)
    - Initial Courses (Home Feed)
-   These fetches are managed by `warmCriticalCaches()` located in `src/services/cacheWarming.ts`.
+     These fetches are managed by `warmCriticalCaches()` located in `src/services/cacheWarming.ts`.
 
 3. **Background Prefetching and Fallbacks:**
-   - The fetch logic uses existing cache layers (e.g., `fetchWithSWR`).
+   - The fetch logic uses the three-tier API cache (`fetchWithSWR`): memory, AsyncStorage, then network.
    - If a request fails or times out, the cache warming catches the error silently (swallowed errors) to prevent blocking the app startup. The UI will render with cached/stale data or a loading state if needed.
 
 4. **Dismissing the Splash Screen:**
-   Once `warmCriticalCaches()` and other critical initializations resolve, `SplashScreen.hideAsync()` is invoked. By this point, the initial home screen components have access to the cached data directly, resulting in an immediate render with no spinners.
+   Once `warmCriticalCaches()` and other critical initializations resolve, `SplashScreen.hideAsync()` is invoked. By this point, the initial home screen components have access to warmed memory cache entries, AsyncStorage-backed entries, or normal loading states if warming failed.
+
+The per-data-type API cache policy is documented in [api-cache-strategy.md](./api-cache-strategy.md).
 
 ## Performance Monitoring
 
 Cold start times are tracked using the `mobileAnalyticsService` globally. At the beginning of `App.tsx`, we log the `appStartTime` and record the duration until the splash screen is dismissed:
+
 ```typescript
 const coldStartDuration = Date.now() - appStartTime;
 mobileAnalyticsService.trackEvent(AnalyticsEvent.PERFORMANCE_METRIC, {
@@ -33,6 +36,7 @@ mobileAnalyticsService.trackEvent(AnalyticsEvent.PERFORMANCE_METRIC, {
   launch_type: 'cold',
 });
 ```
+
 This is essential for identifying regressions and ensuring the app consistently meets the 50%+ reduction goal for cold start times.
 
 ## Success Criteria Addressed

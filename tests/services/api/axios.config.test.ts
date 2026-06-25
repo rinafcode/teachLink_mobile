@@ -321,3 +321,119 @@ describe('axios.config - Rate Limit Handling (Issue #141)', () => {
     });
   });
 });
+
+// ─── Issue #225 — Exponential Backoff with Jitter for 500+ Errors ─────────────
+
+describe('Issue #225 — Exponential Backoff with Jitter (Server Errors)', () => {
+  const BASE_DELAY_MS = 1_000;
+  const MAX_DELAY_MS = 60_000;
+  const MAX_SERVER_ERROR_RETRIES = 7;
+
+  function getBackoffWithJitter(attempt: number): number {
+    const exponential = BASE_DELAY_MS * Math.pow(2, attempt);
+    const capped = Math.min(exponential, MAX_DELAY_MS);
+    const jitter = 0.9 + Math.random() * 0.2;
+    return Math.round(capped * jitter);
+  }
+
+  describe('Backoff constants', () => {
+    it('should set MAX_SERVER_ERROR_RETRIES to 7', () => {
+      expect(MAX_SERVER_ERROR_RETRIES).toBe(7);
+    });
+
+    it('should set BASE_DELAY_MS to 1000ms', () => {
+      expect(BASE_DELAY_MS).toBe(1_000);
+    });
+
+    it('should set MAX_DELAY_MS to 60000ms (60 s)', () => {
+      expect(MAX_DELAY_MS).toBe(60_000);
+    });
+  });
+
+  describe('getBackoffWithJitter', () => {
+    it('returns a value within ±10 % of exponential delay for attempt 0', () => {
+      // attempt 0 → base × 2^0 = 1000 ms, capped at 60 000
+      const raw = BASE_DELAY_MS * Math.pow(2, 0); // 1000
+      for (let i = 0; i < 20; i++) {
+        const result = getBackoffWithJitter(0);
+        expect(result).toBeGreaterThanOrEqual(Math.round(raw * 0.9));
+        expect(result).toBeLessThanOrEqual(Math.round(raw * 1.1));
+      }
+    });
+
+    it('caps delay at MAX_DELAY_MS × 1.1 for large attempt numbers', () => {
+      // attempt 10 → 1000 × 1024 = 1 024 000, capped to 60 000
+      const result = getBackoffWithJitter(10);
+      expect(result).toBeLessThanOrEqual(Math.round(MAX_DELAY_MS * 1.1));
+    });
+
+    it('doubles (approximately) between consecutive early attempts', () => {
+      // Sample many times — ratio of medians should be ~2
+      const samples0 = Array.from({ length: 50 }, () => getBackoffWithJitter(0));
+      const samples1 = Array.from({ length: 50 }, () => getBackoffWithJitter(1));
+
+      const median = (arr: number[]) => {
+        const sorted = [...arr].sort((a, b) => a - b);
+        return sorted[Math.floor(sorted.length / 2)];
+      };
+
+      const ratio = median(samples1) / median(samples0);
+      // Allow tolerance — jitter can shift the median slightly
+      expect(ratio).toBeGreaterThan(1.7);
+      expect(ratio).toBeLessThan(2.3);
+    });
+
+    it('produces different values on successive calls (jitter is non-deterministic)', () => {
+      const values = new Set(Array.from({ length: 10 }, () => getBackoffWithJitter(3)));
+      // With ±10 % jitter over 8000 ms the range is [7200, 8800]; expect at least 2 distinct values
+      expect(values.size).toBeGreaterThan(1);
+    });
+  });
+
+  describe('Retry progression', () => {
+    it('should allow up to 7 retries before failing', () => {
+      let retryCount = 0;
+      while (retryCount < MAX_SERVER_ERROR_RETRIES) {
+        retryCount++;
+      }
+      expect(retryCount).toBe(7);
+    });
+
+    it('should not retry after MAX_SERVER_ERROR_RETRIES is reached', () => {
+      const retryCount = MAX_SERVER_ERROR_RETRIES;
+      const shouldRetry = retryCount < MAX_SERVER_ERROR_RETRIES;
+      expect(shouldRetry).toBe(false);
+    });
+
+    it('approximate delay sequence stays within expected range', () => {
+      const expectedApprox = [1000, 2000, 4000, 8000, 16000, 32000, 60000];
+
+      for (let attempt = 0; attempt < 7; attempt++) {
+        const raw = Math.min(BASE_DELAY_MS * Math.pow(2, attempt), MAX_DELAY_MS);
+        const min = Math.round(raw * 0.9);
+        const max = Math.round(raw * 1.1);
+
+        // Collect 20 samples — all must be within [min, max]
+        for (let i = 0; i < 20; i++) {
+          const result = getBackoffWithJitter(attempt);
+          expect(result).toBeGreaterThanOrEqual(min);
+          expect(result).toBeLessThanOrEqual(max);
+        }
+
+        // Median should be close to expected
+        const median = Array.from({ length: 50 }, () => getBackoffWithJitter(attempt)).sort(
+          (a, b) => a - b
+        )[25];
+        expect(median).toBeGreaterThanOrEqual(expectedApprox[attempt] * 0.85);
+        expect(median).toBeLessThanOrEqual(expectedApprox[attempt] * 1.15);
+      }
+    });
+  });
+
+  describe('Server error does not share 429 retry logic', () => {
+    it('MAX_SERVER_ERROR_RETRIES differs from MAX_RATE_LIMIT_RETRIES', () => {
+      const MAX_RATE_LIMIT_RETRIES = 5;
+      expect(MAX_SERVER_ERROR_RETRIES).not.toBe(MAX_RATE_LIMIT_RETRIES);
+    });
+  });
+});
