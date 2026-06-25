@@ -32,7 +32,7 @@
     "prepare": "husky",
     "fonts:subset": "node ./scripts/subset-fonts.js",
     "fonts:analyze": "node ./scripts/analyze-fonts.js",
-    "audit": "npm audit --audit-level=high",
+    "audit": "node scripts/security-audit.js",
     "depcheck": "depcheck",
     "audit:performance": "tsx src/audit/cli.ts",
     "audit:performance:html": "tsx src/audit/cli.ts --format html --output ./reports/audit-report",
