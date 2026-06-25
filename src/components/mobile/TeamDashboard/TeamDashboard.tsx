@@ -8,8 +8,9 @@
  * intervals are low-value in snapshot tests — see docs/metrics-dashboard.md).
  */
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+    Animated,
     RefreshControl,
     ScrollView,
     StyleSheet,
@@ -79,6 +80,20 @@ export const TeamDashboard: React.FC<TeamDashboardProps> = ({ isDark = false }) 
   } = useDashboardMetrics();
 
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
+
+  const fadeAnim = useRef(new Animated.Value(snapshot ? 1 : 0)).current;
+
+  useEffect(() => {
+    if (snapshot) {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      fadeAnim.setValue(0);
+    }
+  }, [snapshot, fadeAnim]);
 
   const handleDismissAlert = useCallback((id: string) => {
     setDismissedAlerts((prev) => new Set([...prev, id]));
@@ -462,8 +477,9 @@ export const TeamDashboard: React.FC<TeamDashboardProps> = ({ isDark = false }) 
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: bg }]} edges={['top']}>
-      <ScrollView
-        style={{ flex: 1 }}
+      <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+        <ScrollView
+          style={{ flex: 1 }}
         contentContainerStyle={[styles.scrollContent, { backgroundColor: bg }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -576,6 +592,7 @@ export const TeamDashboard: React.FC<TeamDashboardProps> = ({ isDark = false }) 
           </Text>
         </View>
       </ScrollView>
+      </Animated.View>
     </SafeAreaView>
   );
 };

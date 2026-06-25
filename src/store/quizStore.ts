@@ -21,6 +21,10 @@ interface QuizSession {
   currentQuestionIndex: number;
   selectedAnswers: Record<string, string | number | (string | number)[]>; // questionId -> answer(s)
   startedAt: string | null;
+  // Compatibility fields
+  answers?: Record<string, string | number | (string | number)[]>;
+  startTime?: string | null;
+  selectedOption?: string | null;
 }
 
 function isVersionedQuizEnvelope<T>(value: unknown): value is VersionedQuizEnvelope<T> {
@@ -109,6 +113,7 @@ async function saveQuizProgress(
 interface QuizState {
   // Session state (temporary, for active quiz)
   session: QuizSession;
+  quizId?: string | null;
 
   // Progress state (persistent, synced with AsyncStorage)
   quizProgress: Record<string, QuizProgress>; // quizId -> QuizProgress
@@ -122,6 +127,8 @@ interface QuizState {
   loadQuizProgress: (courseId: string) => Promise<void>;
   getQuizProgress: (quizId: string) => QuizProgress | null;
   hasCompletedQuiz: (quizId: string) => boolean;
+  initializeQuiz: (quizId: string) => void;
+  resetQuiz: () => void;
 }
 
 const initialSession: QuizSession = {
@@ -131,10 +138,14 @@ const initialSession: QuizSession = {
   currentQuestionIndex: 0,
   selectedAnswers: {},
   startedAt: null,
+  answers: {},
+  startTime: null,
+  selectedOption: null,
 };
 
 export const useQuizStore = create<QuizState>((set, get) => ({
   session: initialSession,
+  quizId: null,
   quizProgress: {},
 
   startQuiz: async (quizId: string, sectionId: string, courseId: string) => {
@@ -147,9 +158,12 @@ export const useQuizStore = create<QuizState>((set, get) => ({
         currentQuestionIndex: 0,
         selectedAnswers: {},
         startedAt: new Date().toISOString(),
+        answers: {},
+        startTime: new Date().toISOString(),
+        selectedOption: null,
       };
 
-      set({ session: newSession });
+      set({ quizId, session: newSession });
 
       // Save session to AsyncStorage
       await writeVersionedQuizStorage(QUIZ_SESSION_KEY, newSession);
@@ -300,9 +314,9 @@ export const useQuizStore = create<QuizState>((set, get) => ({
       // Save to AsyncStorage
       await saveQuizProgress(session.courseId, updatedProgress);
 
-      // Clear session
+      // Clear to-do session
       await AsyncStorage.removeItem(QUIZ_SESSION_KEY);
-      set({ session: initialSession });
+      set({ quizId: null, session: initialSession });
 
       logger.info('Quiz completed:', { quizId: session.quizId, score, passed });
 
@@ -317,7 +331,7 @@ export const useQuizStore = create<QuizState>((set, get) => ({
     try {
       await ensureQuizStorageMigrated();
       await AsyncStorage.removeItem(QUIZ_SESSION_KEY);
-      set({ session: initialSession });
+      set({ quizId: null, session: initialSession });
     } catch (error) {
       logger.error('Error resetting quiz session:', error);
     }
@@ -340,7 +354,7 @@ export const useQuizStore = create<QuizState>((set, get) => ({
       if (session) {
         // Only restore if it's for the current course
         if (session.courseId === courseId) {
-          set({ session });
+          set({ session, quizId: session.quizId });
         } else {
           // Clear stale session
           await AsyncStorage.removeItem(QUIZ_SESSION_KEY);
@@ -360,5 +374,40 @@ export const useQuizStore = create<QuizState>((set, get) => ({
   hasCompletedQuiz: (quizId: string) => {
     const { quizProgress } = get();
     return quizProgress[quizId]?.completed || false;
+  },
+
+  initializeQuiz: (newQuizId: string) => {
+    const state = get();
+    const currentQuizId = state.quizId || state.session?.quizId;
+    if (newQuizId !== currentQuizId) {
+      state.resetQuiz();
+      set((prev) => ({
+        quizId: newQuizId,
+        session: {
+          ...prev.session,
+          quizId: newQuizId,
+        },
+      }));
+    }
+  },
+
+  resetQuiz: () => {
+    const freshSession: QuizSession = {
+      quizId: null,
+      sectionId: null,
+      courseId: null,
+      currentQuestionIndex: 0,
+      selectedAnswers: {},
+      startedAt: null,
+      answers: {},
+      startTime: null,
+      selectedOption: null,
+    };
+    set({
+      quizId: null,
+      session: freshSession,
+    });
+    void AsyncStorage.removeItem(QUIZ_SESSION_KEY)
+      .catch((error) => logger.error('Error removing quiz session in resetQuiz:', error));
   },
 }));
