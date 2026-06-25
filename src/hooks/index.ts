@@ -49,4 +49,6 @@ export { OptimizedSwipeView, useOptimizedSwipe } from './useOptimizedSwipe';
 export * from './useDashboardMetrics';
 export { OptimizedVideoGesturesView, useOptimizedVideoGestures } from './useOptimizedVideoGestures';
 export * from './useTouchDeduplication';
+export { useSearchIndex } from './useSearchIndex';
+export type { UseSearchIndexResult } from './useSearchIndex';
 

@@ -42,6 +42,7 @@ import socketService from './src/services/socket';
 import { syncService } from './src/services/syncService'; // Fixed naming convention from the merge conflict
 import { useAppStore, useNotificationStore } from './src/store'; // Added missing store imports
 import { useDegradationStore } from './src/store/degradationStore';
+import { searchIndexService } from './src/services/searchIndex';
 import { handleCacheVersionUpdate } from './src/utils/cacheVersioning';
 import { requireEnvVariables } from './src/utils/env';
 import { appLogger } from './src/utils/logger';
@@ -268,6 +269,9 @@ const App = () => {
 
       // Cache warming (network requests for course list, user profile)
       warmCriticalCaches();
+
+      // Build the offline search index from cached/fetched course data.
+      searchIndexService.initialize();
     });
 
     // Cleanup on unmount

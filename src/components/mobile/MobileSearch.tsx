@@ -1,21 +1,20 @@
 import { AlertCircle, Search, SlidersHorizontal } from 'lucide-react-native';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 import { FlatList, Platform, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
 import { FilterField, FilterSheet, FilterValues } from './FilterSheet';
 import { SearchHistory } from './SearchHistory';
 import { SearchResultCard, SearchResultItem } from './SearchResultCard';
 import { VoiceSearch } from './VoiceSearch';
-import { sampleCourse } from '../../data/sampleCourse';
+import { useSearchIndex } from '../../hooks/useSearchIndex';
 import { useAnalytics, useDebounce, useDynamicFontSize, useMemoryMonitor } from '../../hooks';
 import { usePrefetchImages } from '../../hooks/usePrefetchImages';
-import { Course } from '../../types/course';
 import { addToSearchHistory } from '../../utils/searchHistory';
 import { AnalyticsEvent } from '../../utils/trackingEvents';
-import { buildTrie, Trie } from '../../utils/trie';
 import { validateSearchQuery } from '../../utils/validation';
 import { AppText as Text } from '../common/AppText';
 import { DelegatedKeyboardAvoidingView } from '../common/DelegatedKeyboardAvoidingView';
+import { buildTrie } from '../../utils/trie';
 
 const DEFAULT_FILTERS: FilterField[] = [
   {
@@ -40,81 +39,15 @@ const DEFAULT_FILTERS: FilterField[] = [
   },
 ];
 
-/**
- * Seed keywords for the suggestion Trie.
- * In production these would be populated from course titles, categories, etc.
- */
-const SUGGESTION_KEYWORDS = [
-  'React Native',
-  'Mobile Development',
-  'Expo',
-  'JavaScript',
-  'beginner',
-  'Web Development',
-  'Design',
-  'intermediate',
-  'advanced',
-  'TypeScript',
-  'CSS',
-  'HTML',
-  'Node.js',
-  'Python',
-  'Machine Learning',
+// Static fallback keywords used until the index-derived suggestions are ready.
+const FALLBACK_KEYWORDS = [
+  'React Native', 'Mobile Development', 'Expo', 'JavaScript', 'TypeScript',
+  'Web Development', 'Design', 'CSS', 'HTML', 'Node.js', 'Python',
+  'Machine Learning', 'beginner', 'intermediate', 'advanced',
 ];
 
-/** Module-level Trie built once from the seed keywords (O(k) per word). */
-const suggestionTrie: Trie = (() => {
-  const trie = buildTrie(SUGGESTION_KEYWORDS) as Trie | { autocomplete?: unknown };
-  if (typeof trie.autocomplete === 'function') {
-    return trie as Trie;
-  }
-
-  return {
-    autocomplete: () => [],
-    insert: () => undefined,
-    insertMany: () => undefined,
-    search: () => false,
-    startsWith: () => false,
-    clear: () => undefined,
-    get wordCount() {
-      return 0;
-    },
-  } as Trie;
-})();
-
-function courseToSearchResult(course: Course): SearchResultItem {
-  return {
-    id: course.id,
-    title: course.title,
-    description: course.description,
-    category: course.category,
-    level: course.level,
-    duration: course.totalDuration,
-    thumbnail: course.thumbnail,
-  };
-}
-
-function filterCourse(course: Course, query: string, filters: FilterValues): boolean {
-  const q = query.trim().toLowerCase();
-  if (q) {
-    const match =
-      course.title.toLowerCase().includes(q) ||
-      course.description.toLowerCase().includes(q) ||
-      course.category.toLowerCase().includes(q);
-    if (!match) return false;
-  }
-  if (filters.category && course.category !== filters.category) return false;
-  if (filters.level && course.level !== filters.level) return false;
-  return true;
-}
-
-/**
- * Props for the MobileSearch component
- */
 export interface MobileSearchProps {
-  /** Callback when a search result is pressed */
   onResultPress?: (item: SearchResultItem) => void;
-  /** Placeholder text for the search input */
   placeholder?: string;
 }
 
@@ -146,29 +79,39 @@ export const MobileSearch = ({
   const [hasSearched, setHasSearched] = useState(false);
   const [, setIsSearching] = useState(false);
   const searchAbortRef = React.useRef<AbortController | null>(null);
+
   const fontSizeScale = useDynamicFontSize() as { scale?: (value: number) => number };
   const scale =
     typeof fontSizeScale.scale === 'function' ? fontSizeScale.scale : (value: number) => value;
   const { trackEvent } = useAnalytics();
 
+  const { search: indexSearch, suggestions: indexSuggestions, isReady: indexReady } =
+    useSearchIndex();
+
   useMemoryMonitor({ componentId: 'MobileSearch', itemCount: results.length });
 
-  // Prefetch thumbnails for visible search results during idle time
-  const resultThumbnails = useMemo(() => results.map(r => r.thumbnail ?? null), [results]);
+  const resultThumbnails = useMemo(
+    () => results.map((r: SearchResultItem) => r.thumbnail ?? null),
+    [results],
+  );
   usePrefetchImages(resultThumbnails, { auto: true, limit: 10 });
 
   const debouncedQuery = useDebounce(query, 300);
 
-  /**
-   * Trie-based autocomplete — O(k + n), typically <1 ms for 10 000+ items.
-   * Falls back to top-5 suggestions when the query is empty.
-   */
+  // Build Trie from index-derived suggestions (real course titles / words)
+  // falling back to static keywords until the index is ready.
+  const suggestionTrie = useMemo(() => {
+    const words = indexReady && indexSuggestions.length > 0
+      ? indexSuggestions
+      : FALLBACK_KEYWORDS;
+    return buildTrie(words);
+  }, [indexReady, indexSuggestions]);
+
   const suggestions = useMemo(() => {
     const q = debouncedQuery.trim();
-    if (typeof suggestionTrie.autocomplete !== 'function') return [];
     if (!q) return suggestionTrie.autocomplete('', 5);
     return suggestionTrie.autocomplete(q, 6);
-  }, [debouncedQuery]);
+  }, [debouncedQuery, suggestionTrie]);
 
   const performSearch = useCallback(
     (searchQuery: string) => {
@@ -183,25 +126,23 @@ export const MobileSearch = ({
       const trimmed = searchQuery.trim();
       addToSearchHistory(trimmed);
       trackEvent(AnalyticsEvent.SEARCH_QUERY, { query: trimmed, filters: filterValues });
-      const filtered = filterCourse(sampleCourse, trimmed, filterValues)
-        ? [courseToSearchResult(sampleCourse)]
-        : [];
-      setResults(filtered);
+
+      const found = indexSearch(trimmed, filterValues);
+      setResults(found);
       setHasSearched(true);
       setSuggestionsVisible(false);
     },
-    [filterValues, trackEvent]
+    [filterValues, trackEvent, indexSearch],
   );
 
   const handleResultPress = useCallback(
     (item: SearchResultItem) => onResultPress?.(item),
-    [onResultPress]
+    [onResultPress],
   );
 
   React.useEffect(() => {
     const trimmed = debouncedQuery.trim();
 
-    // cancel any in-flight search work (network requests in real implementation)
     searchAbortRef.current?.abort();
     searchAbortRef.current = null;
 
@@ -210,8 +151,6 @@ export const MobileSearch = ({
       searchAbortRef.current = controller;
       setIsSearching(true);
 
-      // performSearch is currently synchronous/local (sampleCourse),
-      // but we keep the cancellation pattern to prevent rapid re-renders.
       try {
         if (!controller.signal.aborted) {
           performSearch(trimmed);
@@ -228,16 +167,14 @@ export const MobileSearch = ({
     }
   }, [debouncedQuery, performSearch]);
 
-  const handleSubmit = useCallback(() => {
-    performSearch(query);
-  }, [query, performSearch]);
+  const handleSubmit = useCallback(() => performSearch(query), [query, performSearch]);
 
   const handleSelectSuggestion = useCallback(
     (text: string) => {
       setQuery(text);
       performSearch(text);
     },
-    [performSearch]
+    [performSearch],
   );
 
   const handleHistorySelect = useCallback(
@@ -245,7 +182,7 @@ export const MobileSearch = ({
       setQuery(text);
       performSearch(text);
     },
-    [performSearch]
+    [performSearch],
   );
 
   const handleVoiceResult = useCallback(
@@ -253,7 +190,7 @@ export const MobileSearch = ({
       setQuery(text);
       performSearch(text);
     },
-    [performSearch]
+    [performSearch],
   );
 
   const handleApplyFilters = useCallback((values: FilterValues) => {
@@ -319,20 +256,11 @@ export const MobileSearch = ({
         </View>
       )}
 
-      {showSuggestions && query.length > 0 && suggestions.length > 0 && !showResults && (
+      {showSuggestions && !showResults && suggestions.length > 0 && (
         <View style={styles.suggestSection}>
           <Text style={styles.suggestLabel}>Suggestions</Text>
-          {suggestions.map(s => (
-            <SuggestionItem key={s} suggestion={s} onPress={() => handleSelectSuggestion(s)} />
           {suggestions.map((s: string) => (
-            <TouchableOpacity
-              key={s}
-              style={styles.suggestItem}
-              onPress={() => handleSelectSuggestion(s)}
-            >
-              <Search size={scale(16)} color="#9CA3AF" />
-              <Text style={styles.suggestText}>{s}</Text>
-            </TouchableOpacity>
+            <SuggestionItem key={s} suggestion={s} onPress={() => handleSelectSuggestion(s)} />
           ))}
         </View>
       )}
@@ -344,13 +272,11 @@ export const MobileSearch = ({
               ? 'No results'
               : `${results.length} result${results.length === 1 ? '' : 's'}`}
           </Text>
-          <FlatList
+          <FlatList<SearchResultItem>
             data={results}
-            keyExtractor={item => item.id}
-            renderItem={({ item }) => (
-              <SearchResultCard item={item} onPress={() => handleResultPress(item)} />
+            keyExtractor={(item: SearchResultItem) => item.id}
             renderItem={({ item }: { item: SearchResultItem }) => (
-              <SearchResultCard item={item} onPress={() => onResultPress?.(item)} />
+              <SearchResultCard item={item} onPress={() => handleResultPress(item)} />
             )}
             removeClippedSubviews
             contentContainerStyle={styles.resultsList}
