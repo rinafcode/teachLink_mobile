@@ -31,32 +31,10 @@ interface AppState {
   setError: (error: string | null) => void;
 }
 
-export const useAppStore = create<AppState>((set) => ({
-  user: null,
-  isAuthenticated: false,
-  accessToken: null,
-  refreshToken: null,
-  sessionExpiresAt: null,
-  sessionExpiringSoon: false,
-  theme: "light",
-  isLoading: false,
-  error: null,
-  setUser: (user) => set({ user, isAuthenticated: !!user }),
-  setTheme: (theme) => set({ theme }),
-  setTokens: (accessToken, refreshToken, sessionExpiresAt) =>
-    set({ accessToken, refreshToken, sessionExpiresAt }),
-  setSessionExpiringSoon: (sessionExpiringSoon) => set({ sessionExpiringSoon }),
-  logout: () =>
-    set({
-      user: null,
-      isAuthenticated: false,
-      accessToken: null,
-      refreshToken: null,
-      sessionExpiresAt: null,
-      sessionExpiringSoon: false,
-    }),
-  setLoading: (isLoading) => set({ isLoading }),
-  setError: (error) => set({ error }),
+const secureStorage = createJSONStorage(() => ({
+  getItem: SecureStore.getItemAsync,
+  setItem: SecureStore.setItemAsync,
+  removeItem: SecureStore.deleteItemAsync,
 }));
 
 export const useAppStore = create<AppState>()(
@@ -70,6 +48,7 @@ export const useAppStore = create<AppState>()(
         accessToken: null,
         refreshToken: null,
         sessionExpiresAt: null,
+        sessionExpiringSoon: false,
         theme: "light",
         isLoading: false,
         error: null,
@@ -79,6 +58,7 @@ export const useAppStore = create<AppState>()(
           set({ accessToken, refreshToken, sessionExpiresAt }, false, "setTokens"),
         setAuthLoading: (isAuthLoading) => set({ isAuthLoading }, false, "setAuthLoading"),
         setAuthError: (authError) => set({ authError }, false, "setAuthError"),
+        setSessionExpiringSoon: (sessionExpiringSoon) => set({ sessionExpiringSoon }, false, "setSessionExpiringSoon"),
         logout: () =>
           set(
             {
@@ -89,6 +69,7 @@ export const useAppStore = create<AppState>()(
               accessToken: null,
               refreshToken: null,
               sessionExpiresAt: null,
+              sessionExpiringSoon: false,
             },
             false,
             "logout"

@@ -29,7 +29,7 @@ interface LessonCarouselProps {
   /** Callback when lesson progress is updated */
   onProgressUpdate?: (lessonId: string, position: number) => void;
   /** Function to render the content for each lesson */
-  renderLessonContent: (lesson: Lesson) => React.ReactNode;
+  renderLessonContent: (lesson: Lesson, isActive: boolean) => React.ReactNode;
   /** Callback when "Next" is clicked on the last lesson */
   onLastLessonNext?: () => void;
   /** Whether the current lesson is the last in its section */
@@ -212,7 +212,7 @@ export default function LessonCarousel({
               contentContainerStyle={styles.lessonContent}
               showsVerticalScrollIndicator={true}
             >
-              {renderLessonContent(lesson)}
+              {renderLessonContent(lesson, index === currentIndex)}
             </ScrollView>
           </View>
         ))}
