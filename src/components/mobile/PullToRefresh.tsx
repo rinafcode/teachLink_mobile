@@ -6,10 +6,10 @@ import {
   Easing,
   Pressable,
   StyleProp,
-  StyleSheet,
   View,
   ViewStyle,
 } from 'react-native';
+import { useAdaptiveFrameRate } from '../../hooks/useAdaptiveFrameRate';
 
 type AnyScrollComponent = React.ComponentType<any>;
 
@@ -84,12 +84,14 @@ export function PullToRefresh(props: PullToRefreshProps) {
 
   const [screenReaderEnabled, setScreenReaderEnabled] = React.useState(false);
 
+  const { durationMultiplier } = useAdaptiveFrameRate();
+
   React.useEffect(() => {
     let mounted = true;
-    AccessibilityInfo.isScreenReaderEnabled().then((enabled) => {
+    AccessibilityInfo.isScreenReaderEnabled().then(enabled => {
       if (mounted) setScreenReaderEnabled(enabled);
     });
-    const sub = AccessibilityInfo.addEventListener?.('screenReaderChanged', (enabled) => {
+    const sub = AccessibilityInfo.addEventListener?.('screenReaderChanged', enabled => {
       setScreenReaderEnabled(Boolean(enabled));
     });
     return () => {
@@ -104,12 +106,12 @@ export function PullToRefresh(props: PullToRefreshProps) {
     (toValue: number) => {
       Animated.timing(pullY, {
         toValue,
-        duration: 180,
+        duration: 180 * durationMultiplier,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }).start();
     },
-    [pullY],
+    [pullY, durationMultiplier]
   );
 
   const runRefresh = React.useCallback(async () => {
@@ -130,12 +132,15 @@ export function PullToRefresh(props: PullToRefreshProps) {
     else animatePullTo(0);
   }, [animatePullTo, maxPull, refreshing, threshold]);
 
-  const onScroll = React.useCallback((e: any) => {
-    scrollYRef.current = e?.nativeEvent?.contentOffset?.y ?? 0;
-    // Forward if consumer provided their own onScroll.
-    const consumerOnScroll = (scrollProps as any)?.onScroll;
-    consumerOnScroll?.(e);
-  }, [scrollProps]);
+  const onScroll = React.useCallback(
+    (e: any) => {
+      scrollYRef.current = e?.nativeEvent?.contentOffset?.y ?? 0;
+      // Forward if consumer provided their own onScroll.
+      const consumerOnScroll = (scrollProps as any)?.onScroll;
+      consumerOnScroll?.(e);
+    },
+    [scrollProps]
+  );
 
   const canStartPull = () => !refreshing && scrollYRef.current <= 0;
 
@@ -195,7 +200,7 @@ export function PullToRefresh(props: PullToRefreshProps) {
       },
       onResponderTerminationRequest: () => true,
     }),
-    [animatePullTo, maxPull, pullY, refreshing, runRefresh, threshold],
+    [animatePullTo, maxPull, pullY, refreshing, runRefresh, threshold]
   );
 
   const progress = pullY.interpolate({
@@ -205,9 +210,9 @@ export function PullToRefresh(props: PullToRefreshProps) {
   });
 
   return (
-    <View style={[styles.container, style]} {...responderHandlers}>
+    <View className="flex-1 overflow-hidden" style={style} {...responderHandlers}>
       {showA11yFallbackButton && screenReaderEnabled ? (
-        <View style={styles.a11yRow}>
+        <View className="px-3 pt-2 pb-1">
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={refreshA11yLabel}
@@ -215,17 +220,17 @@ export function PullToRefresh(props: PullToRefreshProps) {
               if (refreshing) return;
               void runRefresh();
             }}
-            style={styles.a11yButton}
+            className="self-start px-3 py-2 rounded-xl bg-gray-200"
           >
-            <Animated.Text style={styles.a11yButtonText}>Refresh</Animated.Text>
+            <Animated.Text className="text-sm font-semibold text-gray-900">Refresh</Animated.Text>
           </Pressable>
         </View>
       ) : null}
 
       <Animated.View
         pointerEvents="none"
+        className="absolute -top-11 left-0 right-0 h-11 items-center justify-center"
         style={[
-          styles.indicator,
           indicatorStyle,
           {
             transform: [{ translateY: pullY }],
@@ -251,37 +256,3 @@ export function PullToRefresh(props: PullToRefreshProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    overflow: 'hidden',
-  },
-  indicator: {
-    position: 'absolute',
-    top: -44,
-    left: 0,
-    right: 0,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  a11yRow: {
-    paddingHorizontal: 12,
-    paddingTop: 8,
-    paddingBottom: 4,
-  },
-  a11yButton: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    backgroundColor: '#e5e7eb',
-  },
-  a11yButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#111827',
-  },
-});
-

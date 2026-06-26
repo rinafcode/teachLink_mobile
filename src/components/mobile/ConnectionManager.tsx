@@ -1,5 +1,14 @@
-import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ListRenderItemInfo } from 'react-native';
+import React, { useCallback } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  ListRenderItemInfo,
+} from 'react-native';
+
+import { useMemoryMonitor } from '../../hooks';
 
 interface Connection {
   id: string;
@@ -18,7 +27,10 @@ export const ConnectionManager: React.FC<ConnectionManagerProps> = ({
   onAddConnection,
   onRemoveConnection,
 }) => {
-  const renderConnectionItem = ({ item }: ListRenderItemInfo<Connection>) => (
+  useMemoryMonitor({ componentId: 'ConnectionManager', itemCount: connections.length });
+
+  const renderConnectionItem = useCallback(
+    ({ item }: ListRenderItemInfo<Connection>) => (
     <View style={styles.connectionItem}>
       <View style={styles.connectionInfo}>
         {/* Placeholder for Avatar */}
@@ -28,12 +40,15 @@ export const ConnectionManager: React.FC<ConnectionManagerProps> = ({
         <Text style={styles.connectionName}>{item.name}</Text>
       </View>
       {onRemoveConnection && (
-        <TouchableOpacity style={[styles.button, styles.removeButton]} onPress={() => onRemoveConnection(item.id)}>
+        <TouchableOpacity
+          style={[styles.button, styles.removeButton]}
+          onPress={() => onRemoveConnection(item.id)}
+        >
           <Text style={styles.buttonText}>Remove</Text>
         </TouchableOpacity>
       )}
     </View>
-  );
+  ), [onRemoveConnection]);
 
   return (
     <View style={styles.container}>
@@ -49,7 +64,8 @@ export const ConnectionManager: React.FC<ConnectionManagerProps> = ({
         <FlatList
           data={connections}
           renderItem={renderConnectionItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={item => item.id}
+          removeClippedSubviews
           style={styles.list}
         />
       ) : (

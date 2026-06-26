@@ -1,12 +1,10 @@
-import React, { useRef, useEffect, useCallback } from 'react';
-import {
-  View,
-  Dimensions,
-  StyleSheet,
-  ScrollView,
-} from 'react-native';
-import { Question } from '../../../types/course';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Dimensions, FlatList, StyleSheet, View } from 'react-native';
+
 import MobileQuestionCard from './MobileQuestionCard';
+import { useAnalytics } from '../../../hooks/useAnalytics';
+import { Question } from '../../../types/course';
+import { AnalyticsEvent } from '../../../utils/trackingEvents';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -18,112 +16,118 @@ interface QuizCarouselProps {
   onAnswerSelect: (questionId: string, answer: string | number, isMultiSelect?: boolean) => void;
 }
 
-export default function QuizCarousel({
+const QuizCarousel = ({
   questions,
   currentQuestionIndex,
   selectedAnswers,
   onQuestionChange,
   onAnswerSelect,
-}: QuizCarouselProps) {
-  const scrollViewRef = useRef<ScrollView>(null);
+}: QuizCarouselProps) => {
+  const { trackEvent } = useAnalytics();
+  const flatListRef = useRef<FlatList<Question>>(null);
+  const [activeIndex, setActiveIndex] = useState(currentQuestionIndex);
   const isScrollingRef = useRef(false);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Only scroll if not currently being scrolled by user
-    if (scrollViewRef.current && !isScrollingRef.current) {
-      scrollViewRef.current.scrollTo({
-        x: currentQuestionIndex * SCREEN_WIDTH,
-        animated: true,
-      });
+    if (currentQuestionIndex !== activeIndex) {
+      setActiveIndex(currentQuestionIndex);
+      if (!isScrollingRef.current) {
+        flatListRef.current?.scrollToIndex({ index: currentQuestionIndex, animated: true });
+      }
     }
-  }, [currentQuestionIndex]);
+  }, [activeIndex, currentQuestionIndex]);
 
-  const handleScroll = (event: any) => {
+  const trackScrollAnalytics = (event: any) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(offsetX / SCREEN_WIDTH);
-    
-    // Clear any existing timeout
-    if (scrollTimeoutRef.current) {
-      clearTimeout(scrollTimeoutRef.current);
-    }
-    
-    // Mark as scrolling
+
+    trackEvent(AnalyticsEvent.PERFORMANCE_METRIC, {
+      event_category: 'high_frequency',
+      event_name: 'quiz_carousel_scroll',
+      offsetX: Math.round(offsetX),
+      index,
+    });
+
     isScrollingRef.current = true;
-    
-    // Update index if changed
-    if (index !== currentQuestionIndex && index >= 0 && index < questions.length) {
+  };
+
+  const getItemLayout = useCallback(
+    (_: ArrayLike<Question> | null | undefined, index: number) => ({
+      length: SCREEN_WIDTH,
+      offset: SCREEN_WIDTH * index,
+      index,
+    }),
+    []
+  );
+
+  const handleMomentumScrollEnd = useCallback(
+    (event: { nativeEvent: { contentOffset: { x: number } } }) => {
+      isScrollingRef.current = false;
+      const index = Math.round(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+      if (index < 0 || index >= questions.length || index === activeIndex) return;
+
+      setActiveIndex(index);
       onQuestionChange(index);
-    }
-    
-    // Reset scrolling flag after scroll ends
-    scrollTimeoutRef.current = setTimeout(() => {
-      isScrollingRef.current = false;
-    }, 100);
-  };
+    },
+    [activeIndex, onQuestionChange, questions.length]
+  );
 
-  const handleScrollBeginDrag = () => {
-    isScrollingRef.current = true;
-  };
+  const renderItem = useCallback(
+    ({ item, index }: { item: Question; index: number }) => (
+      <View style={styles.cardContainer}>
+        <MobileQuestionCard
+          question={item}
+          questionNumber={index + 1}
+          totalQuestions={questions.length}
+          selectedAnswer={selectedAnswers[item.id]}
+          onAnswerSelect={onAnswerSelect}
+        />
+      </View>
+    ),
+    [questions.length, selectedAnswers, onAnswerSelect]
+  );
 
-  const handleScrollEndDrag = () => {
-    // Keep flag true briefly to prevent programmatic scroll interference
-    setTimeout(() => {
-      isScrollingRef.current = false;
-    }, 150);
-  };
-
-  const handleMomentumScrollEnd = () => {
-    // Scroll has completely finished
-    isScrollingRef.current = false;
-  };
-
-  if (questions.length === 0) {
-    return null;
-  }
+  if (questions.length === 0) return null;
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        ref={scrollViewRef}
+      <FlatList
+        ref={flatListRef}
+        data={questions}
+        renderItem={renderItem}
+        keyExtractor={item => item.id}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onScroll={handleScroll}
-        onScrollBeginDrag={handleScrollBeginDrag}
-        onScrollEndDrag={handleScrollEndDrag}
+        onScroll={trackScrollAnalytics}
+        onScrollBeginDrag={() => {
+          isScrollingRef.current = true;
+        }}
         onMomentumScrollEnd={handleMomentumScrollEnd}
         scrollEventThrottle={16}
         decelerationRate="fast"
         snapToInterval={SCREEN_WIDTH}
         snapToAlignment="center"
-        contentContainerStyle={styles.scrollContent}
+        getItemLayout={getItemLayout}
+        windowSize={3}
+        maxToRenderPerBatch={1}
+        initialNumToRender={1}
+        removeClippedSubviews
         bounces={false}
-      >
-        {questions.map((question, index) => (
-          <View key={question.id} style={[styles.cardContainer, { width: SCREEN_WIDTH }]}>
-            <MobileQuestionCard
-              question={question}
-              questionNumber={index + 1}
-              totalQuestions={questions.length}
-              selectedAnswer={selectedAnswers[question.id]}
-              onAnswerSelect={onAnswerSelect}
-            />
-          </View>
-        ))}
-      </ScrollView>
+        testID="QuizCarouselList"
+      />
     </View>
   );
-}
+};
+
+export default QuizCarousel;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  scrollContent: {
-    alignItems: 'center',
-  },
   cardContainer: {
+    width: SCREEN_WIDTH,
     flex: 1,
     paddingHorizontal: 16,
     paddingVertical: 20,

@@ -1,9 +1,5 @@
 import { AccessibilityInfo, Platform } from 'react-native';
 
-/**
- * Combines multiple labels into a single descriptive string for accessibility.
- * Useful for screen readers when multiple pieces of information describe an element.
- */
 export const combineAriaLabels = (...labels: (string | undefined | null)[]): string => {
   return labels.filter(Boolean).join(', ');
 };

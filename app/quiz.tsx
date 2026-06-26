@@ -1,8 +1,15 @@
-import MobileQuizManager from '@/src/components/mobile/MobileQuizManager';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React from 'react';
 
-export default function QuizScreen() {
+import { QuizSkeleton } from '@/components/mobile/QuizSkeleton';
+import { createLazyRoute } from '@/utils/lazyRoute';
+
+const LazyMobileQuizManager = createLazyRoute({
+  importFn: () => import('@/components/mobile/MobileQuizManager'),
+  LoadingFallback: QuizSkeleton,
+  boundaryName: 'QuizRoute',
+});
+
+const QuizScreen = () => {
   const router = useRouter();
   const { quiz, courseId, course } = useLocalSearchParams();
 
@@ -10,11 +17,13 @@ export default function QuizScreen() {
   const parsedCourse = course ? JSON.parse(course as string) : null;
 
   return (
-    <MobileQuizManager
+    <LazyMobileQuizManager
       quiz={parsedQuiz}
       courseId={courseId as string}
       course={parsedCourse}
       onBack={() => router.back()}
     />
   );
-}
+};
+
+export default QuizScreen;

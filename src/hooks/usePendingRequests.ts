@@ -1,21 +1,41 @@
 import { useEffect, useState } from 'react';
-import requestQueue from '../services/api/requestQueue';
+import requestQueue, { RequestPriority } from '../services/api/requestQueue';
 
-/**
- * Hook to get the number of pending offline requests
- */
-export function usePendingRequests() {
+export function usePendingRequests(priority?: RequestPriority) {
   const [pendingCount, setPendingCount] = useState(0);
+  const [byPriority, setByPriority] = useState<
+    Record<RequestPriority, number>
+  >({
+    critical: 0,
+    high: 0,
+    normal: 0,
+    low: 0,
+  });
 
   useEffect(() => {
-    // Get initial count
-    requestQueue.getPendingCount().then(setPendingCount);
+    const update = async () => {
+      if (priority) {
+        const counts = await requestQueue.getPendingByPriority();
+        setByPriority(counts);
+        setPendingCount(counts[priority]);
+      } else {
+        const count = await requestQueue.getPendingCount();
+        setPendingCount(count);
+      }
+    };
 
-    // Listen for changes
-    const unsubscribe = requestQueue.onPendingCountChange(setPendingCount);
+    update();
+
+    const unsubscribe = requestQueue.onPendingCountChange(() => {
+      update();
+    });
 
     return unsubscribe;
-  }, []);
+  }, [priority]);
+
+  if (priority) {
+    return { pendingCount, byPriority };
+  }
 
   return pendingCount;
 }

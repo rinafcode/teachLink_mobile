@@ -1,24 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  TextInput,
-  StyleSheet,
-  ScrollView,
-} from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Question } from '../../../types/course';
-import { useHapticFeedback } from '../../../hooks/useHapticFeedback';
+import { useHapticFeedback } from '../../../hooks';
 
 interface MobileQuestionCardProps {
+  /** The question data to display */
   question: Question;
+  /** The current question number (1-indexed) */
   questionNumber: number;
+  /** Total number of questions in the quiz */
   totalQuestions: number;
+  /** Currently selected answer(s) for this question */
   selectedAnswer?: string | number | (string | number)[];
+  /** Callback when an answer is selected */
   onAnswerSelect: (questionId: string, answer: string | number, isMultiSelect?: boolean) => void;
 }
 
-export default function MobileQuestionCard({
+const MobileQuestionCard = React.memo(function MobileQuestionCard({
   question,
   questionNumber,
   totalQuestions,
@@ -39,11 +37,13 @@ export default function MobileQuestionCard({
   }, [selectedAnswer]);
 
   const handleOptionSelect = (optionIndex: number) => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     useHapticFeedback('light');
     onAnswerSelect(question.id, optionIndex, question.multiple);
   };
 
   const handleTrueFalse = (value: number) => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     useHapticFeedback('light');
     onAnswerSelect(question.id, value, false);
   };
@@ -70,6 +70,7 @@ export default function MobileQuestionCard({
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
+      removeClippedSubviews={true}
     >
       {/* Question Header */}
       <View style={styles.header}>
@@ -86,9 +87,7 @@ export default function MobileQuestionCard({
       {/* Question Text */}
       <View style={styles.questionContainer}>
         <Text style={styles.questionText}>{question.question}</Text>
-        {question.multiple && (
-          <Text style={styles.multiSelectHint}>(Select all that apply)</Text>
-        )}
+        {question.multiple && <Text style={styles.multiSelectHint}>(Select all that apply)</Text>}
       </View>
 
       {/* Answer Options */}
@@ -99,12 +98,9 @@ export default function MobileQuestionCard({
               const isSelected = isOptionSelected(index);
               return (
                 <TouchableOpacity
-                  key={index}
+                  key={`option-${question.id}-${index}`}
                   onPress={() => handleOptionSelect(index)}
-                  style={[
-                    styles.optionButton,
-                    isSelected && styles.optionButtonSelected,
-                  ]}
+                  style={[styles.optionButton, isSelected && styles.optionButtonSelected]}
                 >
                   <View style={styles.optionContent}>
                     {/* Radio or Checkbox Indicator */}
@@ -117,19 +113,11 @@ export default function MobileQuestionCard({
                     >
                       {isSelected && (
                         <View
-                          style={[
-                            styles.indicatorInner,
-                            question.multiple && styles.checkboxInner,
-                          ]}
+                          style={[styles.indicatorInner, question.multiple && styles.checkboxInner]}
                         />
                       )}
                     </View>
-                    <Text
-                      style={[
-                        styles.optionText,
-                        isSelected && styles.optionTextSelected,
-                      ]}
-                    >
+                    <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
                       {option}
                     </Text>
                   </View>
@@ -196,7 +184,9 @@ export default function MobileQuestionCard({
       </View>
     </ScrollView>
   );
-}
+});
+
+export default MobileQuestionCard;
 
 const styles = StyleSheet.create({
   container: {

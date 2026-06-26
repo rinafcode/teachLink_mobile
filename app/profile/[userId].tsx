@@ -1,19 +1,30 @@
-import { MobileProfile } from '@/src/components';
-import { useAppStore } from '@/src/store';
 import { useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
-export default function ProfileScreen() {
+import { ProfileSkeleton } from '@/components/mobile/ProfileSkeleton';
+import { useAppStore } from '@/store';
+import { createLazyRoute } from '@/utils/lazyRoute';
+
+const LazyMobileProfile = createLazyRoute({
+  importFn: () =>
+    import('@/components/mobile/MobileProfile').then(m => ({ default: m.MobileProfile })),
+  LoadingFallback: ProfileSkeleton,
+  boundaryName: 'ProfileRoute',
+});
+
+const ProfileScreen = () => {
   const { userId } = useLocalSearchParams();
-  const theme = useAppStore((s) => s.theme);
+  const theme = useAppStore(s => s.theme);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
+    const timer = setTimeout(() => setIsLoading(false), 1500);
     return () => clearTimeout(timer);
   }, []);
 
-  return <MobileProfile userId={userId as string} isDark={theme === 'dark'} isLoading={isLoading} />;
-}
+  return (
+    <LazyMobileProfile userId={userId as string} isDark={theme === 'dark'} isLoading={isLoading} />
+  );
+};
+
+export default ProfileScreen;

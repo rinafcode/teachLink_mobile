@@ -1,14 +1,18 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-    "./App.{js,jsx,ts,tsx}",
-    "./app/**/*.{js,jsx,ts,tsx}",
-    "./src/**/*.{js,jsx,ts,tsx}",
-  ],
-  presets: [require("nativewind/preset")],
+  content: ['./App.{js,jsx,ts,tsx}', './app/**/*.{js,jsx,ts,tsx}', './src/**/*.{js,jsx,ts,tsx}'],
+  presets: [require('nativewind/preset')],
   theme: {
     extend: {
       colors: {
+        themeBg: 'hsl(var(--color-background) / <alpha-value>)',
+        themeCard: 'hsl(var(--color-card) / <alpha-value>)',
+        themePrimary: 'hsl(var(--color-primary) / <alpha-value>)',
+        themeSecondary: 'hsl(var(--color-secondary) / <alpha-value>)',
+        themeAccent: 'hsl(var(--color-accent) / <alpha-value>)',
+        themeText: 'hsl(var(--color-text-primary) / <alpha-value>)',
+        themeTextMuted: 'hsl(var(--color-text-secondary) / <alpha-value>)',
+        themeBorder: 'hsl(var(--color-border) / <alpha-value>)',
         primary: {
           light: '#19c3e6',
           DEFAULT: '#19c3e6',

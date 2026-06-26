@@ -7,7 +7,7 @@ jest.mock('react-native-safe-area-context', () => ({
     })),
 }));
 
-import { useSafeArea } from '../../src/hooks/useSafeArea';
+import { useSafeArea } from '../../src/hooks';
 
 describe('useSafeArea', () => {
     it('maps inset values and helper paddings', () => {

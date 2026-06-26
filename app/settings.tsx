@@ -1,33 +1,32 @@
-import { useAppStore } from '@/src/store';
-import React from 'react';
-import { Switch, View } from 'react-native';
-import { AppText } from '@/src/components/common/AppText';
+import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function SettingsScreen() {
-    const { theme, setTheme } = useAppStore();
-    const isDark = theme === 'dark';
+import { SettingsSkeleton } from '@/components/mobile/SettingsSkeleton';
+import { mobileAuthService } from '@/services/mobileAuth';
+import { useAppStore } from '@/store';
+import { createLazyRoute } from '@/utils/lazyRoute';
 
-    return (
-        <View className="flex-1 bg-white dark:bg-gray-900 p-4">
-            <AppText 
-                style={{ fontSize: 24 }}
-                className="font-bold text-gray-900 dark:text-white mb-6"
-            >
-                Settings
-            </AppText>
+const LazyMobileSettings = createLazyRoute({
+  importFn: () => import('@/components/mobile/MobileSettings'),
+  LoadingFallback: SettingsSkeleton,
+  boundaryName: 'SettingsRoute',
+});
 
-            <View className="flex-row items-center justify-between mb-4">
-                <AppText 
-                    style={{ fontSize: 18 }}
-                    className="text-gray-900 dark:text-white"
-                >
-                    Dark Mode
-                </AppText>
-                <Switch
-                    value={isDark}
-                    onValueChange={(value) => setTheme(value ? 'dark' : 'light')}
-                />
-            </View>
-        </View>
-    );
-}
+const SettingsScreen = () => {
+  const router = useRouter();
+  const { logout } = useAppStore();
+
+  const handleSignOut = async () => {
+    await mobileAuthService.logout();
+    logout();
+    router.replace('/');
+  };
+
+  return (
+    <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+      <LazyMobileSettings onSignOut={handleSignOut} />
+    </SafeAreaView>
+  );
+};
+
+export default SettingsScreen;

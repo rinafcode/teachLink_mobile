@@ -1,6 +1,10 @@
-import * as SecureStore from "expo-secure-store";
-import { create } from "zustand";
-import { createJSONStorage, devtools, persist, subscribeWithSelector } from "zustand/middleware";
+import * as SecureStore from 'expo-secure-store';
+import { create } from 'zustand';
+import { createJSONStorage, devtools, persist, subscribeWithSelector } from 'zustand/middleware';
+
+import type { StateStorage } from 'zustand/middleware';
+import { toUnixMs } from './persistence';
+import { sentryContextService } from '../services/sentryContext';
 
 export interface User {
   id: string;
@@ -19,13 +23,14 @@ interface AppState {
   refreshToken: string | null;
   sessionExpiresAt: number | null;
   sessionExpiringSoon: boolean;
-  theme: "light" | "dark";
   isLoading: boolean;
   error: string | null;
   setUser: (user: User | null) => void;
-  setTheme: (theme: "light" | "dark") => void;
-  setTokens: (accessToken: string, refreshToken: string, expiresAt: number) => void;
+  setTheme: (theme: 'light' | 'dark') => void;
+  setTokens: (accessToken: string, refreshToken: string, expiresAt: number | Date) => void;
   setSessionExpiringSoon: (isExpiringSoon: boolean) => void;
+  setAuthLoading: (isAuthLoading: boolean) => void;
+  setAuthError: (authError: string | null) => void;
   logout: () => void;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
@@ -40,7 +45,7 @@ const secureStorage = createJSONStorage(() => ({
 export const useAppStore = create<AppState>()(
   devtools(
     persist(
-      subscribeWithSelector((set) => ({
+      subscribeWithSelector(set => ({
         user: null,
         isAuthenticated: false,
         isAuthLoading: false,
@@ -52,8 +57,22 @@ export const useAppStore = create<AppState>()(
         theme: "light",
         isLoading: false,
         error: null,
-        setUser: (user) => set({ user, isAuthenticated: !!user }, false, "setUser"),
-        setTheme: (theme) => set({ theme }, false, "setTheme"),
+        setUser: (user) => {
+          set({ user, isAuthenticated: !!user }, false, 'setUser');
+          // Sync Sentry scope with the signed-in user so every subsequent
+          // error report is automatically tagged with user identity.
+          if (user) {
+            sentryContextService.setUser({
+              id: user.id,
+              email: user.email,
+              username: user.name,
+              role: user.role,
+            });
+          } else {
+            sentryContextService.clearUser();
+          }
+        },
+        setTheme: (theme) => set({ theme }, false, 'setTheme'),
         setTokens: (accessToken, refreshToken, sessionExpiresAt) =>
           set({ accessToken, refreshToken, sessionExpiresAt }, false, "setTokens"),
         setAuthLoading: (isAuthLoading) => set({ isAuthLoading }, false, "setAuthLoading"),
@@ -72,31 +91,49 @@ export const useAppStore = create<AppState>()(
               sessionExpiringSoon: false,
             },
             false,
-            "logout"
-          ),
-        setLoading: (isLoading) => set({ isLoading }, false, "setLoading"),
-        setError: (error) => set({ error }, false, "setError"),
+            'logout'
+          );
+          // Clear Sentry user scope and reset breadcrumb trail on logout
+          sentryContextService.clearUser();
+          sentryContextService.resetSession();
+        },
+        setLoading: (isLoading) => set({ isLoading }, false, 'setLoading'),
+        setError: (error) => set({ error }, false, 'setError'),
       })),
       {
-        name: "app-auth-storage",
-        storage: secureStorage,
+        name: 'app-auth-storage',
+        storage: createJSONStorage(() => secureStorageAdapter),
         /**
          * Only persist auth-related and UI preference state.
          * Transient flags (isLoading, isAuthLoading, error, authError)
          * are intentionally excluded — they should always start fresh.
          */
-        partialize: (state) => ({
+        partialize: state => ({
           user: state.user,
           isAuthenticated: state.isAuthenticated,
           accessToken: state.accessToken,
           refreshToken: state.refreshToken,
-          sessionExpiresAt: state.sessionExpiresAt,
+          sessionExpiresAt: toUnixMs(state.sessionExpiresAt),
           theme: state.theme,
         }),
+        merge: (persistedState, currentState) => {
+          const hydratedState = (persistedState ?? {}) as Partial<AppState>;
+
+          return {
+            ...currentState,
+            ...hydratedState,
+            sessionExpiresAt: toUnixMs(hydratedState.sessionExpiresAt),
+          };
+        },
       }
     ),
-    { name: "AppStore" }
+    { name: 'AppStore' }
   )
 );
 
-export * from "./notificationStore";
+export * from './courseProgressStore';
+export * from './metricsStore';
+export * from './notificationStore';
+export * from './reviewStore';
+export * from './selectors';
+

@@ -12,8 +12,8 @@ import {
     ViewStyle,
 } from 'react-native';
 
-import { usePictureInPicture } from '../../hooks/usePictureInPicture';
-import { useVideoGestures } from '../../hooks/useVideoGestures';
+import VideoControls from './VideoControls';
+import { usePictureInPicture, useVideoGestures } from '../../hooks';
 import {
     AUTO_QUALITY_ID,
     deriveNetworkType,
@@ -25,7 +25,6 @@ import {
     type VideoSource,
 } from '../../services/videoQuality';
 import { ErrorBoundary } from '../common/ErrorBoundary';
-import VideoControls from './VideoControls';
 
 const AUTO_HIDE_MS = 3000;
 const DEFAULT_ASPECT_RATIO = 16 / 9;
@@ -39,9 +38,9 @@ export type MobileVideoPlayerProps = {
   sources: VideoSource[];
   /** URI of the poster image to display before playback */
   posterUri?: string;
-  /** Whether to start playback automatically */
+  /** Whether to start playback automatically when loaded */
   autoPlay?: boolean;
-  /** Initial playback rate */
+  /** Initial playback rate (speed) */
   initialRate?: number;
   /** Available playback rate options */
   rateOptions?: number[];
@@ -78,13 +77,11 @@ const MobileVideoPlayer = ({
   const videoRef = useRef<Video | null>(null);
   const autoPlayHandledRef = useRef(false);
   const lastToggleRef = useRef(0);
-  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | (() => void) | null>(null);
   const resumeStatusRef = useRef<AVPlaybackStatusToSet | null>(null);
 
   const [networkType, setNetworkType] = useState<NetworkType>('unknown');
-  const [selectedQualityId, setSelectedQualityId] = useState(
-    initialQualityId ?? AUTO_QUALITY_ID
-  );
+  const [selectedQualityId, setSelectedQualityId] = useState(initialQualityId ?? AUTO_QUALITY_ID);
   const [activeSource, setActiveSource] = useState<NormalizedVideoSource | null>(null);
   const [playbackRate, setPlaybackRate] = useState(initialRate);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -122,9 +119,13 @@ const MobileVideoPlayer = ({
       return;
     }
     if (hideTimerRef.current) {
-      clearTimeout(hideTimerRef.current);
+      if (typeof hideTimerRef.current === 'function') {
+        hideTimerRef.current();
+      } else {
+        clearTimeout(hideTimerRef.current);
+      }
     }
-    hideTimerRef.current = setTimeout(() => {
+    hideTimerRef.current = scheduleAnimationFrame(() => {
       setControlsVisible(false);
     }, AUTO_HIDE_MS);
   }, []);
@@ -224,16 +225,19 @@ const MobileVideoPlayer = ({
     [scheduleAutoHide]
   );
 
-  const handleChangeRate = useCallback(async (rate: number) => {
-    setControlsVisible(true);
-    setPlaybackRate(rate);
-    try {
-      await videoRef.current?.setRateAsync(rate, true);
-    } catch {
-      // Ignore rate errors.
-    }
-    scheduleAutoHide();
-  }, [scheduleAutoHide]);
+  const handleChangeRate = useCallback(
+    async (rate: number) => {
+      setControlsVisible(true);
+      setPlaybackRate(rate);
+      try {
+        await videoRef.current?.setRateAsync(rate, true);
+      } catch {
+        // Ignore rate errors.
+      }
+      scheduleAutoHide();
+    },
+    [scheduleAutoHide]
+  );
 
   const handleTogglePiP = useCallback(() => {
     if (isPiPActive) {
@@ -261,7 +265,7 @@ const MobileVideoPlayer = ({
     } catch {
       // Ignore status capture errors.
     }
-    setIsFullscreen((prev) => !prev);
+    setIsFullscreen(prev => !prev);
   }, [playbackRate]);
 
   const handlePlaybackStatusUpdate = useCallback(
@@ -314,7 +318,11 @@ const MobileVideoPlayer = ({
     }
     return () => {
       if (hideTimerRef.current) {
-        clearTimeout(hideTimerRef.current);
+        if (typeof hideTimerRef.current === 'function') {
+          hideTimerRef.current();
+        } else {
+          clearTimeout(hideTimerRef.current);
+        }
       }
     };
   }, [controlsVisibleEffective, error, isPlaying, isScrubbing, scheduleAutoHide]);
@@ -336,11 +344,14 @@ const MobileVideoPlayer = ({
     let previousMode: Awaited<ReturnType<typeof Audio.getAudioModeAsync>> | null = null;
     const configure = async () => {
       try {
+        // eslint-disable-next-line import/namespace
         previousMode = await Audio.getAudioModeAsync();
         await Audio.setAudioModeAsync({
           ...previousMode,
           allowsRecordingIOS: false,
+          // eslint-disable-next-line import/namespace
           interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_DUCK_OTHERS,
+          // eslint-disable-next-line import/namespace
           interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DUCK_OTHERS,
           playsInSilentModeIOS: false,
           staysActiveInBackground: true,
@@ -365,24 +376,24 @@ const MobileVideoPlayer = ({
       try {
         const state = await Network.getNetworkStateAsync();
         if (isMounted) {
-          setNetworkType(deriveNetworkType(state));
+          setNetworkType(deriveNetworkType(state, isSlowConnection));
         }
       } catch {
         // Ignore network errors.
       }
     };
     updateNetworkState();
-    const subscription = Network.addNetworkStateListener((state) => {
-      setNetworkType(deriveNetworkType(state));
+    const subscription = Network.addNetworkStateListener(state => {
+      setNetworkType(deriveNetworkType(state, isSlowConnection));
     });
     return () => {
       isMounted = false;
       subscription.remove();
     };
-  }, []);
+  }, [isSlowConnection]);
 
   useEffect(() => {
-    if (!qualityOptions.some((option) => option.id === selectedQualityId)) {
+    if (!qualityOptions.some(option => option.id === selectedQualityId)) {
       setSelectedQualityId(AUTO_QUALITY_ID);
     }
   }, [qualityOptions, selectedQualityId]);
@@ -450,8 +461,12 @@ const MobileVideoPlayer = ({
   const renderPlayer = (fullscreen: boolean) => (
     <View style={fullscreen ? styles.fullscreenRoot : [styles.root, style]}>
       <View
-        style={fullscreen ? styles.fullscreenVideoContainer : [styles.videoContainer, { aspectRatio: videoAspectRatio }]}
-        onLayout={(event) => setContainerWidth(event.nativeEvent.layout.width)}
+        style={
+          fullscreen
+            ? styles.fullscreenVideoContainer
+            : [styles.videoContainer, { aspectRatio: videoAspectRatio }]
+        }
+        onLayout={event => setContainerWidth(event.nativeEvent.layout.width)}
       >
         {videoSource ? (
           <Video
@@ -464,14 +479,14 @@ const MobileVideoPlayer = ({
             shouldPlay={!isActive ? false : undefined}
             onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
             onLoadStart={() => setIsLoading(true)}
-            onReadyForDisplay={(event) => {
+            onReadyForDisplay={event => {
               const { width, height } = event.naturalSize;
               if (width > 0 && height > 0) {
                 setVideoAspectRatio(width / height);
               }
               setIsLoading(false);
             }}
-            onError={(message) => {
+            onError={message => {
               setError(message);
               onError?.(message);
             }}

@@ -1,8 +1,17 @@
-import React from 'react';
-import { View, Text, Switch, ScrollView, TouchableOpacity } from 'react-native';
-import { useNotificationPermission } from '../../hooks/useNotificationPermission';
+import React, { memo, useState } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react-native';
+import React, { useState } from 'react';
+import {
+    ScrollView,
+    Switch,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
+import { useNotificationPermission } from '../../hooks';
 import { useNotificationStore } from '../../store/notificationStore';
 import { NotificationPreferences } from '../../types/notifications';
+import { configureNext } from '../../utils/layoutAnimation';
 
 interface SettingRowProps {
   icon: string;
@@ -13,7 +22,7 @@ interface SettingRowProps {
   disabled?: boolean;
 }
 
-function SettingRow({
+const SettingRow = memo(function SettingRow({
   icon,
   title,
   description,
@@ -22,19 +31,13 @@ function SettingRow({
   disabled = false,
 }: SettingRowProps) {
   return (
-    <View
-      className={`flex-row items-center py-4 px-4 ${disabled ? 'opacity-50' : ''}`}
-    >
-      <View className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900 items-center justify-center mr-3">
+    <View className={`flex-row items-center px-4 py-4 ${disabled ? 'opacity-50' : ''}`}>
+      <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900">
         <Text className="text-xl">{icon}</Text>
       </View>
-      <View className="flex-1 mr-3">
-        <Text className="text-base font-medium text-gray-900 dark:text-white">
-          {title}
-        </Text>
-        <Text className="text-sm text-gray-500 dark:text-gray-400">
-          {description}
-        </Text>
+      <View className="mr-3 flex-1">
+        <Text className="text-base font-medium text-gray-900 dark:text-white">{title}</Text>
+        <Text className="text-sm text-gray-500 dark:text-gray-400">{description}</Text>
       </View>
       <Switch
         value={value}
@@ -46,36 +49,53 @@ function SettingRow({
       />
     </View>
   );
-}
+});
 
 export function NotificationSettings() {
   const { permissionStatus, requestPermission, openSettings, isLoading } =
     useNotificationPermission();
   const { preferences, setPreference, pushToken } = useNotificationStore();
+  const [savingKey, setSavingKey] = useState<keyof NotificationPreferences | null>(null);
+
+  // Progressive disclosure: advanced notifications collapsed by default
+  const [showAdvancedNotifications, setShowAdvancedNotifications] = useState(false);
 
   const isEnabled = permissionStatus === 'granted' && pushToken !== null;
 
-  const handlePreferenceChange = (
-    key: keyof NotificationPreferences,
-    value: boolean
-  ) => {
-    setPreference(key, value);
-    // TODO: Sync with backend
-    // api.updateNotificationPreferences({ [key]: value });
+  const handlePreferenceChange = async (key: keyof NotificationPreferences, value: boolean) => {
+    try {
+      setSavingKey(key);
+      // Update local preferences (automatically persisted by Zustand)
+      setPreference(key, value);
+
+      // TODO: Sync with backend
+      // try {
+      //   await api.updateNotificationPreferences({ [key]: value });
+      // } catch (error) {
+      //   console.error('Failed to sync notification preferences:', error);
+      //   // Preferences are still saved locally even if sync fails
+      // }
+    } finally {
+      setSavingKey(null);
+    }
+  };
+
+  const handleToggleAdvancedNotifications = () => {
+    configureNext();
+    setShowAdvancedNotifications(prev => !prev);
   };
 
   return (
-    <ScrollView className="flex-1 bg-gray-50 dark:bg-gray-900">
-      {/* Permission Status Banner */}
+    <ScrollView className="flex-1 bg-gray-50 dark:bg-gray-900" removeClippedSubviews={true}>
       {permissionStatus !== 'granted' && (
-        <View className="mx-4 mt-4 p-4 bg-amber-50 dark:bg-amber-900/30 rounded-xl border border-amber-200 dark:border-amber-800">
-          <View className="flex-row items-center mb-2">
-            <Text className="text-lg mr-2">&#x26A0;</Text>
+        <View className="mx-4 mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/30">
+          <View className="mb-2 flex-row items-center">
+            <Text className="mr-2 text-lg">&#x26A0;</Text>
             <Text className="text-base font-semibold text-amber-800 dark:text-amber-200">
               Notifications Disabled
             </Text>
           </View>
-          <Text className="text-sm text-amber-700 dark:text-amber-300 mb-3">
+          <Text className="mb-3 text-sm text-amber-700 dark:text-amber-300">
             {permissionStatus === 'denied'
               ? 'You have denied notification permissions. Enable them in your device settings to receive updates.'
               : 'Enable notifications to stay updated with courses, messages, and achievements.'}
@@ -83,86 +103,119 @@ export function NotificationSettings() {
           <TouchableOpacity
             onPress={permissionStatus === 'denied' ? openSettings : requestPermission}
             disabled={isLoading}
-            className="bg-amber-600 py-2 px-4 rounded-lg self-start"
+            className="self-start rounded-lg bg-amber-600 px-4 py-2"
           >
-            <Text className="text-white font-medium">
+            <Text className="font-medium text-white">
               {isLoading
                 ? 'Enabling...'
                 : permissionStatus === 'denied'
-                ? 'Open Settings'
-                : 'Enable Notifications'}
+                  ? 'Open Settings'
+                  : 'Enable Notifications'}
             </Text>
           </TouchableOpacity>
         </View>
       )}
 
-      {/* Notification Categories */}
+      {/* ── ESSENTIAL: Primary Notification Types ───────────── */}
       <View className="mt-6">
-        <Text className="px-4 pb-2 text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase">
-          Notification Types
+        <Text className="px-4 pb-2 text-sm font-semibold uppercase text-gray-500 dark:text-gray-400">
+          Notifications
         </Text>
-        <View className="bg-white dark:bg-gray-800 rounded-xl mx-4">
+        <View className="mx-4 rounded-xl bg-white dark:bg-gray-800">
           <SettingRow
             icon="&#x1F4DA;"
             title="Course Updates"
             description="New lessons, content updates, and announcements"
             value={preferences.courseUpdates}
-            onValueChange={(value) => handlePreferenceChange('courseUpdates', value)}
+            onValueChange={value => handlePreferenceChange('courseUpdates', value)}
             disabled={!isEnabled}
           />
-          <View className="h-px bg-gray-200 dark:bg-gray-700 mx-4" />
+          <View className="mx-4 h-px bg-gray-200 dark:bg-gray-700" />
 
           <SettingRow
             icon="&#x1F4AC;"
             title="Messages"
             description="Direct messages and chat notifications"
             value={preferences.messages}
-            onValueChange={(value) => handlePreferenceChange('messages', value)}
-            disabled={!isEnabled}
-          />
-          <View className="h-px bg-gray-200 dark:bg-gray-700 mx-4" />
-
-          <SettingRow
-            icon="&#x23F0;"
-            title="Learning Reminders"
-            description="Daily reminders to keep your streak"
-            value={preferences.learningReminders}
-            onValueChange={(value) => handlePreferenceChange('learningReminders', value)}
-            disabled={!isEnabled}
-          />
-          <View className="h-px bg-gray-200 dark:bg-gray-700 mx-4" />
-
-          <SettingRow
-            icon="&#x1F3C6;"
-            title="Achievement Unlocks"
-            description="Celebrate when you unlock achievements"
-            value={preferences.achievementUnlocks}
-            onValueChange={(value) => handlePreferenceChange('achievementUnlocks', value)}
-            disabled={!isEnabled}
-          />
-          <View className="h-px bg-gray-200 dark:bg-gray-700 mx-4" />
-
-          <SettingRow
-            icon="&#x1F465;"
-            title="Community Activity"
-            description="Posts, comments, and community updates"
-            value={preferences.communityActivity}
-            onValueChange={(value) => handlePreferenceChange('communityActivity', value)}
+            onValueChange={value => handlePreferenceChange('messages', value)}
             disabled={!isEnabled}
           />
         </View>
       </View>
 
+      {/* ── PROGRESSIVE DISCLOSURE: Advanced Notifications ─── */}
+      <TouchableOpacity
+        onPress={handleToggleAdvancedNotifications}
+        activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={
+          showAdvancedNotifications ? 'Hide advanced notifications' : 'Show advanced notifications'
+        }
+        accessibilityState={{ expanded: showAdvancedNotifications }}
+        className="mx-4 mt-4 flex-row items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800"
+      >
+        <View className="flex-row items-center gap-2">
+          <Text className="text-lg">&#x1F514;</Text>
+          <Text className="text-sm font-semibold text-indigo-500">
+            {showAdvancedNotifications ? 'Hide Advanced Notifications' : 'Advanced Notifications'}
+          </Text>
+        </View>
+        {showAdvancedNotifications ? (
+          <ChevronUp size={16} color="#6366f1" />
+        ) : (
+          <ChevronDown size={16} color="#6366f1" />
+        )}
+      </TouchableOpacity>
+
+      {/* Advanced notification categories (expandable) */}
+      {showAdvancedNotifications && (
+        <View className="mt-3">
+          <Text className="px-4 pb-2 text-sm font-semibold uppercase text-gray-500 dark:text-gray-400">
+            More Notification Types
+          </Text>
+          <View className="mx-4 rounded-xl bg-white dark:bg-gray-800">
+            <SettingRow
+              icon="&#x23F0;"
+              title="Learning Reminders"
+              description="Daily reminders to keep your streak"
+              value={preferences.learningReminders}
+              onValueChange={value => handlePreferenceChange('learningReminders', value)}
+              disabled={!isEnabled}
+            />
+            <View className="mx-4 h-px bg-gray-200 dark:bg-gray-700" />
+
+            <SettingRow
+              icon="&#x1F3C6;"
+              title="Achievement Unlocks"
+              description="Celebrate when you unlock achievements"
+              value={preferences.achievementUnlocks}
+              onValueChange={value => handlePreferenceChange('achievementUnlocks', value)}
+              disabled={!isEnabled}
+            />
+            <View className="mx-4 h-px bg-gray-200 dark:bg-gray-700" />
+
+            <SettingRow
+              icon="&#x1F465;"
+              title="Community Activity"
+              description="Posts, comments, and community updates"
+              value={preferences.communityActivity}
+              onValueChange={value => handlePreferenceChange('communityActivity', value)}
+              disabled={!isEnabled}
+            />
+          </View>
+        </View>
+      )}
+
       {/* Debug Info (remove in production) */}
       {__DEV__ && (
-        <View className="mt-6 mx-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-xl">
-          <Text className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">
+        <View className="mx-4 mt-6 rounded-xl bg-gray-100 p-4 dark:bg-gray-800">
+          <Text className="mb-2 text-sm font-semibold text-gray-500 dark:text-gray-400">
             Debug Info
           </Text>
           <Text className="text-xs text-gray-500 dark:text-gray-400">
             Permission: {permissionStatus}
           </Text>
-          <Text className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          <Text className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             Token: {pushToken ? `${pushToken.slice(0, 30)}...` : 'Not registered'}
           </Text>
         </View>

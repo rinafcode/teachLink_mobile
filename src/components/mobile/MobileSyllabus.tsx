@@ -1,21 +1,12 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  Animated,
-  LayoutAnimation,
-  UIManager,
-  Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { Section, Lesson, CourseProgress } from '../../types/course';
-
-// Enable LayoutAnimation on Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
+import { CourseProgress, Lesson, Section } from '../../types/course';
 
 /**
  * Props for the MobileSyllabus component
@@ -23,12 +14,14 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 interface MobileSyllabusProps {
   /** Array of course sections to display */
   sections: Section[];
+  /** Optional course progress data for showing completion status */
   /** Course progress data */
   progress?: CourseProgress | null;
   /** ID of the currently active lesson */
   currentLessonId?: string;
   /** Callback when a lesson is selected */
   onLessonSelect: (lessonId: string, sectionId: string) => void;
+  /** Optional callback when a section is expanded/collapsed */
   /** Optional callback when a section is toggled */
   onSectionToggle?: (sectionId: string, isExpanded: boolean) => void;
 }
@@ -41,7 +34,7 @@ export default function MobileSyllabus({
   onSectionToggle,
 }: MobileSyllabusProps) {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(sections.map((s) => s.id)) // All expanded by default
+    new Set(sections.map(s => s.id)) // All expanded by default
   );
 
   const toggleSection = (sectionId: string) => {
@@ -62,7 +55,7 @@ export default function MobileSyllabus({
     if (!progress || section.lessons.length === 0) return 0;
 
     const completedCount = section.lessons.filter(
-      (lesson) => progress.lessons[lesson.id]?.completed
+      lesson => progress.lessons[lesson.id]?.completed
     ).length;
 
     return Math.round((completedCount / section.lessons.length) * 100);
@@ -70,7 +63,7 @@ export default function MobileSyllabus({
 
   const getLessonStatus = (lesson: Lesson): 'completed' | 'in-progress' | 'not-started' => {
     if (!progress) return 'not-started';
-    
+
     const lessonProgress = progress.lessons[lesson.id];
     if (lessonProgress?.completed) return 'completed';
     if (lesson.id === currentLessonId || lessonProgress?.lastPosition > 0) {
@@ -84,17 +77,19 @@ export default function MobileSyllabus({
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
+      removeClippedSubviews={true}
     >
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>📚 Course Syllabus</Text>
         <Text style={styles.headerSubtitle}>
-          {sections.length} sections • {sections.reduce((acc, s) => acc + s.lessons.length, 0)} lessons
+          {sections.length} sections • {sections.reduce((acc, s) => acc + s.lessons.length, 0)}{' '}
+          lessons
         </Text>
       </View>
 
       {/* Sections */}
-      {sections.map((section) => {
+      {sections.map(section => {
         const isExpanded = expandedSections.has(section.id);
         const sectionProgress = getSectionProgress(section);
 
@@ -112,16 +107,11 @@ export default function MobileSyllabus({
                     <Text style={styles.lessonCountText}>{section.lessons.length}</Text>
                   </View>
                 </View>
-                
+
                 {/* Progress Bar */}
                 <View style={styles.progressBarContainer}>
                   <View style={styles.progressBarBackground}>
-                    <View
-                      style={[
-                        styles.progressBarFill,
-                        { width: `${sectionProgress}%` },
-                      ]}
-                    />
+                    <View style={[styles.progressBarFill, { width: `${sectionProgress}%` }]} />
                   </View>
                   <Text style={styles.progressText}>{sectionProgress}% complete</Text>
                 </View>
@@ -152,10 +142,7 @@ export default function MobileSyllabus({
                     <TouchableOpacity
                       key={lesson.id}
                       onPress={() => onLessonSelect(lesson.id, section.id)}
-                      style={[
-                        styles.lessonItem,
-                        isCurrent && styles.lessonItemCurrent,
-                      ]}
+                      style={[styles.lessonItem, isCurrent && styles.lessonItemCurrent]}
                     >
                       {/* Lesson Status Icon */}
                       <View style={styles.lessonStatusIcon}>
@@ -176,26 +163,23 @@ export default function MobileSyllabus({
 
                       {/* Lesson Info */}
                       <View style={styles.lessonContent}>
-                        <Text
-                          style={[
-                            styles.lessonTitle,
-                            isCurrent && styles.lessonTitleCurrent,
-                          ]}
-                        >
+                        <Text style={[styles.lessonTitle, isCurrent && styles.lessonTitleCurrent]}>
                           {lesson.title}
                         </Text>
-                        
+
                         <View style={styles.lessonMetadata}>
                           <View style={styles.durationBadge}>
                             <Text style={styles.durationText}>⏱️ {lesson.duration} min</Text>
                           </View>
-                          
-                          {lessonProgress?.lastPosition && lessonProgress.lastPosition > 0 && status !== 'completed' && (
-                            <View style={styles.resumeBadge}>
-                              <Text style={styles.resumeText}>📌 Resume</Text>
-                            </View>
-                          )}
-                          
+
+                          {lessonProgress?.lastPosition &&
+                            lessonProgress.lastPosition > 0 &&
+                            status !== 'completed' && (
+                              <View style={styles.resumeBadge}>
+                                <Text style={styles.resumeText}>📌 Resume</Text>
+                              </View>
+                            )}
+
                           {progress?.bookmarks.includes(lesson.id) && (
                             <View style={styles.bookmarkBadge}>
                               <Text style={styles.bookmarkText}>⭐ Bookmarked</Text>

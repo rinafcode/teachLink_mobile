@@ -1,26 +1,19 @@
 import { Check, ChevronRight } from 'lucide-react-native';
 import React, { useState } from 'react';
-import {
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
-import { useHapticFeedback } from '../../hooks/useHapticFeedback';
+import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useHapticFeedback } from '../../hooks';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 
-export interface PickerOption {
+export interface PickerOption<T extends string = string> {
   label: string;
-  value: string;
+  value: T;
   description?: string;
 }
 
-interface SettingsPickerProps {
-  value: string;
-  options: PickerOption[];
-  onValueChange: (value: string) => void;
+interface SettingsPickerProps<T extends string = string> {
+  value: T;
+  options: PickerOption<T>[];
+  onValueChange: (value: T) => void;
   label: string;
   description?: string;
   icon?: React.ReactNode;
@@ -32,7 +25,7 @@ interface SettingsPickerProps {
  * showing all available options. The selected option gets a cyan checkmark.
  * Matches the iOS-style grouped settings aesthetic used throughout the app.
  */
-export function SettingsPicker({
+export function SettingsPicker<T extends string = string>({
   value,
   options,
   onValueChange,
@@ -40,12 +33,13 @@ export function SettingsPicker({
   description,
   icon,
   disabled = false,
-}: SettingsPickerProps) {
+}: SettingsPickerProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const selectedLabel = options.find((o) => o.value === value)?.label ?? value;
+  const selectedLabel = options.find(o => o.value === value)?.label ?? value;
 
-  const handleSelect = (optionValue: string) => {
+  const handleSelect = (optionValue: T) => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     useHapticFeedback('light');
     onValueChange(optionValue);
     setIsOpen(false);
@@ -60,25 +54,17 @@ export function SettingsPicker({
         disabled={disabled}
         className={`flex-row items-center ${disabled ? 'opacity-50' : ''}`}
       >
-        {icon ? (
-          <View className="w-8 h-8 items-center justify-center mr-3">{icon}</View>
-        ) : null}
+        {icon ? <View className="mr-3 h-8 w-8 items-center justify-center">{icon}</View> : null}
 
         <View className="flex-1">
-          <Text className="text-[15px] font-medium text-gray-900 dark:text-white">
-            {label}
-          </Text>
+          <Text className="text-[15px] font-medium text-gray-900 dark:text-white">{label}</Text>
           {description ? (
-            <Text className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-              {description}
-            </Text>
+            <Text className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{description}</Text>
           ) : null}
         </View>
 
         <View className="flex-row items-center gap-1">
-          <Text className="text-sm text-gray-400 dark:text-gray-500">
-            {selectedLabel}
-          </Text>
+          <Text className="text-sm text-gray-400 dark:text-gray-500">{selectedLabel}</Text>
           <ChevronRight size={16} color="#9CA3AF" />
         </View>
       </TouchableOpacity>
@@ -102,15 +88,15 @@ export function SettingsPicker({
             </TouchableOpacity>
 
             {/* Sheet */}
-            <View className="bg-white dark:bg-gray-800 rounded-t-3xl pb-8">
+            <View className="rounded-t-3xl bg-white pb-8 dark:bg-gray-800">
               {/* Drag handle */}
-              <View className="items-center pt-3 pb-1">
-                <View className="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+              <View className="items-center pb-1 pt-3">
+                <View className="h-1 w-10 rounded-full bg-gray-300 dark:bg-gray-600" />
               </View>
 
               {/* Title */}
-              <View className="px-6 py-3 border-b border-gray-100 dark:border-gray-700">
-                <Text className="text-base font-semibold text-gray-900 dark:text-white text-center">
+              <View className="border-b border-gray-100 px-6 py-3 dark:border-gray-700">
+                <Text className="text-center text-base font-semibold text-gray-900 dark:text-white">
                   {label}
                 </Text>
               </View>
@@ -139,15 +125,13 @@ export function SettingsPicker({
                         {option.label}
                       </Text>
                       {option.description ? (
-                        <Text className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        <Text className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
                           {option.description}
                         </Text>
                       ) : null}
                     </View>
 
-                    {option.value === value ? (
-                      <Check size={18} color="#19c3e6" />
-                    ) : null}
+                    {option.value === value ? <Check size={18} color="#19c3e6" /> : null}
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -156,9 +140,9 @@ export function SettingsPicker({
               <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={() => setIsOpen(false)}
-                className="mx-4 mt-3 py-4 bg-gray-100 dark:bg-gray-700 rounded-2xl"
+                className="mx-4 mt-3 rounded-2xl bg-gray-100 py-4 dark:bg-gray-700"
               >
-                <Text className="text-[15px] font-semibold text-gray-900 dark:text-white text-center">
+                <Text className="text-center text-[15px] font-semibold text-gray-900 dark:text-white">
                   Cancel
                 </Text>
               </TouchableOpacity>

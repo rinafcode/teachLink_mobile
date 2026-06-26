@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-background: 220 20% 95%;
+    --color-card: 0 0% 100%;
+    --color-primary: 220 85% 57%;
+    --color-secondary: 190 80% 50%;
+    --color-accent: 250 70% 65%;
+    --color-text-primary: 220 20% 15%;
+    --color-text-secondary: 220 10% 45%;
+    --color-border: 220 15% 88%;
+  }
+
+  .dark {
+    --color-background: 220 25% 15%;
+    --color-card: 220 25% 20%;
+    --color-primary: 220 85% 60%;
+    --color-secondary: 190 80% 55%;
+    --color-accent: 250 70% 70%;
+    --color-text-primary: 220 10% 95%;
+    --color-text-secondary: 220 10% 65%;
+    --color-border: 220 15% 25%;
+  }
+}

@@ -1,19 +1,16 @@
-import React from "react";
-import {
-    Animated,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from "react-native";
-import { useNetworkStatus } from "../../hooks/useNetworkStatus";
-import logger from "../../utils/logger";
-import { OfflineIndicator } from "./OfflineIndicator";
+import React from 'react';
+import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+import { OfflineIndicator } from './OfflineIndicator';
+import { useNetworkStatus } from '../../hooks';
+import { useAdaptiveFrameRate } from '../../hooks/useAdaptiveFrameRate';
+// eslint-disable-next-line import/no-named-as-default
+import logger from '../../utils/logger';
 
 interface Toast {
   id: string;
   message: string;
-  type: "offline" | "online";
+  type: 'offline' | 'online';
   timestamp: number;
 }
 
@@ -22,11 +19,21 @@ interface Toast {
  * Monitors network status and displays indicators when going offline/online
  */
 export const OfflineIndicatorProvider = (props: any) => {
-  const {
+  const { children, showToastNotifications = true, toastDuration = 3000 } = props;
+
+  return React.createElement(
+    View,
+    { style: styles.container },
     children,
-    showToastNotifications = true,
-    toastDuration = 3000,
-  } = props;
+    React.createElement(OfflineUI, { showToastNotifications, toastDuration })
+  );
+};
+
+/**
+ * Isolated stateful component for network status banner and toast notifications
+ */
+const OfflineUI = React.memo((props: any) => {
+  const { showToastNotifications, toastDuration } = props;
   const { isOnline, isOffline } = useNetworkStatus();
   const [toasts, setToasts] = React.useState<Toast[]>([]);
   const [wasOffline, setWasOffline] = React.useState(isOffline);
@@ -34,16 +41,19 @@ export const OfflineIndicatorProvider = (props: any) => {
   /**
    * Add a toast notification
    */
-  const addToast = (message: string, type: "offline" | "online") => {
+  const addToast = (message: string, type: 'offline' | 'online') => {
     const id = `${Date.now()}-${Math.random()}`;
     const toast: Toast = { id, message, type, timestamp: Date.now() };
 
     setToasts((prev: any) => [...prev, toast]);
 
-    // Auto-remove toast after duration
-    setTimeout(() => {
+    // Auto-remove toast after duration using requestAnimationFrame for frame-synced timing
+    const cancelSchedule = scheduleAnimationFrame(() => {
       removeToast(id);
     }, toastDuration);
+
+    // Store cancel function for cleanup if needed
+    (toast as any).cancelSchedule = cancelSchedule;
 
     return id;
   };
@@ -62,39 +72,39 @@ export const OfflineIndicatorProvider = (props: any) => {
     // Check if status changed from online to offline
     if (wasOffline !== isOffline) {
       if (isOffline && showToastNotifications) {
-        logger.warn("📡 Network status: OFFLINE");
-        addToast("You are now offline", "offline");
+        logger.warn('📡 Network status: OFFLINE');
+        addToast('You are now offline', 'offline');
       } else if (isOnline && showToastNotifications) {
-        logger.info("📡 Network status: ONLINE");
-        addToast("You are back online", "online");
+        logger.info('📡 Network status: ONLINE');
+        addToast('You are back online', 'online');
       }
       setWasOffline(isOffline);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOffline, isOnline, showToastNotifications, wasOffline]);
 
   return React.createElement(
-    View,
-    { style: styles.container },
+    React.Fragment,
+    null,
     // Offline Indicator Banner
-    React.createElement(OfflineIndicator, { position: "top" }),
-
-    // Main Content
-    children,
+    React.createElement(OfflineIndicator, { position: 'top' }),
 
     // Toast Notifications Container
     React.createElement(
       View,
-      { style: styles.toastContainer, pointerEvents: "box-none" },
+      { style: styles.toastContainer, pointerEvents: 'box-none' },
       toasts.map((toast: Toast) =>
         React.createElement(ToastComponent, {
           key: toast.id,
           toast,
           onDismiss: () => removeToast(toast.id),
-        }),
-      ),
-    ),
+        })
+      )
+    )
   );
-};
+});
+
+OfflineUI.displayName = 'OfflineUI';
 
 /**
  * Individual Toast Component
@@ -102,32 +112,32 @@ export const OfflineIndicatorProvider = (props: any) => {
 const ToastComponent = (props: any) => {
   const { toast, onDismiss } = props;
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const { durationMultiplier } = useAdaptiveFrameRate();
 
   React.useEffect(() => {
-    // Fade in animation
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 300,
+      duration: 300 * durationMultiplier,
       useNativeDriver: true,
     }).start();
-  }, [fadeAnim]);
+  }, [fadeAnim, durationMultiplier]);
 
   const getToastStyle = () => {
     switch (toast.type) {
-      case "offline":
+      case 'offline':
         return {
-          backgroundColor: "#FF5722",
-          icon: "⚠️",
+          backgroundColor: '#FF5722',
+          icon: '⚠️',
         };
-      case "online":
+      case 'online':
         return {
-          backgroundColor: "#4CAF50",
-          icon: "✓",
+          backgroundColor: '#4CAF50',
+          icon: '✓',
         };
       default:
         return {
-          backgroundColor: "#333",
-          icon: "ℹ️",
+          backgroundColor: '#333',
+          icon: 'ℹ️',
         };
     }
   };
@@ -137,11 +147,7 @@ const ToastComponent = (props: any) => {
   return React.createElement(
     Animated.View,
     {
-      style: [
-        styles.toast,
-        { backgroundColor: style.backgroundColor },
-        { opacity: fadeAnim },
-      ],
+      style: [styles.toast, { backgroundColor: style.backgroundColor }, { opacity: fadeAnim }],
     },
     React.createElement(
       TouchableOpacity,
@@ -152,8 +158,8 @@ const ToastComponent = (props: any) => {
       },
       React.createElement(Text, { style: styles.toastIcon }, style.icon),
       React.createElement(Text, { style: styles.toastMessage }, toast.message),
-      React.createElement(Text, { style: styles.toastDismiss }, "✕"),
-    ),
+      React.createElement(Text, { style: styles.toastDismiss }, '✕')
+    )
   );
 };
 
@@ -162,7 +168,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   toastContainer: {
-    position: "absolute",
+    position: 'absolute',
     bottom: 20,
     left: 16,
     right: 16,
@@ -170,13 +176,13 @@ const styles = StyleSheet.create({
   },
   toast: {
     borderRadius: 8,
-    overflow: "hidden",
+    overflow: 'hidden',
     marginBottom: 12,
     elevation: 5,
   },
   toastContent: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 16,
   },
@@ -186,14 +192,14 @@ const styles = StyleSheet.create({
   },
   toastMessage: {
     flex: 1,
-    color: "#FFFFFF",
+    color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: '500',
   },
   toastDismiss: {
-    color: "#FFFFFF",
+    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     paddingLeft: 8,
   },
 });

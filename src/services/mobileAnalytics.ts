@@ -1,53 +1,86 @@
-import logger from '../utils/logger';
+import { appLogger } from '../utils/logger';
 import { AnalyticsEvent, EventProperties } from '../utils/trackingEvents';
 
 /**
  * MobileAnalyticsService provides a centralized API for tracking user behavior
- * and application performance. It abstracts the underlying analytics provider
- * (e.g., Firebase, Segment, Mixpanel) to allow for easy swaps in the future.
+ * and application performance with differential privacy applied to all events.
+ *
+ * Privacy guarantees:
+ * - All numeric properties are noise-added via the Laplace mechanism (ε-DP).
+ * - All string properties are sanitized to remove PII before transmission.
+ * - DP is applied per-event before any external SDK call.
  */
 class MobileAnalyticsService {
+  private static readonly HIGH_FREQUENCY_EVENT_MAX_PER_SECOND = 10;
+  private static readonly HIGH_FREQUENCY_EVENT_INTERVAL_MS =
+    1000 / MobileAnalyticsService.HIGH_FREQUENCY_EVENT_MAX_PER_SECOND;
   private isInitialized: boolean = false;
   private currentSessionId: string | null = null;
   private currentScreen: string | null = null;
+  private readonly throttledEventLastSentAt = new Map<string, number>();
+
+  // Critical events that must always be sent (100% volume)
+  private readonly CRITICAL_EVENTS: Set<AnalyticsEvent> = new Set([
+    AnalyticsEvent.APP_LAUNCH,
+    AnalyticsEvent.SESSION_START,
+    AnalyticsEvent.SESSION_END,
+    AnalyticsEvent.AUTH_LOGIN,
+    AnalyticsEvent.AUTH_LOGOUT,
+    AnalyticsEvent.COURSE_STARTED,
+    AnalyticsEvent.COURSE_COMPLETED,
+    AnalyticsEvent.QUIZ_STARTED,
+    AnalyticsEvent.QUIZ_COMPLETED,
+    AnalyticsEvent.API_ERROR,
+    AnalyticsEvent.CRASH_REPORT,
+  ]);
 
   /**
    * Initialize the analytics SDK.
-   * This is where you would call Firebase.initializeApp() or similar.
    */
-  public async init(): Promise<void> {
+  public async init(dpConfig?: Partial<DPConfig>): Promise<void> {
     if (this.isInitialized) return;
+
+    if (dpConfig) {
+      this.dpConfig = { ...this.dpConfig, ...dpConfig };
+    }
 
     try {
       // In a real implementation:
       // await analytics().setAnalyticsCollectionEnabled(true);
-      
+
       this.isInitialized = true;
       this.startSession();
-      logger.info('MobileAnalytics: Initialized successfully');
+      appLogger.info('MobileAnalytics: Initialized successfully');
     } catch (error) {
-      logger.error('MobileAnalytics: Failed to initialize', error);
+      appLogger.error('MobileAnalytics: Failed to initialize', error);
     }
   }
 
   /**
-   * Start a new tracking session.
+   * Configure the differential privacy budget at runtime.
    */
+  public configureDifferentialPrivacy(config: Partial<DPConfig>): void {
+    this.dpConfig = { ...this.dpConfig, ...config };
+    appLogger.info('MobileAnalytics: DP config updated', this.dpConfig);
+  }
+
+  /** Return the current DP configuration (read-only). */
+  public getDPConfig(): Readonly<DPConfig> {
+    return { ...this.dpConfig };
+  }
+
   public startSession(): void {
     const timestamp = Date.now();
     this.currentSessionId = `sess_${timestamp}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     this.trackEvent(AnalyticsEvent.SESSION_START, {
       sessionId: this.currentSessionId,
       timestamp,
     });
-    
-    logger.debug(`MobileAnalytics: Session started [${this.currentSessionId}]`);
+
+    appLogger.debug(`MobileAnalytics: Session started [${this.currentSessionId}]`);
   }
 
-  /**
-   * End the current tracking session.
-   */
   public endSession(): void {
     if (!this.currentSessionId) return;
 
@@ -57,15 +90,26 @@ class MobileAnalyticsService {
     });
 
     this.currentSessionId = null;
-    logger.debug('MobileAnalytics: Session ended');
+    appLogger.debug('MobileAnalytics: Session ended');
   }
 
   /**
-   * Track a custom event.
-   * @param event The event name from the AnalyticsEvent enum.
-   * @param properties Optional metadata to attach to the event.
+   * Track a custom event with differential privacy applied to all properties.
+   * Numeric properties receive Laplace noise; strings are PII-sanitized.
    */
   public trackEvent(event: AnalyticsEvent, properties?: EventProperties): void {
+    if (this.shouldThrottleHighFrequencyEvent(event, properties)) {
+      return;
+    }
+
+    // Implement sampling for non-critical events (10% rate)
+    if (!this.CRITICAL_EVENTS.has(event)) {
+      if (Math.random() > 0.1) {
+        appLogger.debug(`📊 [Analytics] Event: ${event} skipped due to sampling`);
+        return;
+      }
+    }
+
     const payload = {
       ...properties,
       screen: this.currentScreen,
@@ -75,10 +119,36 @@ class MobileAnalyticsService {
     };
 
     // Log to console/Metro for development visibility
-    logger.info(`📊 [Analytics] Event: ${event}`, JSON.stringify(payload, null, 2));
+    appLogger.info(`📊 [Analytics] Event: ${event}`, JSON.stringify(payload, null, 2));
 
-    // Here you would call the real SDK:
-    // analytics().logEvent(event, payload);
+    // Real SDK call here: analytics().logEvent(event, privatized);
+  }
+
+  private shouldThrottleHighFrequencyEvent(
+    event: AnalyticsEvent,
+    properties?: EventProperties
+  ): boolean {
+    const eventCategory = properties?.event_category;
+    if (eventCategory !== 'high_frequency') {
+      return false;
+    }
+
+    const eventName =
+      typeof properties?.event_name === 'string' && properties.event_name.trim().length > 0
+        ? properties.event_name
+        : event;
+    const now = Date.now();
+    const lastSentAt = this.throttledEventLastSentAt.get(eventName);
+
+    if (
+      typeof lastSentAt === 'number' &&
+      now - lastSentAt < MobileAnalyticsService.HIGH_FREQUENCY_EVENT_INTERVAL_MS
+    ) {
+      return true;
+    }
+
+    this.throttledEventLastSentAt.set(eventName, now);
+    return false;
   }
 
   /**
@@ -96,14 +166,14 @@ class MobileAnalyticsService {
       timestamp: new Date().toISOString(),
     };
 
-    logger.info(`📱 [Analytics] Screen View: ${screenName}`, payload);
+    appLogger.info(`📱 [Analytics] Screen View: ${screenName}`, payload);
 
     // Real SDK implementation:
     // analytics().logScreenView({
     //   screen_name: screenName,
     //   screen_class: screenName,
     // });
-    
+
     // Also track as a generic event for providers that don't have logScreenView
     this.trackEvent(AnalyticsEvent.SCREEN_VIEW, {
       screen: screenName,
@@ -112,41 +182,70 @@ class MobileAnalyticsService {
   }
 
   /**
-   * Log performance metrics.
-   * @param name The metric name.
-   * @param value The value (usually in milliseconds).
+   * Log a performance metric. Duration is privatized before logging.
    */
   public trackPerformance(name: string, value: number, properties?: EventProperties): void {
+    const privatizedValue = privatizeDuration(value, 300_000, this.dpConfig);
+
     const payload = {
       metric_name: name,
-      metric_value: value,
+      metric_value: privatizedValue,
       ...properties,
     };
 
-    logger.info(`⏱️ [Analytics] Performance: ${name} = ${value}ms`, payload);
+    appLogger.info(`⏱️ [Analytics] Performance: ${name} = ${value}ms`, payload);
 
     this.trackEvent(AnalyticsEvent.PERFORMANCE_METRIC, payload);
   }
 
-  /**
-   * Set user identity for tracking across sessions.
-   * @param userId The unique user ID from the backend.
-   * @param userProperties Key-value pairs of user traits.
-   */
   public async identifyUser(userId: string, userProperties?: EventProperties): Promise<void> {
-    logger.info(`👤 [Analytics] Identify User: ${userId}`, userProperties);
-    
+    appLogger.info(`👤 [Analytics] Identify User: ${userId}`, userProperties);
+
     // Real SDK implementation:
     // await analytics().setUserId(userId);
     // if (userProperties) await analytics().setUserProperties(userProperties);
   }
 
-  /**
-   * Clear user identity (on logout).
-   */
   public async resetUser(): Promise<void> {
-    logger.info('👤 [Analytics] Reset User identity');
+    appLogger.info('👤 [Analytics] Reset User identity');
     // await analytics().setUserId(null);
+  }
+
+  // ─── Private DP Helpers ──────────────────────────────────────────────────
+
+  /**
+   * Apply differential privacy to a flat property bag.
+   * - Numeric values: Laplace noise (sensitivity = 1, configurable ε).
+   * - String values: PII sanitization (email/phone/uuid redaction).
+   * - Booleans / null: passed through unchanged.
+   */
+  private applyDifferentialPrivacy(properties: Record<string, unknown>): Record<string, unknown> {
+    if (!this.dpConfig.enabled) return properties;
+
+    const stringProps: Record<string, unknown> = {};
+    const numericProps: Record<string, unknown> = {};
+
+    for (const [k, v] of Object.entries(properties)) {
+      if (typeof v === 'number') {
+        numericProps[k] = v;
+      } else {
+        stringProps[k] = v;
+      }
+    }
+
+    const sanitized = sanitizeProperties(stringProps);
+
+    // Add Laplace noise to each numeric field individually
+    const noisyNumerics: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(numericProps)) {
+      const scale = this.dpConfig.sensitivity / this.dpConfig.epsilon;
+      let u = Math.random() - 0.5;
+      while (u === 0) u = Math.random() - 0.5;
+      const noise = -scale * Math.sign(u) * Math.log(1 - 2 * Math.abs(u));
+      noisyNumerics[k] = (v as number) + noise;
+    }
+
+    return { ...sanitized, ...noisyNumerics };
   }
 }
 

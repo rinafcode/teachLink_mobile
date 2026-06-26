@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { Animated, Easing } from 'react-native';
 import type { GestureResponderEvent, ViewProps } from 'react-native';
+import { Animated, Easing } from 'react-native';
 import type { GestureCoordinator } from './useGestures';
 
 export interface LongPressInfo {
@@ -63,15 +63,24 @@ export function useLongPress(options: UseLongPressOptions) {
   const pressProgress = React.useRef(new Animated.Value(0)).current;
 
   const startRef = React.useRef<{ x: number; y: number } | null>(null);
-  const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timerRef = React.useRef<ReturnType<typeof setTimeout> | number | null>(null);
+  const rafRef = React.useRef<number | null>(null);
   const firedRef = React.useRef(false);
   const cancelledRef = React.useRef(false);
+  const startTimeRef = React.useRef<number | null>(null);
 
   const clearTimer = React.useCallback(() => {
     if (timerRef.current) {
-      clearTimeout(timerRef.current);
+      if (typeof timerRef.current === 'number') {
+        clearTimeout(timerRef.current);
+      }
       timerRef.current = null;
     }
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    startTimeRef.current = null;
   }, []);
 
   const reset = React.useCallback(() => {
@@ -117,18 +126,32 @@ export function useLongPress(options: UseLongPressOptions) {
         }).start();
 
         clearTimer();
-        timerRef.current = setTimeout(() => {
+        startTimeRef.current = performance.now();
+        
+        // Use requestAnimationFrame for frame-synced timing
+        const checkDuration = (timestamp: number) => {
           if (cancelledRef.current || firedRef.current) return;
-          // Claim only at trigger time so we don't block scroll/swipe prematurely.
-          const claimed = coordinator ? coordinator.tryClaim(id, { priority: 5 }) : true;
-          if (!claimed) {
-            cancel();
-            return;
+          
+          const elapsed = timestamp - (startTimeRef.current ?? timestamp);
+          if (elapsed >= durationMs) {
+            // Duration elapsed, trigger long press
+            if (cancelledRef.current || firedRef.current) return;
+            // Claim only at trigger time so we don't block scroll/swipe prematurely.
+            const claimed = coordinator ? coordinator.tryClaim(id, { priority: 5 }) : true;
+            if (!claimed) {
+              cancel();
+              return;
+            }
+            firedRef.current = true;
+            const s = startRef.current;
+            if (s) onLongPress({ pageX: s.x, pageY: s.y });
+          } else {
+            // Continue checking
+            rafRef.current = requestAnimationFrame(checkDuration);
           }
-          firedRef.current = true;
-          const s = startRef.current;
-          if (s) onLongPress({ pageX: s.x, pageY: s.y });
-        }, durationMs);
+        };
+        
+        rafRef.current = requestAnimationFrame(checkDuration);
       },
       onResponderMove: (e: GestureResponderEvent) => {
         if (e.nativeEvent.touches.length !== 1) {

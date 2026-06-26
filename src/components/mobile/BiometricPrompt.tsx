@@ -1,14 +1,16 @@
 import { Eye, FingerprintPattern, KeyRound, ScanFace } from 'lucide-react-native';
-import React from 'react';
+import React, { useRef } from 'react';
 import {
-    ActivityIndicator,
-    Modal,
-    Pressable,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+
+import { useFocusTrap, useFocusRestore } from '../../hooks';
 import { BiometricType } from '../../services/mobileAuth';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 
@@ -38,7 +40,7 @@ interface BiometricPromptProps {
 
 // ─── Biometric icon helper ────────────────────────────────────────────────────
 
-function BiometricIcon({
+const BiometricIcon = ({
   type,
   size = 52,
   color,
@@ -46,7 +48,7 @@ function BiometricIcon({
   type: BiometricType;
   size?: number;
   color: string;
-}) {
+}) => {
   switch (type) {
     case 'face':
       return <ScanFace size={size} color={color} />;
@@ -55,7 +57,7 @@ function BiometricIcon({
     default:
       return <FingerprintPattern size={size} color={color} />;
   }
-}
+};
 
 function biometricLabel(type: BiometricType): string {
   switch (type) {
@@ -90,6 +92,10 @@ export const BiometricPrompt: React.FC<BiometricPromptProps> = ({
 
   const label = biometricLabel(biometricType);
 
+  const containerRef = useRef<View>(null);
+  useFocusRestore(visible);
+  const { containerProps } = useFocusTrap(containerRef, visible, { autoFocus: true });
+
   return (
     <ErrorBoundary boundaryName="BiometricPromptModal">
       <Modal
@@ -101,60 +107,64 @@ export const BiometricPrompt: React.FC<BiometricPromptProps> = ({
       >
         <Pressable style={[styles.overlay, { backgroundColor: overlay }]} onPress={onDismiss}>
           <Pressable
+            ref={containerRef}
             style={[styles.sheet, { backgroundColor: bg }]}
-            onPress={(e) => e.stopPropagation()}
+            onPress={e => e.stopPropagation()}
+            accessibilityRole="dialog"
+            accessibilityLabel={`Sign in with ${label}`}
+            {...containerProps}
           >
-          {/* Icon */}
-          <View style={[styles.iconBg, { backgroundColor: iconBg }]}>
-            {isLoading ? (
-              <ActivityIndicator size="large" color={accentColor} />
-            ) : (
-              <BiometricIcon type={biometricType} color={accentColor} />
-            )}
-          </View>
-
-          {/* Title */}
-          <Text style={[styles.title, { color: textPrimary }]}>
-            {isLoading ? 'Authenticating…' : `Sign in with ${label}`}
-          </Text>
-
-          {/* Subtitle */}
-          <Text style={[styles.subtitle, { color: textSecondary }]}>
-            {isLoading
-              ? 'Please follow the on-screen prompt'
-              : `Use your ${label} to quickly and securely sign in to TeachLink`}
-          </Text>
-
-          {/* Error */}
-          {error && !isLoading && (
-            <View style={styles.errorBanner}>
-              <Text style={styles.errorText}>{error}</Text>
+            {/* Icon */}
+            <View style={[styles.iconBg, { backgroundColor: iconBg }]}>
+              {isLoading ? (
+                <ActivityIndicator size="large" color={accentColor} />
+              ) : (
+                <BiometricIcon type={biometricType} color={accentColor} />
+              )}
             </View>
-          )}
 
-          {/* CTA */}
-          {!isLoading && (
-            <TouchableOpacity
-              style={[styles.primaryBtn, { backgroundColor: accentColor }]}
-              onPress={onAuthenticate}
-              activeOpacity={0.85}
-            >
-              <BiometricIcon type={biometricType} size={18} color="#fff" />
-              <Text style={styles.primaryBtnText}>
-                {error ? `Retry ${label}` : `Use ${label}`}
-              </Text>
-            </TouchableOpacity>
-          )}
+            {/* Title */}
+            <Text style={[styles.title, { color: textPrimary }]}>
+              {isLoading ? 'Authenticating…' : `Sign in with ${label}`}
+            </Text>
 
-          {/* Fallback */}
-          {!isLoading && (
-            <TouchableOpacity style={styles.fallbackBtn} onPress={onFallback}>
-              <KeyRound size={15} color={textSecondary} />
-              <Text style={[styles.fallbackText, { color: textSecondary }]}>
-                Use password instead
-              </Text>
-            </TouchableOpacity>
-          )}
+            {/* Subtitle */}
+            <Text style={[styles.subtitle, { color: textSecondary }]}>
+              {isLoading
+                ? 'Please follow the on-screen prompt'
+                : `Use your ${label} to quickly and securely sign in to TeachLink`}
+            </Text>
+
+            {/* Error */}
+            {error && !isLoading && (
+              <View style={styles.errorBanner}>
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            )}
+
+            {/* CTA */}
+            {!isLoading && (
+              <TouchableOpacity
+                style={[styles.primaryBtn, { backgroundColor: accentColor }]}
+                onPress={onAuthenticate}
+                activeOpacity={0.85}
+              >
+                <BiometricIcon type={biometricType} size={18} color="#fff" />
+                <Text style={styles.primaryBtnText}>
+                  {error ? `Retry ${label}` : `Use ${label}`}
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Fallback */}
+            {!isLoading && (
+              <TouchableOpacity style={styles.fallbackBtn} onPress={onFallback}>
+                <KeyRound size={15} color={textSecondary} />
+                <Text style={[styles.fallbackText, { color: textSecondary }]}>
+                  Use password instead
+                </Text>
+              </TouchableOpacity>
+            )}
           </Pressable>
         </Pressable>
       </Modal>

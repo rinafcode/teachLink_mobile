@@ -1,0 +1,375 @@
+name: Performance Regression
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress runs for the same branch
+concurrency:
+  group: perf-regression-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─────────────────────────────────────────────
+  # 1. Bundle Size Check (size-limit + regression)
+  # ─────────────────────────────────────────────
+  bundle-size:
+    name: Bundle Size
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build bundles
+        run: |
+          npx expo export --platform android --output-dir ./bundle-android 2>/dev/null || true
+          npx expo export --platform ios    --output-dir ./bundle-ios     2>/dev/null || true
+        env:
+          EXPO_NO_DOTENV: 1
+
+      - name: Measure bundle sizes
+        id: sizes
+        run: |
+          mkdir -p reports
+
+          ANDROID=0
+          IOS=0
+          [ -d bundle-android ] && ANDROID=$(du -sb bundle-android | cut -f1)
+          [ -d bundle-ios ]     && IOS=$(du -sb bundle-ios | cut -f1)
+          TOTAL=$((ANDROID + IOS))
+
+          echo "android_bytes=$ANDROID" >> $GITHUB_OUTPUT
+          echo "ios_bytes=$IOS"         >> $GITHUB_OUTPUT
+          echo "total_bytes=$TOTAL"     >> $GITHUB_OUTPUT
+
+          # Write JSON for regression check
+          cat > reports/bundle-sizes.json <<EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "android_bytes": $ANDROID,
+            "ios_bytes": $IOS,
+            "total_bytes": $TOTAL
+          }
+          EOF
+
+          echo "### 📦 Bundle Sizes" >> $GITHUB_STEP_SUMMARY
+          echo "| Platform | Bytes | MB |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|----|" >> $GITHUB_STEP_SUMMARY
+          echo "| Android  | $ANDROID | $(echo "scale=2; $ANDROID/1048576" | bc) |" >> $GITHUB_STEP_SUMMARY
+          echo "| iOS      | $IOS | $(echo "scale=2; $IOS/1048576" | bc) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Total**| **$TOTAL** | **$(echo "scale=2; $TOTAL/1048576" | bc)** |" >> $GITHUB_STEP_SUMMARY
+
+      # Restore cached baseline bundle sizes for regression comparison
+      - name: Restore baseline bundle sizes
+        uses: actions/cache@v4
+        with:
+          path: reports/bundle-sizes-baseline.json
+          key: perf-bundle-baseline-${{ github.base_ref || 'main' }}
+          restore-keys: perf-bundle-baseline-
+
+      - name: Check bundle size regression (>5%)
+        run: |
+          CURRENT=${{ steps.sizes.outputs.total_bytes }}
+          BASELINE_FILE="reports/bundle-sizes-baseline.json"
+
+          if [ -f "$BASELINE_FILE" ]; then
+            BASELINE=$(node -e "console.log(require('./$BASELINE_FILE').total_bytes || 0)")
+            if [ "$BASELINE" -gt 0 ]; then
+              # Calculate percentage change using node for float math
+              node -e "
+                const baseline = $BASELINE;
+                const current  = $CURRENT;
+                const pct = ((current - baseline) / baseline) * 100;
+                console.log('Baseline:', baseline, 'bytes');
+                console.log('Current: ', current,  'bytes');
+                console.log('Change:  ', pct.toFixed(2) + '%');
+                if (pct > 5) {
+                  console.error('❌ Bundle size regressed by ' + pct.toFixed(2) + '% (threshold: 5%)');
+                  process.exit(1);
+                }
+                console.log('✅ Bundle size OK (' + pct.toFixed(2) + '% change)');
+              "
+            else
+              echo "No valid baseline — skipping regression check"
+            fi
+          else
+            echo "No baseline file found — first run, skipping regression check"
+          fi
+
+      # Save current sizes as new baseline on main branch pushes
+      - name: Save bundle size baseline
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: cp reports/bundle-sizes.json reports/bundle-sizes-baseline.json
+
+      - name: Cache bundle size baseline
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/cache@v4
+        with:
+          path: reports/bundle-sizes-baseline.json
+          key: perf-bundle-baseline-main
+
+      - name: Upload bundle size report
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-size-report
+          path: reports/bundle-sizes.json
+          retention-days: 30
+
+  # ─────────────────────────────────────────────
+  # 2. Startup Time Benchmark
+  # ─────────────────────────────────────────────
+  startup-time:
+    name: Startup Time
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run startup benchmark
+        run: node scripts/measureStartupTime.js
+        env:
+          STARTUP_ITERATIONS: 10
+          STARTUP_BUDGET_MS: 2000
+
+      - name: Restore startup baseline
+        uses: actions/cache@v4
+        with:
+          path: reports/startup-baseline.json
+          key: perf-startup-baseline-${{ github.base_ref || 'main' }}
+          restore-keys: perf-startup-baseline-
+
+      - name: Check startup time regression (>5%)
+        run: |
+          CURRENT_FILE="reports/startup-benchmark.json"
+          BASELINE_FILE="reports/startup-baseline.json"
+
+          if [ -f "$BASELINE_FILE" ] && [ -f "$CURRENT_FILE" ]; then
+            node -e "
+              const baseline = require('./$BASELINE_FILE');
+              const current  = require('./$CURRENT_FILE');
+              const bp95 = baseline.metrics?.p95;
+              const cp95 = current.metrics?.p95;
+              if (!bp95 || !cp95) { console.log('Missing data — skip'); process.exit(0); }
+              const pct = ((cp95 - bp95) / bp95) * 100;
+              console.log('Baseline p95:', bp95, 'ms');
+              console.log('Current  p95:', cp95, 'ms');
+              console.log('Change:      ', pct.toFixed(2) + '%');
+              if (pct > 5) {
+                console.error('❌ Startup p95 regressed by ' + pct.toFixed(2) + '% (threshold: 5%)');
+                process.exit(1);
+              }
+              console.log('✅ Startup time OK (' + pct.toFixed(2) + '% change)');
+            "
+          else
+            echo "No baseline — skipping regression check"
+          fi
+
+      - name: Save startup baseline
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: cp reports/startup-benchmark.json reports/startup-baseline.json
+
+      - name: Cache startup baseline
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/cache@v4
+        with:
+          path: reports/startup-baseline.json
+          key: perf-startup-baseline-main
+
+      - name: Upload startup report
+        uses: actions/upload-artifact@v4
+        with:
+          name: startup-time-report
+          path: reports/startup-benchmark.json
+          retention-days: 30
+
+  # ─────────────────────────────────────────────
+  # 3. API Latency Benchmark (k6)
+  # ─────────────────────────────────────────────
+  api-latency:
+    name: API Latency (k6)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring \
+            --keyring /usr/share/keyrings/k6-archive-keyring.gpg \
+            --keyserver hkp://keyserver.ubuntu.com:80 \
+            --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" \
+            | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update -qq
+          sudo apt-get install -y k6
+
+      - name: Run k6 API benchmark
+        run: |
+          mkdir -p reports
+          k6 run \
+            --env API_BASE_URL=${API_BASE_URL:-https://jsonplaceholder.typicode.com} \
+            --out json=reports/k6-raw.json \
+            scripts/k6-api-benchmark.js
+        env:
+          API_BASE_URL: ${{ vars.PERF_API_BASE_URL || 'https://jsonplaceholder.typicode.com' }}
+
+      - name: Restore API latency baseline
+        uses: actions/cache@v4
+        with:
+          path: reports/k6-baseline.json
+          key: perf-api-baseline-${{ github.base_ref || 'main' }}
+          restore-keys: perf-api-baseline-
+
+      - name: Check API latency regression (>5%)
+        run: |
+          CURRENT_FILE="reports/k6-summary.json"
+          BASELINE_FILE="reports/k6-baseline.json"
+
+          if [ -f "$BASELINE_FILE" ] && [ -f "$CURRENT_FILE" ]; then
+            node -e "
+              const baseline = require('./$BASELINE_FILE');
+              const current  = require('./$CURRENT_FILE');
+              const bp95 = baseline.metrics?.p95;
+              const cp95 = current.metrics?.p95;
+              if (!bp95 || !cp95) { console.log('Missing data — skip'); process.exit(0); }
+              const pct = ((cp95 - bp95) / bp95) * 100;
+              console.log('Baseline p95:', bp95.toFixed(0), 'ms');
+              console.log('Current  p95:', cp95.toFixed(0), 'ms');
+              console.log('Change:      ', pct.toFixed(2) + '%');
+              if (pct > 5) {
+                console.error('❌ API p95 latency regressed by ' + pct.toFixed(2) + '% (threshold: 5%)');
+                process.exit(1);
+              }
+              console.log('✅ API latency OK (' + pct.toFixed(2) + '% change)');
+            "
+          else
+            echo "No baseline — skipping regression check"
+          fi
+
+      - name: Save API latency baseline
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: cp reports/k6-summary.json reports/k6-baseline.json
+
+      - name: Cache API latency baseline
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/cache@v4
+        with:
+          path: reports/k6-baseline.json
+          key: perf-api-baseline-main
+
+      - name: Upload k6 report
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-latency-report
+          path: |
+            reports/k6-summary.json
+            reports/k6-raw.json
+          retention-days: 30
+
+  # ─────────────────────────────────────────────
+  # 4. Consolidated Regression Gate
+  # ─────────────────────────────────────────────
+  regression-gate:
+    name: Regression Gate
+    runs-on: ubuntu-latest
+    needs: [bundle-size, startup-time, api-latency]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download all reports
+        uses: actions/download-artifact@v4
+        with:
+          path: reports
+          merge-multiple: true
+
+      - name: Run consolidated regression check
+        run: node scripts/checkPerfRegression.js
+        env:
+          REGRESSION_THRESHOLD: 5
+
+      - name: Upload regression report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-report
+          path: reports/regression-report.json
+          retention-days: 30
+
+      - name: Post PR comment
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let body = '## ⚡ Performance Regression Report\n\n';
+
+            try {
+              const report = JSON.parse(fs.readFileSync('reports/regression-report.json', 'utf8'));
+              const { summary, checks, threshold_pct } = report;
+
+              const statusEmoji = summary.failed > 0 ? '❌' : '✅';
+              body += `${statusEmoji} **${summary.failed} failure(s)** | ${summary.passed} passed | ${summary.skipped} skipped | threshold: ${threshold_pct}%\n\n`;
+              body += '| Metric | Baseline | Current | Change | Status |\n';
+              body += '|--------|----------|---------|--------|--------|\n';
+
+              for (const c of checks) {
+                if (c.status === 'skip') {
+                  body += `| ${c.label} | — | — | — | ⏭ skip |\n`;
+                } else {
+                  const change = `${c.change_pct > 0 ? '+' : ''}${c.change_pct}%`;
+                  const status = c.status === 'pass' ? '✅' : '❌';
+                  body += `| ${c.label} | ${c.baseline} | ${c.current} | ${change} | ${status} |\n`;
+                }
+              }
+            } catch (e) {
+              body += '_Report not available._\n';
+            }
+
+            // Find and update existing comment, or create new one
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body.includes('Performance Regression Report'));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }

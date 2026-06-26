@@ -1,23 +1,26 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { ErrorBoundary } from '@/src/components';
+import { useTheme } from '@/store';
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+const TabLayout = () => {
+  const theme = useTheme();
 
   return (
     <ErrorBoundary boundaryName="TabsLayout">
       <Tabs
+        // Keep all tab screens mounted so state and scroll positions survive tab switches
+        detachInactiveScreens={false}
         screenOptions={{
-          tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+          tabBarActiveTintColor: Colors[theme].tint,
           headerShown: false,
           tabBarButton: HapticTab,
-        }}>
+        }}
+      >
         <Tabs.Screen
           name="index"
           options={{
@@ -29,8 +32,9 @@ export default function TabLayout() {
           name="search"
           options={{
             title: 'Search',
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="magnifyingglass" color={color} />,
-            href: '/search'
+            tabBarIcon: ({ color }) => (
+              <IconSymbol size={28} name="magnifyingglass" color={color} />
+            ),
           }}
         />
         <Tabs.Screen
@@ -38,10 +42,20 @@ export default function TabLayout() {
           options={{
             title: 'Profile',
             tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
-            href: '/profile/123'
+          }}
+        />
+        <Tabs.Screen
+          name="dashboard"
+          options={{
+            title: 'Dashboard',
+            tabBarIcon: ({ color }) => (
+              <IconSymbol size={28} name="chart.bar.fill" color={color} />
+            ),
           }}
         />
       </Tabs>
     </ErrorBoundary>
   );
-}
+};
+
+export default TabLayout;
