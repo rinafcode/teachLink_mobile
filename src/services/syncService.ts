@@ -6,6 +6,7 @@ import { offlineStorage, SyncOperation, SyncOperationType } from './offlineStora
 import { syncEntityManager } from './sync/syncEntityManager';
 import { useDeviceStore } from '../store/deviceStore';
 import { useSettingsStore } from '../store/settingsStore';
+import { useSyncStore } from '../store/syncStore';
 import { logger } from '../utils/logger';
 
 import type {
@@ -20,6 +21,10 @@ interface SyncConfig {
   syncInterval: number;
   batchSize: number;
 }
+
+const MAX_AUTO_SYNC_BACKOFF_MS = 300_000;
+const CIRCUIT_OPEN_FAILURE_THRESHOLD = 5;
+const CIRCUIT_OPEN_MS = 600_000;
 
 // Conflict resolution strategies
 type LegacyConflictResolutionStrategy = 'serverWins' | 'clientWins' | 'merge' | 'manual';
@@ -56,9 +61,12 @@ export interface SyncStats {
   successRate: number;
 }
 
-class SyncService {
+export class SyncService {
   private isSyncing: boolean = false;
-  private syncIntervalId: any = null;
+  private syncTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private autoSyncActive: boolean = false;
+  private consecutiveFailures: number = 0;
+  private circuitOpen: boolean = false;
   private eventListeners: ((event: SyncEvent) => void)[] = [];
   private config: SyncConfig;
   private metrics = {
@@ -84,7 +92,7 @@ class SyncService {
         logger.info(
           `SyncService: Low battery status changed to ${state.isLowBattery}, restarting auto-sync`
         );
-        if (this.syncIntervalId) {
+        if (this.autoSyncActive) {
           this.stopAutoSync();
           this.startAutoSync();
         }
@@ -109,17 +117,17 @@ class SyncService {
    * Start automatic sync process
    */
   startAutoSync(): void {
-    if (this.syncIntervalId) {
+    if (this.autoSyncActive) {
       logger.warn('Auto sync is already running');
       return;
     }
 
-    const isLowBattery = useDeviceStore.getState().isLowBattery;
-    const interval = isLowBattery ? 120000 : this.config.syncInterval; // 2 minutes if low battery
-
-    this.syncIntervalId = setInterval(() => {
-      this.syncPendingOperations();
-    }, interval);
+    this.autoSyncActive = true;
+    this.circuitOpen = false;
+    this.consecutiveFailures = 0;
+    const baseInterval = this.getBaseSyncInterval();
+    useSyncStore.getState().resetSyncStatus(baseInterval);
+    this.scheduleNextAutoSync(baseInterval);
 
     logger.info('Auto sync started');
     this.emitEvent({ type: 'syncStarted', timestamp: Date.now() });
@@ -129,11 +137,75 @@ class SyncService {
    * Stop automatic sync process
    */
   stopAutoSync(): void {
-    if (this.syncIntervalId) {
-      clearInterval(this.syncIntervalId);
-      this.syncIntervalId = null;
+    if (this.syncTimeoutId) {
+      clearTimeout(this.syncTimeoutId);
+      this.syncTimeoutId = null;
+    }
+
+    if (this.autoSyncActive) {
+      this.autoSyncActive = false;
       logger.info('Auto sync stopped');
     }
+  }
+
+  private scheduleNextAutoSync(delayMs: number): void {
+    if (!this.autoSyncActive) return;
+
+    if (this.syncTimeoutId) {
+      clearTimeout(this.syncTimeoutId);
+    }
+
+    useSyncStore.getState().setSyncStatus({ backoffMs: delayMs, circuitOpen: this.circuitOpen });
+    this.syncTimeoutId = setTimeout(() => {
+      void this.runScheduledAutoSync();
+    }, delayMs);
+  }
+
+  private async runScheduledAutoSync(): Promise<void> {
+    this.syncTimeoutId = null;
+
+    if (this.circuitOpen) {
+      this.circuitOpen = false;
+      this.consecutiveFailures = 0;
+      useSyncStore.getState().resetSyncStatus(this.getBaseSyncInterval());
+    }
+
+    const succeeded = await this.syncPendingOperations(false);
+    this.updateAutoSyncBackoff(succeeded);
+  }
+
+  private updateAutoSyncBackoff(succeeded: boolean): void {
+    if (!this.autoSyncActive) return;
+
+    if (succeeded) {
+      this.consecutiveFailures = 0;
+      this.circuitOpen = false;
+      const baseInterval = this.getBaseSyncInterval();
+      useSyncStore.getState().resetSyncStatus(baseInterval);
+      this.scheduleNextAutoSync(baseInterval);
+      return;
+    }
+
+    this.consecutiveFailures += 1;
+
+    if (this.consecutiveFailures >= CIRCUIT_OPEN_FAILURE_THRESHOLD) {
+      this.circuitOpen = true;
+      useSyncStore.getState().openCircuit(CIRCUIT_OPEN_MS, this.consecutiveFailures);
+      this.scheduleNextAutoSync(CIRCUIT_OPEN_MS);
+      return;
+    }
+
+    const backoffMs = this.calculateAutoSyncBackoff(this.consecutiveFailures);
+    useSyncStore.getState().recordSyncFailure(backoffMs, false, this.consecutiveFailures);
+    this.scheduleNextAutoSync(backoffMs);
+  }
+
+  private getBaseSyncInterval(): number {
+    return useDeviceStore.getState().isLowBattery ? 120000 : this.config.syncInterval;
+  }
+
+  private calculateAutoSyncBackoff(failures: number): number {
+    return Math.min(this.getBaseSyncInterval() * 2 ** failures, MAX_AUTO_SYNC_BACKOFF_MS);
   }
 
   /**
@@ -141,16 +213,21 @@ class SyncService {
    */
   async manualSync(): Promise<void> {
     logger.info('Manual sync triggered');
-    await this.syncPendingOperations(true);
+    const succeeded = await this.syncPendingOperations(true);
+    if (succeeded) {
+      this.consecutiveFailures = 0;
+      this.circuitOpen = false;
+      useSyncStore.getState().resetSyncStatus(this.getBaseSyncInterval());
+    }
   }
 
   /**
    * Main sync process
    */
-  private async syncPendingOperations(isManual = false): Promise<void> {
+  private async syncPendingOperations(isManual = false): Promise<boolean> {
     if (this.isSyncing) {
       logger.debug('Sync already in progress, skipping');
-      return;
+      return true;
     }
 
     const settings = useSettingsStore.getState();
@@ -158,7 +235,7 @@ class SyncService {
 
     if (settings.dataSaverEnabled && !isManual) {
       logger.debug('SyncService: Skipped auto-sync — Data Saver mode enabled');
-      return;
+      return true;
     }
 
     if (isLowBattery && !isManual) {
@@ -171,16 +248,17 @@ class SyncService {
     const isConnected = await this.checkConnectivity();
     if (!isConnected) {
       logger.debug('No network connectivity, skipping sync');
-      return;
+      return false;
     }
 
     this.isSyncing = true;
+    let syncSucceeded = true;
 
     try {
       const queue = await offlineStorage.getSyncQueue();
       if (queue.length === 0) {
         logger.debug('No pending operations to sync');
-        return;
+        return true;
       }
 
       this.metrics.attemptedOperations += queue.length;
@@ -190,11 +268,18 @@ class SyncService {
       const batches = this.createBatches(queue, this.config.batchSize);
 
       for (const batch of batches) {
-        await this.processBatch(batch);
+        const batchSucceeded = await this.processBatch(batch);
+        if (!batchSucceeded) {
+          syncSucceeded = false;
+        }
       }
 
-      logger.info('Sync completed successfully');
-      this.emitEvent({ type: 'syncCompleted', timestamp: Date.now() });
+      if (syncSucceeded) {
+        logger.info('Sync completed successfully');
+        this.emitEvent({ type: 'syncCompleted', timestamp: Date.now() });
+      }
+
+      return syncSucceeded;
     } catch (error) {
       logger.error('Sync failed:', error);
       this.emitEvent({
@@ -202,6 +287,7 @@ class SyncService {
         error,
         timestamp: Date.now(),
       });
+      return false;
     } finally {
       this.isSyncing = false;
     }
@@ -211,7 +297,7 @@ class SyncService {
    * Process a batch of operations — mutation types are combined into a single
    * POST /api/batch request; READ operations continue on the individual path.
    */
-  private async processBatch(operations: SyncOperation[]): Promise<void> {
+  private async processBatch(operations: SyncOperation[]): Promise<boolean> {
     const reads = operations.filter(op => op.type === 'READ');
     const mutations = operations.filter(op => op.type !== 'READ');
 
@@ -233,6 +319,7 @@ class SyncService {
             data: result,
             timestamp: Date.now(),
           });
+          return true;
         })
         .catch(async (error: any) => {
           logger.error(`Batch operation failed: ${op.id}`, error);
@@ -249,11 +336,24 @@ class SyncService {
             error,
             timestamp: Date.now(),
           });
+          return false;
         });
     });
 
     // mutate() calls above are synchronous enqueues; flush sends them as one request.
-    await Promise.all([batchClient.flush(), ...mutationPromises, ...readPromises]);
+    const results = await Promise.all([
+      batchClient.flush().then(
+        () => true,
+        error => {
+          logger.error('Batch flush failed:', error);
+          return false;
+        }
+      ),
+      ...mutationPromises,
+      ...readPromises,
+    ]);
+
+    return results.every(Boolean);
   }
 
   private mapOperationToMethod(type: SyncOperationType): 'POST' | 'PUT' | 'DELETE' | null {
@@ -266,7 +366,7 @@ class SyncService {
   /**
    * Process individual operation
    */
-  private async processOperation(operation: SyncOperation): Promise<void> {
+  private async processOperation(operation: SyncOperation): Promise<boolean> {
     try {
       logger.debug(`Processing operation: ${operation.type} ${operation.endpoint}`);
 
@@ -300,6 +400,7 @@ class SyncService {
         data: result,
         timestamp: Date.now(),
       });
+      return true;
     } catch (error: any) {
       logger.error(`Operation failed: ${operation.id}`, error);
       this.recordSyncFailure(operation, error);
@@ -326,6 +427,7 @@ class SyncService {
         error,
         timestamp: Date.now(),
       });
+      return false;
     }
   }
 

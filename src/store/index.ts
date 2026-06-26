@@ -58,7 +58,7 @@ export const useAppStore = create<AppState>()(
         theme: "light",
         isLoading: false,
         error: null,
-        setUser: (user) => {
+        setUser: user => {
           set({ user, isAuthenticated: !!user }, false, 'setUser');
           // Sync Sentry scope with the signed-in user so every subsequent
           // error report is automatically tagged with user identity.
@@ -73,13 +73,22 @@ export const useAppStore = create<AppState>()(
             sentryContextService.clearUser();
           }
         },
-        setTheme: (theme) => set({ theme }, false, 'setTheme'),
+        setTheme: theme => set({ theme }, false, 'setTheme'),
         setTokens: (accessToken, refreshToken, sessionExpiresAt) =>
-          set({ accessToken, refreshToken, sessionExpiresAt }, false, "setTokens"),
-        setAuthLoading: (isAuthLoading) => set({ isAuthLoading }, false, "setAuthLoading"),
-        setAuthError: (authError) => set({ authError }, false, "setAuthError"),
-        setSessionExpiringSoon: (sessionExpiringSoon) => set({ sessionExpiringSoon }, false, "setSessionExpiringSoon"),
-        logout: () =>
+          set(
+            {
+              accessToken,
+              refreshToken,
+              sessionExpiresAt: toUnixMs(sessionExpiresAt),
+            },
+            false,
+            'setTokens'
+          ),
+        setSessionExpiringSoon: sessionExpiringSoon =>
+          set({ sessionExpiringSoon }, false, 'setSessionExpiringSoon'),
+        setAuthLoading: isAuthLoading => set({ isAuthLoading }, false, 'setAuthLoading'),
+        setAuthError: authError => set({ authError }, false, 'setAuthError'),
+        logout: () => {
           set(
             {
               user: null,
@@ -98,8 +107,8 @@ export const useAppStore = create<AppState>()(
           sentryContextService.clearUser();
           sentryContextService.resetSession();
         },
-        setLoading: (isLoading) => set({ isLoading }, false, 'setLoading'),
-        setError: (error) => set({ error }, false, 'setError'),
+        setLoading: isLoading => set({ isLoading }, false, 'setLoading'),
+        setError: error => set({ error }, false, 'setError'),
       })),
       {
         name: 'app-auth-storage',
@@ -137,4 +146,4 @@ export * from './metricsStore';
 export * from './notificationStore';
 export * from './reviewStore';
 export * from './selectors';
-
+export * from './syncStore';
