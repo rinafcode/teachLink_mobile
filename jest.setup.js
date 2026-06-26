@@ -10,7 +10,10 @@ jest.mock('react-native', () => ({
   View: 'View',
   Text: 'Text',
   TouchableOpacity: 'TouchableOpacity',
-  KeyboardAvoidingView: 'KeyboardAvoidingView',
+  KeyboardAvoidingView: Object.assign(
+    ({ children, ...props }) => children,
+    { displayName: 'KeyboardAvoidingView' }
+  ),
   Modal: 'Modal',
   SafeAreaView: 'SafeAreaView',
   ScrollView: 'ScrollView',
@@ -283,7 +286,6 @@ jest.mock('expo-notifications', () => ({
   getExpoPushTokenAsync: jest.fn(() =>
     Promise.resolve({ data: 'ExponentPushToken[test-token-123]' })
   ),
-  setNotificationChannelAsync: jest.fn(() => Promise.resolve()),
   scheduleNotificationAsync: jest.fn(() => Promise.resolve('notification-id')),
   cancelScheduledNotificationAsync: jest.fn(() => Promise.resolve()),
   cancelAllScheduledNotificationsAsync: jest.fn(() => Promise.resolve()),
