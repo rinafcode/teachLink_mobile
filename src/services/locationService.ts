@@ -8,12 +8,19 @@
  *
  * Gracefully degrades to manual entry if GPS unavailable
  * No errors thrown - always falls back to manual entry
+ *
+ * Permission revoke detection:
+ * - Listens to AppState changes to detect OS-level permission revocation
+ * - On revoke: stops watcher, clears coordinates, notifies store
  */
 
 import * as Location from 'expo-location';
-import { useDegradationStore } from '../store/degradationStore';
-import { appLogger } from '../utils/logger';
+import { AppState, AppStateStatus } from 'react-native';
+
 import { featureCapabilities, FeatureStatus, FeatureType } from './featureCapabilities';
+import { useDegradationStore } from '../store/degradationStore';
+import { useLocationStore } from '../store/locationStore';
+import { appLogger } from '../utils/logger';
 
 export enum LocationSourceType {
   GPS = 'gps',
@@ -35,6 +42,8 @@ class LocationService {
   private static instance: LocationService;
   private cachedLocation: LocationData | null = null;
   private locationPermissionStatus: Location.PermissionStatus | null = null;
+  private appStateSubscription: { remove: () => void } | null = null;
+  private isWatchingPermissionChanges: boolean = false;
 
   private constructor() {}
 
@@ -55,15 +64,19 @@ class LocationService {
 
       if (status === 'granted') {
         featureCapabilities.getFeatureInfo(FeatureType.LOCATION);
-        const degradationStore = useDegradationStore();
-        degradationStore.setFeatureStatus(FeatureType.LOCATION, FeatureStatus.AVAILABLE);
+        useDegradationStore
+          .getState()
+          .setFeatureStatus(FeatureType.LOCATION, FeatureStatus.AVAILABLE);
+        useLocationStore.getState().setPermissionGranted(true);
+        this.startWatchingPermissionChanges();
         appLogger.infoSync('[LocationService] Location permission granted');
         return true;
       } else {
         featureCapabilities.getFeatureInfo(FeatureType.LOCATION);
-        const degradationStore = useDegradationStore();
-        degradationStore.setFeatureStatus(FeatureType.LOCATION, FeatureStatus.DEGRADED);
-        degradationStore.addNotification({
+        useDegradationStore
+          .getState()
+          .setFeatureStatus(FeatureType.LOCATION, FeatureStatus.DEGRADED);
+        useDegradationStore.getState().addNotification({
           feature: FeatureType.LOCATION,
           status: FeatureStatus.DEGRADED,
           message: 'Location permission denied. You can manually enter your location instead.',
@@ -72,7 +85,10 @@ class LocationService {
         return false;
       }
     } catch (error) {
-      appLogger.errorSync('[LocationService] Error requesting permission', error instanceof Error ? error : new Error(String(error)));
+      appLogger.errorSync(
+        '[LocationService] Error requesting permission',
+        error instanceof Error ? error : new Error(String(error))
+      );
       return false;
     }
   }
@@ -86,7 +102,10 @@ class LocationService {
       this.locationPermissionStatus = status;
       return status === 'granted';
     } catch (error) {
-      appLogger.errorSync('[LocationService] Error checking permission', error instanceof Error ? error : new Error(String(error)));
+      appLogger.errorSync(
+        '[LocationService] Error checking permission',
+        error instanceof Error ? error : new Error(String(error))
+      );
       return false;
     }
   }
@@ -98,12 +117,14 @@ class LocationService {
   public async getCurrentLocation(): Promise<LocationData | null> {
     try {
       // Check permission
-      const hasPermission = this.locationPermissionStatus === 'granted' || await this.checkPermission();
+      const hasPermission =
+        this.locationPermissionStatus === 'granted' || (await this.checkPermission());
       if (!hasPermission) {
         appLogger.infoSync('[LocationService] Location permission not granted - GPS unavailable');
         featureCapabilities.getFeatureInfo(FeatureType.LOCATION);
-        const degradationStore = useDegradationStore();
-        degradationStore.setFeatureStatus(FeatureType.LOCATION, FeatureStatus.DEGRADED);
+        useDegradationStore
+          .getState()
+          .setFeatureStatus(FeatureType.LOCATION, FeatureStatus.DEGRADED);
         return null;
       }
 
@@ -135,17 +156,29 @@ class LocationService {
           locationData.address = parts.join(', ');
         }
       } catch (geocodeError) {
-        appLogger.infoSync('[LocationService] Reverse geocoding failed (non-fatal)', geocodeError instanceof Error ? geocodeError : new Error(String(geocodeError)));
+        appLogger.infoSync(
+          '[LocationService] Reverse geocoding failed (non-fatal)',
+          geocodeError instanceof Error ? geocodeError : new Error(String(geocodeError))
+        );
         // Continue with GPS coordinates even if geocoding fails
       }
 
       // Cache the location
       this.cachedLocation = locationData;
 
+      // Store coordinates in locationStore for downstream consumers
+      if (locationData.latitude !== undefined && locationData.longitude !== undefined) {
+        useLocationStore.getState().setCoordinates({
+          latitude: locationData.latitude,
+          longitude: locationData.longitude,
+        });
+      }
+
       // Update feature status
       featureCapabilities.getFeatureInfo(FeatureType.LOCATION);
-      const degradationStore = useDegradationStore();
-      degradationStore.setFeatureStatus(FeatureType.LOCATION, FeatureStatus.AVAILABLE);
+      useDegradationStore
+        .getState()
+        .setFeatureStatus(FeatureType.LOCATION, FeatureStatus.AVAILABLE);
 
       appLogger.infoSync('[LocationService] GPS location obtained successfully', {
         lat: locationData.latitude,
@@ -154,13 +187,15 @@ class LocationService {
 
       return locationData;
     } catch (error) {
-      appLogger.errorSync('[LocationService] Error getting current location', error instanceof Error ? error : new Error(String(error)));
+      appLogger.errorSync(
+        '[LocationService] Error getting current location',
+        error instanceof Error ? error : new Error(String(error))
+      );
 
       // Feature degraded but not unavailable - return cached location if available
       featureCapabilities.getFeatureInfo(FeatureType.LOCATION);
-      const degradationStore = useDegradationStore();
-      degradationStore.setFeatureStatus(FeatureType.LOCATION, FeatureStatus.DEGRADED);
-      degradationStore.addNotification({
+      useDegradationStore.getState().setFeatureStatus(FeatureType.LOCATION, FeatureStatus.DEGRADED);
+      useDegradationStore.getState().addNotification({
         feature: FeatureType.LOCATION,
         status: FeatureStatus.DEGRADED,
         message: 'Could not access your current location. Please enter your location manually.',
@@ -183,8 +218,7 @@ class LocationService {
     this.cachedLocation = locationData;
 
     featureCapabilities.getFeatureInfo(FeatureType.LOCATION);
-    const degradationStore = useDegradationStore();
-    degradationStore.setFeatureStatus(FeatureType.LOCATION, FeatureStatus.AVAILABLE);
+    useDegradationStore.getState().setFeatureStatus(FeatureType.LOCATION, FeatureStatus.AVAILABLE);
 
     appLogger.infoSync('[LocationService] Manual location set', { address });
     return locationData;
@@ -202,6 +236,77 @@ class LocationService {
    */
   public clearCachedLocation(): void {
     this.cachedLocation = null;
+  }
+
+  /**
+   * Start watching for OS-level permission changes via AppState.
+   * When the app becomes active, re-checks permission status and cleans up
+   * if permission was revoked while in background.
+   */
+  public startWatchingPermissionChanges(): void {
+    if (this.isWatchingPermissionChanges) return;
+    this.isWatchingPermissionChanges = true;
+    this.appStateSubscription = AppState.addEventListener('change', this.handleAppStateChange);
+    appLogger.infoSync('[LocationService] Started watching permission changes via AppState');
+  }
+
+  private handleAppStateChange = async (nextAppState: AppStateStatus): void => {
+    if (nextAppState !== 'active') return;
+
+    const previousStatus = this.locationPermissionStatus;
+    const hasPermission = await this.checkPermission();
+
+    if (previousStatus === 'granted' && !hasPermission) {
+      this.onPermissionRevoked();
+    }
+  };
+
+  private onPermissionRevoked(): void {
+    // Stop watching — permission is gone
+    if (this.appStateSubscription) {
+      this.appStateSubscription.remove();
+      this.appStateSubscription = null;
+    }
+    this.isWatchingPermissionChanges = false;
+
+    // Clear cached location so stale data is never served
+    this.clearCachedLocation();
+
+    // Clear locationStore coordinates and mark permission as denied
+    useLocationStore.getState().clearLocation();
+
+    // Update degradation store
+    useDegradationStore
+      .getState()
+      .setFeatureStatus(FeatureType.LOCATION, FeatureStatus.PERMISSION_DENIED);
+    useDegradationStore.getState().addNotification({
+      feature: FeatureType.LOCATION,
+      status: FeatureStatus.PERMISSION_DENIED,
+      message:
+        'Location permission was revoked while the app was running. Please enable it in Settings or enter your location manually.',
+    });
+
+    appLogger.warnSync(
+      '[LocationService] Location permission revoked — watcher stopped, coordinates cleared'
+    );
+  }
+
+  /**
+   * Clean up AppState subscription. Called during service teardown.
+   */
+  public cleanup(): void {
+    if (this.appStateSubscription) {
+      this.appStateSubscription.remove();
+      this.appStateSubscription = null;
+    }
+    this.isWatchingPermissionChanges = false;
+  }
+
+  /** @internal Reset internal state for testing purposes. */
+  public reset(): void {
+    this.cleanup();
+    this.cachedLocation = null;
+    this.locationPermissionStatus = null;
   }
 
   /**
@@ -235,8 +340,7 @@ class LocationService {
     // Return null - manual entry required
     appLogger.infoSync('[LocationService] No location available - manual entry required');
     featureCapabilities.getFeatureInfo(FeatureType.LOCATION);
-    const degradationStore = useDegradationStore();
-    degradationStore.setFeatureStatus(FeatureType.LOCATION, FeatureStatus.DEGRADED);
+    useDegradationStore.getState().setFeatureStatus(FeatureType.LOCATION, FeatureStatus.DEGRADED);
 
     return null;
   }

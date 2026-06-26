@@ -14,7 +14,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { FeatureStatus, FeatureType } from './featureCapabilities';
+
+import { FeatureStatus, FeatureType } from '../services/featureCapabilities';
 
 export interface DegradationNotification {
   id: string;
@@ -85,11 +86,12 @@ export const useDegradationStore = create<DegradationState>()(
 
       // Feature status actions
       setFeatureStatus: (feature, status) =>
-        set((state) => {
+        set(state => {
           const newDegraded = new Set(state.degradedFeatures);
-          const isDegraded = status === FeatureStatus.PERMISSION_DENIED ||
-                            status === FeatureStatus.HARDWARE_UNAVAILABLE ||
-                            status === FeatureStatus.UNAVAILABLE;
+          const isDegraded =
+            status === FeatureStatus.PERMISSION_DENIED ||
+            status === FeatureStatus.HARDWARE_UNAVAILABLE ||
+            status === FeatureStatus.UNAVAILABLE;
 
           if (isDegraded) {
             newDegraded.add(feature);
@@ -108,9 +110,11 @@ export const useDegradationStore = create<DegradationState>()(
 
       isFeatureDegraded: (feature: FeatureType): boolean => {
         const status = get().featureStatuses[feature];
-        return status === FeatureStatus.PERMISSION_DENIED ||
-               status === FeatureStatus.HARDWARE_UNAVAILABLE ||
-               status === FeatureStatus.UNAVAILABLE;
+        return (
+          status === FeatureStatus.PERMISSION_DENIED ||
+          status === FeatureStatus.HARDWARE_UNAVAILABLE ||
+          status === FeatureStatus.UNAVAILABLE
+        );
       },
 
       getDegradedFeatures: (): FeatureType[] => {
@@ -132,7 +136,7 @@ export const useDegradationStore = create<DegradationState>()(
           showedAt: new Date().toISOString(),
         };
 
-        set((state) => ({
+        set(state => ({
           notifications: [newNotification, ...state.notifications].slice(0, 50), // Keep last 50
         }));
 
@@ -140,8 +144,8 @@ export const useDegradationStore = create<DegradationState>()(
       },
 
       dismissNotification: (notificationId: string, action?: string) => {
-        set((state) => ({
-          notifications: state.notifications.map((n) =>
+        set(state => ({
+          notifications: state.notifications.map(n =>
             n.id === notificationId
               ? { ...n, dismissedAt: new Date().toISOString(), actionTaken: action }
               : n
@@ -154,24 +158,24 @@ export const useDegradationStore = create<DegradationState>()(
       },
 
       getUnreadNotifications: (): DegradationNotification[] => {
-        return get().notifications.filter((n) => !n.dismissedAt);
+        return get().notifications.filter(n => !n.dismissedAt);
       },
 
       // Preference actions
       setShowDegradationBanners: (show: boolean) => {
-        set((state) => ({
+        set(state => ({
           preferences: { ...state.preferences, showDegradationBanners: show },
         }));
       },
 
       setAutoDismissAlerts: (autoDismiss: boolean) => {
-        set((state) => ({
+        set(state => ({
           preferences: { ...state.preferences, autoDismissDegradationAlerts: autoDismiss },
         }));
       },
 
       setRemindPermissionRetry: (remind: boolean) => {
-        set((state) => ({
+        set(state => ({
           preferences: { ...state.preferences, remindPermissionRetry: remind },
         }));
       },
@@ -179,7 +183,7 @@ export const useDegradationStore = create<DegradationState>()(
     {
       name: 'degradation-store',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({
+      partialize: state => ({
         preferences: state.preferences,
         notifications: state.notifications,
         featureStatuses: state.featureStatuses,
