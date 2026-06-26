@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
@@ -48,6 +48,15 @@ export const ConnectionManager: React.FC<ConnectionManagerProps> = ({
     </View>
   );
 
+  const getConnectionItemLayout = useCallback(
+    (_data: ArrayLike<Connection> | null | undefined, index: number) => ({
+      length: CONNECTION_ITEM_HEIGHT,
+      offset: CONNECTION_ITEM_HEIGHT * index,
+      index,
+    }),
+    []
+  );
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -63,6 +72,7 @@ export const ConnectionManager: React.FC<ConnectionManagerProps> = ({
           data={connections}
           renderItem={renderConnectionItem}
           keyExtractor={item => item.id}
+          getItemLayout={getConnectionItemLayout}
           style={styles.list}
         />
       ) : (
@@ -71,6 +81,9 @@ export const ConnectionManager: React.FC<ConnectionManagerProps> = ({
     </View>
   );
 };
+
+/** Estimated height of each connection item for optimal FlatList virtualization */
+const CONNECTION_ITEM_HEIGHT = 65;
 
 const styles = StyleSheet.create({
   container: {

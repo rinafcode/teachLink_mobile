@@ -1,5 +1,5 @@
 import { Trash2 } from 'lucide-react-native';
-import React from 'react';
+import React, { useCallback } from 'react';
 import { FlatList, TouchableOpacity, View } from 'react-native';
 import { useDownloads } from '../../hooks/useDownloads';
 import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
@@ -42,6 +42,15 @@ export function DownloadQueue() {
     </View>
   );
 
+  const getDownloadItemLayout = useCallback(
+    (_data: ArrayLike<any> | null | undefined, index: number) => ({
+      length: DOWNLOAD_ITEM_HEIGHT,
+      offset: DOWNLOAD_ITEM_HEIGHT * index,
+      index,
+    }),
+    []
+  );
+
   if (tasks.length === 0) {
     return (
       <View className="flex-1 items-center justify-center p-8">
@@ -55,6 +64,7 @@ export function DownloadQueue() {
       data={tasks}
       keyExtractor={item => item.id}
       renderItem={renderItem}
+      getItemLayout={getDownloadItemLayout}
       contentContainerStyle={{ paddingVertical: 8 }}
       ListHeaderComponent={() => (
         <AppText className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-gray-400">
@@ -64,3 +74,6 @@ export function DownloadQueue() {
     />
   );
 }
+
+/** Estimated height of each download item for optimal FlatList virtualization */
+const DOWNLOAD_ITEM_HEIGHT = 80;

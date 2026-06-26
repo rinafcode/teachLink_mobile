@@ -127,6 +127,15 @@ export const AdvancedDataGrid = <T extends GridRow = GridRow>({
 
   const keyExtractor = useCallback((item: T) => String(item.id), []);
 
+  const getDataRowLayout = useCallback(
+    (_data: ArrayLike<T> | null | undefined, index: number) => ({
+      length: DATA_ROW_HEIGHT,
+      offset: DATA_ROW_HEIGHT * index,
+      index,
+    }),
+    []
+  );
+
   const hasFilters = filters.length > 0;
 
   return (
@@ -177,6 +186,7 @@ export const AdvancedDataGrid = <T extends GridRow = GridRow>({
                 data={paginatedRows}
                 renderItem={renderRow}
                 keyExtractor={keyExtractor}
+                getItemLayout={getDataRowLayout}
                 removeClippedSubviews
                 initialNumToRender={15}
                 maxToRenderPerBatch={10}
@@ -451,6 +461,9 @@ const PaginationBar = ({
 };
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
+
+/** Estimated height of each data row for optimal FlatList virtualization */
+const DATA_ROW_HEIGHT = 40;
 
 const styles = StyleSheet.create({
   root: {
