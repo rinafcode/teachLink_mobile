@@ -20,6 +20,7 @@ import {
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
+    Alert,
     Animated,
     Platform,
     SafeAreaView,
@@ -35,7 +36,7 @@ import { Achievement, AchievementBadges } from './AchievementBadges';
 import { AvatarCamera } from './AvatarCamera';
 import { MobileFormInput } from './MobileFormInput';
 import { StatisticsDisplay } from './StatisticsDisplay';
-import { useFormCache } from '../../hooks/useFormCache';
+import { useFormCache, useRequireReauth } from '../../hooks';
 import { PROFILE_FORM_CACHE_KEYS, cacheFormValues } from '../../services/formCache';
 import { configureNext } from '../../utils/layoutAnimation';
 import { AppText as Text } from '../common/AppText';
@@ -262,6 +263,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [isCameraVisible, setIsCameraVisible] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const { performReauthCheck } = useRequireReauth();
 
   const fadeAnim = useRef(new Animated.Value(isLoading ? 0 : 1)).current;
 
@@ -364,6 +366,19 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
   }, []);
 
   const handleSave = handleSubmit(async (data) => {
+    const isEmailChanged = data.email.trim() !== profile.email;
+    if (isEmailChanged) {
+      const authorized = await performReauthCheck();
+      if (!authorized) {
+        Alert.alert(
+          'Re-authentication Failed',
+          'Biometric verification is required to change your account email.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+    }
+
     setIsSaving(true);
     await new Promise(resolve => setTimeout(resolve, 800));
     setProfile(prev => ({
