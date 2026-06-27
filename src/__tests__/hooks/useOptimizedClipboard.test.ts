@@ -30,7 +30,7 @@ describe('useOptimizedClipboard', () => {
     expect(result.current.isPasting).toBe(false);
     expect(result.current.copySuccess).toBe(false);
     expect(result.current.error).toBeNull();
-    expect(result.current.clipboardContent).toBe('');
+    expect(result.current.clipboardContent).toBeNull();
     expect(result.current.metrics).toBeNull();
   });
 
@@ -109,5 +109,27 @@ describe('useOptimizedClipboard', () => {
     expect(result.current.isPasting).toBe(false);
     expect(result.current.clipboardContent).toBe('test pasted text');
     expect(result.current.error).toBeNull();
+  });
+
+  it('clears clipboard content from state 30 seconds after paste', async () => {
+    const { result } = renderHook(() => useOptimizedClipboard());
+
+    let promise: Promise<string>;
+    act(() => {
+      promise = result.current.pasteFromClipboard();
+    });
+
+    await act(async () => {
+      jest.runAllTimers();
+      await promise;
+    });
+
+    expect(result.current.clipboardContent).toBe('test pasted text');
+
+    act(() => {
+      jest.advanceTimersByTime(30_000);
+    });
+
+    expect(result.current.clipboardContent).toBeNull();
   });
 });

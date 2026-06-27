@@ -8,23 +8,33 @@ export interface UseOptimizedClipboardResult {
   isPasting: boolean;
   copySuccess: boolean;
   error: Error | null;
-  clipboardContent: string;
+  clipboardContent: string | null;
   metrics: ClipboardOperationMetrics | null;
   copyToClipboard: (text: string) => Promise<boolean>;
   pasteFromClipboard: () => Promise<string>;
   clearError: () => void;
 }
 
+/**
+ * Optimized clipboard hook with a 30-second TTL on pasted content.
+ *
+ * Clipboard access is only performed in response to explicit user gestures —
+ * never on mount or auto-focus. Pasted content is automatically cleared from
+ * state after 30 s (TTL) to limit the exposure window for sensitive data such
+ * as passwords, auth tokens, and payment card numbers held in JS heap memory.
+ * No clipboard content is forwarded to analytics or error-reporting services.
+ */
 export function useOptimizedClipboard(): UseOptimizedClipboardResult {
   const [isCopying, setIsCopying] = useState(false);
   const [isPasting, setIsPasting] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const [clipboardContent, setClipboardContent] = useState('');
+  const [clipboardContent, setClipboardContent] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<ClipboardOperationMetrics | null>(null);
-  
+
   const isMounted = useRef(true);
   const successTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const clipboardTtlRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     isMounted.current = true;
@@ -35,6 +45,24 @@ export function useOptimizedClipboard(): UseOptimizedClipboardResult {
       }
     };
   }, []);
+
+  // Clear clipboard content from state 30 s after it is set to limit the
+  // in-memory exposure window for sensitive data.
+  useEffect(() => {
+    if (clipboardContent !== null) {
+      clipboardTtlRef.current = setTimeout(() => {
+        if (isMounted.current) {
+          setClipboardContent(null);
+        }
+      }, 30_000);
+    }
+    return () => {
+      if (clipboardTtlRef.current) {
+        clearTimeout(clipboardTtlRef.current);
+        clipboardTtlRef.current = null;
+      }
+    };
+  }, [clipboardContent]);
 
   const clearError = useCallback(() => {
     setError(null);
