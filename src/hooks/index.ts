@@ -4,6 +4,7 @@ export * from './useAdaptiveTheme';
 export * from './useAnalytics';
 export { AuthProvider, useAuth } from './useAuth';
 export * from './useBiometricAuth';
+export * from './useRequireReauth';
 export * from './useCamera';
 export * from './useCoursePagination';
 export * from './useCourseProgress';
