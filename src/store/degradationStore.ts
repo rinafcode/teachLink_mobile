@@ -26,6 +26,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { FeatureStatus, FeatureType } from '../services/featureCapabilities';
+import { useFeatureFlagStore } from './featureFlagStore';
 
 export interface DegradationNotification {
   id: string;
@@ -42,6 +43,7 @@ export interface DegradationPreferences {
   autoDismissDegradationAlerts: boolean; // Auto-dismiss alerts after 5 seconds
   remindPermissionRetry: boolean; // Remind user to grant permissions after 1 hour
   enableFallbackUX: boolean; // Use fallback UX when features unavailable (always true)
+  respectRemoteFlags: boolean; // Check remote feature flags before marking feature available
 }
 
 interface DegradationState {
@@ -72,6 +74,7 @@ interface DegradationState {
   setShowDegradationBanners: (show: boolean) => void;
   setAutoDismissAlerts: (autoDismiss: boolean) => void;
   setRemindPermissionRetry: (remind: boolean) => void;
+  setRespectRemoteFlags: (respect: boolean) => void;
 }
 
 const DEFAULT_PREFERENCES: DegradationPreferences = {
@@ -79,6 +82,7 @@ const DEFAULT_PREFERENCES: DegradationPreferences = {
   autoDismissDegradationAlerts: true,
   remindPermissionRetry: true,
   enableFallbackUX: true,
+  respectRemoteFlags: true,
 };
 
 let notificationIdCounter = 0;
@@ -135,11 +139,21 @@ export const useDegradationStore = create<DegradationState>()(
 
       isFeatureDegraded: (feature: FeatureType): boolean => {
         const status = get().featureStatuses[feature];
-        return (
+        const hardwareDegraded =
           status === FeatureStatus.PERMISSION_DENIED ||
           status === FeatureStatus.HARDWARE_UNAVAILABLE ||
-          status === FeatureStatus.UNAVAILABLE
-        );
+          status === FeatureStatus.UNAVAILABLE;
+
+        if (hardwareDegraded) return true;
+
+        if (get().preferences.respectRemoteFlags) {
+          const featureFlags = useFeatureFlagStore.getState();
+          if (featureFlags.isEnabled(feature, true) === false) {
+            return true;
+          }
+        }
+
+        return false;
       },
 
       getDegradedFeatures: (): FeatureType[] => {
@@ -202,6 +216,12 @@ export const useDegradationStore = create<DegradationState>()(
       setRemindPermissionRetry: (remind: boolean) => {
         set(state => ({
           preferences: { ...state.preferences, remindPermissionRetry: remind },
+        }));
+      },
+
+      setRespectRemoteFlags: (respect: boolean) => {
+        set(state => ({
+          preferences: { ...state.preferences, respectRemoteFlags: respect },
         }));
       },
     }),
