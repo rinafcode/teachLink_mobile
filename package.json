@@ -1,7 +1,7 @@
 {
   "name": "teachlink_mobile",
   "main": "expo-router/entry",
-  "version": "1.11.0",
+  "version": "1.12.0",
   "scripts": {
     "start": "expo start",
     "subset-fonts": "python scripts/subset-fonts.py",

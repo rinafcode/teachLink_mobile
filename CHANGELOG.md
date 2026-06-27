@@ -1,4 +1,4 @@
-# [1.11.0](https://github.com/rinafcode/teachLink_mobile/compare/v1.15.0...v1.11.0) (2026-06-27)
+# [1.12.0](https://github.com/rinafcode/teachLink_mobile/compare/v1.15.0...v1.12.0) (2026-06-27)
 
 
 ### Bug Fixes
@@ -38,6 +38,7 @@
 * **#244:** Optimized context re-renders with useMemo and useCallback and also added a test for it ([40f63f3](https://github.com/rinafcode/teachLink_mobile/commit/40f63f305b22f9e5290d4238033955cc164e2732)), closes [#244](https://github.com/rinafcode/teachLink_mobile/issues/244)
 * **#337:** Implement scroll position restoration for navigation ([3f6f87e](https://github.com/rinafcode/teachLink_mobile/commit/3f6f87e7a7e1c979ea3f7b81e27bf4ac061f7ba1)), closes [#337](https://github.com/rinafcode/teachLink_mobile/issues/337)
 * **#390:** implement activity/metrics dashboard for team visibility ([33f9c7b](https://github.com/rinafcode/teachLink_mobile/commit/33f9c7bd6f88a4e2f2fb2e9ef2ea9b8fc9283625)), closes [#390](https://github.com/rinafcode/teachLink_mobile/issues/390) [#390](https://github.com/rinafcode/teachLink_mobile/issues/390) [#31](https://github.com/rinafcode/teachLink_mobile/issues/31) [#32](https://github.com/rinafcode/teachLink_mobile/issues/32) [#33](https://github.com/rinafcode/teachLink_mobile/issues/33) [#73](https://github.com/rinafcode/teachLink_mobile/issues/73)
+* add jailbreak/root detection to gate biometric auth and payments ([5bc3f21](https://github.com/rinafcode/teachLink_mobile/commit/5bc3f2198520012478a6a3a5ebf34952095bae83))
 * add smart multi-tier API cache ([422b683](https://github.com/rinafcode/teachLink_mobile/commit/422b683e5386e31fb19b98cfc0c17e1d79a23198))
 * add WebP image format negotiation with PNG fallback ([11db8ce](https://github.com/rinafcode/teachLink_mobile/commit/11db8ce32c426ca2a4b407581aacef6ac758e5e6))
 * **android:** configure ProGuard/R8 for APK size reduction ([#239](https://github.com/rinafcode/teachLink_mobile/issues/239)) ([7a406b1](https://github.com/rinafcode/teachLink_mobile/commit/7a406b14b347408468342996b8749048225ff094))
