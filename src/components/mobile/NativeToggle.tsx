@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, Switch, TouchableOpacity } from 'react-native';
+
 import { useHapticFeedback } from '../../hooks';
 
 interface NativeToggleProps {
@@ -25,7 +26,7 @@ interface NativeToggleProps {
  * pressable row; otherwise just the bare Switch is returned so it can be
  * embedded inside a parent row.
  */
-export function NativeToggle({
+export const NativeToggle = ({
   value,
   onValueChange,
   label,
@@ -33,8 +34,9 @@ export function NativeToggle({
   disabled = false,
   activeTrackColor = '#19c3e6',
   activeThumbColor = '#0099b3',
-}: NativeToggleProps) {
+}: NativeToggleProps) => {
   const handleChange = (newValue: boolean) => {
+     
     useHapticFeedback('light');
     onValueChange(newValue);
   };

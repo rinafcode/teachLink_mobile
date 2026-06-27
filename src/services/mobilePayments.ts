@@ -14,19 +14,16 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import * as IAP from 'react-native-iap';
-import { appLogger } from '../utils/logger';
+
 import { apiService } from './api';
+import { useDeviceStore } from '../store/deviceStore';
+import { appLogger } from '../utils/logger';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type SubscriptionTier = 'free' | 'pro' | 'premium';
 export type PurchaseType = 'subscription' | 'one_time';
-export type PurchaseStatus =
-  | 'pending'
-  | 'completed'
-  | 'failed'
-  | 'refunded'
-  | 'restored';
+export type PurchaseStatus = 'pending' | 'completed' | 'failed' | 'refunded' | 'restored';
 
 export interface SubscriptionPlan {
   id: string;
@@ -174,26 +171,29 @@ class MobilePaymentsService {
     try {
       await IAP.initConnection();
 
-      IAP.purchaseUpdatedListener(async (purchase) => {
+      IAP.purchaseUpdatedListener(async purchase => {
         const receipt = purchase.transactionReceipt;
         if (receipt) {
-          const result = await this.validateReceipt(
-            receipt,
-            Platform.OS as 'ios' | 'android',
-          );
+          const result = await this.validateReceipt(receipt, Platform.OS as 'ios' | 'android');
           if (result.valid) {
             await IAP.finishTransaction({ purchase, isConsumable: false });
           }
         }
       });
 
-      IAP.purchaseErrorListener((error) => {
-        appLogger.errorSync('[Payments] Purchase error', error instanceof Error ? error : new Error(String(error)));
+      IAP.purchaseErrorListener(error => {
+        appLogger.errorSync(
+          '[Payments] Purchase error',
+          error instanceof Error ? error : new Error(String(error))
+        );
       });
 
       this.isInitialized = true;
     } catch (error) {
-      appLogger.errorSync('[Payments] Initialize error', error instanceof Error ? error : new Error(String(error)));
+      appLogger.errorSync(
+        '[Payments] Initialize error',
+        error instanceof Error ? error : new Error(String(error))
+      );
       throw error;
     }
   }
@@ -211,8 +211,8 @@ class MobilePaymentsService {
   async getProducts(productIds: string[]): Promise<SubscriptionPlan[]> {
     try {
       const storeProducts = await IAP.getSubscriptions({ skus: productIds });
-      return storeProducts.map((sp) => {
-        const plan = SUBSCRIPTION_PLANS.find((p) => p.productId === sp.productId);
+      return storeProducts.map(sp => {
+        const plan = SUBSCRIPTION_PLANS.find(p => p.productId === sp.productId);
         return {
           id: plan?.id ?? sp.productId,
           productId: sp.productId,
@@ -228,7 +228,7 @@ class MobilePaymentsService {
       });
     } catch (error) {
       log.error('[Payments] getProducts error:', error);
-      return SUBSCRIPTION_PLANS.filter((p) => productIds.includes(p.productId));
+      return SUBSCRIPTION_PLANS.filter(p => productIds.includes(p.productId));
     }
   }
 
@@ -237,7 +237,8 @@ class MobilePaymentsService {
    * On real devices, IAP.requestSubscription opens the iOS/Android payment UI.
    */
   async purchaseSubscription(productId: string): Promise<PurchaseRecord> {
-    const plan = SUBSCRIPTION_PLANS.find((p) => p.productId === productId);
+    this._throwIfDeviceCompromised();
+    const plan = SUBSCRIPTION_PLANS.find(p => p.productId === productId);
     if (!plan) throw new Error(`Unknown product: ${productId}`);
 
     try {
@@ -259,8 +260,7 @@ class MobilePaymentsService {
         status: 'completed',
         purchasedAt: new Date().toISOString(),
         expiresAt: new Date(
-          Date.now() +
-            (plan.period === 'monthly' ? 30 : 365) * 24 * 60 * 60 * 1000,
+          Date.now() + (plan.period === 'monthly' ? 30 : 365) * 24 * 60 * 60 * 1000
         ).toISOString(),
         platform: Platform.OS as 'ios' | 'android',
       };
@@ -276,6 +276,7 @@ class MobilePaymentsService {
 
   /** Triggers a one-time consumable / non-consumable purchase. */
   async purchaseProduct(productId: string): Promise<PurchaseRecord> {
+    this._throwIfDeviceCompromised();
     try {
       await IAP.requestPurchase({ sku: productId });
 
@@ -315,18 +316,18 @@ class MobilePaymentsService {
           const result = await this.validateReceipt(
             receipt,
             Platform.OS as 'ios' | 'android',
-            purchase.productId,
+            purchase.productId
           );
           if (result.valid) {
             validated.push({
               id: purchase.transactionId,
               productId: purchase.productId,
               transactionId: purchase.transactionId,
-              amount: parseFloat(purchase.priceAmountMicros ? String(purchase.priceAmountMicros / 1000000) : '0'),
+              amount: parseFloat(
+                purchase.priceAmountMicros ? String(purchase.priceAmountMicros / 1000000) : '0'
+              ),
               currency: purchase.priceCurrencyCode ?? 'USD',
-              type: purchase.productId.includes('subscription')
-                ? 'subscription'
-                : 'one_time',
+              type: purchase.productId.includes('subscription') ? 'subscription' : 'one_time',
               status: 'restored',
               purchasedAt: purchase.transactionDate
                 ? new Date(purchase.transactionDate).toISOString()
@@ -342,29 +343,20 @@ class MobilePaymentsService {
       if (validated.length === 0) {
         // Fallback to local history for development
         const history = await this.getPurchaseHistory();
-        const restorable = history.filter((p) => p.status === 'completed');
+        const restorable = history.filter(p => p.status === 'completed');
 
         const activeSub = restorable
           .filter(
-            (p) =>
-              p.type === 'subscription' &&
-              p.expiresAt &&
-              new Date(p.expiresAt) > new Date(),
+            p => p.type === 'subscription' && p.expiresAt && new Date(p.expiresAt) > new Date()
           )
-          .sort(
-            (a, b) =>
-              new Date(b.purchasedAt).getTime() -
-              new Date(a.purchasedAt).getTime(),
-          )[0];
+          .sort((a, b) => new Date(b.purchasedAt).getTime() - new Date(a.purchasedAt).getTime())[0];
 
         if (activeSub) {
-          const plan = SUBSCRIPTION_PLANS.find(
-            (p) => p.productId === activeSub.productId,
-          );
+          const plan = SUBSCRIPTION_PLANS.find(p => p.productId === activeSub.productId);
           if (plan) await this._setTier(plan.tier);
         }
 
-        return restorable.map((r) => ({
+        return restorable.map(r => ({
           ...r,
           status: 'restored' as PurchaseStatus,
         }));
@@ -387,7 +379,7 @@ class MobilePaymentsService {
   async validateReceipt(
     receiptData: string,
     platform: 'ios' | 'android',
-    productId?: string,
+    productId?: string
   ): Promise<ReceiptValidationResult> {
     try {
       const response = await apiService.post('/payments/validate', {
@@ -400,9 +392,7 @@ class MobilePaymentsService {
       // Fallback mock for development — remove in production
       return {
         valid: true,
-        expiry: new Date(
-          Date.now() + 30 * 24 * 60 * 60 * 1000,
-        ).toISOString(),
+        expiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         productId: productId ?? PRODUCT_IDS.PRO_MONTHLY,
         tier: 'pro',
       };
@@ -422,10 +412,7 @@ class MobilePaymentsService {
   }
 
   async clearPaymentData(): Promise<void> {
-    await AsyncStorage.multiRemove([
-      STORAGE_KEYS.PURCHASES,
-      STORAGE_KEYS.SUBSCRIPTION_TIER,
-    ]);
+    await AsyncStorage.multiRemove([STORAGE_KEYS.PURCHASES, STORAGE_KEYS.SUBSCRIPTION_TIER]);
   }
 
   // ─── Utilities ──────────────────────────────────────────────────────────────
@@ -445,12 +432,17 @@ class MobilePaymentsService {
 
   // ─── Private helpers ────────────────────────────────────────────────────────
 
+  private _throwIfDeviceCompromised(): void {
+    if (useDeviceStore.getState().isDeviceCompromised) {
+      throw new Error(
+        'Purchases are not available on this device. Your device appears to be jailbroken or rooted. Please use a secure device to complete purchases.'
+      );
+    }
+  }
+
   private async _savePurchaseRecord(record: PurchaseRecord): Promise<void> {
     const existing = await this.getPurchaseHistory();
-    await AsyncStorage.setItem(
-      STORAGE_KEYS.PURCHASES,
-      JSON.stringify([record, ...existing]),
-    );
+    await AsyncStorage.setItem(STORAGE_KEYS.PURCHASES, JSON.stringify([record, ...existing]));
   }
 
   private async _setTier(tier: SubscriptionTier): Promise<void> {

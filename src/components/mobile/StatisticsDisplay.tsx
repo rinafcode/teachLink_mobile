@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
 interface Statistic {
@@ -10,6 +10,15 @@ interface StatisticsDisplayProps {
   statistics: Statistic[];
 }
 
+const StatItem = memo(function StatItem({ stat }: { stat: Statistic }) {
+  return (
+    <View style={styles.statItem}>
+      <Text style={styles.statValue}>{stat.value}</Text>
+      <Text style={styles.statLabel}>{stat.label}</Text>
+    </View>
+  );
+});
+
 export const StatisticsDisplay: React.FC<StatisticsDisplayProps> = ({ statistics }) => {
   return (
     <View style={styles.container}>
@@ -17,10 +26,7 @@ export const StatisticsDisplay: React.FC<StatisticsDisplayProps> = ({ statistics
       {statistics && statistics.length > 0 ? (
         <View style={styles.statsGrid}>
           {statistics.map((stat, index) => (
-            <View key={index} style={styles.statItem}>
-              <Text style={styles.statValue}>{stat.value}</Text>
-              <Text style={styles.statLabel}>{stat.label}</Text>
-            </View>
+            <StatItem key={`stat-${index}-${stat.label}`} stat={stat} />
           ))}
         </View>
       ) : (

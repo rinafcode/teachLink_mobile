@@ -16,6 +16,8 @@ const INITIAL_STATE = {
   fontSize: 'medium' as const,
   autoplay: true,
   hapticFeedback: true,
+  adaptiveThemeEnabled: false,
+  dataSaverEnabled: false,
 };
 
 describe('useSettingsStore', () => {
@@ -188,6 +190,32 @@ describe('useSettingsStore', () => {
     });
   });
 
+  describe('setAdaptiveThemeEnabled', () => {
+    it('enables adaptive theme', () => {
+      useSettingsStore.getState().setAdaptiveThemeEnabled(true);
+      expect(useSettingsStore.getState().adaptiveThemeEnabled).toBe(true);
+    });
+
+    it('disables adaptive theme', () => {
+      useSettingsStore.setState({ adaptiveThemeEnabled: true });
+      useSettingsStore.getState().setAdaptiveThemeEnabled(false);
+      expect(useSettingsStore.getState().adaptiveThemeEnabled).toBe(false);
+    });
+  });
+
+  describe('setDataSaverEnabled', () => {
+    it('enables data saver', () => {
+      useSettingsStore.getState().setDataSaverEnabled(true);
+      expect(useSettingsStore.getState().dataSaverEnabled).toBe(true);
+    });
+
+    it('disables data saver', () => {
+      useSettingsStore.setState({ dataSaverEnabled: true });
+      useSettingsStore.getState().setDataSaverEnabled(false);
+      expect(useSettingsStore.getState().dataSaverEnabled).toBe(false);
+    });
+  });
+
   // ── resetSettings ─────────────────────────────────────────────────────────
 
   describe('resetSettings', () => {
@@ -207,6 +235,8 @@ describe('useSettingsStore', () => {
         fontSize: 'large',
         autoplay: false,
         hapticFeedback: false,
+        adaptiveThemeEnabled: true,
+        dataSaverEnabled: true,
       });
 
       useSettingsStore.getState().resetSettings();
@@ -225,6 +255,8 @@ describe('useSettingsStore', () => {
       expect(state.fontSize).toBe('medium');
       expect(state.autoplay).toBe(true);
       expect(state.hapticFeedback).toBe(true);
+      expect(state.adaptiveThemeEnabled).toBe(false);
+      expect(state.dataSaverEnabled).toBe(false);
     });
 
     it('is idempotent — calling reset twice yields defaults', () => {
@@ -245,6 +277,8 @@ describe('useSettingsStore', () => {
       expect(state.fontSize).toBe('medium');
       expect(state.downloadQuality).toBe('medium');
       expect(state.hapticFeedback).toBe(true);
+      expect(state.adaptiveThemeEnabled).toBe(false);
+      expect(state.dataSaverEnabled).toBe(false);
     });
   });
 });

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View } from 'react-native';
+
 import { AppText } from '../common/AppText';
 
 interface SettingsSectionProps {
@@ -22,7 +23,7 @@ interface SettingsSectionProps {
  * </SettingsSection>
  * ```
  */
-export function SettingsSection({ title, footer, children }: SettingsSectionProps) {
+export const SettingsSection = ({ title, footer, children }: SettingsSectionProps) => {
   const childArray = React.Children.toArray(children).filter(Boolean);
 
   return (
@@ -38,7 +39,7 @@ export function SettingsSection({ title, footer, children }: SettingsSectionProp
 
       <View className="mx-4 overflow-hidden rounded-2xl bg-white dark:bg-gray-800">
         {childArray.map((child, index) => (
-          <View key={index}>
+          <View key={`settings-child-${index}`}>
             {child}
             {index < childArray.length - 1 ? (
               <View className="ml-4 h-px bg-gray-100 dark:bg-gray-700" />

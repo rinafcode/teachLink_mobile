@@ -1,10 +1,19 @@
-import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Quiz, Question, QuizProgress } from '../types/course';
+import { create } from 'zustand';
+
+import { isRecord } from './persistence';
+import { Quiz, QuizProgress } from '../types/course';
 import logger from '../utils/logger';
 
 const QUIZ_SESSION_KEY = '@teachlink_quiz_session';
 const QUIZ_PROGRESS_KEY = '@teachlink_quiz_progress';
+const QUIZ_STORAGE_VERSION = 1;
+const QUIZ_STORAGE_MIGRATED_KEY = '@teachlink_quiz_storage_migrated_v1';
+
+interface VersionedQuizEnvelope<T> {
+  version: number;
+  data: T;
+}
 
 interface QuizSession {
   quizId: string | null;
@@ -13,15 +22,103 @@ interface QuizSession {
   currentQuestionIndex: number;
   selectedAnswers: Record<string, string | number | (string | number)[]>; // questionId -> answer(s)
   startedAt: string | null;
+  // Compatibility fields
+  answers?: Record<string, string | number | (string | number)[]>;
+  startTime?: string | null;
+  selectedOption?: string | null;
+}
+
+function isVersionedQuizEnvelope<T>(value: unknown): value is VersionedQuizEnvelope<T> {
+  return isRecord(value) && typeof value.version === 'number' && 'data' in value;
+}
+
+async function readQuizStorage<T>(key: string): Promise<T | null> {
+  const rawValue = await AsyncStorage.getItem(key);
+  if (!rawValue) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue) as unknown;
+    if (isVersionedQuizEnvelope<T>(parsed)) {
+      return parsed.data;
+    }
+
+    return parsed as T;
+  } catch {
+    return null;
+  }
+}
+
+async function writeVersionedQuizStorage<T>(key: string, data: T): Promise<void> {
+  const envelope: VersionedQuizEnvelope<T> = {
+    version: QUIZ_STORAGE_VERSION,
+    data,
+  };
+
+  await AsyncStorage.setItem(key, JSON.stringify(envelope));
+}
+
+async function ensureQuizStorageMigrated(): Promise<void> {
+  const migrationMarker = await AsyncStorage.getItem(QUIZ_STORAGE_MIGRATED_KEY);
+  if (migrationMarker) {
+    return;
+  }
+
+  const allKeys = await AsyncStorage.getAllKeys();
+  const legacyKeys = allKeys.filter(
+    key => key === QUIZ_SESSION_KEY || key.startsWith(`${QUIZ_PROGRESS_KEY}_`)
+  );
+
+  for (const key of legacyKeys) {
+    const rawValue = await AsyncStorage.getItem(key);
+    if (!rawValue) {
+      continue;
+    }
+
+    try {
+      const parsed = JSON.parse(rawValue) as unknown;
+      if (isVersionedQuizEnvelope(parsed)) {
+        continue;
+      }
+
+      await AsyncStorage.setItem(
+        key,
+        JSON.stringify({
+          version: QUIZ_STORAGE_VERSION,
+          data: parsed,
+        } as VersionedQuizEnvelope<unknown>)
+      );
+    } catch {
+      // Ignore malformed legacy values; the migration marker still prevents retries.
+    }
+  }
+
+  await AsyncStorage.setItem(QUIZ_STORAGE_MIGRATED_KEY, String(QUIZ_STORAGE_VERSION));
+}
+
+function persistQuizSession(session: QuizSession): void {
+  void ensureQuizStorageMigrated()
+    .then(() => writeVersionedQuizStorage(QUIZ_SESSION_KEY, session))
+    .catch(error => logger.error('Error saving quiz session:', error));
+}
+
+async function saveQuizProgress(
+  courseId: string,
+  quizProgress: Record<string, QuizProgress>
+): Promise<void> {
+  await ensureQuizStorageMigrated();
+  await writeVersionedQuizStorage(`${QUIZ_PROGRESS_KEY}_${courseId}`, quizProgress);
 }
 
 interface QuizState {
   // Session state (temporary, for active quiz)
   session: QuizSession;
-  
+  quizId?: string | null;
+
   // Progress state (persistent, synced with AsyncStorage)
   quizProgress: Record<string, QuizProgress>; // quizId -> QuizProgress
-  
+
   // Actions
   startQuiz: (quizId: string, sectionId: string, courseId: string) => Promise<void>;
   selectAnswer: (questionId: string, answer: string | number, isMultiSelect?: boolean) => void;
@@ -31,6 +128,8 @@ interface QuizState {
   loadQuizProgress: (courseId: string) => Promise<void>;
   getQuizProgress: (quizId: string) => QuizProgress | null;
   hasCompletedQuiz: (quizId: string) => boolean;
+  initializeQuiz: (quizId: string) => void;
+  resetQuiz: () => void;
 }
 
 const initialSession: QuizSession = {
@@ -40,14 +139,19 @@ const initialSession: QuizSession = {
   currentQuestionIndex: 0,
   selectedAnswers: {},
   startedAt: null,
+  answers: {},
+  startTime: null,
+  selectedOption: null,
 };
 
 export const useQuizStore = create<QuizState>((set, get) => ({
   session: initialSession,
+  quizId: null,
   quizProgress: {},
 
   startQuiz: async (quizId: string, sectionId: string, courseId: string) => {
     try {
+      await ensureQuizStorageMigrated();
       const newSession: QuizSession = {
         quizId,
         sectionId,
@@ -55,13 +159,16 @@ export const useQuizStore = create<QuizState>((set, get) => ({
         currentQuestionIndex: 0,
         selectedAnswers: {},
         startedAt: new Date().toISOString(),
+        answers: {},
+        startTime: new Date().toISOString(),
+        selectedOption: null,
       };
 
-      set({ session: newSession });
+      set({ quizId, session: newSession });
 
       // Save session to AsyncStorage
-      await AsyncStorage.setItem(QUIZ_SESSION_KEY, JSON.stringify(newSession));
-      
+      await writeVersionedQuizStorage(QUIZ_SESSION_KEY, newSession);
+
       logger.info('Quiz started:', { quizId, sectionId, courseId });
     } catch (error) {
       logger.error('Error starting quiz:', error);
@@ -76,28 +183,25 @@ export const useQuizStore = create<QuizState>((set, get) => ({
     if (isMultiSelect) {
       // Multi-select: toggle answer in/out of array
       const currentAnswer = session.selectedAnswers[questionId];
-      const currentArray = Array.isArray(currentAnswer) 
-        ? currentAnswer 
-        : currentAnswer !== undefined 
-          ? [currentAnswer] 
+      const currentArray = Array.isArray(currentAnswer)
+        ? currentAnswer
+        : currentAnswer !== undefined
+          ? [currentAnswer]
           : [];
 
       const answerIndex = currentArray.indexOf(answer);
       if (answerIndex > -1) {
         // Remove answer if already selected
-        updatedAnswer = currentArray.filter((a) => a !== answer);
+        updatedAnswer = currentArray.filter(a => a !== answer);
         // If array becomes empty, remove the key
         if (updatedAnswer.length === 0) {
           const { [questionId]: _, ...rest } = session.selectedAnswers;
-          updatedAnswer = undefined as any;
           const updatedSession: QuizSession = {
             ...session,
             selectedAnswers: rest,
           };
           set({ session: updatedSession });
-          AsyncStorage.setItem(QUIZ_SESSION_KEY, JSON.stringify(updatedSession)).catch(
-            (error) => logger.error('Error saving quiz session:', error)
-          );
+          persistQuizSession(updatedSession);
           return;
         }
       } else {
@@ -122,9 +226,7 @@ export const useQuizStore = create<QuizState>((set, get) => ({
     set({ session: updatedSession });
 
     // Auto-save session
-    AsyncStorage.setItem(QUIZ_SESSION_KEY, JSON.stringify(updatedSession)).catch(
-      (error) => logger.error('Error saving quiz session:', error)
-    );
+    persistQuizSession(updatedSession);
   },
 
   goToQuestion: (index: number) => {
@@ -135,30 +237,28 @@ export const useQuizStore = create<QuizState>((set, get) => ({
         currentQuestionIndex: index,
       };
       set({ session: updatedSession });
-      
-      AsyncStorage.setItem(QUIZ_SESSION_KEY, JSON.stringify(updatedSession)).catch(
-        (error) => logger.error('Error saving quiz session:', error)
-      );
+
+      persistQuizSession(updatedSession);
     }
   },
 
   completeQuiz: async (quiz: Quiz) => {
     const { session, quizProgress } = get();
-    
+
     if (!session.quizId || !session.courseId) {
       throw new Error('No active quiz session');
     }
 
     try {
+      await ensureQuizStorageMigrated();
       // Calculate score
-      let correctCount = 0;
       let totalPoints = 0;
       let earnedPoints = 0;
 
-      quiz.questions.forEach((question) => {
+      quiz.questions.forEach(question => {
         totalPoints += question.points;
         const selectedAnswer = session.selectedAnswers[question.id];
-        
+
         if (selectedAnswer !== undefined) {
           let isCorrect = false;
 
@@ -175,9 +275,7 @@ export const useQuizStore = create<QuizState>((set, get) => ({
             if (correctAnswers.length === selectedAnswers.length) {
               const correctSorted = [...correctAnswers].sort();
               const selectedSorted = [...selectedAnswers].sort();
-              isCorrect = correctSorted.every(
-                (val, idx) => val === selectedSorted[idx]
-              );
+              isCorrect = correctSorted.every((val, idx) => val === selectedSorted[idx]);
             }
           } else {
             // Single-select: direct comparison
@@ -185,19 +283,14 @@ export const useQuizStore = create<QuizState>((set, get) => ({
           }
 
           if (isCorrect) {
-            correctCount++;
             earnedPoints += question.points;
           }
         }
       });
 
-      const score = totalPoints > 0 
-        ? Math.round((earnedPoints / totalPoints) * 100) 
-        : 0;
+      const score = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
 
-      const passed = quiz.passingScore 
-        ? score >= quiz.passingScore 
-        : score >= 70; // Default passing score
+      const passed = quiz.passingScore ? score >= quiz.passingScore : score >= 70; // Default passing score
 
       // Get existing progress or create new
       const existingProgress = quizProgress[session.quizId];
@@ -220,12 +313,11 @@ export const useQuizStore = create<QuizState>((set, get) => ({
       set({ quizProgress: updatedProgress });
 
       // Save to AsyncStorage
-      const storageKey = `${QUIZ_PROGRESS_KEY}_${session.courseId}`;
-      await AsyncStorage.setItem(storageKey, JSON.stringify(updatedProgress));
+      await saveQuizProgress(session.courseId, updatedProgress);
 
-      // Clear session
+      // Clear to-do session
       await AsyncStorage.removeItem(QUIZ_SESSION_KEY);
-      set({ session: initialSession });
+      set({ quizId: null, session: initialSession });
 
       logger.info('Quiz completed:', { quizId: session.quizId, score, passed });
 
@@ -238,8 +330,9 @@ export const useQuizStore = create<QuizState>((set, get) => ({
 
   resetSession: async () => {
     try {
+      await ensureQuizStorageMigrated();
       await AsyncStorage.removeItem(QUIZ_SESSION_KEY);
-      set({ session: initialSession });
+      set({ quizId: null, session: initialSession });
     } catch (error) {
       logger.error('Error resetting quiz session:', error);
     }
@@ -247,23 +340,22 @@ export const useQuizStore = create<QuizState>((set, get) => ({
 
   loadQuizProgress: async (courseId: string) => {
     try {
+      await ensureQuizStorageMigrated();
       const storageKey = `${QUIZ_PROGRESS_KEY}_${courseId}`;
-      const stored = await AsyncStorage.getItem(storageKey);
-      
+      const stored = await readQuizStorage<Record<string, QuizProgress>>(storageKey);
+
       if (stored) {
-        const parsed = JSON.parse(stored) as Record<string, QuizProgress>;
-        set({ quizProgress: parsed });
+        set({ quizProgress: stored });
       } else {
         set({ quizProgress: {} });
       }
 
       // Also try to restore active session if exists
-      const sessionData = await AsyncStorage.getItem(QUIZ_SESSION_KEY);
-      if (sessionData) {
-        const session = JSON.parse(sessionData) as QuizSession;
+      const session = await readQuizStorage<QuizSession>(QUIZ_SESSION_KEY);
+      if (session) {
         // Only restore if it's for the current course
         if (session.courseId === courseId) {
-          set({ session });
+          set({ session, quizId: session.quizId });
         } else {
           // Clear stale session
           await AsyncStorage.removeItem(QUIZ_SESSION_KEY);
@@ -283,5 +375,40 @@ export const useQuizStore = create<QuizState>((set, get) => ({
   hasCompletedQuiz: (quizId: string) => {
     const { quizProgress } = get();
     return quizProgress[quizId]?.completed || false;
+  },
+
+  initializeQuiz: (newQuizId: string) => {
+    const state = get();
+    const currentQuizId = state.quizId || state.session?.quizId;
+    if (newQuizId !== currentQuizId) {
+      state.resetQuiz();
+      set((prev) => ({
+        quizId: newQuizId,
+        session: {
+          ...prev.session,
+          quizId: newQuizId,
+        },
+      }));
+    }
+  },
+
+  resetQuiz: () => {
+    const freshSession: QuizSession = {
+      quizId: null,
+      sectionId: null,
+      courseId: null,
+      currentQuestionIndex: 0,
+      selectedAnswers: {},
+      startedAt: null,
+      answers: {},
+      startTime: null,
+      selectedOption: null,
+    };
+    set({
+      quizId: null,
+      session: freshSession,
+    });
+    void AsyncStorage.removeItem(QUIZ_SESSION_KEY)
+      .catch((error) => logger.error('Error removing quiz session in resetQuiz:', error));
   },
 }));

@@ -1,10 +1,20 @@
-import clsx from 'clsx';
+import { clsx } from 'clsx';
 import { CheckCircle2, Clock, Download, XCircle } from 'lucide-react-native';
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { ActivityIndicator, TouchableOpacity, View } from 'react-native';
+
 import { useDownloads } from '../../hooks/useDownloads';
 import { useDynamicFontSize } from '../../hooks/useDynamicFontSize';
 import { AppText } from '../common/AppText';
+import { createMemoizedIcon } from '../ui/MemoizedIcon';
+
+// ─── Memoized Icons (Issue #361) ───────────────────────────────────────────
+// Issue #361: SVG components wrapped with React.memo to prevent re-renders on parent updates
+
+const MemoizedDownload = createMemoizedIcon(Download, 'MemoizedDownload');
+const MemoizedClock = createMemoizedIcon(Clock, 'MemoizedClock');
+const MemoizedCheckCircle2 = createMemoizedIcon(CheckCircle2, 'MemoizedCheckCircle2');
+const MemoizedXCircle = createMemoizedIcon(XCircle, 'MemoizedXCircle');
 
 interface DownloadButtonProps {
   id: string;
@@ -14,40 +24,56 @@ interface DownloadButtonProps {
   className?: string;
 }
 
-export function DownloadButton({ id, title, url, size, className }: DownloadButtonProps) {
+interface IconRendererProps {
+  status?: string;
+  progress?: number;
+  scale: number;
+}
+
+// ─── Memoized Icon Renderer ────────────────────────────────────────────────
+
+const DownloadIconRenderer = React.memo(
+  ({ status, progress, scale }: IconRendererProps) => {
+    if (!status) return <MemoizedDownload size={scale * 20} color="#4B5563" />;
+
+    switch (status) {
+      case 'queued':
+        return <MemoizedClock size={scale * 20} color="#9CA3AF" />;
+      case 'downloading':
+        return <ActivityIndicator size="small" color="#6366F1" />;
+      case 'completed':
+        return <MemoizedCheckCircle2 size={scale * 20} color="#10B981" />;
+      case 'failed':
+        return <MemoizedXCircle size={scale * 20} color="#EF4444" />;
+      default:
+        return <MemoizedDownload size={scale * 20} color="#4B5563" />;
+    }
+  },
+  (prevProps, nextProps) => {
+    // Re-render only if status or progress change
+    return prevProps.status === nextProps.status && prevProps.progress === nextProps.progress;
+  }
+);
+
+DownloadIconRenderer.displayName = 'DownloadIconRenderer';
+
+export const DownloadButton = ({ id, title, url, size, className }: DownloadButtonProps) => {
   const { tasks, startDownload, removeDownload } = useDownloads();
   const { scale } = useDynamicFontSize();
 
-  const task = tasks.find(t => t.id === id);
+  const task = useMemo(() => tasks.find(t => t.id === id), [tasks, id]);
 
-  const handlePress = async () => {
+  const handlePress = useCallback(async () => {
     if (!task) {
       try {
         await startDownload(id, title, url, size);
-      } catch (e: any) {
+      } catch {
         // Error handled in manager/toast
       }
     } else if (task.status === 'completed') {
       removeDownload(id);
     }
-  };
-
-  const renderIcon = () => {
-    if (!task) return <Download size={scale(20)} color="#4B5563" />;
-
-    switch (task.status) {
-      case 'queued':
-        return <Clock size={scale(20)} color="#9CA3AF" />;
-      case 'downloading':
-        return <ActivityIndicator size="small" color="#6366F1" />;
-      case 'completed':
-        return <CheckCircle2 size={scale(20)} color="#10B981" />;
-      case 'failed':
-        return <XCircle size={scale(20)} color="#EF4444" />;
-      default:
-        return <Download size={scale(20)} color="#4B5563" />;
-    }
-  };
+  }, [task, id, title, url, size, startDownload, removeDownload]);
 
   const getLabel = () => {
     if (!task) return 'Download';
@@ -70,7 +96,9 @@ export function DownloadButton({ id, title, url, size, className }: DownloadButt
         className
       )}
     >
-      <View className="mr-2">{renderIcon()}</View>
+      <View className="mr-2">
+        <DownloadIconRenderer status={task?.status} progress={task?.progress} scale={scale} />
+      </View>
       <AppText
         style={{ fontSize: 13 }}
         className={clsx(
@@ -82,4 +110,4 @@ export function DownloadButton({ id, title, url, size, className }: DownloadButt
       </AppText>
     </TouchableOpacity>
   );
-}
+};

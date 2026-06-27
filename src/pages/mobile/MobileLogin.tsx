@@ -11,10 +11,10 @@ import {
     Mail,
 } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import {
     ActivityIndicator,
     Alert,
-    KeyboardAvoidingView,
     Platform,
     SafeAreaView,
     ScrollView,
@@ -25,11 +25,20 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { useBiometricAuth, useDynamicFontSize } from '../../hooks';
+
+
 import { BiometricInlineButton, BiometricPrompt } from '../../components/mobile/BiometricPrompt';
-import mobileAuthService, { AuthResult } from '../../services/mobileAuth';
+import { DelegatedKeyboardAvoidingView } from '../../components/common/DelegatedKeyboardAvoidingView';
+import { MobileFormInput } from '../../components/mobile/MobileFormInput';
+import { useBiometricAuth, useDynamicFontSize, useFormValidation } from '../../hooks';
+import authService, { AuthResult } from '../../services/mobileAuth';
 import * as secureStorage from '../../services/secureStorage';
 import { validateEmail, validateRequired } from '../../utils/validation';
+
+interface LoginFormValues {
+  email: string;
+  password: string;
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -52,16 +61,19 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
   onRegister,
   isDark = false,
 }) => {
-  // ── State ────────────────────────────────────────────────────────────────
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  // ── Form ─────────────────────────────────────────────────────────────────
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm<LoginFormValues>({ defaultValues: { email: '', password: '' } });
+
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
   const [showBiometricModal, setShowBiometricModal] = useState(false);
-  const [emailFocused, setEmailFocused] = useState(false);
-  const [passwordFocused, setPasswordFocused] = useState(false);
 
   const passwordRef = useRef<TextInput>(null);
 
@@ -75,6 +87,16 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
     clearError: clearBiometricError,
   } = useBiometricAuth();
 
+  const {
+    errors: fieldErrors,
+    onChangeText: onFieldChange,
+    onBlur: onFieldBlur,
+    validateAll,
+  } = useFormValidation({
+    email: { validator: validateEmail },
+    password: { validator: v => validateRequired(v, 'Password') },
+  });
+
   const { scale } = useDynamicFontSize();
   const styles = createStyles(scale, isDark);
 
@@ -82,22 +104,19 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
   useEffect(() => {
     async function loadRemembered() {
       const [savedEmail, savedRememberMe] = await Promise.all([
-        mobileAuthService.getRememberedEmail(),
+        authService.getRememberedEmail(),
         secureStorage.isRememberMeEnabled(),
       ]);
-      if (savedEmail) setEmail(savedEmail);
+      if (savedEmail) setValue('email', savedEmail);
       if (savedRememberMe) setRememberMe(true);
     }
     loadRemembered();
-  }, []);
+  }, [setValue]);
 
   // ── Auto-trigger biometric on mount if enabled ───────────────────────────
   useEffect(() => {
     if (biometricEnabled && biometricAvailable) {
-      // Small delay so screen renders first
-      const timer = setTimeout(() => {
-        setShowBiometricModal(true);
-      }, 600);
+      const timer = setTimeout(() => setShowBiometricModal(true), 600);
       return () => clearTimeout(timer);
     }
   }, [biometricEnabled, biometricAvailable]);
@@ -112,29 +131,19 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
 
   // ── Password login ───────────────────────────────────────────────────────
   const handlePasswordLogin = async () => {
-    const emailCheck = validateEmail(email);
-    if (!emailCheck.valid) {
-      setError(emailCheck.message ?? 'Invalid email.');
-      return;
-    }
-    const passwordCheck = validateRequired(password, 'Password');
-    if (!passwordCheck.valid) {
-      setError(passwordCheck.message ?? 'Password is required.');
-      return;
-    }
+    if (!validateAll({ email, password })) return;
 
     setError(null);
     setIsLoading(true);
     try {
-      const result = await mobileAuthService.login({
-        email: email.trim().toLowerCase(),
-        password,
+      const result = await authService.login({
+        email: data.email.trim().toLowerCase(),
+        password: data.password,
         rememberMe,
       });
       onLoginSuccess(result);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Login failed. Please try again.';
-      setError(msg);
+      setServerError(err instanceof Error ? err.message : 'Login failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -159,27 +168,21 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
   const handleSocialLogin = (provider: 'google' | 'apple') => {
     Alert.alert(
       `${provider === 'google' ? 'Google' : 'Apple'} Sign In`,
-      'Social login integration requires native SDK configuration.',
+      'Social login integration requires native SDK configuration.'
     );
   };
 
   // ── Input border colors ──────────────────────────────────────────────────
-  const emailBorder = error?.toLowerCase().includes('email')
-    ? '#ef4444'
-    : emailFocused
-    ? accentColor
-    : borderColor;
-
-  const passwordBorder = error?.toLowerCase().includes('password')
+  const passwordBorder = fieldErrors.password
     ? '#ef4444'
     : passwordFocused
-    ? accentColor
-    : borderColor;
+      ? accentColor
+      : borderColor;
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
-      <KeyboardAvoidingView
+      <DelegatedKeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.kav}
       >
@@ -187,6 +190,7 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          removeClippedSubviews={true}
         >
           {/* ── Header ── */}
           <View style={styles.header}>
@@ -198,7 +202,9 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
             >
               <BookOpen size={scale(30)} color="#fff" />
             </LinearGradient>
-            <Text allowFontScaling={false} style={[styles.appName, { color: textPrimary }]}>TeachLink</Text>
+            <Text allowFontScaling={false} style={[styles.appName, { color: textPrimary }]}>
+              TeachLink
+            </Text>
             <Text allowFontScaling={false} style={[styles.tagline, { color: textSecondary }]}>
               Sign in to continue learning
             </Text>
@@ -207,48 +213,47 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
           {/* ── Card ── */}
           <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
             {/* Error banner */}
-            {error && (
+            {displayError && (
               <View style={styles.errorBanner}>
                 <AlertCircle size={scale(14)} color="#dc2626" />
-                <Text allowFontScaling={false} style={styles.errorText}>{error}</Text>
+                <Text allowFontScaling={false} style={styles.errorText}>
+                  {displayError}
+                </Text>
               </View>
             )}
 
-            {/* Email */}
-            <View style={styles.fieldWrap}>
-              <Text allowFontScaling={false} style={[styles.label, { color: textSecondary }]}>Email</Text>
-              <View
-                style={[
-                  styles.inputRow,
-                  { borderColor: emailBorder, backgroundColor: isDark ? '#0f172a' : '#f8fafc' },
-                ]}
-              >
-                <Mail size={scale(18)} color={emailFocused ? accentColor : textSecondary} />
-                <TextInput
-                  allowFontScaling={false}
-                  style={[styles.input, { color: textPrimary }]}
-                  value={email}
-                  onChangeText={(v) => { setEmail(v); setError(null); }}
-                  placeholder="you@example.com"
-                  placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  autoComplete="email"
-                  returnKeyType="next"
-                  onFocus={() => setEmailFocused(true)}
-                  onBlur={() => setEmailFocused(false)}
-                  onSubmitEditing={() => passwordRef.current?.focus()}
-                />
-              </View>
-            </View>
+            <MobileFormInput
+              inputRef={emailRef}
+              label="Email"
+              value={email}
+              onChangeText={v => {
+                setEmail(v);
+                setError(null);
+                onFieldChange('email', v);
+              }}
+              onBlur={() => onFieldBlur('email', email)}
+              error={fieldErrors.email}
+              placeholder="you@example.com"
+              isDark={isDark}
+              cacheKey="email"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              leftIcon={<Mail size={scale(18)} color={textSecondary} />}
+              onSubmitEditing={() => passwordRef.current?.focus()}
+            />
 
             {/* Password */}
             <View style={styles.fieldWrap}>
               <View style={styles.labelRow}>
-                <Text allowFontScaling={false} style={[styles.label, { color: textSecondary }]}>Password</Text>
+                <Text allowFontScaling={false} style={[styles.label, { color: textSecondary }]}>
+                  Password
+                </Text>
                 {onForgotPassword && (
                   <TouchableOpacity onPress={onForgotPassword}>
-                    <Text allowFontScaling={false} style={[styles.forgotLink, { color: accentColor }]}>
+                    <Text
+                      allowFontScaling={false}
+                      style={[styles.forgotLink, { color: accentColor }]}
+                    >
                       Forgot password?
                     </Text>
                   </TouchableOpacity>
@@ -266,18 +271,25 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
                   ref={passwordRef}
                   style={[styles.input, { color: textPrimary }]}
                   value={password}
-                  onChangeText={(v) => { setPassword(v); setError(null); }}
+                  onChangeText={v => {
+                    setPassword(v);
+                    setError(null);
+                    onFieldChange('password', v);
+                  }}
                   placeholder="Enter your password"
                   placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
                   secureTextEntry={!showPassword}
                   autoComplete="current-password"
                   returnKeyType="go"
                   onFocus={() => setPasswordFocused(true)}
-                  onBlur={() => setPasswordFocused(false)}
+                  onBlur={() => {
+                    setPasswordFocused(false);
+                    onFieldBlur('password', password);
+                  }}
                   onSubmitEditing={handlePasswordLogin}
                 />
                 <TouchableOpacity
-                  onPress={() => setShowPassword((s) => !s)}
+                  onPress={() => setShowPassword(s => !s)}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
                   {showPassword ? (
@@ -287,6 +299,17 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
                   )}
                 </TouchableOpacity>
               </View>
+              {fieldErrors.password && (
+                <View style={styles.errorRow}>
+                  <AlertCircle size={scale(13)} color="#ef4444" />
+                  <Text
+                    allowFontScaling={false}
+                    style={[styles.inlineErrorText, { fontSize: scale(12) }]}
+                  >
+                    {fieldErrors.password}
+                  </Text>
+                </View>
+              )}
             </View>
 
             {/* Remember Me */}
@@ -298,18 +321,18 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
                 thumbColor="#fff"
                 ios_backgroundColor={borderColor}
               />
-              <Text allowFontScaling={false} style={[styles.rememberLabel, { color: textSecondary }]}>
+              <Text
+                allowFontScaling={false}
+                style={[styles.rememberLabel, { color: textSecondary }]}
+              >
                 Remember me
               </Text>
             </View>
 
             {/* Primary CTA */}
             <TouchableOpacity
-              style={[
-                styles.loginBtn,
-                { opacity: isLoading ? 0.7 : 1 },
-              ]}
-              onPress={handlePasswordLogin}
+              style={[styles.loginBtn, { opacity: isLoading ? 0.7 : 1 }]}
+              onPress={handleSubmit(onSubmit)}
               disabled={isLoading}
               activeOpacity={0.85}
             >
@@ -324,7 +347,9 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
                 ) : (
                   <>
                     <LogIn size={scale(18)} color="#fff" />
-                    <Text allowFontScaling={false} style={styles.loginBtnText}>Sign In</Text>
+                    <Text allowFontScaling={false} style={styles.loginBtnText}>
+                      Sign In
+                    </Text>
                   </>
                 )}
               </LinearGradient>
@@ -335,7 +360,12 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
               <>
                 <View style={styles.dividerRow}>
                   <View style={[styles.divider, { backgroundColor: borderColor }]} />
-                  <Text allowFontScaling={false} style={[styles.dividerText, { color: textSecondary }]}>or</Text>
+                  <Text
+                    allowFontScaling={false}
+                    style={[styles.dividerText, { color: textSecondary }]}
+                  >
+                    or
+                  </Text>
                   <View style={[styles.divider, { backgroundColor: borderColor }]} />
                 </View>
 
@@ -355,7 +385,12 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
                     activeOpacity={0.7}
                   >
                     <Chrome size={scale(22)} color="#4285F4" />
-                    <Text allowFontScaling={false} style={[styles.socialBtnText, { color: textSecondary }]}>Google</Text>
+                    <Text
+                      allowFontScaling={false}
+                      style={[styles.socialBtnText, { color: textSecondary }]}
+                    >
+                      Google
+                    </Text>
                   </TouchableOpacity>
 
                   {Platform.OS === 'ios' && (
@@ -365,7 +400,12 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
                       activeOpacity={0.7}
                     >
                       <Apple size={scale(22)} color={isDark ? '#f1f5f9' : '#1e293b'} />
-                      <Text allowFontScaling={false} style={[styles.socialBtnText, { color: textSecondary }]}>Apple</Text>
+                      <Text
+                        allowFontScaling={false}
+                        style={[styles.socialBtnText, { color: textSecondary }]}
+                      >
+                        Apple
+                      </Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -376,18 +416,25 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
           {/* ── Register link ── */}
           {onRegister && (
             <View style={styles.registerRow}>
-              <Text allowFontScaling={false} style={[styles.registerText, { color: textSecondary }]}>
-                Don't have an account?
+              <Text
+                allowFontScaling={false}
+                style={[styles.registerText, { color: textSecondary }]}
+              >
+                Don&apos;t have an account?
               </Text>
               <TouchableOpacity onPress={onRegister}>
-                <Text allowFontScaling={false} style={[styles.registerLink, { color: accentColor }]}>
-                  {' '}Sign up
+                <Text
+                  allowFontScaling={false}
+                  style={[styles.registerLink, { color: accentColor }]}
+                >
+                  {' '}
+                  Sign up
                 </Text>
               </TouchableOpacity>
             </View>
           )}
         </ScrollView>
-      </KeyboardAvoidingView>
+      </DelegatedKeyboardAvoidingView>
 
       {/* Biometric modal */}
       <BiometricPrompt
@@ -408,182 +455,194 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const createStyles = (scale: (size: number) => number, isDark: boolean) => StyleSheet.create({
-  safe: {
-    flex: 1,
-  },
-  kav: {
-    flex: 1,
-  },
-  scroll: {
-    flexGrow: 1,
-    paddingHorizontal: scale(20),
-    paddingBottom: scale(40),
-    justifyContent: 'center',
-  },
-  // Header
-  header: {
-    alignItems: 'center',
-    paddingTop: scale(32),
-    paddingBottom: scale(28),
-    gap: scale(10),
-  },
-  logoGradient: {
-    width: scale(68),
-    height: scale(68),
-    borderRadius: scale(20),
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#20afe7',
-    shadowOffset: { width: 0, height: scale(8) },
-    shadowOpacity: 0.35,
-    shadowRadius: scale(16),
-    elevation: 10,
-  },
-  appName: {
-    fontSize: scale(28),
-    fontWeight: '900',
-    letterSpacing: -0.5,
-  },
-  tagline: {
-    fontSize: scale(14),
-  },
-  // Card
-  card: {
-    borderRadius: scale(20),
-    padding: scale(22),
-    borderWidth: 1,
-    gap: scale(4),
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: scale(4) },
-    shadowOpacity: 0.07,
-    shadowRadius: scale(16),
-    elevation: 4,
-  },
-  errorBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: scale(8),
-    backgroundColor: '#fee2e2',
-    borderRadius: scale(10),
-    paddingHorizontal: scale(14),
-    paddingVertical: scale(10),
-    marginBottom: scale(4),
-  },
-  errorText: {
-    color: '#dc2626',
-    fontSize: scale(13),
-    fontWeight: '500',
-    flex: 1,
-  },
-  // Fields
-  fieldWrap: {
-    marginBottom: scale(12),
-    gap: scale(6),
-  },
-  labelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  label: {
-    fontSize: scale(13),
-    fontWeight: '600',
-  },
-  forgotLink: {
-    fontSize: scale(13),
-    fontWeight: '600',
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: scale(10),
-    borderWidth: 1.5,
-    borderRadius: scale(12),
-    paddingHorizontal: scale(14),
-    paddingVertical: Platform.OS === 'ios' ? scale(13) : scale(10),
-  },
-  input: {
-    flex: 1,
-    fontSize: scale(15),
-    paddingVertical: 0,
-  },
-  // Remember Me
-  rememberRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: scale(10),
-    paddingVertical: scale(4),
-    marginBottom: scale(4),
-  },
-  rememberLabel: {
-    fontSize: scale(14),
-    fontWeight: '500',
-  },
-  // Login button
-  loginBtn: {
-    borderRadius: scale(14),
-    overflow: 'hidden',
-    marginTop: scale(6),
-  },
-  loginBtnGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: scale(8),
-    paddingVertical: scale(15),
-  },
-  loginBtnText: {
-    color: '#fff',
-    fontSize: scale(16),
-    fontWeight: '700',
-  },
-  // Divider
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: scale(10),
-    marginVertical: scale(8),
-  },
-  divider: {
-    flex: 1,
-    height: 1,
-  },
-  dividerText: {
-    fontSize: scale(13),
-    fontWeight: '500',
-  },
-  // Alt auth row
-  altRow: {
-    flexDirection: 'row',
-    gap: scale(10),
-  },
-  socialBtn: {
-    flex: 1,
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: scale(6),
-    paddingVertical: scale(14),
-    borderRadius: scale(14),
-    borderWidth: 1.5,
-  },
-  socialBtnText: {
-    fontSize: scale(12),
-    fontWeight: '600',
-  },
-  // Register
-  registerRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: scale(20),
-  },
-  registerText: {
-    fontSize: scale(14),
-  },
-  registerLink: {
-    fontSize: scale(14),
-    fontWeight: '700',
-  },
-});
+const createStyles = (scale: (size: number) => number, isDark: boolean) =>
+  StyleSheet.create({
+    safe: {
+      flex: 1,
+    },
+    kav: {
+      flex: 1,
+    },
+    scroll: {
+      flexGrow: 1,
+      paddingHorizontal: scale(20),
+      paddingBottom: scale(40),
+      justifyContent: 'center',
+    },
+    // Header
+    header: {
+      alignItems: 'center',
+      paddingTop: scale(32),
+      paddingBottom: scale(28),
+      gap: scale(10),
+    },
+    logoGradient: {
+      width: scale(68),
+      height: scale(68),
+      borderRadius: scale(20),
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: '#20afe7',
+      shadowOffset: { width: 0, height: scale(8) },
+      shadowOpacity: 0.35,
+      shadowRadius: scale(16),
+      elevation: 10,
+    },
+    appName: {
+      fontSize: scale(28),
+      fontWeight: '900',
+      letterSpacing: -0.5,
+    },
+    tagline: {
+      fontSize: scale(14),
+    },
+    // Card
+    card: {
+      borderRadius: scale(20),
+      padding: scale(22),
+      borderWidth: 1,
+      gap: scale(4),
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: scale(4) },
+      shadowOpacity: 0.07,
+      shadowRadius: scale(16),
+      elevation: 4,
+    },
+    errorBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: scale(8),
+      backgroundColor: '#fee2e2',
+      borderRadius: scale(10),
+      paddingHorizontal: scale(14),
+      paddingVertical: scale(10),
+      marginBottom: scale(4),
+    },
+    errorText: {
+      color: '#dc2626',
+      fontSize: scale(13),
+      fontWeight: '500',
+      flex: 1,
+    },
+    // Fields
+    fieldWrap: {
+      marginBottom: scale(12),
+      gap: scale(6),
+    },
+    labelRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    label: {
+      fontSize: scale(13),
+      fontWeight: '600',
+    },
+    forgotLink: {
+      fontSize: scale(13),
+      fontWeight: '600',
+    },
+    inputRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: scale(10),
+      borderWidth: 1.5,
+      borderRadius: scale(12),
+      paddingHorizontal: scale(14),
+      paddingVertical: Platform.OS === 'ios' ? scale(13) : scale(10),
+    },
+    input: {
+      flex: 1,
+      fontSize: scale(15),
+      paddingVertical: 0,
+    },
+    // Remember Me
+    rememberRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: scale(10),
+      paddingVertical: scale(4),
+      marginBottom: scale(4),
+    },
+    rememberLabel: {
+      fontSize: scale(14),
+      fontWeight: '500',
+    },
+    // Login button
+    loginBtn: {
+      borderRadius: scale(14),
+      overflow: 'hidden',
+      marginTop: scale(6),
+    },
+    loginBtnGradient: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: scale(8),
+      paddingVertical: scale(15),
+    },
+    loginBtnText: {
+      color: '#fff',
+      fontSize: scale(16),
+      fontWeight: '700',
+    },
+    // Divider
+    dividerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: scale(10),
+      marginVertical: scale(8),
+    },
+    divider: {
+      flex: 1,
+      height: 1,
+    },
+    dividerText: {
+      fontSize: scale(13),
+      fontWeight: '500',
+    },
+    // Alt auth row
+    altRow: {
+      flexDirection: 'row',
+      gap: scale(10),
+    },
+    socialBtn: {
+      flex: 1,
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: scale(6),
+      paddingVertical: scale(14),
+      borderRadius: scale(14),
+      borderWidth: 1.5,
+    },
+    socialBtnText: {
+      fontSize: scale(12),
+      fontWeight: '600',
+    },
+    // Register
+    registerRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginTop: scale(20),
+    },
+    registerText: {
+      fontSize: scale(14),
+    },
+    registerLink: {
+      fontSize: scale(14),
+      fontWeight: '700',
+    },
+    errorRow: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: 4,
+      marginTop: 4,
+    },
+    inlineErrorText: {
+      color: '#ef4444',
+      flex: 1,
+      fontWeight: '500' as const,
+    },
+  });

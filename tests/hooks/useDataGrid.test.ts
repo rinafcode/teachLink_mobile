@@ -118,7 +118,7 @@ describe('useDataGrid — filtering', () => {
   it('filters rows by a text value', () => {
     const { result } = setup();
     act(() => result.current.setFilter('category', 'fruit'));
-    const names = result.current.paginatedRows.map((r) => r.name);
+    const names = result.current.paginatedRows.map(r => r.name);
     expect(names).toEqual(expect.arrayContaining(['Apple', 'Banana', 'Elderberry']));
     expect(names).not.toContain('Carrot');
   });
@@ -262,5 +262,21 @@ describe('useDataGrid — exportData', () => {
     const parsed = JSON.parse(result.current.exportData('json'));
     expect(parsed).toHaveLength(2);
     expect(parsed.every((r: Product) => r.category === 'vegetable')).toBe(true);
+  });
+
+  it('exports asynchronously with batch progress', async () => {
+    const progress = jest.fn();
+    const { result } = setup();
+
+    let csv = '';
+    await act(async () => {
+      csv = await result.current.exportDataAsync('csv', progress);
+    });
+
+    expect(csv.split('\n')[0]).toBe('ID,Name,Price,Category');
+    expect(progress).toHaveBeenCalledWith(expect.objectContaining({ phase: 'queued' }));
+    expect(progress).toHaveBeenLastCalledWith(
+      expect.objectContaining({ percent: 100, phase: 'complete' })
+    );
   });
 });

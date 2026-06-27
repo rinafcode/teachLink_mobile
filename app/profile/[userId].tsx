@@ -1,13 +1,18 @@
-import { useAppStore } from '@/src/store';
 import { useLocalSearchParams } from 'expo-router';
-import React, { lazy, Suspense, useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { useEffect, useState } from 'react';
 
-const MobileProfile = lazy(() =>
-  import('@/src/components/mobile/MobileProfile').then(m => ({ default: m.MobileProfile }))
-);
+import { ProfileSkeleton } from '@/components/mobile/ProfileSkeleton';
+import { useAppStore } from '@/store';
+import { createLazyRoute } from '@/utils/lazyRoute';
 
-export default function ProfileScreen() {
+const LazyMobileProfile = createLazyRoute({
+  importFn: () =>
+    import('@/components/mobile/MobileProfile').then(m => ({ default: m.MobileProfile })),
+  LoadingFallback: ProfileSkeleton,
+  boundaryName: 'ProfileRoute',
+});
+
+const ProfileScreen = () => {
   const { userId } = useLocalSearchParams();
   const theme = useAppStore(s => s.theme);
   const [isLoading, setIsLoading] = useState(true);
@@ -18,14 +23,8 @@ export default function ProfileScreen() {
   }, []);
 
   return (
-    <Suspense
-      fallback={
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator />
-        </View>
-      }
-    >
-      <MobileProfile userId={userId as string} isDark={theme === 'dark'} isLoading={isLoading} />
-    </Suspense>
+    <LazyMobileProfile userId={userId as string} isDark={theme === 'dark'} isLoading={isLoading} />
   );
-}
+};
+
+export default ProfileScreen;

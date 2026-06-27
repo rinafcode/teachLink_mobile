@@ -34,10 +34,44 @@ export enum AnalyticsEvent {
   // Button Clicks
   BUTTON_CLICK = 'button_click',
 
+  // App Store Review
+  REVIEW_REQUESTED = 'review_requested',
+  REVIEW_PROMPT_SHOWN = 'review_prompt_shown',
+  REVIEW_PROMPT_DISMISSED = 'review_prompt_dismissed',
+
   // Performance & Infrastructure
   PERFORMANCE_METRIC = 'performance_metric',
+  REACT_PROFILER_RENDER = 'react_profiler_render',
+  REACT_PROFILER_SLOW_RENDER = 'react_profiler_slow_render',
+  AB_ASSIGNMENT = 'ab_assignment',
+  AB_EXPOSURE = 'ab_exposure',
   API_ERROR = 'api_error',
   CRASH_REPORT = 'crash_report',
+
+  // Device capability
+  DEVICE_COMPLEXITY_ASSIGNED = 'device_complexity_assigned',
+  // App lifecycle
+  APP_BACKGROUND = 'app_background',
+  APP_FOREGROUND = 'app_foreground',
+
+  // App update events
+  UPDATE_CHECK_STARTED = 'update_check_started',
+  UPDATE_AVAILABLE = 'update_available',
+  UPDATE_NOT_AVAILABLE = 'update_not_available',
+  UPDATE_DOWNLOAD_STARTED = 'update_download_started',
+  UPDATE_DOWNLOAD_COMPLETED = 'update_download_completed',
+  UPDATE_DOWNLOAD_FAILED = 'update_download_failed',
+  UPDATE_APPLIED = 'update_applied',
+  UPDATE_DISMISSED = 'update_dismissed',
+  UPDATE_STORE_REDIRECT = 'update_store_redirect',
+
+  // Core Web Vitals
+  WEB_VITALS_LCP = 'web_vitals_lcp',
+  WEB_VITALS_FID = 'web_vitals_fid',
+  WEB_VITALS_CLS = 'web_vitals_cls',
+  WEB_VITALS_FCP = 'web_vitals_fcp',
+  WEB_VITALS_TTFB = 'web_vitals_ttfb',
+  WEB_VITALS_REGRESSION = 'web_vitals_regression',
 }
 
 /**
@@ -72,4 +106,29 @@ export enum PerformanceMetric {
   APP_LOAD_TIME = 'app_load_time',
   SCREEN_TRANSITION_TIME = 'screen_transition_time',
   API_RESPONSE_TIME = 'api_response_time',
+
+  // React Profiler
+  RENDER_DURATION = 'render_duration',
+  NAVIGATION_LATENCY = 'navigation_latency',
+
+  // Core Web Vitals
+  LCP = 'lcp',
+  FID = 'fid',
+  CLS = 'cls',
+  FCP = 'fcp',
+  TTFB = 'ttfb',
+}
+
+/**
+ * Resource timing metric names for structured reporting.
+ */
+export enum ResourceTimingMetric {
+  API_DURATION = 'api_duration',
+  IMAGE_LOAD_DURATION = 'image_load_duration',
+  API_P50 = 'api_p50',
+  API_P95 = 'api_p95',
+  IMAGE_P50 = 'image_p50',
+  IMAGE_P95 = 'image_p95',
+  API_ERROR_RATE = 'api_error_rate',
+  IMAGE_ERROR_RATE = 'image_error_rate',
 }

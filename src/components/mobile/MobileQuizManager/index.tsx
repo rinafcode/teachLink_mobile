@@ -7,6 +7,8 @@ import QuizCarousel from './QuizCarousel';
 import QuizProgress from './QuizProgress';
 import QuizResults from './QuizResults';
 import { useAnalytics } from '../../../hooks/useAnalytics';
+import { useInAppReview, useReviewMetrics } from '../../../hooks/useInAppReview';
+import { ReviewTrigger } from '../../../services/inAppReview';
 import { useQuizStore } from '../../../store/quizStore';
 import { Quiz, Course } from '../../../types/course';
 import logger from '../../../utils/logger';
@@ -43,17 +45,24 @@ export default function MobileQuizManager({
     goToQuestion,
     completeQuiz,
     resetSession,
+    initializeQuiz,
   } = useQuizStore();
 
   const [currentView, setCurrentView] = useState<QuizView>('intro');
   const [quizResults, setQuizResults] = useState<{ score: number; passed: boolean } | null>(null);
   const { trackEvent, trackScreen } = useAnalytics();
+  const { requestReview } = useInAppReview();
+  const { trackPerfectQuiz } = useReviewMetrics();
 
   useEffect(() => {
-    loadQuizProgress(courseId);
+    const init = async () => {
+      await loadQuizProgress(courseId);
+      initializeQuiz(quiz.id);
+    };
+    void init();
     trackScreen(ScreenName.QUIZ, { quizId: quiz.id, courseId });
     setCurrentView('intro');
-  }, [courseId, loadQuizProgress]);
+  }, [courseId, quiz.id, loadQuizProgress, initializeQuiz]);
 
   const handleStartQuiz = async () => {
     try {
@@ -93,6 +102,11 @@ export default function MobileQuizManager({
         score: results.score,
         passed: results.passed,
       });
+
+      if (results.score === 100) {
+        trackPerfectQuiz();
+        requestReview(ReviewTrigger.PERFECT_QUIZ_SCORE);
+      }
 
       // If passed, navigate back to course with syllabus view
       if (results.passed && navigation && course) {
@@ -134,6 +148,7 @@ export default function MobileQuizManager({
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          removeClippedSubviews={true}
         >
           {/* Header */}
           <View style={styles.header}>

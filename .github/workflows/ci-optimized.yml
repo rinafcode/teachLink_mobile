@@ -1,0 +1,208 @@
+name: CI (Optimized with Caching)
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+# Cancel in-progress runs for the same workflow and branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # For better cache key generation
+
+      # ==============================
+      # 🐍 PYTHON SETUP WITH CACHING
+      # ==============================
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Cache Python dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt', 'scripts/subset-fonts.py') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install subsetting dependencies
+        run: pip install fonttools
+
+      # ==============================
+      # 📦 NODE.JS SETUP WITH CACHING
+      # ==============================
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Multi-layer caching strategy for node_modules
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.npm
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      # Only run npm ci if cache miss
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: npm ci --prefer-offline --no-audit
+
+      # ==============================
+      # 🎨 FONT SUBSETTING WITH CACHE
+      # ==============================
+      - name: Cache subsetted fonts
+        id: cache-fonts
+        uses: actions/cache@v4
+        with:
+          path: |
+            assets/fonts/*.ttf
+            !assets/fonts/original/*.ttf
+          key: ${{ runner.os }}-fonts-${{ hashFiles('assets/fonts/original/*.ttf', 'scripts/subset-fonts.py') }}
+          restore-keys: |
+            ${{ runner.os }}-fonts-
+
+      - name: Run Font Subsetting
+        if: steps.cache-fonts.outputs.cache-hit != 'true'
+        run: python scripts/subset-fonts.py
+
+      # ==============================
+      # 🔍 TYPESCRIPT CACHE
+      # ==============================
+      - name: Cache TypeScript build info
+        uses: actions/cache@v4
+        with:
+          path: |
+            .tsbuildinfo
+            **/.tsbuildinfo
+          key: ${{ runner.os }}-typescript-${{ hashFiles('tsconfig.json', 'src/**/*.ts', 'src/**/*.tsx') }}
+          restore-keys: |
+            ${{ runner.os }}-typescript-
+
+      # ==============================
+      # 🧪 JEST CACHE
+      # ==============================
+      - name: Cache Jest
+        uses: actions/cache@v4
+        with:
+          path: |
+            .jest-cache
+            coverage
+          key: ${{ runner.os }}-jest-${{ hashFiles('jest.config.js', 'src/**/*.test.ts', 'src/**/*.test.tsx') }}
+          restore-keys: |
+            ${{ runner.os }}-jest-
+
+      # ==============================
+      # 📱 EXPO CACHE
+      # ==============================
+      - name: Cache Expo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.expo
+            .expo
+            .expo-shared
+          key: ${{ runner.os }}-expo-${{ hashFiles('app.json', 'package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-expo-
+
+      # ==============================
+      # 🏗️ METRO BUNDLER CACHE
+      # ==============================
+      - name: Cache Metro bundler
+        uses: actions/cache@v4
+        with:
+          path: |
+            .metro-cache
+            node_modules/.cache/metro
+          key: ${{ runner.os }}-metro-${{ hashFiles('metro.config.js', 'package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-metro-
+
+      # ==============================
+      # 🎯 LINTING & FORMATTING
+      # ==============================
+      - name: Cache ESLint
+        uses: actions/cache@v4
+        with:
+          path: .eslintcache
+          key: ${{ runner.os }}-eslint-${{ hashFiles('eslint.config.js', 'src/**/*.ts', 'src/**/*.tsx') }}
+          restore-keys: |
+            ${{ runner.os }}-eslint-
+
+      - name: Lint
+        run: npm run lint -- --cache --cache-location .eslintcache
+
+      - name: Format check
+        run: npm run format:check
+
+      # ==============================
+      # 🔎 TYPE CHECKING
+      # ==============================
+      - name: Typecheck
+        run: npx tsc --noEmit --incremental
+
+      # ==============================
+      # 🧪 TESTING
+      # ==============================
+      - name: Test
+        run: npm test -- --passWithNoTests --cache --cacheDirectory=.jest-cache
+
+      - name: Validate OpenAPI Spec
+        run: npm run validate:openapi
+
+      # ==============================
+      # 🚀 BUILD & PERFORMANCE CHECKS
+      # ==============================
+      - name: Cache Expo build output
+        uses: actions/cache@v4
+        with:
+          path: |
+            dist
+            .expo/web
+          key: ${{ runner.os }}-expo-build-${{ hashFiles('app/**/*', 'src/**/*', 'package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-expo-build-
+
+      - name: Build App (Web)
+        run: npx expo export --platform web
+
+      - name: Check Bundle Size
+        run: node scripts/checkBundleSize.js
+
+      - name: Check API Performance
+        run: node scripts/checkApiPerf.js
+
+      # ==============================
+      # 📊 CACHE STATISTICS
+      # ==============================
+      - name: Report cache statistics
+        if: always()
+        run: |
+          echo "## 📊 Cache Statistics" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Cache | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Node Modules | ${{ steps.cache-node-modules.outputs.cache-hit == 'true' && '✅ Hit' || '❌ Miss' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Fonts | ${{ steps.cache-fonts.outputs.cache-hit == 'true' && '✅ Hit' || '❌ Miss' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Build completed in:** ${{ job.status == 'success' && '✅' || '❌' }}" >> $GITHUB_STEP_SUMMARY

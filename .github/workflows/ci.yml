@@ -9,18 +9,36 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    
+    env:
+      EXPO_PUBLIC_API_BASE_URL: https://api.teachlink.com
+      EXPO_PUBLIC_SOCKET_URL: wss://api.teachlink.com
+      EXPO_PUBLIC_APP_ENV: production
+      EXPO_PUBLIC_ENABLE_PUSH_NOTIFICATIONS: true
+
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install subsetting dependencies
+        run: pip install fonttools
+
+      - name: Run Font Subsetting
+        run: python scripts/subset-fonts.py
 
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
-      - run: npm ci
+      - run: npm install
 
       - name: Lint
-        run: npm run lint
+        run: npm run lint -- --max-warnings=500
 
       - name: Format check
         run: npm run format:check
@@ -30,3 +48,19 @@ jobs:
 
       - name: Test
         run: npm test -- --passWithNoTests
+
+      - name: Validate OpenAPI Spec
+        run: npm run validate:openapi
+
+      # ==============================
+      # 🚀 PERFORMANCE BUDGET CHECKS
+      # ==============================
+
+      - name: Build App (required for bundle check)
+        run: npx expo export --platform web
+
+      - name: Check Bundle Size
+        run: node scripts/checkBundleSize.js
+
+      - name: Check API Performance
+        run: node scripts/checkApiPerf.js

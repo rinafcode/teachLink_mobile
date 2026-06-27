@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useReducer } from 'react';
 
+import { BatchProgress, batchExportData } from '../services/batchDataProcessor';
 import {
   ColumnDef,
   EditingCell,
@@ -60,7 +61,7 @@ function reducer(state: DataGridState, action: DataGridAction): DataGridState {
       return { ...state, sortConfig: null };
 
     case 'SET_FILTER': {
-      const without = state.filters.filter((f) => f.columnKey !== action.columnKey);
+      const without = state.filters.filter(f => f.columnKey !== action.columnKey);
       const updated: FilterEntry[] = action.value.trim()
         ? [
             ...without,
@@ -73,7 +74,7 @@ function reducer(state: DataGridState, action: DataGridAction): DataGridState {
     case 'CLEAR_FILTER':
       return {
         ...state,
-        filters: state.filters.filter((f) => f.columnKey !== action.columnKey),
+        filters: state.filters.filter(f => f.columnKey !== action.columnKey),
         page: 1,
       };
 
@@ -168,6 +169,10 @@ export interface UseDataGridReturn<T extends GridRow> {
 
   // ── Export ──
   exportData: (format: ExportFormat) => string;
+  exportDataAsync: (
+    format: ExportFormat,
+    onProgress?: (progress: BatchProgress) => void
+  ) => Promise<string>;
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
@@ -265,7 +270,7 @@ export function useDataGrid<T extends GridRow>(
   // ── Editing actions ───────────────────────────────────────────────────────
   const startEditing = useCallback(
     (rowId: string | number, columnKey: string, currentValue: unknown) => {
-      const col = columns.find((c) => c.key === columnKey);
+      const col = columns.find(c => c.key === columnKey);
       if (!col?.editable) {
         logger.warn(`[useDataGrid] Column "${columnKey}" is not editable.`);
         return;
@@ -289,7 +294,7 @@ export function useDataGrid<T extends GridRow>(
     if (!state.editingCell) return;
 
     const { rowId, columnKey, draft } = state.editingCell;
-    const col = columns.find((c) => c.key === columnKey);
+    const col = columns.find(c => c.key === columnKey);
 
     if (col) {
       const error = validateCellValue(draft, col as ColumnDef);
@@ -321,6 +326,18 @@ export function useDataGrid<T extends GridRow>(
     [processedRows, columns]
   );
 
+  const exportDataAsync = useCallback(
+    (format: ExportFormat, onProgress?: (progress: BatchProgress) => void): Promise<string> =>
+      batchExportData({
+        rows: processedRows,
+        columns,
+        format,
+        onProgress,
+        useWorker: true,
+      }),
+    [processedRows, columns]
+  );
+
   return {
     paginatedRows: pagination.rows,
     processedRows,
@@ -343,6 +360,7 @@ export function useDataGrid<T extends GridRow>(
     commitEdit,
     cancelEditing,
     exportData,
+    exportDataAsync,
   };
 }
 

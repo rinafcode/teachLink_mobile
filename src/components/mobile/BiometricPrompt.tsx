@@ -1,5 +1,5 @@
 import { Eye, FingerprintPattern, KeyRound, ScanFace } from 'lucide-react-native';
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -9,6 +9,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+
+import { useFocusTrap, useFocusRestore } from '../../hooks';
 import { BiometricType } from '../../services/mobileAuth';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 
@@ -38,7 +40,7 @@ interface BiometricPromptProps {
 
 // ─── Biometric icon helper ────────────────────────────────────────────────────
 
-function BiometricIcon({
+const BiometricIcon = ({
   type,
   size = 52,
   color,
@@ -46,7 +48,7 @@ function BiometricIcon({
   type: BiometricType;
   size?: number;
   color: string;
-}) {
+}) => {
   switch (type) {
     case 'face':
       return <ScanFace size={size} color={color} />;
@@ -55,7 +57,7 @@ function BiometricIcon({
     default:
       return <FingerprintPattern size={size} color={color} />;
   }
-}
+};
 
 function biometricLabel(type: BiometricType): string {
   switch (type) {
@@ -90,6 +92,10 @@ export const BiometricPrompt: React.FC<BiometricPromptProps> = ({
 
   const label = biometricLabel(biometricType);
 
+  const containerRef = useRef<View>(null);
+  useFocusRestore(visible);
+  const { containerProps } = useFocusTrap(containerRef, visible, { autoFocus: true });
+
   return (
     <ErrorBoundary boundaryName="BiometricPromptModal">
       <Modal
@@ -101,8 +107,12 @@ export const BiometricPrompt: React.FC<BiometricPromptProps> = ({
       >
         <Pressable style={[styles.overlay, { backgroundColor: overlay }]} onPress={onDismiss}>
           <Pressable
+            ref={containerRef}
             style={[styles.sheet, { backgroundColor: bg }]}
             onPress={e => e.stopPropagation()}
+            accessibilityRole="dialog"
+            accessibilityLabel={`Sign in with ${label}`}
+            {...containerProps}
           >
             {/* Icon */}
             <View style={[styles.iconBg, { backgroundColor: iconBg }]}>

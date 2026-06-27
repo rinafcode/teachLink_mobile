@@ -9,6 +9,13 @@ on:
 jobs:
   bundle-size:
     runs-on: ubuntu-latest
+    
+    env:
+      EXPO_PUBLIC_API_BASE_URL: https://api.teachlink.com
+      EXPO_PUBLIC_SOCKET_URL: wss://api.teachlink.com
+      EXPO_PUBLIC_APP_ENV: production
+      EXPO_PUBLIC_ENABLE_PUSH_NOTIFICATIONS: true
+      
     steps:
       - uses: actions/checkout@v4
 
@@ -18,7 +25,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build Android bundle
         run: |
@@ -166,10 +173,13 @@ jobs:
                 body += `\n⚠️ **Warning**: Bundle size increased by more than 10%!\n`;
               }
             }
-            
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: body
-            });
+            try {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+              });
+            } catch (error) {
+              console.warn('Skipping PR commenting due to permission limits (e.g. fork PRs):', error.message);
+            }

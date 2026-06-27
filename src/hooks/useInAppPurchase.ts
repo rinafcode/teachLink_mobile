@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import logger from '../utils/logger';
+
 import {
   mobilePaymentsService,
   SubscriptionPlan,
@@ -8,6 +8,7 @@ import {
   SUBSCRIPTION_PLANS,
   PRODUCT_IDS,
 } from '../services/mobilePayments';
+import logger from '../utils/logger';
 
 // ─── State shape ──────────────────────────────────────────────────────────────
 

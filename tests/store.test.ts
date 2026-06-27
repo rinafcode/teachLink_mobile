@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from '@jest/globals';
 
 import { AuthUser } from '../src/services/mobileAuth';
 import { useAppStore } from '../src/store';
+import { useUiStore } from '../src/store/uiStore';
 
 const MOCK_USER: AuthUser = {
   id: 'user-001',
@@ -25,7 +26,6 @@ const INITIAL_STATE = {
   accessToken: null,
   refreshToken: null,
   sessionExpiresAt: null,
-  theme: 'light' as const,
 };
 
 describe('useAppStore', () => {
@@ -218,20 +218,24 @@ describe('useAppStore', () => {
   // ── setTheme ────────────────────────────────────────────────────────────
 
   describe('setTheme', () => {
+    beforeEach(() => {
+      useUiStore.setState({ theme: 'light' });
+    });
+
     it('switches theme to dark', () => {
-      useAppStore.getState().setTheme('dark');
-      expect(useAppStore.getState().theme).toBe('dark');
+      useUiStore.getState().setTheme('dark');
+      expect(useUiStore.getState().theme).toBe('dark');
     });
 
     it('switches theme back to light', () => {
-      useAppStore.setState({ theme: 'dark' });
-      useAppStore.getState().setTheme('light');
-      expect(useAppStore.getState().theme).toBe('light');
+      useUiStore.setState({ theme: 'dark' });
+      useUiStore.getState().setTheme('light');
+      expect(useUiStore.getState().theme).toBe('light');
     });
 
     it('does not affect auth state', () => {
       useAppStore.setState({ user: MOCK_USER, isAuthenticated: true });
-      useAppStore.getState().setTheme('dark');
+      useUiStore.getState().setTheme('dark');
       const state = useAppStore.getState();
       expect(state.isAuthenticated).toBe(true);
       expect(state.user).toEqual(MOCK_USER);

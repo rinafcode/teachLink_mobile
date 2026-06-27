@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-06-06T14:52:13.900Z",
+  "iterations": 10,
+  "budget_ms": 2000,
+  "metrics": {
+    "min": 13,
+    "max": 22,
+    "avg": 15,
+    "p50": 14,
+    "p95": 22
+  },
+  "passed": true
+}

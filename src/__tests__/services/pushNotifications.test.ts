@@ -97,6 +97,41 @@ describe('pushNotifications service', () => {
         trigger,
       });
     });
+
+    it('embeds only sanitized fields — extra keys are stripped', async () => {
+      const mockSchedule = Notifications.scheduleNotificationAsync as jest.Mock;
+      mockSchedule.mockResolvedValue('notification-id-789');
+
+      const data = {
+        type: NotificationType.MESSAGE,
+        conversationId: 'conv-1',
+        extraField: 'should-be-dropped',
+      } as unknown as NotificationData;
+
+      await scheduleLocalNotification('Msg', 'body', data);
+
+      const calledWith = mockSchedule.mock.calls[0][0];
+      expect(calledWith.content.data).not.toHaveProperty('extraField');
+      expect(calledWith.content.data).toHaveProperty('conversationId', 'conv-1');
+    });
+
+    it('throws when payload contains a prototype-pollution key', async () => {
+      const data = JSON.parse(
+        '{"type":"course_update","__proto__":{"polluted":true}}'
+      ) as NotificationData;
+
+      await expect(scheduleLocalNotification('Title', 'Body', data)).rejects.toThrow(
+        'invalid or unsafe notification payload'
+      );
+    });
+
+    it('throws when payload has an invalid type', async () => {
+      const data = { type: 'not_a_valid_type' } as unknown as NotificationData;
+
+      await expect(scheduleLocalNotification('Title', 'Body', data)).rejects.toThrow(
+        'invalid or unsafe notification payload'
+      );
+    });
   });
 
   describe('cancelScheduledNotification', () => {

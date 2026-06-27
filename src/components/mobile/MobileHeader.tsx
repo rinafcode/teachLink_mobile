@@ -2,7 +2,8 @@ import { DrawerNavigationProp } from '@react-navigation/drawer';
 import { useNavigation } from '@react-navigation/native';
 import { ArrowLeft, Bell, Menu } from 'lucide-react-native';
 import React from 'react';
-import { TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity, View, StyleSheet } from 'react-native';
+
 import { useDynamicFontSize, usePendingRequests, useSafeArea } from '../../hooks';
 import { AppText } from '../common/AppText';
 
@@ -16,18 +17,26 @@ interface MobileHeaderProps {
   showBack?: boolean;
   /** Optional custom right action component */
   rightAction?: React.ReactNode;
+  /** Whether to use sticky positioning for scroll performance */
+  sticky?: boolean;
+  /** Top offset for sticky positioning (default: 0) */
+  stickyTop?: number;
 }
 
-export const MobileHeader = ({ title, showBack = false, rightAction }: MobileHeaderProps) => {
+export const MobileHeader = ({ title, showBack = false, rightAction, sticky = false, stickyTop = 0 }: MobileHeaderProps) => {
   const { top } = useSafeArea();
   const navigation = useNavigation<DrawerNavigationProp<any>>();
   const pendingCount = usePendingRequests();
   const { scale } = useDynamicFontSize();
 
+  const headerStyle = sticky 
+    ? [styles.header, styles.stickyHeader, { top: stickyTop }]
+    : styles.header;
+
   return (
     <View
+      style={headerStyle}
       className="flex-row items-center justify-between border-b border-gray-200 bg-white px-4 pb-3"
-      style={{ paddingTop: top }}
       accessibilityRole="header"
     >
       <View className="flex-row items-center gap-3">
@@ -78,3 +87,18 @@ export const MobileHeader = ({ title, showBack = false, rightAction }: MobileHea
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  header: {
+    paddingTop: 0, // Will be set dynamically via style prop
+  },
+  stickyHeader: {
+    position: 'sticky' as const,
+    zIndex: 1000,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+});

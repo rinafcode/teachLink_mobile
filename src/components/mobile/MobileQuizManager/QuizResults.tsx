@@ -1,5 +1,6 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
 import { Quiz } from '../../../types/course';
 import PrimaryButton from '../../common/PrimaryButton';
 
@@ -24,6 +25,7 @@ export default function QuizResults({ quiz, score, passed, onBack, onRetake }: Q
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
+      removeClippedSubviews={true}
     >
       {/* Result Icon */}
       <View style={styles.iconContainer}>

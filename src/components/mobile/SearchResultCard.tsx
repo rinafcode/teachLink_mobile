@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { BookOpen, Clock } from 'lucide-react-native';
+import React from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
 
 export interface SearchResultItem {
   id: string;
@@ -19,7 +19,10 @@ export interface SearchResultCardProps {
   onPress: () => void;
 }
 
-export function SearchResultCard({ item, onPress }: SearchResultCardProps) {
+export const SearchResultCard = React.memo(function SearchResultCard({
+  item,
+  onPress,
+}: SearchResultCardProps) {
   const metaParts = [item.category, item.level].filter(Boolean);
   const metaText = metaParts.join(' · ');
   const screenReaderDescription = [item.title, item.description || item.subtitle, metaText]
@@ -28,99 +31,44 @@ export function SearchResultCard({ item, onPress }: SearchResultCardProps) {
 
   return (
     <TouchableOpacity
-      style={styles.card}
+      className="flex-row items-start bg-white rounded-xl p-3.5 mx-4 mb-2.5 border border-gray-200 shadow-sm shadow-black/5 elevation-1"
       onPress={onPress}
       activeOpacity={0.7}
       accessibilityRole="button"
       accessibilityLabel={screenReaderDescription}
       accessibilityHint="Opens course details"
     >
-      <View style={styles.iconWrap}>
+      <View className="w-11 h-11 rounded-lg bg-sky-100 items-center justify-center mr-3">
         <BookOpen size={24} color="#19c3e6" />
       </View>
-      <View style={styles.body}>
-        <Text style={styles.title} numberOfLines={2}>
+      <View className="flex-1 min-w-0">
+        <Text className="text-base font-semibold text-gray-900 mb-1" numberOfLines={2}>
           {item.title}
         </Text>
         {(item.description || item.subtitle) && (
-          <Text style={styles.description} numberOfLines={2}>
+          <Text className="text-[13px] text-gray-500 leading-[18px] mb-1.5" numberOfLines={2}>
             {item.description || item.subtitle}
           </Text>
         )}
-        <View style={styles.metaRow}>
-          {metaText ? <Text style={styles.meta}>{metaText}</Text> : null}
+        <View className="flex-row items-center flex-wrap gap-2">
+          {metaText ? <Text className="text-xs text-gray-500 font-medium">{metaText}</Text> : null}
           {item.duration != null && item.duration > 0 && (
-            <View style={styles.durationWrap}>
+            <View className="flex-row items-center gap-1">
               <Clock size={12} color="#6B7280" />
-              <Text style={styles.duration}>{item.duration} min</Text>
+              <Text className="text-xs text-gray-500">{item.duration} min</Text>
             </View>
           )}
         </View>
       </View>
     </TouchableOpacity>
   );
-}
-
-const styles = StyleSheet.create({
-  card: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 14,
-    marginHorizontal: 16,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  iconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 10,
-    backgroundColor: '#E0F2FE',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  body: {
-    flex: 1,
-    minWidth: 0,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 4,
-  },
-  description: {
-    fontSize: 13,
-    color: '#6B7280',
-    lineHeight: 18,
-    marginBottom: 6,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  meta: {
-    fontSize: 12,
-    color: '#6B7280',
-    fontWeight: '500',
-  },
-  durationWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  duration: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
+}, (prev, next) => {
+  return prev.item.id === next.item.id
+    && prev.item.title === next.item.title
+    && prev.item.description === next.item.description
+    && prev.item.subtitle === next.item.subtitle
+    && prev.item.duration === next.item.duration
+    && prev.item.category === next.item.category
+    && prev.item.level === next.item.level;
 });
+

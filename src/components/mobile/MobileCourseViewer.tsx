@@ -1,8 +1,8 @@
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
+  Animated,
   Modal,
   ScrollView,
   StyleSheet,
@@ -10,18 +10,24 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { AppText as Text } from '../common/AppText';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import BookmarkButton from './BookmarkButton';
+import { CourseViewerSkeleton } from './CourseViewerSkeleton';
+import LessonCarousel from './LessonCarousel';
+import MobileSyllabus from './MobileSyllabus';
 import { useCourseProgress, useDynamicFontSize } from '../../hooks';
-import { SafeAreaView } from "react-native-safe-area-context";
-import logger from "../../utils/logger";
-import PrimaryButton from "../common/PrimaryButton";
-import BookmarkButton from "./BookmarkButton";
-import LessonCarousel from "./LessonCarousel";
-import MobileSyllabus from "./MobileSyllabus";
-import { useAnalytics } from "../../hooks/useAnalytics";
-import { Course, Lesson, Note } from "../../types/course";
-import { AnalyticsEvent, ScreenName } from "../../utils/trackingEvents";
-import { ErrorBoundary } from "../common/ErrorBoundary";
+import { useAnalytics } from '../../hooks/useAnalytics';
+import { useInAppReview, useReviewMetrics } from '../../hooks/useInAppReview';
+import { usePrefetchImages } from '../../hooks/usePrefetchImages';
+import { ReviewTrigger } from '../../services/inAppReview';
+import { useReviewStore } from '../../store/reviewStore';
+import { Course, Lesson, Note } from '../../types/course';
+import { logger } from '../../utils/logger';
+import { AnalyticsEvent, ScreenName } from '../../utils/trackingEvents';
+import { AppText as Text } from '../common/AppText';
+import { ErrorBoundary } from '../common/ErrorBoundary';
+import PrimaryButton from '../common/PrimaryButton';
 
 /**
  * Props for the MobileCourseViewer component
@@ -41,15 +47,17 @@ interface MobileCourseViewerProps {
 
 type ViewMode = 'lesson' | 'syllabus' | 'notes';
 
-export default function MobileCourseViewer({
+const MobileCourseViewer = ({
   course,
   initialLessonId,
   initialViewMode,
   onBack,
   navigation,
-}: MobileCourseViewerProps) {
+}: MobileCourseViewerProps) => {
   const { scale } = useDynamicFontSize();
   const { trackEvent, trackScreen } = useAnalytics();
+  const { requestReview } = useInAppReview();
+  const { trackCourseComplete } = useReviewMetrics();
   const [viewMode, setViewMode] = useState<ViewMode>(initialViewMode || 'lesson');
   const [currentLessonId, setCurrentLessonId] = useState<string>(
     initialLessonId || course.sections[0]?.lessons[0]?.id || ''
@@ -64,7 +72,6 @@ export default function MobileCourseViewer({
   const {
     progress,
     isLoading,
-    updateLessonProgress,
     markLessonComplete,
     setCurrentLesson,
     addBookmark,
@@ -79,6 +86,20 @@ export default function MobileCourseViewer({
     course,
     autoSync: true,
   });
+
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!isLoading) {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      fadeAnim.setValue(0);
+    }
+  }, [isLoading, fadeAnim]);
 
   // Get all lessons in order
   const allLessons = course.sections.flatMap(section => section.lessons.map(lesson => lesson));
@@ -117,15 +138,34 @@ export default function MobileCourseViewer({
   // Get the quiz for current section (if exists)
   const currentSectionQuiz = useMemo(() => {
     const currentSection = course.sections.find(s => s.id === currentSectionId);
-    return currentSection?.quizzes?.[0] || null; // Get first quiz if multiple exist
+    return currentSection?.quizzes?.[0] || null;
   }, [currentSectionId, course]);
+
+  // Collect image URLs for upcoming lessons so we can warm the cache during idle
+  const upcomingImageUrls = useMemo(() => {
+    const currentIndex = allLessons.findIndex(l => l.id === currentLessonId);
+    const nextLessons = allLessons.slice(currentIndex + 1, currentIndex + 6);
+    const urls: string[] = [];
+
+    if (course.thumbnail) urls.push(course.thumbnail);
+    if (course.instructor.avatar) urls.push(course.instructor.avatar);
+
+    nextLessons.forEach(lesson => {
+      lesson.resources?.forEach(resource => {
+        if (resource.type === 'image' && resource.url) urls.push(resource.url);
+      });
+    });
+
+    return urls;
+  }, [course, allLessons, currentLessonId]);
+
+  usePrefetchImages(upcomingImageUrls, { auto: true, limit: 5 });
 
   // Resume from last position
   useEffect(() => {
     if (progress && currentLessonId) {
       const lessonProgress = progress.lessons[currentLessonId];
       if (lessonProgress?.lastPosition > 0 && !lessonProgress.completed) {
-        // Could scroll to position or seek video here
         logger.info('Resuming from position:', lessonProgress.lastPosition);
       }
     }
@@ -142,6 +182,7 @@ export default function MobileCourseViewer({
     } catch (error) {
       logger.error('Error in MobileCourseViewer:', error);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [course.id]);
 
   // Track course completion
@@ -154,9 +195,26 @@ export default function MobileCourseViewer({
           courseTitle: course.title,
           progress: overallProgress,
         });
+
+        // Track and request review
+        trackCourseComplete();
+        const coursesCompleted = useReviewStore.getState().coursesCompleted;
+        if (coursesCompleted === 1) {
+          requestReview(ReviewTrigger.FIRST_COURSE_COMPLETED);
+        } else if (coursesCompleted > 0 && coursesCompleted % 3 === 0) {
+          requestReview(ReviewTrigger.COURSE_MILESTONE);
+        }
       }
     }
-  }, [progress, course.id, course.title, calculateOverallProgress, trackEvent]);
+  }, [
+    progress,
+    course.id,
+    course.title,
+    calculateOverallProgress,
+    trackEvent,
+    trackCourseComplete,
+    requestReview,
+  ]);
 
   const handleLessonChange = useCallback(
     async (lessonId: string, index: number) => {
@@ -249,18 +307,14 @@ export default function MobileCourseViewer({
     [currentLessonId, deleteNote]
   );
 
-  // Handle "Next" button click on last lesson
   const handleLastLessonNext = useCallback(() => {
     if (isLastLessonInSection && sectionHasQuiz) {
-      // Show quiz prompt modal
       setShowQuizPromptModal(true);
     } else {
-      // No quiz, just go to syllabus
       setViewMode('syllabus');
     }
   }, [isLastLessonInSection, sectionHasQuiz]);
 
-  // Handle "Take Quiz" button - using navigation prop (React Navigation)
   const handleTakeQuiz = useCallback(() => {
     if (!currentSectionQuiz || !navigation) return;
 
@@ -268,11 +322,10 @@ export default function MobileCourseViewer({
     navigation.navigate('Quiz', {
       quiz: currentSectionQuiz,
       courseId: course.id,
-      course: course, // Pass course for navigation back to syllabus
+      course: course,
     });
   }, [currentSectionQuiz, course, navigation]);
 
-  // Handle "Skip" button
   const handleSkipQuiz = useCallback(() => {
     setShowQuizPromptModal(false);
     setViewMode('syllabus');
@@ -284,7 +337,11 @@ export default function MobileCourseViewer({
 
       return (
         <View style={styles.lessonContentWrapper}>
-          <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={styles.scrollView}
+            showsVerticalScrollIndicator={false}
+            removeClippedSubviews={true}
+          >
             {/* Lesson Content */}
             <View style={styles.lessonSection}>
               <Text style={styles.lessonText}>{lesson.content}</Text>
@@ -341,24 +398,21 @@ export default function MobileCourseViewer({
         </View>
       );
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [progress, handleAddNote, handleEditNote, handleDeleteNote]
   );
 
   if (isLoading) {
-    return (
-      <SafeAreaView style={[styles.container, styles.centerContent]}>
-        <ActivityIndicator size="large" color="#19c3e6" />
-        <Text style={styles.loadingText}>Loading course...</Text>
-      </SafeAreaView>
-    );
+    return <CourseViewerSkeleton />;
   }
 
   const overallProgress = calculateOverallProgress();
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
+      <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+        {/* Header */}
+        <View style={styles.header}>
         <View style={styles.headerContent}>
           {onBack && (
             <TouchableOpacity onPress={onBack} style={styles.backButton}>
@@ -391,9 +445,7 @@ export default function MobileCourseViewer({
           onPress={() => setViewMode('lesson')}
           style={[
             styles.tab,
-            {
-              borderBottomColor: viewMode === 'lesson' ? '#20afe7' : 'transparent',
-            },
+            { borderBottomColor: viewMode === 'lesson' ? '#20afe7' : 'transparent' },
           ]}
         >
           <Text
@@ -412,9 +464,7 @@ export default function MobileCourseViewer({
           onPress={() => setViewMode('syllabus')}
           style={[
             styles.tab,
-            {
-              borderBottomColor: viewMode === 'syllabus' ? '#20afe7' : 'transparent',
-            },
+            { borderBottomColor: viewMode === 'syllabus' ? '#20afe7' : 'transparent' },
           ]}
         >
           <Text
@@ -582,24 +632,17 @@ export default function MobileCourseViewer({
           </View>
         </ErrorBoundary>
       </Modal>
+      </Animated.View>
     </SafeAreaView>
   );
-}
+};
+
+export default MobileCourseViewer;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f0f1f5',
-  },
-  centerContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingText: {
-    marginTop: 16,
-    color: '#6b7280',
-    fontSize: 16,
-    fontWeight: '500',
   },
   header: {
     paddingHorizontal: 16,

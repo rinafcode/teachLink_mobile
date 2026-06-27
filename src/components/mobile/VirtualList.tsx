@@ -1,14 +1,37 @@
 import React, { useCallback } from 'react';
 import { FlatList, FlatListProps, ViewStyle, StyleProp } from 'react-native';
+
 import { useMemoryMonitor } from '../../hooks';
 
+/**
+ * Explicit extension props for VirtualList.
+ *
+ * NOTE: Do NOT reintroduce `{...rest}` or generic prop spreading here.
+ * All supported FlatList extension points must be listed explicitly.
+ * See docs/prop-patterns.md.
+ */
+
 export interface VirtualListProps<T> extends Omit<FlatListProps<T>, 'renderItem'> {
-  data: ReadonlyArray<T> | null | undefined;
+  data: readonly T[] | null | undefined;
   renderItem: FlatListProps<T>['renderItem'];
   keyExtractor: (item: T, index: number) => string;
-  itemHeight?: number; // Optional: If items have fixed height, this drastically improves layout performance
+  /** Optional: If items have fixed height, this drastically improves layout performance */
+  itemHeight?: number;
   contentContainerStyle?: StyleProp<ViewStyle>;
-  listId?: string; // Optional ID for memory monitoring
+  /** Optional ID for memory monitoring */
+  listId?: string;
+  /** Component rendered above the list items. */
+  ListHeaderComponent?: FlatListProps<T>['ListHeaderComponent'];
+  /** Component rendered when the list is empty. */
+  ListEmptyComponent?: FlatListProps<T>['ListEmptyComponent'];
+  /** Render horizontally instead of vertically. */
+  horizontal?: boolean;
+  /** Hide the vertical scroll indicator. */
+  showsVerticalScrollIndicator?: boolean;
+  /** Pull-to-refresh control. */
+  refreshControl?: FlatListProps<T>['refreshControl'];
+  /** Test identifier for automated tests. */
+  testID?: string;
 }
 
 /**
@@ -21,7 +44,13 @@ export function VirtualList<T>({
   keyExtractor,
   itemHeight,
   listId = 'VirtualList',
-  ...rest
+  contentContainerStyle,
+  ListHeaderComponent,
+  ListEmptyComponent,
+  horizontal,
+  showsVerticalScrollIndicator,
+  refreshControl,
+  testID,
 }: VirtualListProps<T>) {
   // Monitor memory footprint based on list size
   useMemoryMonitor({
@@ -49,7 +78,13 @@ export function VirtualList<T>({
       maxToRenderPerBatch={10} // Reduce number of items rendered per batch
       windowSize={5} // Reduce the size of the render window (default 21)
       updateCellsBatchingPeriod={50} // Delay in ms between batch renders
-      {...rest}
+      contentContainerStyle={contentContainerStyle}
+      ListHeaderComponent={ListHeaderComponent}
+      ListEmptyComponent={ListEmptyComponent}
+      horizontal={horizontal}
+      showsVerticalScrollIndicator={showsVerticalScrollIndicator}
+      refreshControl={refreshControl}
+      testID={testID}
     />
   );
 }

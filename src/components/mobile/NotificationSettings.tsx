@@ -1,8 +1,17 @@
-import React from 'react';
-import { View, Text, Switch, ScrollView, TouchableOpacity } from 'react-native';
+import { ChevronDown, ChevronUp } from 'lucide-react-native';
+import React, { memo, useState } from 'react';
+import {
+    ScrollView,
+    Switch,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
+
 import { useNotificationPermission } from '../../hooks';
 import { useNotificationStore } from '../../store/notificationStore';
 import { NotificationPreferences } from '../../types/notifications';
+import { configureNext } from '../../utils/layoutAnimation';
 
 interface SettingRowProps {
   icon: string;
@@ -13,7 +22,7 @@ interface SettingRowProps {
   disabled?: boolean;
 }
 
-function SettingRow({
+const SettingRow = memo(function SettingRow({
   icon,
   title,
   description,
@@ -40,25 +49,25 @@ function SettingRow({
       />
     </View>
   );
-}
+});
 
-export function NotificationSettings() {
+export const NotificationSettings = () => {
   const { permissionStatus, requestPermission, openSettings, isLoading } =
     useNotificationPermission();
   const { preferences, setPreference, pushToken } = useNotificationStore();
   const [savingKey, setSavingKey] = useState<keyof NotificationPreferences | null>(null);
 
+  // Progressive disclosure: advanced notifications collapsed by default
+  const [showAdvancedNotifications, setShowAdvancedNotifications] = useState(false);
+
   const isEnabled = permissionStatus === 'granted' && pushToken !== null;
 
-  const handlePreferenceChange = async (
-    key: keyof NotificationPreferences,
-    value: boolean
-  ) => {
+  const handlePreferenceChange = async (key: keyof NotificationPreferences, value: boolean) => {
     try {
       setSavingKey(key);
       // Update local preferences (automatically persisted by Zustand)
       setPreference(key, value);
-      
+
       // TODO: Sync with backend
       // try {
       //   await api.updateNotificationPreferences({ [key]: value });
@@ -71,9 +80,13 @@ export function NotificationSettings() {
     }
   };
 
+  const handleToggleAdvancedNotifications = () => {
+    configureNext();
+    setShowAdvancedNotifications(prev => !prev);
+  };
+
   return (
-    <ScrollView className="flex-1 bg-gray-50 dark:bg-gray-900">
-      {/* Permission Status Banner */}
+    <ScrollView className="flex-1 bg-gray-50 dark:bg-gray-900" removeClippedSubviews={true}>
       {permissionStatus !== 'granted' && (
         <View className="mx-4 mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/30">
           <View className="mb-2 flex-row items-center">
@@ -103,10 +116,10 @@ export function NotificationSettings() {
         </View>
       )}
 
-      {/* Notification Categories */}
+      {/* ── ESSENTIAL: Primary Notification Types ───────────── */}
       <View className="mt-6">
         <Text className="px-4 pb-2 text-sm font-semibold uppercase text-gray-500 dark:text-gray-400">
-          Notification Types
+          Notifications
         </Text>
         <View className="mx-4 rounded-xl bg-white dark:bg-gray-800">
           <SettingRow
@@ -127,38 +140,71 @@ export function NotificationSettings() {
             onValueChange={value => handlePreferenceChange('messages', value)}
             disabled={!isEnabled}
           />
-          <View className="mx-4 h-px bg-gray-200 dark:bg-gray-700" />
-
-          <SettingRow
-            icon="&#x23F0;"
-            title="Learning Reminders"
-            description="Daily reminders to keep your streak"
-            value={preferences.learningReminders}
-            onValueChange={value => handlePreferenceChange('learningReminders', value)}
-            disabled={!isEnabled}
-          />
-          <View className="mx-4 h-px bg-gray-200 dark:bg-gray-700" />
-
-          <SettingRow
-            icon="&#x1F3C6;"
-            title="Achievement Unlocks"
-            description="Celebrate when you unlock achievements"
-            value={preferences.achievementUnlocks}
-            onValueChange={value => handlePreferenceChange('achievementUnlocks', value)}
-            disabled={!isEnabled}
-          />
-          <View className="mx-4 h-px bg-gray-200 dark:bg-gray-700" />
-
-          <SettingRow
-            icon="&#x1F465;"
-            title="Community Activity"
-            description="Posts, comments, and community updates"
-            value={preferences.communityActivity}
-            onValueChange={value => handlePreferenceChange('communityActivity', value)}
-            disabled={!isEnabled}
-          />
         </View>
       </View>
+
+      {/* ── PROGRESSIVE DISCLOSURE: Advanced Notifications ─── */}
+      <TouchableOpacity
+        onPress={handleToggleAdvancedNotifications}
+        activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={
+          showAdvancedNotifications ? 'Hide advanced notifications' : 'Show advanced notifications'
+        }
+        accessibilityState={{ expanded: showAdvancedNotifications }}
+        className="mx-4 mt-4 flex-row items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800"
+      >
+        <View className="flex-row items-center gap-2">
+          <Text className="text-lg">&#x1F514;</Text>
+          <Text className="text-sm font-semibold text-indigo-500">
+            {showAdvancedNotifications ? 'Hide Advanced Notifications' : 'Advanced Notifications'}
+          </Text>
+        </View>
+        {showAdvancedNotifications ? (
+          <ChevronUp size={16} color="#6366f1" />
+        ) : (
+          <ChevronDown size={16} color="#6366f1" />
+        )}
+      </TouchableOpacity>
+
+      {/* Advanced notification categories (expandable) */}
+      {showAdvancedNotifications && (
+        <View className="mt-3">
+          <Text className="px-4 pb-2 text-sm font-semibold uppercase text-gray-500 dark:text-gray-400">
+            More Notification Types
+          </Text>
+          <View className="mx-4 rounded-xl bg-white dark:bg-gray-800">
+            <SettingRow
+              icon="&#x23F0;"
+              title="Learning Reminders"
+              description="Daily reminders to keep your streak"
+              value={preferences.learningReminders}
+              onValueChange={value => handlePreferenceChange('learningReminders', value)}
+              disabled={!isEnabled}
+            />
+            <View className="mx-4 h-px bg-gray-200 dark:bg-gray-700" />
+
+            <SettingRow
+              icon="&#x1F3C6;"
+              title="Achievement Unlocks"
+              description="Celebrate when you unlock achievements"
+              value={preferences.achievementUnlocks}
+              onValueChange={value => handlePreferenceChange('achievementUnlocks', value)}
+              disabled={!isEnabled}
+            />
+            <View className="mx-4 h-px bg-gray-200 dark:bg-gray-700" />
+
+            <SettingRow
+              icon="&#x1F465;"
+              title="Community Activity"
+              description="Posts, comments, and community updates"
+              value={preferences.communityActivity}
+              onValueChange={value => handlePreferenceChange('communityActivity', value)}
+              disabled={!isEnabled}
+            />
+          </View>
+        </View>
+      )}
 
       {/* Debug Info (remove in production) */}
       {__DEV__ && (

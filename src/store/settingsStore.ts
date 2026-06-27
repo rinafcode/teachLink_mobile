@@ -1,6 +1,6 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type ProfileVisibility = 'public' | 'private' | 'friends_only';
 export type DownloadQuality = 'low' | 'medium' | 'high';
@@ -29,6 +29,8 @@ interface SettingsState {
   fontSize: FontSize;
   autoplay: boolean;
   hapticFeedback: boolean;
+  adaptiveThemeEnabled: boolean;
+  dataSaverEnabled: boolean;
 
   // Actions — Account
   setProfileVisibility: (v: ProfileVisibility) => void;
@@ -50,12 +52,20 @@ interface SettingsState {
   setFontSize: (v: FontSize) => void;
   setAutoplay: (v: boolean) => void;
   setHapticFeedback: (v: boolean) => void;
+  setAdaptiveThemeEnabled: (v: boolean) => void;
+  setDataSaverEnabled: (v: boolean) => void;
 
   // Misc
   resetSettings: () => void;
 }
 
-const DEFAULT_SETTINGS: Omit<SettingsState, keyof Omit<SettingsState, ProfileVisibility | DownloadQuality | StorageLimit | AppLanguage | FontSize | boolean>> = {
+const DEFAULT_SETTINGS: Omit<
+  SettingsState,
+  keyof Omit<
+    SettingsState,
+    ProfileVisibility | DownloadQuality | StorageLimit | AppLanguage | FontSize | boolean
+  >
+> = {
   profileVisibility: 'public' as ProfileVisibility,
   twoFactorEnabled: false,
   dataSharing: true,
@@ -69,6 +79,8 @@ const DEFAULT_SETTINGS: Omit<SettingsState, keyof Omit<SettingsState, ProfileVis
   fontSize: 'medium' as FontSize,
   autoplay: true,
   hapticFeedback: true,
+  adaptiveThemeEnabled: false,
+  dataSaverEnabled: false,
 };
 
 const INITIAL_STATE = {
@@ -85,39 +97,62 @@ const INITIAL_STATE = {
   fontSize: 'medium' as FontSize,
   autoplay: true,
   hapticFeedback: true,
+  adaptiveThemeEnabled: false,
+  dataSaverEnabled: false,
 };
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
-    (set) => ({
+    set => ({
       ...INITIAL_STATE,
 
       // Account
-      setProfileVisibility: (v) => set({ profileVisibility: v }),
-      setTwoFactorEnabled: (v) => set({ twoFactorEnabled: v }),
+      setProfileVisibility: v => set({ profileVisibility: v }),
+      setTwoFactorEnabled: v => set({ twoFactorEnabled: v }),
 
       // Privacy
-      setDataSharing: (v) => set({ dataSharing: v }),
-      setAnalyticsEnabled: (v) => set({ analyticsEnabled: v }),
-      setLocationServices: (v) => set({ locationServices: v }),
+      setDataSharing: v => set({ dataSharing: v }),
+      setAnalyticsEnabled: v => set({ analyticsEnabled: v }),
+      setLocationServices: v => set({ locationServices: v }),
 
       // Downloads
-      setDownloadOverWifiOnly: (v) => set({ downloadOverWifiOnly: v }),
-      setAutoDownload: (v) => set({ autoDownload: v }),
-      setDownloadQuality: (v) => set({ downloadQuality: v }),
-      setStorageLimit: (v) => set({ storageLimit: v }),
+      setDownloadOverWifiOnly: v => set({ downloadOverWifiOnly: v }),
+      setAutoDownload: v => set({ autoDownload: v }),
+      setDownloadQuality: v => set({ downloadQuality: v }),
+      setStorageLimit: v => set({ storageLimit: v }),
 
       // App Preferences
       setLanguage: (v) => set({ language: v }),
       setFontSize: (v) => set({ fontSize: v }),
       setAutoplay: (v) => set({ autoplay: v }),
       setHapticFeedback: (v) => set({ hapticFeedback: v }),
+      setAdaptiveThemeEnabled: (v) => set({ adaptiveThemeEnabled: v }),
+      setDataSaverEnabled: (v) => set({ dataSaverEnabled: v }),
 
       resetSettings: () => set(INITIAL_STATE),
     }),
     {
       name: 'settings-storage',
+      version: 1,
       storage: createJSONStorage(() => AsyncStorage),
+      partialize: state => ({
+        profileVisibility: state.profileVisibility,
+        twoFactorEnabled: state.twoFactorEnabled,
+        dataSharing: state.dataSharing,
+        analyticsEnabled: state.analyticsEnabled,
+        locationServices: state.locationServices,
+        downloadOverWifiOnly: state.downloadOverWifiOnly,
+        autoDownload: state.autoDownload,
+        downloadQuality: state.downloadQuality,
+        storageLimit: state.storageLimit,
+        language: state.language,
+        fontSize: state.fontSize,
+        autoplay: state.autoplay,
+        hapticFeedback: state.hapticFeedback,
+        adaptiveThemeEnabled: state.adaptiveThemeEnabled,
+        dataSaverEnabled: state.dataSaverEnabled,
+      }),
+      migrate: persistedState => (persistedState ?? {}) as Partial<SettingsState>,
     }
   )
 );

@@ -1,17 +1,3 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  Alert,
-  ActivityIndicator,
-  RefreshControl,
-} from 'react-native';
-import { AppText as Text } from '../../components/common/AppText';
-import { useDynamicFontSize, useInAppPurchase } from '../../hooks';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
     ArrowLeft,
@@ -25,6 +11,21 @@ import {
     TrendingUp,
     XCircle,
 } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  Alert,
+  ActivityIndicator,
+  RefreshControl,
+} from 'react-native';
+
+import { AppText as Text } from '../../components/common/AppText';
+import { useDynamicFontSize, useInAppPurchase } from '../../hooks';
 import {
     PurchaseRecord,
     PurchaseStatus,
@@ -253,6 +254,7 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.tabsRow}
+        removeClippedSubviews={true}
       >
         {tabs.map((tab) => (
           <TouchableOpacity
@@ -421,6 +423,7 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
 
       <ScrollView
         showsVerticalScrollIndicator={false}
+        removeClippedSubviews={true}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}

@@ -10,6 +10,10 @@ jest.mock('react-native', () => ({
   View: 'View',
   Text: 'Text',
   TouchableOpacity: 'TouchableOpacity',
+  KeyboardAvoidingView: Object.assign(
+    ({ children, ...props }) => children,
+    { displayName: 'KeyboardAvoidingView' }
+  ),
   Modal: 'Modal',
   SafeAreaView: 'SafeAreaView',
   ScrollView: 'ScrollView',
@@ -17,6 +21,8 @@ jest.mock('react-native', () => ({
   TextInput: 'TextInput',
   ActivityIndicator: 'ActivityIndicator',
   Image: 'Image',
+  Pressable: 'Pressable',
+  TouchableWithoutFeedback: 'TouchableWithoutFeedback',
   StyleSheet: {
     create: styles => styles,
     flatten: style => (style ? (Array.isArray(style) ? Object.assign({}, ...style) : style) : {}),
@@ -53,6 +59,10 @@ jest.mock('react-native', () => ({
       stopAnimation: jest.fn(),
     })),
     timing: jest.fn(() => ({
+      start: jest.fn(callback => callback && callback({ finished: true })),
+      stop: jest.fn(),
+    })),
+    spring: jest.fn(() => ({
       start: jest.fn(callback => callback && callback({ finished: true })),
       stop: jest.fn(),
     })),
@@ -125,10 +135,15 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn(() => Promise.resolve()),
 }));
 
-// Mock expo-device
+// Mock expo-device.  __esModule: true prevents Babel's _interopRequireWildcard
+// from copying values at import time, so tests can mutate properties directly.
 jest.mock('expo-device', () => ({
+  __esModule: true,
   isDevice: true,
   deviceName: 'Test Device',
+  deviceYearClass: 2021,
+  totalMemory: 4 * 1024 * 1024 * 1024, // 4 GB — high-end default
+  modelName: 'Test Model',
 }));
 
 // Mock expo-constants
@@ -158,6 +173,7 @@ jest.mock('expo-network', () => ({
       type: 'WIFI',
     })
   ),
+  addNetworkStateListener: jest.fn(() => ({ remove: jest.fn() })),
   NetworkStateType: {
     UNKNOWN: 0,
     NONE: 1,
@@ -224,13 +240,29 @@ jest.mock('expo-image', () => ({
   clearDiskCache: jest.fn(() => Promise.resolve()),
 }));
 
-// Mock react-native-safe-area-context
-jest.mock('react-native-safe-area-context', () => ({
-  SafeAreaProvider: ({ children }) => children,
-  SafeAreaConsumer: ({ children }) => children({ top: 0, right: 0, bottom: 0, left: 0 }),
-  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
-  useSafeAreaFrame: () => ({ x: 0, y: 0, width: 390, height: 844 }),
-}));
+jest.mock('react-native-safe-area-context', () => {
+  const mockComponent = name => {
+    const Comp = ({ children }) => children;
+    Comp.displayName = name;
+    return Comp;
+  };
+  return new Proxy(
+    {
+      SafeAreaProvider: mockComponent('SafeAreaProvider'),
+      SafeAreaConsumer: ({ children }) => children({ top: 0, right: 0, bottom: 0, left: 0 }),
+      useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+      useSafeAreaFrame: () => ({ x: 0, y: 0, width: 390, height: 844 }),
+      SafeAreaView: mockComponent('SafeAreaView'),
+    },
+    {
+      get: (target, prop) => {
+        if (prop in target) return target[prop];
+        if (typeof prop === 'symbol') return undefined;
+        return mockComponent(String(prop));
+      },
+    }
+  );
+});
 
 // Mock expo-notifications (override jest-expo's mock to add removed methods)
 jest.mock('expo-notifications', () => ({
@@ -240,7 +272,6 @@ jest.mock('expo-notifications', () => ({
   getExpoPushTokenAsync: jest.fn(() =>
     Promise.resolve({ data: 'ExponentPushToken[test-token-123]' })
   ),
-  setNotificationChannelAsync: jest.fn(() => Promise.resolve()),
   scheduleNotificationAsync: jest.fn(() => Promise.resolve('notification-id')),
   cancelScheduledNotificationAsync: jest.fn(() => Promise.resolve()),
   cancelAllScheduledNotificationsAsync: jest.fn(() => Promise.resolve()),
@@ -254,15 +285,181 @@ jest.mock('expo-notifications', () => ({
   PermissionStatus: { GRANTED: 'granted', DENIED: 'denied', UNDETERMINED: 'undetermined' },
 }));
 
-// Mock @sentry/react-native to prevent native module import issues in tests
+// Mock expo-battery
+jest.mock('expo-battery', () => ({
+  BatteryState: {
+    UNKNOWN: 0,
+    UNPLUGGED: 1,
+    CHARGING: 2,
+    FULL: 3,
+  },
+  useLowPowerMode: jest.fn(() => false),
+  isLowPowerModeEnabledAsync: jest.fn(() => Promise.resolve(false)),
+  getBatteryLevelAsync: jest.fn(() => Promise.resolve(1)),
+  getPowerStateAsync: jest.fn(() =>
+    Promise.resolve({ batteryLevel: 1, batteryState: 1, lowPowerMode: false })
+  ),
+  addLowPowerModeListener: jest.fn(() => ({ remove: jest.fn() })),
+}));
+
+
+// Lightweight mock for expo-router to avoid pulling in navigation internals during tests
+jest.mock(
+  'expo-router',
+  () => ({
+    useRouter: () => ({
+      push: jest.fn(),
+      replace: jest.fn(),
+      back: jest.fn(),
+      prefetch: jest.fn(),
+    }),
+    Link: ({ children }) => children,
+    useLocalSearchParams: () => ({}),
+    usePathname: () => '/',
+    useSegments: () => [],
+  }),
+  { virtual: true }
+);
+
+// Mock expo-document-picker and expo-file-system used by components/tests
+jest.mock(
+  'expo-document-picker',
+  () => ({
+    getDocumentAsync: jest.fn(() => Promise.resolve({ type: 'cancelled' })),
+    getDocumentsAsync: jest.fn(() => Promise.resolve([])),
+  }),
+  { virtual: true }
+);
+
+jest.mock(
+  'expo-file-system',
+  () => ({
+    documentDirectory: '/tmp/',
+    readAsStringAsync: jest.fn(() => Promise.resolve('')),
+    writeAsStringAsync: jest.fn(() => Promise.resolve()),
+    deleteAsync: jest.fn(() => Promise.resolve()),
+  }),
+  { virtual: true }
+);
+
+// Mock @sentry/react-native with comprehensive API surface
 jest.mock('@sentry/react-native', () => ({
   init: jest.fn(),
+  wrap: jest.fn(component => component),
   captureException: jest.fn(),
   captureMessage: jest.fn(),
+  setUser: jest.fn(),
+  clearBreadcrumbs: jest.fn(),
+  addBreadcrumb: jest.fn(),
   withScope: jest.fn(),
   configureScope: jest.fn(),
   setContext: jest.fn(),
   setExtra: jest.fn(),
-  addBreadcrumb: jest.fn(),
+  ReactNavigationInstrumentation: jest.fn(),
+  ReactNativeTracing: jest.fn(),
+  Native: {
+    RNSentry: {},
+  },
   Severity: { Error: 'error', Warning: 'warning', Log: 'log' },
+  SDK_NAME: 'sentry.javascript.react-native',
+  SDK_VERSION: '5.36.0',
 }));
+
+// Mock expo-sensors globally to avoid native device sensor requirements in Jest
+jest.mock('expo-sensors', () => ({
+  LightSensor: {
+    addListener: jest.fn(() => ({ remove: jest.fn() })),
+    removeAllListeners: jest.fn(),
+    setUpdateInterval: jest.fn(),
+    isAvailableAsync: jest.fn(() => Promise.resolve(true)),
+  },
+}));
+
+// Mock react-native-reanimated with a stable custom lightweight implementation globally
+jest.mock('react-native-reanimated', () => {
+  const RN = require('react-native');
+  return {
+    default: RN.Animated,
+    View: RN.View,
+    Text: RN.Text,
+    ScrollView: RN.ScrollView,
+    Image: RN.Image,
+    useSharedValue: val => ({ value: val }),
+    useAnimatedStyle: fn => fn(),
+    withSpring: val => val,
+    withTiming: (val, config, callback) => {
+      if (callback) {
+        callback(true);
+      }
+      return val;
+    },
+    runOnJS: fn => fn,
+  };
+});
+
+// Mock react-native-gesture-handler globally
+jest.mock('react-native-gesture-handler', () => {
+  const RN = require('react-native');
+  return {
+    Gesture: {
+      Pan: () => ({
+        activeOffsetX: jest.fn().mockReturnThis(),
+        failOffsetY: jest.fn().mockReturnThis(),
+        onStart: jest.fn().mockReturnThis(),
+        onUpdate: jest.fn().mockReturnThis(),
+        onChange: jest.fn().mockReturnThis(),
+        onEnd: jest.fn().mockReturnThis(),
+        onFinalize: jest.fn().mockReturnThis(),
+      }),
+      LongPress: () => ({
+        minDuration: jest.fn().mockReturnThis(),
+        maxDist: jest.fn().mockReturnThis(),
+        onStart: jest.fn().mockReturnThis(),
+        onUpdate: jest.fn().mockReturnThis(),
+        onChange: jest.fn().mockReturnThis(),
+        onEnd: jest.fn().mockReturnThis(),
+        onFinalize: jest.fn().mockReturnThis(),
+      }),
+      Pinch: () => ({
+        onStart: jest.fn().mockReturnThis(),
+        onUpdate: jest.fn().mockReturnThis(),
+        onChange: jest.fn().mockReturnThis(),
+        onEnd: jest.fn().mockReturnThis(),
+        onFinalize: jest.fn().mockReturnThis(),
+      }),
+      Simultaneous: RN.View,
+    },
+    GestureDetector: RN.View,
+    Swipeable: RN.View,
+    gestureHandlerRootHOC: jest.fn(c => c),
+  };
+});
+
+// Mock react-native-svg globally to resolve SvgTouchableMixin errors
+jest.mock('react-native-svg', () => {
+  const RN = require('react-native');
+  return {
+    default: RN.View,
+    Svg: RN.View,
+    Path: RN.View,
+    Rect: RN.View,
+    Circle: RN.View,
+  };
+});
+
+// Mock expo-store-review for in-app review tests
+jest.mock('expo-store-review', () => ({
+  isAvailableAsync: jest.fn(() => Promise.resolve(true)),
+  requestReview: jest.fn(() => Promise.resolve()),
+  hasAction: jest.fn(() => Promise.resolve(true)),
+  storeUrl: jest.fn(() => Promise.resolve('https://apps.apple.com/app/teachlink/id1234567890')),
+}));
+
+// Mock expo-linear-gradient for jest tests
+jest.mock('expo-linear-gradient', () => {
+  const RN = require('react-native');
+  return {
+    LinearGradient: RN.View,
+  };
+});
+

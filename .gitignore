@@ -20,6 +20,10 @@ expo-env.d.ts
 
 # Metro
 .metro-health-check*
+.metro-route-sizes.json
+
+# Route size analysis reports
+.route-size-report.json
 
 # debug
 npm-debug.*
@@ -81,3 +85,4 @@ GoogleService-Info.plist
 # Documentation files (except README.md)
 *.md
 !README.md
+!docs/**/*.md

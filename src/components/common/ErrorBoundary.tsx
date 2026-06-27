@@ -1,5 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
 import { crashReportingService } from '../../services/crashReporting';
 import logger from '../../utils/logger';
 

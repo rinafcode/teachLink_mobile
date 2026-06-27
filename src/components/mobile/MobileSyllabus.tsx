@@ -1,19 +1,9 @@
-import React, { useState } from 'react';
-import {
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  UIManager,
-  View,
-} from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { SectionList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
 import { CourseProgress, Lesson, Section } from '../../types/course';
 
-// Enable LayoutAnimation on Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
+import type { SectionListData, SectionListRenderItemInfo } from 'react-native';
 
 /**
  * Props for the MobileSyllabus component
@@ -21,71 +11,224 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 interface MobileSyllabusProps {
   /** Array of course sections to display */
   sections: Section[];
-  /** Optional course progress data for showing completion status */
   /** Course progress data */
   progress?: CourseProgress | null;
   /** ID of the currently active lesson */
   currentLessonId?: string;
   /** Callback when a lesson is selected */
   onLessonSelect: (lessonId: string, sectionId: string) => void;
-  /** Optional callback when a section is expanded/collapsed */
   /** Optional callback when a section is toggled */
   onSectionToggle?: (sectionId: string, isExpanded: boolean) => void;
 }
 
-export default function MobileSyllabus({
+/** Extra fields attached to each SectionList section. */
+type SyllabusSectionExtra = { courseSection: Section };
+type SyllabusSection = SectionListData<Lesson, SyllabusSectionExtra>;
+
+/**
+ * PERFORMANCE NOTES (issue #219)
+ * --------------------------------------------------------------------------
+ * Before: every section and every lesson was rendered inside a single
+ * <ScrollView> via `.map()`. For large courses (1000+ lessons) that mounts
+ * thousands of views up-front -> high memory and 15-20fps scrolling.
+ *
+ * After: a <SectionList> (built on VirtualizedList) renders only the rows near
+ * the viewport and recycles them while scrolling, keeping memory flat and
+ * scrolling at ~60fps no matter how many lessons a course has.
+ *
+ * Tuning props (verify with the React Profiler):
+ *   - keyExtractor              -> stable keys avoid needless re-renders
+ *   - initialNumToRender        -> small first screenful = fast time-to-interactive
+ *   - maxToRenderPerBatch       -> rows rendered per batch (kept in the 10-15 range)
+ *   - updateCellsBatchingPeriod -> ms between render batches (smooths frame pacing)
+ *   - windowSize                -> screens worth of rows kept mounted
+ *   - removeClippedSubviews     -> unmounts off-screen rows to free memory
+ *
+ * getItemLayout is intentionally omitted here: lesson rows have variable height
+ * (wrapping titles + optional Resume/Bookmarked badges), so a fixed height would
+ * break scroll positioning. Only use getItemLayout when row height is constant.
+ */
+const MobileSyllabus = ({
   sections,
   progress,
   currentLessonId,
   onLessonSelect,
   onSectionToggle,
-}: MobileSyllabusProps) {
+}: MobileSyllabusProps) => {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(sections.map(s => s.id)) // All expanded by default
+    () => new Set(sections.map(s => s.id)) // All expanded by default
   );
 
-  const toggleSection = (sectionId: string) => {
-    const newExpanded = new Set(expandedSections);
-    const isCurrentlyExpanded = newExpanded.has(sectionId);
+  const toggleSection = useCallback(
+    (sectionId: string) => {
+      const isCurrentlyExpanded = expandedSections.has(sectionId);
+      const newExpanded = new Set(expandedSections);
 
-    if (isCurrentlyExpanded) {
-      newExpanded.delete(sectionId);
-    } else {
-      newExpanded.add(sectionId);
-    }
+      if (isCurrentlyExpanded) {
+        newExpanded.delete(sectionId);
+      } else {
+        newExpanded.add(sectionId);
+      }
 
-    setExpandedSections(newExpanded);
-    onSectionToggle?.(sectionId, !isCurrentlyExpanded);
-  };
+      setExpandedSections(newExpanded);
+      onSectionToggle?.(sectionId, !isCurrentlyExpanded);
+    },
+    [expandedSections, onSectionToggle]
+  );
 
-  const getSectionProgress = (section: Section): number => {
-    if (!progress || section.lessons.length === 0) return 0;
+  const getSectionProgress = useCallback(
+    (section: Section): number => {
+      if (!progress || section.lessons.length === 0) return 0;
 
-    const completedCount = section.lessons.filter(
-      lesson => progress.lessons[lesson.id]?.completed
-    ).length;
+      const completedCount = section.lessons.filter(
+        lesson => progress.lessons[lesson.id]?.completed
+      ).length;
 
-    return Math.round((completedCount / section.lessons.length) * 100);
-  };
+      return Math.round((completedCount / section.lessons.length) * 100);
+    },
+    [progress]
+  );
 
-  const getLessonStatus = (lesson: Lesson): 'completed' | 'in-progress' | 'not-started' => {
-    if (!progress) return 'not-started';
+  const getLessonStatus = useCallback(
+    (lesson: Lesson): 'completed' | 'in-progress' | 'not-started' => {
+      if (!progress) return 'not-started';
 
-    const lessonProgress = progress.lessons[lesson.id];
-    if (lessonProgress?.completed) return 'completed';
-    if (lesson.id === currentLessonId || lessonProgress?.lastPosition > 0) {
-      return 'in-progress';
-    }
-    return 'not-started';
-  };
+      const lessonProgress = progress.lessons[lesson.id];
+      if (lessonProgress?.completed) return 'completed';
+      if (lesson.id === currentLessonId || lessonProgress?.lastPosition > 0) {
+        return 'in-progress';
+      }
+      return 'not-started';
+    },
+    [progress, currentLessonId]
+  );
 
-  return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Header */}
+  // Map course sections into SectionList sections. Collapsed -> empty data array
+  // so those lesson rows are unmounted while the section header stays visible.
+  const listSections = useMemo<SyllabusSection[]>(
+    () =>
+      sections.map(section => ({
+        courseSection: section,
+        data: expandedSections.has(section.id) ? section.lessons : [],
+      })),
+    [sections, expandedSections]
+  );
+
+  const keyExtractor = useCallback(
+    (lesson: Lesson, index: number) => lesson.id ?? `lesson-${index}`,
+    []
+  );
+
+  const renderSectionHeader = useCallback(
+    ({ section }: { section: SyllabusSection }) => {
+      const courseSection = section.courseSection;
+      const isExpanded = expandedSections.has(courseSection.id);
+      const sectionProgress = getSectionProgress(courseSection);
+
+      return (
+        <TouchableOpacity
+          onPress={() => toggleSection(courseSection.id)}
+          style={styles.sectionHeader}
+          testID={`section-header-${courseSection.id}`}
+        >
+          <View style={styles.sectionHeaderContent}>
+            <View style={styles.sectionTitleContainer}>
+              <Text style={styles.sectionTitle}>{courseSection.title}</Text>
+              <View style={styles.lessonCountBadge}>
+                <Text style={styles.lessonCountText}>{courseSection.lessons.length}</Text>
+              </View>
+            </View>
+
+            <View style={styles.progressBarContainer}>
+              <View style={styles.progressBarBackground}>
+                <View style={[styles.progressBarFill, { width: `${sectionProgress}%` }]} />
+              </View>
+              <Text style={styles.progressText}>{sectionProgress}% complete</Text>
+            </View>
+          </View>
+
+          <Text
+            style={[styles.expandIcon, { transform: [{ rotate: isExpanded ? '180deg' : '0deg' }] }]}
+          >
+            ▼
+          </Text>
+        </TouchableOpacity>
+      );
+    },
+    [expandedSections, getSectionProgress, toggleSection]
+  );
+
+  const renderLesson = useCallback(
+    ({
+      item: lesson,
+      index: lessonIndex,
+      section,
+    }: SectionListRenderItemInfo<Lesson, SyllabusSectionExtra>) => {
+      const status = getLessonStatus(lesson);
+      const isCurrent = lesson.id === currentLessonId;
+      const lessonProgress = progress?.lessons[lesson.id];
+
+      return (
+        <TouchableOpacity
+          onPress={() => onLessonSelect(lesson.id, section.courseSection.id)}
+          style={[styles.lessonItem, isCurrent && styles.lessonItemCurrent]}
+          testID={`lesson-item-${lesson.id}`}
+        >
+          <View style={styles.lessonStatusIcon}>
+            {status === 'completed' ? (
+              <View style={styles.statusIconCompleted}>
+                <Text style={styles.statusIconText}>✓</Text>
+              </View>
+            ) : status === 'in-progress' ? (
+              <View style={styles.statusIconInProgress}>
+                <View style={styles.statusIconDot} />
+              </View>
+            ) : (
+              <View style={styles.statusIconNotStarted}>
+                <Text style={styles.statusIconNumber}>{lessonIndex + 1}</Text>
+              </View>
+            )}
+          </View>
+
+          <View style={styles.lessonContent}>
+            <Text style={[styles.lessonTitle, isCurrent && styles.lessonTitleCurrent]}>
+              {lesson.title}
+            </Text>
+
+            <View style={styles.lessonMetadata}>
+              <View style={styles.durationBadge}>
+                <Text style={styles.durationText}>⏱️ {lesson.duration} min</Text>
+              </View>
+
+              {lessonProgress?.lastPosition &&
+                lessonProgress.lastPosition > 0 &&
+                status !== 'completed' && (
+                  <View style={styles.resumeBadge}>
+                    <Text style={styles.resumeText}>📌 Resume</Text>
+                  </View>
+                )}
+
+              {progress?.bookmarks.includes(lesson.id) && (
+                <View style={styles.bookmarkBadge}>
+                  <Text style={styles.bookmarkText}>⭐ Bookmarked</Text>
+                </View>
+              )}
+            </View>
+          </View>
+
+          {isCurrent && (
+            <View style={styles.currentBadge}>
+              <Text style={styles.currentBadgeText}>Current</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      );
+    },
+    [currentLessonId, getLessonStatus, onLessonSelect, progress]
+  );
+
+  const ListHeader = useMemo(
+    () => (
       <View style={styles.header}>
         <Text style={styles.headerTitle}>📚 Course Syllabus</Text>
         <Text style={styles.headerSubtitle}>
@@ -93,124 +236,34 @@ export default function MobileSyllabus({
           lessons
         </Text>
       </View>
-
-      {/* Sections */}
-      {sections.map(section => {
-        const isExpanded = expandedSections.has(section.id);
-        const sectionProgress = getSectionProgress(section);
-
-        return (
-          <View key={section.id} style={styles.sectionCard}>
-            {/* Section Header */}
-            <TouchableOpacity
-              onPress={() => toggleSection(section.id)}
-              style={styles.sectionHeader}
-            >
-              <View style={styles.sectionHeaderContent}>
-                <View style={styles.sectionTitleContainer}>
-                  <Text style={styles.sectionTitle}>{section.title}</Text>
-                  <View style={styles.lessonCountBadge}>
-                    <Text style={styles.lessonCountText}>{section.lessons.length}</Text>
-                  </View>
-                </View>
-
-                {/* Progress Bar */}
-                <View style={styles.progressBarContainer}>
-                  <View style={styles.progressBarBackground}>
-                    <View style={[styles.progressBarFill, { width: `${sectionProgress}%` }]} />
-                  </View>
-                  <Text style={styles.progressText}>{sectionProgress}% complete</Text>
-                </View>
-              </View>
-
-              {/* Expand/Collapse Icon */}
-              <Text
-                style={[
-                  styles.expandIcon,
-                  {
-                    transform: [{ rotate: isExpanded ? '180deg' : '0deg' }],
-                  },
-                ]}
-              >
-                ▼
-              </Text>
-            </TouchableOpacity>
-
-            {/* Section Lessons */}
-            {isExpanded && (
-              <View style={styles.lessonsContainer}>
-                {section.lessons.map((lesson, lessonIndex) => {
-                  const status = getLessonStatus(lesson);
-                  const isCurrent = lesson.id === currentLessonId;
-                  const lessonProgress = progress?.lessons[lesson.id];
-
-                  return (
-                    <TouchableOpacity
-                      key={lesson.id}
-                      onPress={() => onLessonSelect(lesson.id, section.id)}
-                      style={[styles.lessonItem, isCurrent && styles.lessonItemCurrent]}
-                    >
-                      {/* Lesson Status Icon */}
-                      <View style={styles.lessonStatusIcon}>
-                        {status === 'completed' ? (
-                          <View style={styles.statusIconCompleted}>
-                            <Text style={styles.statusIconText}>✓</Text>
-                          </View>
-                        ) : status === 'in-progress' ? (
-                          <View style={styles.statusIconInProgress}>
-                            <View style={styles.statusIconDot} />
-                          </View>
-                        ) : (
-                          <View style={styles.statusIconNotStarted}>
-                            <Text style={styles.statusIconNumber}>{lessonIndex + 1}</Text>
-                          </View>
-                        )}
-                      </View>
-
-                      {/* Lesson Info */}
-                      <View style={styles.lessonContent}>
-                        <Text style={[styles.lessonTitle, isCurrent && styles.lessonTitleCurrent]}>
-                          {lesson.title}
-                        </Text>
-
-                        <View style={styles.lessonMetadata}>
-                          <View style={styles.durationBadge}>
-                            <Text style={styles.durationText}>⏱️ {lesson.duration} min</Text>
-                          </View>
-
-                          {lessonProgress?.lastPosition &&
-                            lessonProgress.lastPosition > 0 &&
-                            status !== 'completed' && (
-                              <View style={styles.resumeBadge}>
-                                <Text style={styles.resumeText}>📌 Resume</Text>
-                              </View>
-                            )}
-
-                          {progress?.bookmarks.includes(lesson.id) && (
-                            <View style={styles.bookmarkBadge}>
-                              <Text style={styles.bookmarkText}>⭐ Bookmarked</Text>
-                            </View>
-                          )}
-                        </View>
-                      </View>
-
-                      {/* Current Lesson Badge */}
-                      {isCurrent && (
-                        <View style={styles.currentBadge}>
-                          <Text style={styles.currentBadgeText}>Current</Text>
-                        </View>
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            )}
-          </View>
-        );
-      })}
-    </ScrollView>
+    ),
+    [sections]
   );
-}
+
+  return (
+    <SectionList
+      sections={listSections}
+      keyExtractor={keyExtractor}
+      renderItem={renderLesson}
+      renderSectionHeader={renderSectionHeader}
+      renderSectionFooter={() => <View style={styles.sectionFooter} />}
+      ListHeaderComponent={ListHeader}
+      stickySectionHeadersEnabled={false}
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={false}
+      // ---- Virtualization tuning (see PERFORMANCE NOTES above) ----
+      removeClippedSubviews={true}
+      initialNumToRender={12}
+      maxToRenderPerBatch={12}
+      updateCellsBatchingPeriod={50}
+      windowSize={7}
+      testID="syllabus-list"
+    />
+  );
+};
+
+export default MobileSyllabus;
 
 const styles = StyleSheet.create({
   container: {
@@ -247,23 +300,13 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#6b7280',
   },
-  sectionCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    marginBottom: 12,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
   sectionHeader: {
     paddingHorizontal: 16,
     paddingVertical: 14,
     backgroundColor: '#ffffff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -318,9 +361,8 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     fontWeight: '600',
   },
-  lessonsContainer: {
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
+  sectionFooter: {
+    height: 12,
   },
   lessonItem: {
     paddingHorizontal: 16,

@@ -1,8 +1,10 @@
+import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { Home, Compass, PlusCircle, MessageCircle, User } from 'lucide-react-native';
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+
 import { useSafeArea } from '../../hooks';
-import { Home, Compass, PlusCircle, MessageCircle, User } from 'lucide-react-native';
+
 
 /**
  * Custom bottom tab bar component for TeachLink mobile
@@ -57,7 +59,7 @@ export const MobileTabBar = ({ state, descriptors, navigation }: BottomTabBarPro
         if (route.name === 'Create') {
           return (
             <TouchableOpacity
-              key={index}
+              key={route.key}
               accessible={true}
               testID={`tab-${route.name.toLowerCase()}`}
               accessibilityRole="button"
@@ -76,7 +78,7 @@ export const MobileTabBar = ({ state, descriptors, navigation }: BottomTabBarPro
 
         return (
           <TouchableOpacity
-            key={index}
+            key={route.key}
             accessible={true}
             testID={`tab-${route.name.toLowerCase()}`}
             accessibilityRole="button"

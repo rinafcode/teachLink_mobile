@@ -2,29 +2,29 @@ import { Audio, AVPlaybackStatus, AVPlaybackStatusToSet, ResizeMode, Video } fro
 import * as Network from 'expo-network';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Modal,
-  Pressable,
-  StyleProp,
-  StyleSheet,
-  Text,
-  View,
-  ViewStyle,
+    ActivityIndicator,
+    Modal,
+    Pressable,
+    StyleProp,
+    StyleSheet,
+    Text,
+    View,
+    ViewStyle,
 } from 'react-native';
 
+import VideoControls from './VideoControls';
 import { usePictureInPicture, useVideoGestures } from '../../hooks';
 import {
-  AUTO_QUALITY_ID,
-  deriveNetworkType,
-  getQualityOptions,
-  normalizeSources,
-  selectSourceById,
-  type NetworkType,
-  type NormalizedVideoSource,
-  type VideoSource,
+    AUTO_QUALITY_ID,
+    deriveNetworkType,
+    getQualityOptions,
+    normalizeSources,
+    selectSourceById,
+    type NetworkType,
+    type NormalizedVideoSource,
+    type VideoSource,
 } from '../../services/videoQuality';
 import { ErrorBoundary } from '../common/ErrorBoundary';
-import VideoControls from './VideoControls';
 
 const AUTO_HIDE_MS = 3000;
 const DEFAULT_ASPECT_RATIO = 16 / 9;
@@ -36,22 +36,11 @@ const DEFAULT_RATES = [0.75, 1, 1.25, 1.5, 2];
 export type MobileVideoPlayerProps = {
   /** Array of video sources with different quality options */
   sources: VideoSource[];
-  /** Optional poster image URI to display before playback */
+  /** URI of the poster image to display before playback */
   posterUri?: string;
   /** Whether to start playback automatically when loaded */
   autoPlay?: boolean;
   /** Initial playback rate (speed) */
-  initialRate?: number;
-  /** Available playback rate options */
-  rateOptions?: number[];
-  /** Initial quality ID to use for playback */
-  initialQualityId?: string;
-  /** Optional style for the video container */
-  /** URI of the poster image to display before playback */
-  posterUri?: string;
-  /** Whether to start playback automatically */
-  autoPlay?: boolean;
-  /** Initial playback rate */
   initialRate?: number;
   /** Available playback rate options */
   rateOptions?: number[];
@@ -67,6 +56,8 @@ export type MobileVideoPlayerProps = {
   onPlaybackStatusUpdate?: (status: AVPlaybackStatus) => void;
   /** Callback when video quality changes */
   onQualityChange?: (qualityId: string) => void;
+  /** Whether the player is currently active (on-screen) */
+  isActive?: boolean;
 };
 
 const MobileVideoPlayer = ({
@@ -81,11 +72,12 @@ const MobileVideoPlayer = ({
   onError,
   onPlaybackStatusUpdate,
   onQualityChange,
+  isActive = true,
 }: MobileVideoPlayerProps) => {
   const videoRef = useRef<Video | null>(null);
   const autoPlayHandledRef = useRef(false);
   const lastToggleRef = useRef(0);
-  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | (() => void) | null>(null);
   const resumeStatusRef = useRef<AVPlaybackStatusToSet | null>(null);
 
   const [networkType, setNetworkType] = useState<NetworkType>('unknown');
@@ -127,9 +119,13 @@ const MobileVideoPlayer = ({
       return;
     }
     if (hideTimerRef.current) {
-      clearTimeout(hideTimerRef.current);
+      if (typeof hideTimerRef.current === 'function') {
+        hideTimerRef.current();
+      } else {
+        clearTimeout(hideTimerRef.current);
+      }
     }
-    hideTimerRef.current = setTimeout(() => {
+    hideTimerRef.current = scheduleAnimationFrame(() => {
       setControlsVisible(false);
     }, AUTO_HIDE_MS);
   }, []);
@@ -189,6 +185,12 @@ const MobileVideoPlayer = ({
   useEffect(() => {
     errorRef.current = error;
   }, [error]);
+
+  useEffect(() => {
+    if (!isActive) {
+      videoRef.current?.pauseAsync().catch(() => {});
+    }
+  }, [isActive]);
 
   const handleOverlayPress = useCallback(() => {
     setControlsVisible(true);
@@ -316,7 +318,11 @@ const MobileVideoPlayer = ({
     }
     return () => {
       if (hideTimerRef.current) {
-        clearTimeout(hideTimerRef.current);
+        if (typeof hideTimerRef.current === 'function') {
+          hideTimerRef.current();
+        } else {
+          clearTimeout(hideTimerRef.current);
+        }
       }
     };
   }, [controlsVisibleEffective, error, isPlaying, isScrubbing, scheduleAutoHide]);
@@ -338,11 +344,14 @@ const MobileVideoPlayer = ({
     let previousMode: Awaited<ReturnType<typeof Audio.getAudioModeAsync>> | null = null;
     const configure = async () => {
       try {
+        // eslint-disable-next-line import/namespace
         previousMode = await Audio.getAudioModeAsync();
         await Audio.setAudioModeAsync({
           ...previousMode,
           allowsRecordingIOS: false,
+          // eslint-disable-next-line import/namespace
           interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_DUCK_OTHERS,
+          // eslint-disable-next-line import/namespace
           interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DUCK_OTHERS,
           playsInSilentModeIOS: false,
           staysActiveInBackground: true,
@@ -367,7 +376,7 @@ const MobileVideoPlayer = ({
       try {
         const state = await Network.getNetworkStateAsync();
         if (isMounted) {
-          setNetworkType(deriveNetworkType(state));
+          setNetworkType(deriveNetworkType(state, isSlowConnection));
         }
       } catch {
         // Ignore network errors.
@@ -375,13 +384,13 @@ const MobileVideoPlayer = ({
     };
     updateNetworkState();
     const subscription = Network.addNetworkStateListener(state => {
-      setNetworkType(deriveNetworkType(state));
+      setNetworkType(deriveNetworkType(state, isSlowConnection));
     });
     return () => {
       isMounted = false;
       subscription.remove();
     };
-  }, []);
+  }, [isSlowConnection]);
 
   useEffect(() => {
     if (!qualityOptions.some(option => option.id === selectedQualityId)) {
@@ -465,7 +474,9 @@ const MobileVideoPlayer = ({
             source={videoSource}
             resizeMode={ResizeMode.CONTAIN}
             posterSource={posterUri ? { uri: posterUri } : undefined}
-            usePoster={!!posterUri}
+            usePoster={!isActive ? true : !!posterUri}
+            preload={isActive ? 'auto' : 'none'}
+            shouldPlay={!isActive ? false : undefined}
             onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
             onLoadStart={() => setIsLoading(true)}
             onReadyForDisplay={event => {

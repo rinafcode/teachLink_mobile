@@ -14,7 +14,8 @@
       "bundleIdentifier": "com.jaynomyaro.teachlink",
       "infoPlist": {
         "UIBackgroundModes": ["remote-notification"],
-        "NSCameraUsageDescription": "TeachLink uses the camera to scan QR codes and open deep links."
+        "NSCameraUsageDescription": "TeachLink uses the camera to scan QR codes and open deep links.",
+        "LSApplicationQueriesSchemes": ["cydia"]
       },
       "associatedDomains": ["applinks:teachlink.com", "applinks:www.teachlink.com"],
       "buildNumber": "1",
@@ -62,8 +63,18 @@
       "output": "static",
       "favicon": "./assets/icon.png"
     },
+    "updates": {
+      "url": "https://u.expo.dev/teachlink-mobile",
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "plugins": [
       "expo-router",
+      "expo-updates",
       [
         "expo-splash-screen",
         {
@@ -86,7 +97,18 @@
           "mode": "production"
         }
       ],
-      "expo-speech-recognition"
+      "expo-speech-recognition",
+      "expo-video",
+      "./plugins/withProguard.js",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ]
     ],
     "notification": {
       "icon": "./assets/notification-icon.png",

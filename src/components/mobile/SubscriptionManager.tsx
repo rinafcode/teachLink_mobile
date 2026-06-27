@@ -1,3 +1,5 @@
+import { LinearGradient } from 'expo-linear-gradient';
+import { Crown, Zap, Check, RefreshCw, ChevronRight, Star, Shield } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -9,9 +11,9 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Crown, Zap, Check, RefreshCw, ChevronRight, Star, Shield } from 'lucide-react-native';
+
 import { PurchaseButton } from './PurchaseButton';
+import { SubscriptionSkeleton } from './SubscriptionSkeleton';
 import { useInAppPurchase } from '../../hooks';
 import {
   SUBSCRIPTION_PLANS,
@@ -205,7 +207,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
         {/* Features list */}
         <View style={styles.featuresList}>
           {plan.features.map((feature, i) => (
-            <View key={i} style={styles.featureRow}>
+            <View key={`feature-${plan.id}-${i}`} style={styles.featureRow}>
               <View style={[styles.featureCheck, { backgroundColor: `${meta.colors[0]}20` }]}>
                 <Check size={12} color={meta.colors[0]} />
               </View>
@@ -279,7 +281,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
 
       <View style={styles.featuresList}>
         {FREE_FEATURES.map((feature, i) => (
-          <View key={i} style={styles.featureRow}>
+          <View key={`free-feature-${i}`} style={styles.featureRow}>
             <View style={[styles.featureCheck, { backgroundColor: '#64748b20' }]}>
               <Check size={12} color="#64748b" />
             </View>
@@ -303,14 +305,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
   // ── Loading skeleton ────────────────────────────────────────────────────
 
   if (isLoading) {
-    return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#19c3e6" />
-          <Text style={[styles.loadingText, { color: textSecondary }]}>Loading plans…</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <SubscriptionSkeleton />;
   }
 
   // ── Main render ─────────────────────────────────────────────────────────
@@ -332,7 +327,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
         )}
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll} removeClippedSubviews={true}>
         {/* Current plan */}
         {renderCurrentPlan()}
 

@@ -1,3 +1,4 @@
+import { NotificationType, NotificationData } from '../../types/notifications';
 import {
   setNavigationRef,
   handleCourseUpdate,
@@ -7,8 +8,8 @@ import {
   handleCommunityActivity,
   buildDeepLink,
   parseDeepLink,
+  validateNotificationPayload,
 } from '../../utils/notificationHandlers';
-import { NotificationType, NotificationData } from '../../types/notifications';
 
 describe('notificationHandlers', () => {
   const mockNavigate = jest.fn();
@@ -252,6 +253,97 @@ describe('notificationHandlers', () => {
       const result = parseDeepLink('teachlink://unknown/path');
 
       expect(result).toBeNull();
+    });
+  });
+});
+
+describe('validateNotificationPayload', () => {
+  it('returns a valid NotificationData for a clean payload', () => {
+    const raw = { type: NotificationType.COURSE_UPDATE, courseId: 'c-1' };
+    const result = validateNotificationPayload(raw);
+    expect(result).toEqual({ type: NotificationType.COURSE_UPDATE, courseId: 'c-1' });
+  });
+
+  it('strips unknown extra fields (only allow-list survives)', () => {
+    const raw = {
+      type: NotificationType.MESSAGE,
+      conversationId: 'conv-1',
+      extraField: 'should-be-dropped',
+      nested: { deep: true },
+    };
+    const result = validateNotificationPayload(raw);
+    expect(result).toEqual({ type: NotificationType.MESSAGE, conversationId: 'conv-1' });
+    expect(result).not.toHaveProperty('extraField');
+    expect(result).not.toHaveProperty('nested');
+  });
+
+  it('returns undefined for null input', () => {
+    expect(validateNotificationPayload(null)).toBeUndefined();
+  });
+
+  it('returns undefined for non-object input', () => {
+    expect(validateNotificationPayload('string')).toBeUndefined();
+    expect(validateNotificationPayload(42)).toBeUndefined();
+    expect(validateNotificationPayload(undefined)).toBeUndefined();
+  });
+
+  it('returns undefined for arrays', () => {
+    expect(validateNotificationPayload([])).toBeUndefined();
+    expect(validateNotificationPayload([{ type: NotificationType.MESSAGE }])).toBeUndefined();
+  });
+
+  it('returns undefined when type is invalid', () => {
+    expect(validateNotificationPayload({ type: 'invalid_type' })).toBeUndefined();
+    expect(validateNotificationPayload({ type: 123 })).toBeUndefined();
+    expect(validateNotificationPayload({})).toBeUndefined();
+  });
+
+  // Prototype pollution vectors
+  it('rejects payload containing __proto__ key', () => {
+    const raw = JSON.parse('{"type":"course_update","__proto__":{"polluted":true}}');
+    const result = validateNotificationPayload(raw);
+    expect(result).toBeUndefined();
+  });
+
+  it('rejects payload containing constructor key', () => {
+    const raw = { type: NotificationType.COURSE_UPDATE, constructor: { name: 'Object' } };
+    const result = validateNotificationPayload(raw as unknown as Record<string, unknown>);
+    expect(result).toBeUndefined();
+  });
+
+  it('rejects payload containing prototype key', () => {
+    const raw = { type: NotificationType.COURSE_UPDATE, prototype: { polluted: true } };
+    const result = validateNotificationPayload(raw as unknown as Record<string, unknown>);
+    expect(result).toBeUndefined();
+  });
+
+  it('does not pollute Object.prototype when __proto__ key is present in raw JSON', () => {
+    const before = (Object.prototype as Record<string, unknown>).polluted;
+    JSON.parse('{"type":"course_update","__proto__":{"polluted":true}}');
+    expect((Object.prototype as Record<string, unknown>).polluted).toBe(before);
+  });
+
+  it('returns undefined for optional string fields when value is not a string', () => {
+    const raw = {
+      type: NotificationType.COURSE_UPDATE,
+      courseId: 12345, // number — should be dropped
+    };
+    const result = validateNotificationPayload(raw);
+    expect(result).toBeDefined();
+    expect(result?.courseId).toBeUndefined();
+  });
+
+  it('preserves all valid optional fields', () => {
+    const raw = {
+      type: NotificationType.COMMUNITY_ACTIVITY,
+      postId: 'p-1',
+      deepLink: 'teachlink://community/p-1',
+    };
+    const result = validateNotificationPayload(raw);
+    expect(result).toEqual({
+      type: NotificationType.COMMUNITY_ACTIVITY,
+      postId: 'p-1',
+      deepLink: 'teachlink://community/p-1',
     });
   });
 });

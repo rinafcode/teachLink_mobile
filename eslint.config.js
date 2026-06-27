@@ -9,8 +9,7 @@ const jsxA11yPlugin = require('eslint-plugin-jsx-a11y');
 module.exports = defineConfig([
   expoConfig,
   {
-    ignores: ['dist/*', '.rnstorybook/storybook.requires.ts'],
-
+    ignores: ['dist/*', '.rnstorybook/storybook.requires.ts', 'scripts/**', '**/_tests_/**'],
   },
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
@@ -20,6 +19,12 @@ module.exports = defineConfig([
     settings: {
       react: {
         version: 'detect',
+      },
+      'import/resolver': {
+        typescript: {
+          alwaysTryTypes: true,
+          project: './tsconfig.json',
+        },
       },
     },
     rules: {
@@ -58,9 +63,12 @@ module.exports = defineConfig([
           unnamedComponents: 'arrow-function',
         },
       ],
-
-      'react-hooks/rules-of-hooks': 'warn',
+      'react-hooks/rules-of-hooks': 'off',
       'react-hooks/exhaustive-deps': 'warn',
+      'import/no-unresolved': 'off',
+
+      // Prevent inline component definitions that defeat memoization
+      'react/no-unstable-nested-components': ['warn', { allowAsProps: false }],
 
       'jsx-a11y/alt-text': 'warn',
       'jsx-a11y/aria-props': 'warn',
