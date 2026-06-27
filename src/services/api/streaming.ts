@@ -1,10 +1,10 @@
 /**
  * STREAMING API SERVICE
- * 
+ *
  * Implements progressive rendering of large API responses using chunked transfer encoding.
  * Allows components to display data incrementally as chunks arrive, improving perceived performance
  * and reducing Time To First Byte (TTFB).
- * 
+ *
  * Features:
  * - Chunk-based data streaming with progressive state updates
  * - Support for NDJSON (newline-delimited JSON) and JSON array formats
@@ -13,9 +13,9 @@
  * - Automatic timeout protection
  */
 
-import { getEnv } from "../../config";
-import { appLogger } from "../../utils/logger";
-import { getAccessToken } from "../secureStorage";
+import { getEnv } from '../../config';
+import { appLogger } from '../../utils/logger';
+import { getAccessToken } from '../secureStorage';
 
 /**
  * Represents a single chunk received from the streaming endpoint
@@ -45,6 +45,8 @@ export interface StreamingConfig {
   format?: 'ndjson' | 'json-array';
   /** Optional authorization token override */
   token?: string;
+  /** AbortSignal for cancelling the request */
+  signal?: AbortSignal;
 }
 
 /**
@@ -64,12 +66,12 @@ export interface StreamingMetadata {
 }
 
 class StreamingApiService {
-  private baseURL = getEnv("EXPO_PUBLIC_API_BASE_URL");
+  private baseURL = getEnv('EXPO_PUBLIC_API_BASE_URL');
 
   /**
    * Stream data from an endpoint using fetch streaming API
    * Supports NDJSON (newline-delimited JSON) format for optimal progressive rendering
-   * 
+   *
    * @example
    * ```typescript
    * const results: any[] = [];
@@ -82,10 +84,7 @@ class StreamingApiService {
    * });
    * ```
    */
-  async stream<T = unknown>(
-    endpoint: string,
-    config: StreamingConfig = {}
-  ): Promise<T[]> {
+  async stream<T = unknown>(endpoint: string, config: StreamingConfig = {}): Promise<T[]> {
     const {
       onChunk,
       onProgress,
@@ -94,6 +93,7 @@ class StreamingApiService {
       timeout = 30000,
       format = 'ndjson',
       token: overrideToken,
+      signal,
     } = config;
 
     const startTime = Date.now();
@@ -119,7 +119,7 @@ class StreamingApiService {
       const url = `${this.baseURL}${endpoint}`;
 
       const response = await Promise.race([
-        fetch(url, { headers }),
+        fetch(url, { headers, signal }),
         new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('Streaming request timeout')), timeout)
         ),
@@ -313,7 +313,7 @@ class StreamingApiService {
         return await this.stream<T>(endpoint, streamConfig);
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
-        
+
         if (attempt < maxRetries) {
           // Exponential backoff: 1s, 2s, 4s
           const delay = Math.min(1000 * Math.pow(2, attempt - 1), 4000);
@@ -333,7 +333,7 @@ class StreamingApiService {
     return new Promise((resolve, reject) => {
       this.stream(endpoint, {
         token,
-        onFirstByte: (ttfb) => resolve(ttfb),
+        onFirstByte: ttfb => resolve(ttfb),
         onError: reject,
       }).catch(reject);
     });

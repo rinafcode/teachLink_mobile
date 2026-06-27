@@ -1,6 +1,8 @@
+import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
+import { getEnv } from '../config';
 import defaultLogger from '../utils/logger';
 
 const logger = defaultLogger;
@@ -385,6 +387,44 @@ export async function isSessionValid(): Promise<boolean> {
 
   // Consider session expired 30s early to allow refresh
   return expiresAt > Date.now() + 30_000;
+}
+
+interface RefreshTokenResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
+}
+
+/**
+ * Refresh the access token using the stored refresh token.
+ */
+export async function refreshAccessToken(): Promise<RefreshTokenResponse> {
+  if (!isSecureStorageReady()) {
+    throw new Error('SecureStorage not initialized - cannot refresh tokens');
+  }
+
+  const refreshToken = await getRefreshToken();
+  if (!refreshToken) {
+    throw new Error('No refresh token available. Please log in again.');
+  }
+
+  const baseURL = getEnv('EXPO_PUBLIC_API_BASE_URL');
+  const { data } = await axios.post(`${baseURL}/auth/refresh`, {
+    refreshToken,
+  });
+
+  const tokens = data?.tokens ?? data;
+  if (!tokens?.accessToken || !tokens?.refreshToken || !tokens?.expiresAt) {
+    throw new Error('Refresh response did not include a complete token set.');
+  }
+
+  await saveTokens(tokens.accessToken, tokens.refreshToken, tokens.expiresAt);
+
+  return {
+    accessToken: tokens.accessToken,
+    refreshToken: tokens.refreshToken,
+    expiresAt: tokens.expiresAt,
+  };
 }
 
 // ─── Export manifest (for verification in tests) ────────────────────────────────

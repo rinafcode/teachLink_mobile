@@ -1,9 +1,9 @@
 /**
  * STREAMING DATA HOOK
- * 
+ *
  * React hook for consuming streaming API responses with progressive rendering support.
  * Manages state for chunks, loading, error, and performance metrics.
- * 
+ *
  * Features:
  * - Progressive state updates as chunks arrive
  * - Automatic error handling and retry logic
@@ -14,7 +14,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { streamingApi, StreamChunk, StreamingConfig } from '../services/api/streaming';
+import { streamingApi, StreamingConfig } from '../services/api/streaming';
 import { appLogger } from '../utils/logger';
 
 export interface UseStreamingDataOptions extends StreamingConfig {
@@ -57,7 +57,7 @@ export interface UseStreamingDataResult<T> {
 
 /**
  * Hook for progressive streaming data fetching
- * 
+ *
  * @example
  * ```tsx
  * const { data, isStreaming, progress, ttfb } = useStreamingData<SearchResult>(
@@ -68,7 +68,7 @@ export interface UseStreamingDataResult<T> {
  *     transform: (item) => ({ ...item, loaded: true }),
  *   }
  * );
- * 
+ *
  * return (
  *   <>
  *     {data.map((item) => <ResultCard key={item.id} {...item} />)}
@@ -98,7 +98,8 @@ export function useStreamingData<T extends object = unknown>(
   const startTimeRef = useRef<number | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const activeFetchRef = useRef(false);
-  
+  const isMounted = useRef(true);
+
   const optionsRef = useRef(options);
   optionsRef.current = options;
 
@@ -113,6 +114,12 @@ export function useStreamingData<T extends object = unknown>(
 
     activeFetchRef.current = true;
     startTimeRef.current = Date.now();
+
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = new AbortController();
+    const { signal } = abortControllerRef.current;
+
+    if (!isMounted.current) return;
     setIsLoading(true);
     setIsStreaming(true);
     setError(null);
@@ -136,16 +143,18 @@ export function useStreamingData<T extends object = unknown>(
     try {
       await streamingApi.streamWithRetry<T>(endpoint, {
         ...streamConfig,
-        onChunk: (chunk) => {
+        signal,
+        onChunk: chunk => {
+          if (!isMounted.current || signal.aborted) return;
           let item = chunk.data;
           if (transform) {
             item = transform(item);
           }
-          setData((prev) => {
+          setData(prev => {
             if (deduplicateKey && typeof item === 'object' && item !== null) {
               const key = (item as Record<string, any>)[deduplicateKey];
               const isDuplicate = prev.some(
-                (existing) =>
+                existing =>
                   typeof existing === 'object' &&
                   existing !== null &&
                   (existing as Record<string, any>)[deduplicateKey] === key
@@ -156,17 +165,22 @@ export function useStreamingData<T extends object = unknown>(
             dataRef.current = updated;
             return updated;
           });
-          setChunkCount((c) => c + 1);
+          setChunkCount(c => c + 1);
           externalOnChunk?.(chunk);
         },
-        onProgress: setProgress,
-        onFirstByte: setTtfb,
-        onError: (err) => {
+        onProgress: p => {
+          if (isMounted.current) setProgress(p);
+        },
+        onFirstByte: t => {
+          if (isMounted.current) setTtfb(t);
+        },
+        onError: err => {
           // Individual attempt error is handled by streamWithRetry
         },
         maxRetries,
       });
 
+      if (!isMounted.current) return;
       const elapsed = startTimeRef.current ? Date.now() - startTimeRef.current : 0;
       setTotalTime(elapsed);
 
@@ -177,15 +191,19 @@ export function useStreamingData<T extends object = unknown>(
       });
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
-      setError(error);
+      if (isMounted.current) {
+        setError(error);
+      }
 
       appLogger.errorSync('Streaming data fetch failed', error, {
         endpoint,
         attempts: maxRetries,
       });
     } finally {
-      setIsLoading(false);
-      setIsStreaming(false);
+      if (isMounted.current) {
+        setIsLoading(false);
+        setIsStreaming(false);
+      }
       activeFetchRef.current = false;
     }
   }, [endpoint]);
@@ -225,6 +243,8 @@ export function useStreamingData<T extends object = unknown>(
     return () => {
       // Clean up abort controller if needed
       currentAbortController?.abort();
+      isMounted.current = false;
+      abortControllerRef.current?.abort();
     };
   }, [autoFetch, doFetch]);
 
@@ -247,7 +267,7 @@ export function useStreamingData<T extends object = unknown>(
 /**
  * Hook for measuring TTFB of a streaming endpoint
  * Useful for performance monitoring dashboards
- * 
+ *
  * @example
  * ```tsx
  * const { ttfb, isLoading } = useTTFBMeasurement('/api/courses');

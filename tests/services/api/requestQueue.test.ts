@@ -3,6 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Network from 'expo-network';
 
 import { requestQueue } from '../../../src/services/api/requestQueue';
+import * as secureStorage from '../../../src/services/secureStorage';
+import { useAppStore } from '../../../src/store';
 
 jest.mock('../../../src/utils/logger', () => ({
   __esModule: true,
@@ -26,6 +28,20 @@ jest.mock('../../../src/services/mobileAnalytics', () => ({
   },
 }));
 
+jest.mock('../../../src/services/secureStorage', () => ({
+  isSessionValid: jest.fn(() => Promise.resolve(true)),
+  refreshAccessToken: jest.fn(),
+}));
+
+jest.mock('../../../src/store', () => ({
+  useAppStore: {
+    getState: jest.fn(() => ({
+      logout: jest.fn(),
+      setTokens: jest.fn(),
+    })),
+  },
+}));
+
 const mockConfig = (overrides: Partial<InternalAxiosRequestConfig> = {}): InternalAxiosRequestConfig =>
   ({
     method: 'GET',
@@ -36,8 +52,27 @@ const mockConfig = (overrides: Partial<InternalAxiosRequestConfig> = {}): Intern
   }) as InternalAxiosRequestConfig;
 
 describe('RequestQueue', () => {
+  const mockIsSessionValid = secureStorage.isSessionValid as jest.MockedFunction<
+    typeof secureStorage.isSessionValid
+  >;
+  const mockRefreshAccessToken = secureStorage.refreshAccessToken as jest.MockedFunction<
+    typeof secureStorage.refreshAccessToken
+  >;
+  const mockLogout = jest.fn();
+  const mockSetTokens = jest.fn();
+
   beforeEach(async () => {
     jest.clearAllMocks();
+    (useAppStore.getState as jest.Mock).mockReturnValue({
+      logout: mockLogout,
+      setTokens: mockSetTokens,
+    });
+    mockIsSessionValid.mockResolvedValue(true);
+    mockRefreshAccessToken.mockResolvedValue({
+      accessToken: 'fresh-access-token',
+      refreshToken: 'fresh-refresh-token',
+      expiresAt: Date.now() + 3_600_000,
+    });
 
     const queue = await requestQueue.getQueue();
     for (const req of queue) {
@@ -154,6 +189,43 @@ describe('RequestQueue', () => {
       const queue = await requestQueue.getQueue();
       expect(queue).toHaveLength(0);
       expect(client).toHaveBeenCalledTimes(1);
+      expect(mockIsSessionValid).toHaveBeenCalledTimes(1);
+    });
+
+    it('should refresh the session before replay when the access token expired', async () => {
+      mockIsSessionValid.mockResolvedValue(false);
+      const client = jest.fn().mockResolvedValue({ data: 'ok' });
+      await requestQueue.addToQueue(mockConfig());
+
+      await requestQueue.processQueue(client);
+
+      expect(mockRefreshAccessToken).toHaveBeenCalledTimes(1);
+      expect(mockSetTokens).toHaveBeenCalledWith(
+        'fresh-access-token',
+        'fresh-refresh-token',
+        expect.any(Number),
+      );
+      expect(client).toHaveBeenCalledTimes(1);
+
+      const queue = await requestQueue.getQueue();
+      expect(queue).toHaveLength(0);
+    });
+
+    it('should clear the queue and log the user out when refresh fails', async () => {
+      mockIsSessionValid.mockResolvedValue(false);
+      mockRefreshAccessToken.mockRejectedValue(new Error('Refresh token expired'));
+      const client = jest.fn().mockResolvedValue({ data: 'ok' });
+      await requestQueue.addToQueue(mockConfig());
+
+      await requestQueue.processQueue(client);
+
+      expect(mockRefreshAccessToken).toHaveBeenCalledTimes(1);
+      expect(mockLogout).toHaveBeenCalledTimes(1);
+      expect(mockSetTokens).not.toHaveBeenCalled();
+      expect(client).not.toHaveBeenCalled();
+
+      const queue = await requestQueue.getQueue();
+      expect(queue).toHaveLength(0);
     });
 
     it('should handle network errors during processing', async () => {

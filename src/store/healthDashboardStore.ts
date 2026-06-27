@@ -9,10 +9,10 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
 import {
-    AlertThresholds,
-    DEFAULT_THRESHOLDS,
-    HealthSnapshot,
-    MetricAlert,
+  AlertThresholds,
+  DEFAULT_THRESHOLDS,
+  HealthSnapshot,
+  MetricAlert,
 } from '../services/healthMetrics';
 import { shallowDiff } from '../utils/stateDiff';
 
@@ -29,6 +29,10 @@ interface HealthDashboardState {
   // UI state
   status: DashboardStatus;
   lastUpdated: number | null;
+  /** Timestamp of last successful data read (cache or network) */
+  lastChecked: number | null;
+  /** Timestamp of last actual network API call */
+  lastNetworkCheck: number | null;
   /** How often to refresh in ms */
   refreshIntervalMs: number;
   /** Whether auto-refresh is active */
@@ -41,6 +45,8 @@ interface HealthDashboardState {
   setAlerts: (alerts: MetricAlert[]) => void;
   setThresholds: (thresholds: Partial<AlertThresholds>) => void;
   setStatus: (status: DashboardStatus) => void;
+  setLastChecked: () => void;
+  setLastNetworkCheck: () => void;
   setRefreshInterval: (ms: number) => void;
   toggleAutoRefresh: () => void;
   dismissAlert: (id: string) => void;
@@ -56,6 +62,8 @@ const initialState = {
   thresholds: DEFAULT_THRESHOLDS,
   status: 'idle' as DashboardStatus,
   lastUpdated: null,
+  lastChecked: null,
+  lastNetworkCheck: null,
   refreshIntervalMs: 10_000, // 10 seconds default
   isAutoRefresh: true,
   dismissedAlertIds: new Set<string>(),
@@ -65,28 +73,30 @@ const initialState = {
 
 export const useHealthDashboardStore = create<HealthDashboardState>()(
   devtools(
-    (set) => ({
+    set => ({
       ...initialState,
 
-      setSnapshot: (snapshot) =>
+      setSnapshot: snapshot =>
         set(
-          (state) => {
+          state => {
             if (!state.snapshot && !snapshot) return state;
             if (!state.snapshot) return { snapshot, lastUpdated: Date.now() };
             const diff = shallowDiff(state.snapshot, snapshot);
             if (!diff) return state;
-            return { snapshot: { ...state.snapshot, ...diff } as HealthSnapshot, lastUpdated: Date.now() };
+            return {
+              snapshot: { ...state.snapshot, ...diff } as HealthSnapshot,
+              lastUpdated: Date.now(),
+            };
           },
           false,
           'setSnapshot'
         ),
 
-      setAlerts: (alerts) =>
-        set({ alerts }, false, 'setAlerts'),
+      setAlerts: alerts => set({ alerts }, false, 'setAlerts'),
 
-      setThresholds: (partial) =>
+      setThresholds: partial =>
         set(
-          (state) => {
+          state => {
             const diff = shallowDiff(state.thresholds, partial);
             if (!diff) return state; // Return unchanged state to bypass allocation
             return { thresholds: { ...state.thresholds, ...diff } };
@@ -95,22 +105,26 @@ export const useHealthDashboardStore = create<HealthDashboardState>()(
           'setThresholds'
         ),
 
-      setStatus: (status) =>
-        set({ status }, false, 'setStatus'),
+      setStatus: status => set({ status }, false, 'setStatus'),
 
-      setRefreshInterval: (refreshIntervalMs) =>
+      setLastChecked: () => set({ lastChecked: Date.now() }, false, 'setLastChecked'),
+
+      setLastNetworkCheck: () =>
+        set(
+          { lastNetworkCheck: Date.now(), lastChecked: Date.now() },
+          false,
+          'setLastNetworkCheck'
+        ),
+
+      setRefreshInterval: refreshIntervalMs =>
         set({ refreshIntervalMs }, false, 'setRefreshInterval'),
 
       toggleAutoRefresh: () =>
-        set(
-          (state) => ({ isAutoRefresh: !state.isAutoRefresh }),
-          false,
-          'toggleAutoRefresh'
-        ),
+        set(state => ({ isAutoRefresh: !state.isAutoRefresh }), false, 'toggleAutoRefresh'),
 
-      dismissAlert: (id) =>
+      dismissAlert: id =>
         set(
-          (state) => {
+          state => {
             const next = new Set(state.dismissedAlertIds);
             next.add(id);
             return { dismissedAlertIds: next };
@@ -119,11 +133,9 @@ export const useHealthDashboardStore = create<HealthDashboardState>()(
           'dismissAlert'
         ),
 
-      clearDismissed: () =>
-        set({ dismissedAlertIds: new Set() }, false, 'clearDismissed'),
+      clearDismissed: () => set({ dismissedAlertIds: new Set() }, false, 'clearDismissed'),
 
-      reset: () =>
-        set({ ...initialState, dismissedAlertIds: new Set() }, false, 'reset'),
+      reset: () => set({ ...initialState, dismissedAlertIds: new Set() }, false, 'reset'),
     }),
     { name: 'HealthDashboardStore' }
   )
@@ -133,14 +145,12 @@ export const useHealthDashboardStore = create<HealthDashboardState>()(
 
 /** Returns only non-dismissed alerts */
 export const selectVisibleAlerts = (state: HealthDashboardState): MetricAlert[] =>
-  state.alerts.filter((a) => !state.dismissedAlertIds.has(a.id));
+  state.alerts.filter(a => !state.dismissedAlertIds.has(a.id));
 
 /** Returns the highest severity across all visible alerts */
-export const selectOverallStatus = (
-  state: HealthDashboardState
-): 'ok' | 'warning' | 'critical' => {
+export const selectOverallStatus = (state: HealthDashboardState): 'ok' | 'warning' | 'critical' => {
   const visible = selectVisibleAlerts(state);
-  if (visible.some((a) => a.severity === 'critical')) return 'critical';
-  if (visible.some((a) => a.severity === 'warning')) return 'warning';
+  if (visible.some(a => a.severity === 'critical')) return 'critical';
+  if (visible.some(a => a.severity === 'warning')) return 'warning';
   return 'ok';
 };

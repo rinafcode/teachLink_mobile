@@ -4,6 +4,8 @@ import { persist } from 'zustand/middleware';
 import { asyncStorageJSONStorage, isRecord, unwrapPersistedState } from './persistence';
 import { useReviewStore } from './reviewStore';
 import { inAppReviewService, ReviewTrigger } from '../services/inAppReview';
+import apiService from '../services/api';
+import { appLogger } from '../utils/logger';
 
 const triggerAchievementReview = () => {
   const { incrementAchievementsUnlocked, getMetrics, recordReviewRequest } = useReviewStore.getState();
@@ -44,7 +46,7 @@ interface AchievementState {
   unlockedCount: number;
   isLoaded: boolean;
   loadAchievements: () => void;
-  unlockAchievement: (id: string) => void;
+  unlockAchievement: (id: string) => Promise<void>;
   updateProgress: (id: string, current: number) => void;
   isAchievementUnlocked: (id: string) => boolean;
   getUnlockedAchievements: () => Achievement[];
@@ -278,32 +280,43 @@ export const useAchievementStore = create<AchievementState>()(
         });
       },
 
-      unlockAchievement: (id: string) =>
-        set(state => {
-          const achievement = state.achievements.find(a => a.id === id);
-          if (!achievement || !achievement.isLocked) return state;
+      unlockAchievement: async (id: string) => {
+        const previousAchievements = get().achievements;
+        const achievement = previousAchievements.find(a => a.id === id);
+        if (!achievement || !achievement.isLocked) return;
 
-          const updatedAchievements = state.achievements.map(a =>
-            a.id === id
-              ? {
-                  ...a,
-                  isLocked: false,
-                  unlockedAt: new Date().toLocaleDateString('en-US', {
-                    month: 'short',
-                    year: 'numeric',
-                  }),
-                }
-              : a
-          );
+        // Optimistic update
+        const updatedAchievements = previousAchievements.map(a =>
+          a.id === id
+            ? {
+                ...a,
+                isLocked: false,
+                unlockedAt: new Date().toLocaleDateString('en-US', {
+                  month: 'short',
+                  year: 'numeric',
+                }),
+              }
+            : a
+        );
+        set({
+          achievements: updatedAchievements,
+          achievementProgress: snapshotAchievementProgress(updatedAchievements),
+          unlockedCount: updatedAchievements.filter(a => !a.isLocked).length,
+        });
+        setTimeout(triggerAchievementReview, 500);
 
-          setTimeout(triggerAchievementReview, 500);
-
-          return {
-            achievements: updatedAchievements,
-            achievementProgress: snapshotAchievementProgress(updatedAchievements),
-            unlockedCount: updatedAchievements.filter(a => !a.isLocked).length,
-          };
-        }),
+        try {
+          await apiService.post('/api/achievements/unlock', { achievementId: id });
+        } catch {
+          // Rollback on server error
+          set({
+            achievements: previousAchievements,
+            achievementProgress: snapshotAchievementProgress(previousAchievements),
+            unlockedCount: previousAchievements.filter(a => !a.isLocked).length,
+          });
+          appLogger.warn('Achievement sync failed, reverting optimistic update');
+        }
+      },
 
       updateProgress: (id: string, current: number) =>
         set(state => {

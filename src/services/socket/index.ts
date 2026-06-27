@@ -1,3 +1,4 @@
+import { AppState, AppStateStatus } from 'react-native';
 import { io, Socket } from 'socket.io-client';
 
 import { useSocketStore } from '../../store';
@@ -22,9 +23,18 @@ class SocketService {
   private backoffIndex = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private intentionalDisconnect = false;
+  private isBackgrounded = false;
+  private appStateSubscription: ReturnType<typeof AppState.addEventListener> | null = null;
 
   connect() {
     if (this.socket?.connected) return this.socket;
+
+    if (!this.appStateSubscription) {
+      this.appStateSubscription = AppState.addEventListener(
+        'change',
+        this.handleAppStateChange.bind(this)
+      );
+    }
 
     if (!this.socket) {
       const socketUrl = getEnv('EXPO_PUBLIC_SOCKET_URL');
@@ -84,10 +94,27 @@ class SocketService {
     this.intentionalDisconnect = true;
     this.stopHeartbeat();
     this.clearReconnectTimer();
+    if (this.appStateSubscription) {
+      this.appStateSubscription.remove();
+      this.appStateSubscription = null;
+    }
     if (this.socket) {
       this.socket.removeAllListeners();
       this.socket.disconnect();
       this.socket = null;
+    }
+  }
+
+  private handleAppStateChange(nextState: AppStateStatus): void {
+    if (nextState === 'background' || nextState === 'inactive') {
+      this.isBackgrounded = true;
+      this.clearReconnectTimer();
+    } else if (nextState === 'active') {
+      this.isBackgrounded = false;
+      // Attempt immediate reconnect if connection is down
+      if (!this.intentionalDisconnect && this.socket && !this.socket.connected) {
+        this.socket.connect();
+      }
     }
   }
 
@@ -122,6 +149,9 @@ class SocketService {
   }
 
   private scheduleReconnect(): void {
+    // Do not schedule reconnect while app is backgrounded — resumes on foreground
+    if (this.isBackgrounded) return;
+
     this.clearReconnectTimer();
     const delay = BACKOFF_DELAYS[this.backoffIndex] ?? BACKOFF_DELAYS[BACKOFF_DELAYS.length - 1];
     const jitter = 0.9 + Math.random() * 0.2;

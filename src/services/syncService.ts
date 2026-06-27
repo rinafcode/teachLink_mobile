@@ -4,6 +4,7 @@ import { apiService } from './api';
 import { batchClient } from './api/batchClient';
 import { offlineStorage, SyncOperation, SyncOperationType } from './offlineStorage';
 import { syncEntityManager } from './sync/syncEntityManager';
+import { useBookmarkStore } from '../store/bookmarkStore';
 import { useDeviceStore } from '../store/deviceStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { useSyncStore } from '../store/syncStore';
@@ -277,6 +278,8 @@ export class SyncService {
       if (syncSucceeded) {
         logger.info('Sync completed successfully');
         this.emitEvent({ type: 'syncCompleted', timestamp: Date.now() });
+        // Prune stale bookmarks after each successful catalog sync
+        void useBookmarkStore.getState().validateBookmarks();
       }
 
       return syncSucceeded;

@@ -10,14 +10,11 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 
+import { AlertThresholds, healthMetricsService } from '../services/healthMetrics';
 import {
-    AlertThresholds,
-    healthMetricsService,
-} from '../services/healthMetrics';
-import {
-    selectOverallStatus,
-    selectVisibleAlerts,
-    useHealthDashboardStore,
+  selectOverallStatus,
+  selectVisibleAlerts,
+  useHealthDashboardStore,
 } from '../store/healthDashboardStore';
 import { appLogger } from '../utils/logger';
 
@@ -30,12 +27,16 @@ export function useHealthDashboard() {
     thresholds,
     status,
     lastUpdated,
+    lastChecked,
+    lastNetworkCheck,
     refreshIntervalMs,
     isAutoRefresh,
     setSnapshot,
     setAlerts,
     setThresholds,
     setStatus,
+    setLastChecked,
+    setLastNetworkCheck,
     setRefreshInterval,
     toggleAutoRefresh,
     dismissAlert,
@@ -48,27 +49,43 @@ export function useHealthDashboard() {
 
   // ── Core refresh logic ────────────────────────────────────────────────────
 
-  const refresh = useCallback(async () => {
-    if (!isMountedRef.current) return;
+  const refresh = useCallback(
+    async (isNetworkFetch = false) => {
+      if (!isMountedRef.current) return;
 
-    try {
-      setStatus('polling');
-      const snap = healthMetricsService.getSnapshot();
-      const newAlerts = healthMetricsService.evaluateAlerts(snap, thresholds);
+      try {
+        setStatus('polling');
+        const snap = healthMetricsService.getSnapshot();
+        const newAlerts = healthMetricsService.evaluateAlerts(snap, thresholds);
 
-      if (isMountedRef.current) {
-        setSnapshot(snap);
-        setAlerts(newAlerts);
-        setStatus('idle');
-        clearDismissed(); // reset dismissed list on each full refresh cycle
+        if (isMountedRef.current) {
+          setSnapshot(snap);
+          setAlerts(newAlerts);
+          setStatus('idle');
+          clearDismissed(); // reset dismissed list on each full refresh cycle
+          if (isNetworkFetch) {
+            setLastNetworkCheck();
+          } else {
+            setLastChecked();
+          }
+        }
+      } catch (err) {
+        appLogger.errorSync('[useHealthDashboard] Failed to refresh metrics', err as Error);
+        if (isMountedRef.current) {
+          setStatus('error');
+        }
       }
-    } catch (err) {
-      appLogger.errorSync('[useHealthDashboard] Failed to refresh metrics', err as Error);
-      if (isMountedRef.current) {
-        setStatus('error');
-      }
-    }
-  }, [thresholds, setSnapshot, setAlerts, setStatus, clearDismissed]);
+    },
+    [
+      thresholds,
+      setSnapshot,
+      setAlerts,
+      setStatus,
+      clearDismissed,
+      setLastChecked,
+      setLastNetworkCheck,
+    ]
+  );
 
   // ── Auto-refresh interval ─────────────────────────────────────────────────
 
@@ -142,6 +159,8 @@ export function useHealthDashboard() {
     // UI state
     status,
     lastUpdated,
+    lastChecked,
+    lastNetworkCheck,
     isAutoRefresh,
     refreshIntervalMs,
 

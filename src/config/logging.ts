@@ -59,6 +59,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
 
 import { sentryContextService } from '../services/sentryContext';
+import { safeStorageWrite } from '../utils/storage';
 
 // ─── CONFIGURATION ─────────────────────────────────────────────────────────
 
@@ -197,7 +198,7 @@ async function persistBatch(entries: StructuredLogEntry[]): Promise<void> {
     }
 
     const newLog = currentLog ? `${currentLog}\n${logData}` : logData;
-    await AsyncStorage.setItem(storageKey, newLog);
+    await safeStorageWrite(storageKey, newLog);
   } catch {
     // Silent fail for storage errors
   }
@@ -229,7 +230,7 @@ async function rotateLogFiles(): Promise<void> {
       const currentLog = await AsyncStorage.getItem(logKeys[0]);
       if (currentLog) {
         const archiveKey = `${LOG_STORAGE_PREFIX}/archive/${Date.now()}`;
-        await AsyncStorage.setItem(archiveKey, currentLog);
+        await safeStorageWrite(archiveKey, currentLog);
       }
     }
 
@@ -241,7 +242,7 @@ async function rotateLogFiles(): Promise<void> {
     }
 
     // Clear current log
-    await AsyncStorage.setItem(`${LOG_STORAGE_PREFIX}/current`, '');
+    await safeStorageWrite(`${LOG_STORAGE_PREFIX}/current`, '');
   } catch {
     // Silent fail
   }

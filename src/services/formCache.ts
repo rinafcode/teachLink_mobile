@@ -1,5 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { safeStorageWrite } from '../utils/storage';
+
 /** AsyncStorage key for the form value cache (versioned for future migrations). */
 export const FORM_CACHE_STORAGE_KEY = '@teachlink/form-cache/v1';
 
@@ -62,7 +64,7 @@ export async function loadFormCache(): Promise<FormCacheStore> {
 }
 
 export async function saveFormCache(store: FormCacheStore): Promise<void> {
-  await AsyncStorage.setItem(FORM_CACHE_STORAGE_KEY, JSON.stringify(store));
+  await safeStorageWrite(FORM_CACHE_STORAGE_KEY, JSON.stringify(store));
 }
 
 export async function getCachedFieldValue(key: FormCacheFieldKey): Promise<string | null> {
