@@ -2,6 +2,7 @@ import { Image as ExpoImage, ImageProps as ExpoImageProps } from 'expo-image';
 import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   ImageStyle,
   PixelRatio,
   StyleProp,
@@ -128,6 +129,8 @@ const CachedImageComponent: React.FC<CachedImageProps> = ({
   const dataSaverEnabled = useSettingsStore(state => state.dataSaverEnabled);
   const startedAtRef = useRef<number | null>(null);
   const usingFallbackRef = useRef(false);
+  // Stable across re-renders — initialized exactly once per component instance
+  const opacity = useRef(new Animated.Value(0)).current;
 
   const styleWidth = resolveStyleDimension(style as StyleProp<ImageStyle>, 'width');
   const styleHeight = resolveStyleDimension(style as StyleProp<ImageStyle>, 'height');
@@ -186,6 +189,12 @@ const CachedImageComponent: React.FC<CachedImageProps> = ({
     setIsLoading(false);
     setError(null);
 
+    Animated.timing(opacity, {
+      toValue: 1,
+      duration: 250,
+      useNativeDriver: true,
+    }).start();
+
     const startedAt = startedAtRef.current;
     if (startedAt) {
       imagePerformanceService.recordImageLoad({
@@ -233,25 +242,29 @@ const CachedImageComponent: React.FC<CachedImageProps> = ({
 
   return (
     <View style={getContainerStyle()}>
-      <ExpoImage
-        source={[{ uri: optimizedSources.primaryUri }, { uri: optimizedSources.fallbackUri }]}
-        placeholder={{ uri: optimizedSources.lqipUri }}
-        transition={250}
-        onLoadStart={() => {
-          startedAtRef.current = Date.now();
-          usingFallbackRef.current = false;
-        }}
-        onLoadingComplete={handleLoadingComplete}
-        onError={handleError}
-        accessibilityLabel={alt}
-        accessibilityRole="image"
-        {...expoImageProps}
-        style={[
-          styles.image,
-          aspectRatioStyle ? { aspectRatio: detectedDimensions?.aspectRatio } : null,
-          style,
-        ]}
-      />
+      <Animated.View style={[StyleSheet.absoluteFill, { opacity }]}>
+        <ExpoImage
+          source={[{ uri: optimizedSources.primaryUri }, { uri: optimizedSources.fallbackUri }]}
+          placeholder={{ uri: optimizedSources.lqipUri }}
+          transition={0}
+          onLoadStart={() => {
+            startedAtRef.current = Date.now();
+            usingFallbackRef.current = false;
+          }}
+          onLoadingComplete={handleLoadingComplete}
+          onError={handleError}
+          accessibilityLabel={alt}
+          accessibilityRole="image"
+          {...expoImageProps}
+          style={[
+            styles.image,
+            aspectRatioStyle ? { aspectRatio: detectedDimensions?.aspectRatio } : null,
+            style,
+          ]}
+        />
+      </Animated.View>
+
+      </Animated.View>
 
       {/* Loading indicator overlay */}
       {isLoading && showLoadingIndicator && (

@@ -8,6 +8,7 @@ import { useDeviceStore } from '../store/deviceStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { useSyncStore } from '../store/syncStore';
 import { logger } from '../utils/logger';
+import { backgroundScheduler } from '../utils/backgroundTaskScheduler';
 
 import type {
   ConflictResolutionStrategy as VersionedConflictResolutionStrategy,
@@ -206,6 +207,27 @@ export class SyncService {
 
   private calculateAutoSyncBackoff(failures: number): number {
     return Math.min(this.getBaseSyncInterval() * 2 ** failures, MAX_AUTO_SYNC_BACKOFF_MS);
+  }
+
+  /**
+   * Run sync as a bounded background task (25-second limit for iOS).
+   * Checkpoints progress on timeout so partial work is not lost.
+   */
+  async runBackgroundSync(): Promise<void> {
+    const result = await backgroundScheduler.runWithTimeout(
+      async () => {
+        await this.syncPendingOperations(false);
+      },
+      'syncService.runBackgroundSync'
+    );
+
+    if (result.timedOut) {
+      // Checkpoint: persist current isSyncing=false so next launch can resume
+      this.isSyncing = false;
+      logger.warn('SyncService: Background sync timed out — checkpointed for next run', {
+        taskDurationMs: result.taskDurationMs,
+      });
+    }
   }
 
   /**

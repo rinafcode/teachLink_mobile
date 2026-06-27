@@ -12,9 +12,10 @@
 
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-import { invalidateCacheForBatchRequests, invalidateCacheForMutation } from './cache';
+import { invalidateCacheForBatchRequests, invalidateCacheForMutation, invalidateByPattern } from './cache';
 import { requestQueue } from './requestQueue';
 import { getEnv } from '../../config';
+import { MUTATION_INVALIDATION_MAP } from '../../config/apiCacheConfig';
 import { appLogger } from '../../utils/logger';
 import { startTiming, notifyEntry } from '../../utils/performanceTiming';
 import { healthMetricsService } from '../healthMetrics';
@@ -53,6 +54,16 @@ function invalidateSuccessfulMutationCache(config: InternalAxiosRequestConfig): 
   if (method === 'POST' && url.includes('/api/batch')) {
     invalidateCacheForBatchRequests(config.data);
     return;
+  }
+
+  // Pattern-based invalidation from config map
+  for (const rule of MUTATION_INVALIDATION_MAP) {
+    if (rule.methods.includes(method) && rule.urlPattern.test(url)) {
+      for (const pattern of rule.invalidatePatterns) {
+        invalidateByPattern(pattern);
+      }
+      return;
+    }
   }
 
   invalidateCacheForMutation(method, url);
