@@ -2,6 +2,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { createJSONStorage, type StateStorage } from 'zustand/middleware';
 
+import { sentryContextService } from '../services/sentryContext';
+import { appLogger } from '../utils/logger';
+
 export interface VersionedEnvelope<T> {
   version: number;
   data: T;
@@ -9,7 +12,7 @@ export interface VersionedEnvelope<T> {
 
 export const asyncStorageJSONStorage = createJSONStorage(() => AsyncStorage);
 
-const secureStorageAdapter: StateStorage = {
+export const secureStorageAdapter: StateStorage = {
   getItem: async (name: string) => {
     const value = await SecureStore.getItemAsync(name);
     return value ?? null;
@@ -23,6 +26,70 @@ const secureStorageAdapter: StateStorage = {
 };
 
 export const secureStorageJSONStorage = createJSONStorage(() => secureStorageAdapter);
+
+type HydrationReset = () => void;
+
+let hydrationResetToastPending = false;
+let hydrationResetToastShown = false;
+const hydrationResetToastListeners = new Set<() => void>();
+
+export function subscribeToHydrationResetToast(listener: () => void): () => void {
+  hydrationResetToastListeners.add(listener);
+  return () => {
+    hydrationResetToastListeners.delete(listener);
+  };
+}
+
+export function consumeHydrationResetToast(): boolean {
+  if (!hydrationResetToastPending || hydrationResetToastShown) {
+    return false;
+  }
+
+  hydrationResetToastPending = false;
+  hydrationResetToastShown = true;
+  return true;
+}
+
+export function resetHydrationRecoveryForTests(): void {
+  hydrationResetToastPending = false;
+  hydrationResetToastShown = false;
+  hydrationResetToastListeners.clear();
+}
+
+function notifyHydrationResetToast(): void {
+  if (hydrationResetToastShown || hydrationResetToastPending) {
+    return;
+  }
+
+  hydrationResetToastPending = true;
+  hydrationResetToastListeners.forEach(listener => listener());
+}
+
+export function createHydrationErrorRecovery(storeName: string, resetStore: HydrationReset) {
+  return () => (_state: unknown, error: unknown) => {
+    if (!error) {
+      return;
+    }
+
+    resetStore();
+    appLogger.warn('Zustand persisted store hydration failed; reset to defaults', {
+      storeName,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    sentryContextService.captureMessage('Zustand persisted store hydration failed', 'warning', {
+      tags: {
+        storeName,
+        'store.hydration': 'failed',
+      },
+      extra: {
+        storeName,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      fingerprint: ['zustand-hydration-failure', storeName],
+    });
+    notifyHydrationResetToast();
+  };
+}
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
