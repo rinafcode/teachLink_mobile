@@ -1,8 +1,9 @@
-# [1.9.0](https://github.com/rinafcode/teachLink_mobile/compare/v1.15.0...v1.9.0) (2026-06-26)
+# [1.10.0](https://github.com/rinafcode/teachLink_mobile/compare/v1.15.0...v1.10.0) (2026-06-27)
 
 
 ### Bug Fixes
 
+* **#599:** debounce useFormCache writes at 800ms, add flushCache and unmount cleanup ([4ed22d4](https://github.com/rinafcode/teachLink_mobile/commit/4ed22d4a1bd2df6588957e5c7fb304b13d0c5c2e)), closes [#599](https://github.com/rinafcode/teachLink_mobile/issues/599)
 * add build script for CI workflow ([a7d27fa](https://github.com/rinafcode/teachLink_mobile/commit/a7d27fa6245ab1595fa9d99a7ca7b8ea7d672a9a))
 * add environment variables to all CI workflows ([2967357](https://github.com/rinafcode/teachLink_mobile/commit/2967357d147ed2c2adb9b62ad36d2613972f28fc))
 * add expo-store-review dependency and test mocks ([805c115](https://github.com/rinafcode/teachLink_mobile/commit/805c115b3296e70504a7b5b92348464103b544cd))
@@ -10,10 +11,12 @@
 * allow lint warnings and use npm install in test workflow ([ef02e06](https://github.com/rinafcode/teachLink_mobile/commit/ef02e06aaea3e0fb7f1c7f5091e4a0202b5b8d77))
 * cap metrics buffers, add auto‑flush and memory‑pressure flushing ([5446605](https://github.com/rinafcode/teachLink_mobile/commit/54466057104e31964e99922fd9e1ea498ece9f1d))
 * change npm ci to npm install in workflows ([2fedf36](https://github.com/rinafcode/teachLink_mobile/commit/2fedf36d6cecd3d492896ccd57a4a8863a03967f))
+* clean up lint warnings in socket service after merge ([ff54a8e](https://github.com/rinafcode/teachLink_mobile/commit/ff54a8e6404609d4684461966b16d888b97f5721))
 * correct expo-store-review version to 8.0.0 ([7d1246a](https://github.com/rinafcode/teachLink_mobile/commit/7d1246a75413975b7c30a7b1cd458900e7a0ce21))
 * correct style array syntax in MobileProfile and format modified files ([532dd4b](https://github.com/rinafcode/teachLink_mobile/commit/532dd4b995ca339895ed6ea40858a7dac45a1cc9))
 * explicitly add typescript and dependencies to sync lockfile for CI clean install ([b8fe75b](https://github.com/rinafcode/teachLink_mobile/commit/b8fe75b35ff59192181ada1d2f80c1748a049d7c))
 * import missing components in AdvancedDataGrid and add rules of hooks bypasses ([ff297d8](https://github.com/rinafcode/teachLink_mobile/commit/ff297d88e7ee448ec831ec825f66e107ca734027))
+* **mobile:** optimize quiz analytics and socket reconnect backoff ([#593](https://github.com/rinafcode/teachLink_mobile/issues/593), [#601](https://github.com/rinafcode/teachLink_mobile/issues/601)) ([33283f0](https://github.com/rinafcode/teachLink_mobile/commit/33283f095436acb00cd31c3ef54dfec4ba5ad9b0))
 * pin jest-expo@54.0.17 (upstream ~54.0.19 doesn't exist on npm) ([1d9b8e1](https://github.com/rinafcode/teachLink_mobile/commit/1d9b8e12ea5f5f20a275ff470a09e928dce4967f))
 * refactor component tree to reduce re-render propagation ([a634d31](https://github.com/rinafcode/teachLink_mobile/commit/a634d31c5d387027b6bba3cef227459d6c1e3c03))
 * rename streaming test to TSX for JSX parsing support and commit updated lockfile ([be458bf](https://github.com/rinafcode/teachLink_mobile/commit/be458bf4a8267e8999eba3dddedb2c44c165ea1d))
@@ -23,7 +26,9 @@
 * resolve ESLint errors — remove stale ScrollView ref, fix import order, wire onScroll handlers ([6cceac1](https://github.com/rinafcode/teachLink_mobile/commit/6cceac15500398e1338b1386bfbeac44d347234f))
 * resolve failing test suites for secureStorage, streaming, videoQuality, notifications, and card components ([239ca24](https://github.com/rinafcode/teachLink_mobile/commit/239ca24f742cccd20be5489263761863eb591c78))
 * resolve upstream tsconfig and carousel syntax errors ([d4073e2](https://github.com/rinafcode/teachLink_mobile/commit/d4073e24107ee82bb3181af0fb65d760085679c3))
+* **security:** validate & sanitise notification payload to block prototype pollution ([#586](https://github.com/rinafcode/teachLink_mobile/issues/586)) ([55018be](https://github.com/rinafcode/teachLink_mobile/commit/55018be41c170d88f2b083e76309bc4aba36e5ab))
 * store notification timestamps as numeric ms, add migration and update logic ([c5cf4b0](https://github.com/rinafcode/teachLink_mobile/commit/c5cf4b0556659c991cca3a1870e7ff559b742f19))
+* **store:** fix degradedFeatures Set serialization bug in persist middleware ([5a8a069](https://github.com/rinafcode/teachLink_mobile/commit/5a8a069ffc4311c9fa0702b1fcc3881f4658430f))
 * wrap bundle-size comment step in try-catch to allow fork PRs to pass ([3b88561](https://github.com/rinafcode/teachLink_mobile/commit/3b88561a62a6f84d747124bbea27f8c9dbdaf3d8))
 
 
@@ -47,6 +52,7 @@
 * implement intersection observer and viewability hooks for OptimizedVideoPlayer visibility management ([7908ec4](https://github.com/rinafcode/teachLink_mobile/commit/7908ec4338db36b4a430f9db9da20a379461bb15))
 * implement lazy video initialization for MobileVideoPlayer ([fe44e52](https://github.com/rinafcode/teachLink_mobile/commit/fe44e52704d4f44e2c8722d8d48a383cc63bd35e))
 * Implement progressive image loading with LQIP and WebP ([2f7fa53](https://github.com/rinafcode/teachLink_mobile/commit/2f7fa53a9c00d1da61f7aefbc063dd33f735aafb))
+* implement shimmer SkeletonLoader and fix quizStore index persistence bug ([aa04b7e](https://github.com/rinafcode/teachLink_mobile/commit/aa04b7ed5b4f7fe4f1d308dc6864ba589eb745c4))
 * implement smart in-app review system ([ad0e3ab](https://github.com/rinafcode/teachLink_mobile/commit/ad0e3ab0d6256f09e83f74c0dd52387fdd16a317))
 * implement touch event deduplication to prevent double-triggers ([#330](https://github.com/rinafcode/teachLink_mobile/issues/330)) ([c3c74db](https://github.com/rinafcode/teachLink_mobile/commit/c3c74dbf743b55e851dc2ea1031b697663a88254))
 * migrate forms to react-hook-form for minimal re-renders ([2dc0cf7](https://github.com/rinafcode/teachLink_mobile/commit/2dc0cf742582934e0637b6fccab42ab1e7c2dd30))
