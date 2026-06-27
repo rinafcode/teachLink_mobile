@@ -3,6 +3,7 @@ import * as Linking from 'expo-linking';
 
 import { ParsedDeepLink, parseDeepLinkUrl } from '../utils/linkParser';
 import logger from '../utils/logger';
+import { useDeepLinkStore } from '../store/deepLinkStore';
 
 const DEFERRED_DEEP_LINK_KEY = '@teachlink:deferredDeepLink';
 
@@ -166,7 +167,9 @@ export function subscribeToDeepLinks(listener: (deepLink: ParsedDeepLink) => voi
       if (parsed.attribution?.deferred) {
         void AsyncStorage.setItem(DEFERRED_DEEP_LINK_KEY, sanitizedUrl);
       }
+      useDeepLinkStore.getState().setPendingDeepLink(sanitizedUrl);
       listener(parsed);
+      useDeepLinkStore.getState().clearPendingLink();
     }
   });
 
