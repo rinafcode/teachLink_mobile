@@ -23,7 +23,7 @@ Notifications.setNotificationHandler({
  * Register for push notifications and get the Expo push token
  * Includes graceful degradation: if push notifications unavailable, falls back to in-app notifications
  */
-export async function registerForPushNotifications(): Promise<string | null> {
+export async function registerForPushNotifications(allowPrompt = false): Promise<string | null> {
   // Check device type using the proper 'isDevice' check from expo-device
   if (!isDevice) {
     logger.warn('Push notifications require a physical device (simulator detected)');
@@ -43,10 +43,14 @@ export async function registerForPushNotifications(): Promise<string | null> {
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
 
-    // Request permissions if not granted
+    // Request permissions if not granted AND allowPrompt is true
     if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
+      if (allowPrompt) {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      } else {
+        return null;
+      }
     }
 
     if (finalStatus !== 'granted') {

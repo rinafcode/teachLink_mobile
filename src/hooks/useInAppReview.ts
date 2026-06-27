@@ -1,6 +1,8 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useState } from 'react';
 
 import { inAppReviewService, ReviewTrigger, ReviewRequestResult } from '../services/inAppReview';
+import { useNotificationStore } from '../store/notificationStore';
 import { useReviewStore } from '../store/reviewStore';
 import { appLogger } from '../utils/logger';
 
@@ -161,9 +163,18 @@ export function useReviewMetrics() {
   const setLearningStreak = useReviewStore((state) => state.setLearningStreak);
   const incrementPerfectQuizScores = useReviewStore((state) => state.incrementPerfectQuizScores);
 
-  const trackCourseComplete = useCallback(() => {
+  const trackCourseComplete = useCallback(async () => {
     incrementCoursesCompleted();
     appLogger.debug('useReviewMetrics: Course completed');
+    
+    try {
+      const hasSeen = await AsyncStorage.getItem('hasSeenNotificationExplainer');
+      if (hasSeen === 'deferred') {
+        useNotificationStore.getState().setShowNotificationExplainer(true);
+      }
+    } catch (e) {
+      appLogger.error('useReviewMetrics: Error checking notification explainer state', e instanceof Error ? e : new Error(String(e)));
+    }
   }, [incrementCoursesCompleted]);
 
   const trackSession = useCallback(() => {

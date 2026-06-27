@@ -1,4 +1,6 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Font from 'expo-font';
+import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef, useState } from 'react';
@@ -15,10 +17,10 @@ import {
 import StorybookUI from './.rnstorybook';
 import './global.css';
 import { ErrorBoundary } from './src/components/common/ErrorBoundary';
+import { NotificationPermissionExplanationSheet } from './src/components/mobile/NotificationPermissionExplanationSheet';
 import { initializeLogging } from './src/config/logging';
 import { AuthProvider, useAdaptiveTheme, useReviewMetrics } from './src/hooks';
 import AppNavigator from './src/navigation/AppNavigator';
-import { setupNotificationNavigation } from './src/navigation/linking';
 import {
   apiClient,
   getCacheStatus,
@@ -29,7 +31,6 @@ import { warmCriticalCaches } from './src/services/cacheWarming';
 import { crashReportingService } from './src/services/crashReporting';
 import { featureCapabilities } from './src/services/featureCapabilities';
 import { inAppReviewService } from './src/services/inAppReview';
-import { initializeSecureStorage } from './src/services/secureStorage';
 import { mobileAuthService } from './src/services/mobileAuth';
 import {
   registerForPushNotifications, // Added missing native push helpers
@@ -38,7 +39,7 @@ import {
 } from './src/services/pushNotifications';
 import { requestQueue } from './src/services/requestQueue';
 import { searchIndexService } from './src/services/searchIndex';
-import { initializeSecureStorage } from './src/services/secureStorage'; // Added missing storage helper mock path
+import { initializeSecureStorage } from './src/services/secureStorage';
 import socketService from './src/services/socket';
 import { syncService } from './src/services/syncService'; // Fixed naming convention from the merge conflict
 import { useAppStore, useDeviceStore, useNotificationStore } from './src/store'; // Added missing store imports
@@ -233,15 +234,7 @@ const App = () => {
         );
       });
 
-    // Initialize push notifications: request permissions and get device token
-    registerForPushNotifications().then(async token => {
-      if (token) {
-        const { setPushToken, setTokenRegistered } = useNotificationStore.getState();
-        setPushToken(token);
-        const registered = await registerTokenWithBackend(token);
-        setTokenRegistered(registered);
-      }
-    });
+    // Push notifications are now initialized within InteractionManager.runAfterInteractions below
 
     // ===== DEFERRED PATH — runs after user interactions complete =====
     // These tasks are non-critical: they enhance the experience but are not
@@ -274,15 +267,47 @@ const App = () => {
           );
         });
 
-      // Push notification registration (permission dialog + network)
-      registerForPushNotifications().then(async token => {
-        if (token) {
-          const { setPushToken, setTokenRegistered } = useNotificationStore.getState();
-          setPushToken(token);
-          const registered = await registerTokenWithBackend(token);
-          setTokenRegistered(registered);
+      // Push notification registration and explainer logic
+      const checkAndRegisterNotifications = async () => {
+        const { status } = await Notifications.getPermissionsAsync();
+        
+        if (status === 'granted') {
+          // Already granted, silently get token
+          const token = await registerForPushNotifications(false);
+          if (token) {
+            const { setPushToken, setTokenRegistered } = useNotificationStore.getState();
+            setPushToken(token);
+            const registered = await registerTokenWithBackend(token);
+            setTokenRegistered(registered);
+          }
+          return;
         }
-      });
+
+        // Check explainer status
+        const hasSeen = await AsyncStorage.getItem('hasSeenNotificationExplainer');
+        
+        if (hasSeen === 'true') {
+          // Explainer already seen and accepted, do not show sheet again
+          return;
+        }
+
+        if (hasSeen === null) {
+          // First launch
+          useNotificationStore.getState().setShowNotificationExplainer(true);
+        } else if (hasSeen === 'deferred') {
+          // Deferred users
+          const deferredCountStr = await AsyncStorage.getItem('appOpenCountSinceDeferral') || '0';
+          let deferredCount = parseInt(deferredCountStr, 10);
+          deferredCount += 1;
+          await AsyncStorage.setItem('appOpenCountSinceDeferral', deferredCount.toString());
+          
+          if (deferredCount >= 3) {
+            useNotificationStore.getState().setShowNotificationExplainer(true);
+          }
+        }
+      };
+
+      checkAndRegisterNotifications();
 
       // Request queue monitoring
       requestQueue.startMonitoring(apiClient);
@@ -393,6 +418,7 @@ const App = () => {
         <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
         <CacheRevalidationBanner />
         <AppNavigator />
+        <NotificationPermissionExplanationSheet />
       </AuthProvider>
     </ErrorBoundary>
   );
