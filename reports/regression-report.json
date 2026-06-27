@@ -1,0 +1,28 @@
+{
+  "timestamp": "2026-06-06T14:52:14.178Z",
+  "threshold_pct": 5,
+  "summary": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0
+  },
+  "checks": [
+    {
+      "label": "startup.p95_ms",
+      "baseline": 200,
+      "current": 22,
+      "change_pct": -89,
+      "threshold_pct": 5,
+      "status": "pass"
+    },
+    {
+      "label": "startup.p50_ms",
+      "baseline": 50,
+      "current": 14,
+      "change_pct": -72,
+      "threshold_pct": 5,
+      "status": "pass"
+    }
+  ]
+}

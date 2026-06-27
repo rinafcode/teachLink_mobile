@@ -91,7 +91,11 @@ describe('AdvancedDataGrid Performance Tests', () => {
       render(<AdvancedDataGrid columns={columns} rows={rows} />);
     }, 3);
 
-    const regression = detectRegression(metrics, baselineMetrics, performanceBudget.regressionThreshold);
+    const regression = detectRegression(
+      metrics,
+      baselineMetrics,
+      performanceBudget.regressionThreshold
+    );
     expect(regression.isRegression).toBe(false);
     console.log(`Render time: ${metrics.renderTime.toFixed(2)}ms (${regression.message})`);
   });

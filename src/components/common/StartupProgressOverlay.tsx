@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
+
 import { useStartupProgressStore } from '../../services/startupProgressService';
 
 /**
  * StartupProgressOverlay displays the app initialization progress
  * with visual feedback, step names, and estimated time remaining
  */
-export function StartupProgressOverlay() {
+export const StartupProgressOverlay = () => {
   const { isInitializing, steps } = useStartupProgressStore();
   const getProgress = useStartupProgressStore.getState().getProgress;
   const getRemainingTime = useStartupProgressStore.getState().getRemainingTime;

@@ -5,15 +5,16 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+
 import type {
-    AnimationMetrics,
-    IPerformanceAnalyzer,
-    LargeObject,
-    MemoryAnalysis,
-    MemoryLeak,
-    RenderAnalysis,
-    RerenderIssue,
-    SlowComponent,
+  AnimationMetrics,
+  IPerformanceAnalyzer,
+  LargeObject,
+  MemoryAnalysis,
+  MemoryLeak,
+  RenderAnalysis,
+  RerenderIssue,
+  SlowComponent,
 } from './types';
 
 export class MemoryAnalyzer implements IPerformanceAnalyzer {
@@ -107,9 +108,7 @@ export class MemoryAnalyzer implements IPerformanceAnalyzer {
     try {
       if (typeof process !== 'undefined' && process.memoryUsage) {
         const mem = process.memoryUsage();
-        return (mem as any).arrayBuffers
-          ? (mem as any).arrayBuffers
-          : mem.heapTotal * 2;
+        return (mem as any).arrayBuffers ? (mem as any).arrayBuffers : mem.heapTotal * 2;
       }
     } catch {
       // Ignore
@@ -155,9 +154,7 @@ export class MemoryAnalyzer implements IPerformanceAnalyzer {
     // Pattern 1: useEffect without dependencies
     if (
       /useEffect\s*\(\s*(?:async\s+)?function|\(\)\s*=>/m.test(content) &&
-      !/useEffect\s*\(\s*(?:async\s+)?(?:function|\(\)\s*=>)[\s\S]*\]\s*\)/m.test(
-        content
-      )
+      !/useEffect\s*\(\s*(?:async\s+)?(?:function|\(\)\s*=>)[\s\S]*\]\s*\)/m.test(content)
     ) {
       leaks.push({
         name: `useEffect without dependencies in ${fileName}`,
@@ -372,7 +369,7 @@ export class RenderAnalyzer implements IPerformanceAnalyzer {
    */
   private hasSlowPatterns(content: string): boolean {
     return (
-      /map\(/.test(content) && !/(key=|trackBy)/m.test(content) ||
+      (/map\(/.test(content) && !/(key=|trackBy)/m.test(content)) ||
       /useEffect.*useCallback/m.test(content) ||
       /\.length\s*>\s*\d{3,}/.test(content) // Large lists without virtualization
     );

@@ -28,9 +28,7 @@ export const DataGridSkeleton = () => {
       <View style={styles.filterRow}>
         <Skeleton width="100%" height={36} borderRadius={8} />
       </View>
-      <View style={styles.body}>
-        {Array.from({ length: 6 }, (_, i) => renderRow(i))}
-      </View>
+      <View style={styles.body}>{Array.from({ length: 6 }, (_, i) => renderRow(i))}</View>
       <View style={styles.pagination}>
         <Skeleton width={60} height={14} />
         <Skeleton width={100} height={32} borderRadius={8} />

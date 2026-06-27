@@ -46,14 +46,16 @@ def subset_font(font_path, output_path, chars_file_path):
     
     # Let's run standard TTF subsetting (without flavor) so output is a standard TTF
     cmd_ttf = [
-        "pyftsubset",
+        sys.executable,
+        "-m",
+        "fontTools.subset",
         font_path,
         f"--text-file={chars_file_path}",
         f"--output-file={output_path}"
     ]
     
     try:
-        # Check if pyftsubset is installed
+        # Check if fonttools is installed by running the module execution
         result = subprocess.run(cmd_ttf, capture_output=True, text=True, check=True)
         orig_size = os.path.getsize(font_path)
         new_size = os.path.getsize(output_path)
@@ -63,10 +65,11 @@ def subset_font(font_path, output_path, chars_file_path):
         print(f"  Subsetted: {new_size / 1024:.1f} KB ({reduction:.1f}% size reduction)")
         return True
     except FileNotFoundError:
-        print("Error: 'pyftsubset' not found. Please install it using 'pip install fonttools'.", file=sys.stderr)
+        print("Error: 'python' interpreter not found.", file=sys.stderr)
         return False
     except subprocess.CalledProcessError as e:
-        print(f"Error executing pyftsubset: {e.stderr}", file=sys.stderr)
+        print(f"Error executing fontTools subset: {e.stderr}", file=sys.stderr)
+        print("Please ensure fonttools is installed: pip install fonttools", file=sys.stderr)
         return False
 
 def main():

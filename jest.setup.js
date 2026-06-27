@@ -10,14 +10,19 @@ jest.mock('react-native', () => ({
   View: 'View',
   Text: 'Text',
   TouchableOpacity: 'TouchableOpacity',
+  KeyboardAvoidingView: Object.assign(
+    ({ children, ...props }) => children,
+    { displayName: 'KeyboardAvoidingView' }
+  ),
   Modal: 'Modal',
   SafeAreaView: 'SafeAreaView',
-  KeyboardAvoidingView: 'KeyboardAvoidingView',
   ScrollView: 'ScrollView',
   Switch: 'Switch',
   TextInput: 'TextInput',
   ActivityIndicator: 'ActivityIndicator',
   Image: 'Image',
+  Pressable: 'Pressable',
+  TouchableWithoutFeedback: 'TouchableWithoutFeedback',
   StyleSheet: {
     create: styles => styles,
     flatten: style => (style ? (Array.isArray(style) ? Object.assign({}, ...style) : style) : {}),
@@ -54,6 +59,10 @@ jest.mock('react-native', () => ({
       stopAnimation: jest.fn(),
     })),
     timing: jest.fn(() => ({
+      start: jest.fn(callback => callback && callback({ finished: true })),
+      stop: jest.fn(),
+    })),
+    spring: jest.fn(() => ({
       start: jest.fn(callback => callback && callback({ finished: true })),
       stop: jest.fn(),
     })),
@@ -116,6 +125,21 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   getAllKeys: jest.fn(() => Promise.resolve([])),
   multiGet: jest.fn(() => Promise.resolve([])),
   multiSet: jest.fn(() => Promise.resolve()),
+}));
+
+// Mock Sentry for native-less Jest environment
+jest.mock('@sentry/react-native', () => ({
+  init: jest.fn(),
+  captureException: jest.fn(),
+  captureMessage: jest.fn(),
+  addBreadcrumb: jest.fn(),
+  setTag: jest.fn(),
+  setUser: jest.fn(),
+  configureScope: jest.fn(fn => fn && fn({})),
+  withScope: jest.fn(fn => fn && fn({})),
+  NativeModules: {
+    RNSentry: {},
+  },
 }));
 
 // Mock expo-secure-store to avoid ESM issues
@@ -262,7 +286,6 @@ jest.mock('expo-notifications', () => ({
   getExpoPushTokenAsync: jest.fn(() =>
     Promise.resolve({ data: 'ExponentPushToken[test-token-123]' })
   ),
-  setNotificationChannelAsync: jest.fn(() => Promise.resolve()),
   scheduleNotificationAsync: jest.fn(() => Promise.resolve('notification-id')),
   cancelScheduledNotificationAsync: jest.fn(() => Promise.resolve()),
   cancelAllScheduledNotificationsAsync: jest.fn(() => Promise.resolve()),
@@ -278,6 +301,12 @@ jest.mock('expo-notifications', () => ({
 
 // Mock expo-battery
 jest.mock('expo-battery', () => ({
+  BatteryState: {
+    UNKNOWN: 0,
+    UNPLUGGED: 1,
+    CHARGING: 2,
+    FULL: 3,
+  },
   useLowPowerMode: jest.fn(() => false),
   isLowPowerModeEnabledAsync: jest.fn(() => Promise.resolve(false)),
   getBatteryLevelAsync: jest.fn(() => Promise.resolve(1)),
@@ -285,7 +314,52 @@ jest.mock('expo-battery', () => ({
     Promise.resolve({ batteryLevel: 1, batteryState: 1, lowPowerMode: false })
   ),
   addLowPowerModeListener: jest.fn(() => ({ remove: jest.fn() })),
+  BatteryState: {
+    UNKNOWN: 0,
+    UNPLUGGED: 1,
+    CHARGING: 2,
+    FULL: 3,
+  },
 }));
+
+// Lightweight mock for expo-router to avoid pulling in navigation internals during tests
+jest.mock(
+  'expo-router',
+  () => ({
+    useRouter: () => ({
+      push: jest.fn(),
+      replace: jest.fn(),
+      back: jest.fn(),
+      prefetch: jest.fn(),
+    }),
+    Link: ({ children }) => children,
+    useLocalSearchParams: () => ({}),
+    usePathname: () => '/',
+    useSegments: () => [],
+  }),
+  { virtual: true }
+);
+
+// Mock expo-document-picker and expo-file-system used by components/tests
+jest.mock(
+  'expo-document-picker',
+  () => ({
+    getDocumentAsync: jest.fn(() => Promise.resolve({ type: 'cancelled' })),
+    getDocumentsAsync: jest.fn(() => Promise.resolve([])),
+  }),
+  { virtual: true }
+);
+
+jest.mock(
+  'expo-file-system',
+  () => ({
+    documentDirectory: '/tmp/',
+    readAsStringAsync: jest.fn(() => Promise.resolve('')),
+    writeAsStringAsync: jest.fn(() => Promise.resolve()),
+    deleteAsync: jest.fn(() => Promise.resolve()),
+  }),
+  { virtual: true }
+);
 
 // Mock @sentry/react-native to prevent Jest environment failure
 jest.mock('@sentry/react-native', () => ({
@@ -397,3 +471,11 @@ jest.mock('react-native-svg', () => {
     Circle: RN.View,
   };
 });
+
+// Mock expo-store-review for in-app review tests
+jest.mock('expo-store-review', () => ({
+  isAvailableAsync: jest.fn(() => Promise.resolve(true)),
+  requestReview: jest.fn(() => Promise.resolve()),
+  hasAction: jest.fn(() => Promise.resolve(true)),
+  storeUrl: jest.fn(() => Promise.resolve('https://apps.apple.com/app/teachlink/id1234567890')),
+}));

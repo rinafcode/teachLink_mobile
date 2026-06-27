@@ -1,4 +1,5 @@
 import { checksum, checksumEqual } from './checksum';
+
 import type {
   ConflictResolutionResult,
   ConflictResolutionStrategy,

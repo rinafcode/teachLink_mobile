@@ -28,6 +28,7 @@ android/build
 # Tests
 __tests__/fixtures/**
 **/fixtures/**
+**/_tests_/**
 
 # Build outputs
 .turbo

@@ -10,6 +10,8 @@ import {
   loadFormCache,
 } from '../services/formCache';
 
+const DEBOUNCE_MS = 800;
+
 export function useFormCache(fieldKeys: FormCacheFieldKey[]) {
   const [prefillValues, setPrefillValues] = useState<Partial<Record<FormCacheFieldKey, string>>>(
     {}
@@ -18,6 +20,9 @@ export function useFormCache(fieldKeys: FormCacheFieldKey[]) {
   const [isLoading, setIsLoading] = useState(true);
 
   const stableFieldKeysRef = useRef(fieldKeys);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingValuesRef = useRef<Partial<Record<FormCacheFieldKey, string>> | null>(null);
+  const writeCountRef = useRef(0);
 
   useEffect(() => {
     stableFieldKeysRef.current = fieldKeys;
@@ -38,13 +43,53 @@ export function useFormCache(fieldKeys: FormCacheFieldKey[]) {
     void refresh();
   }, [refresh]);
 
-  const persistFields = useCallback(
+  // Cancel pending debounced write on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, []);
+
+  const _commitWrite = useCallback(
     async (values: Partial<Record<FormCacheFieldKey, string>>) => {
       await cacheFormValues(values);
+      writeCountRef.current += 1;
       await refresh();
     },
     [refresh]
   );
+
+  const persistFields = useCallback(
+    (values: Partial<Record<FormCacheFieldKey, string>>) => {
+      pendingValuesRef.current = values;
+
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+
+      debounceRef.current = setTimeout(() => {
+        if (pendingValuesRef.current) {
+          void _commitWrite(pendingValuesRef.current);
+          pendingValuesRef.current = null;
+        }
+        debounceRef.current = null;
+      }, DEBOUNCE_MS);
+    },
+    [_commitWrite]
+  );
+
+  const flushCache = useCallback(async () => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+    if (pendingValuesRef.current) {
+      await _commitWrite(pendingValuesRef.current);
+      pendingValuesRef.current = null;
+    }
+  }, [_commitWrite]);
 
   const applyPrefillToFields = useCallback(
     (
@@ -80,6 +125,8 @@ export function useFormCache(fieldKeys: FormCacheFieldKey[]) {
     cacheStore,
     isLoading,
     persistFields,
+    flushCache,
+    writeCount: writeCountRef.current,
     applyPrefillToFields,
     getSuggestion,
     clearCache,

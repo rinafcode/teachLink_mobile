@@ -1,5 +1,9 @@
-import { useAppStore } from '../../store';
 import { login, logout, checkAuthStatus } from '../../services/auth';
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+import mobileAuthService from '../../services/mobileAuth';
+import { useAppStore } from '../../store';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -21,10 +25,6 @@ jest.mock('../../utils/logger', () => ({
     debug: jest.fn(),
   },
 }));
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-import mobileAuthService from '../../services/mobileAuth';
 
 const mockMobileAuth = mobileAuthService as jest.Mocked<typeof mobileAuthService>;
 

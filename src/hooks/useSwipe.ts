@@ -1,6 +1,7 @@
 import * as React from 'react';
-import type { GestureResponderEvent, ViewProps } from 'react-native';
+
 import type { GestureCoordinator } from './useGestures';
+import type { GestureResponderEvent, ViewProps } from 'react-native';
 
 export type SwipeDirection = 'left' | 'right' | 'up' | 'down';
 

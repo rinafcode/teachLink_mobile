@@ -24,7 +24,7 @@ jest.mock('../../src/utils/logger', () => ({
     debug: jest.fn(),
     error: jest.fn(),
     info: jest.fn(),
-  }
+  },
 }));
 
 import logger from '../../src/utils/logger';
@@ -62,7 +62,10 @@ describe('InfiniteVirtualList', () => {
   });
 
   it('successfully handles large datasets of 10000+ items without blowing memory limits', () => {
-    const largeData = Array.from({ length: 12000 }, (_, i) => ({ id: String(i), name: `Large Item ${i}` }));
+    const largeData = Array.from({ length: 12000 }, (_, i) => ({
+      id: String(i),
+      name: `Large Item ${i}`,
+    }));
     const onEndReached = jest.fn();
 
     const { getByText } = render(
@@ -135,7 +138,7 @@ describe('InfiniteVirtualList', () => {
     );
 
     const list = getByTestId('optimized-list');
-    
+
     // FlatList optimization parameters check
     expect(list.props.windowSize).toBe(3);
     expect(list.props.maxToRenderPerBatch).toBe(5);

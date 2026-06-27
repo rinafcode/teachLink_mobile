@@ -1,7 +1,7 @@
-import * as Font from 'expo-font';
-import { Asset } from 'expo-asset';
-import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Asset } from 'expo-asset';
+import { loadAsync } from 'expo-font';
+import { Platform } from 'react-native';
 
 // Font metadata interface
 export interface FontMetadata {
@@ -151,7 +151,7 @@ class FontService {
 
     try {
       // Load the font
-      await Font.loadAsync({ [name]: source });
+      await loadAsync({ [name]: source });
       this.loadedFonts.add(name);
 
       // Update metadata
@@ -257,7 +257,7 @@ class FontService {
   }
 
   // Preload critical fonts
-  async preloadCriticalFonts(fonts: Array<{ name: string; source: string | number }>): Promise<{
+  async preloadCriticalFonts(fonts: { name: string; source: string | number }[]): Promise<{
     loaded: string[];
     failed: string[];
   }> {

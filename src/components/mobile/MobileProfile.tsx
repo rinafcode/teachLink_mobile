@@ -1,49 +1,50 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import {
-  BookOpen,
-  Camera,
-  ChevronDown,
-  ChevronUp,
-  Clock,
-  Edit3,
-  Globe,
-  Mail,
-  MapPin,
-  Save,
-  Trophy,
-  User,
-  UserCheck,
-  UserPlus,
-  Users,
-  X,
+    BookOpen,
+    Camera,
+    ChevronDown,
+    ChevronUp,
+    Clock,
+    Edit3,
+    Globe,
+    Mail,
+    MapPin,
+    Save,
+    Trophy,
+    User,
+    UserCheck,
+    UserPlus,
+    Users,
+    X,
 } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import {
-  ActivityIndicator,
-  Animated,
-  LayoutAnimation,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  UIManager,
-  View,
+    ActivityIndicator,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    TouchableOpacity,
+    UIManager,
+    View
 } from 'react-native';
+
+import { Achievement, AchievementBadges } from './AchievementBadges';
+import { AvatarCamera } from './AvatarCamera';
+import { MobileFormInput } from './MobileFormInput';
+import { StatisticsDisplay } from './StatisticsDisplay';
 import { useFormCache } from '../../hooks/useFormCache';
 import { PROFILE_FORM_CACHE_KEYS } from '../../services/formCache';
+import { configureNext } from '../../utils/layoutAnimation';
+import { AppText as Text } from '../common/AppText';
+import { CachedImage } from '../ui/CachedImage';
+import { Skeleton } from '../ui/Skeleton';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
-import { Achievement, AchievementBadges } from './AchievementBadges';
-import { AvatarCamera } from './AvatarCamera';
-import { MobileFormInput } from './MobileFormInput';
-import { StatisticsDisplay } from './StatisticsDisplay';
-import { AppText as Text } from '../common/AppText';
-import { CachedImage } from '../ui/CachedImage';
-import { Skeleton } from '../ui/Skeleton';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -255,55 +256,23 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
   isLoading = false,
 }) => {
   const [profile, setProfile] = useState<ProfileData>(MOCK_PROFILE);
-  const {
-    applyPrefillToFields,
-    persistFields,
-    prefillValues,
-    isLoading: formCacheLoading,
-  } = useFormCache(PROFILE_FORM_CACHE_KEYS);
   const unlockedCount = profile.achievements.filter(a => !a.isLocked).length;
   const [activeTab, setActiveTab] = useState<ProfileTab>('overview');
   const [isEditing, setIsEditing] = useState(false);
   const [isCameraVisible, setIsCameraVisible] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Edit form state
-  const [editName, setEditName] = useState('');
-  const [editBio, setEditBio] = useState('');
-  const [editEmail, setEditEmail] = useState('');
-  const [editLocation, setEditLocation] = useState('');
-  const [editWebsite, setEditWebsite] = useState('');
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors: formErrors },
+  } = useForm({
+    defaultValues: { name: '', email: '', bio: '', location: '', website: '' },
+  });
 
-  useEffect(() => {
-    if (!isEditing || formCacheLoading) return;
-    applyPrefillToFields(
-      {
-        fullName: editName,
-        email: editEmail,
-        bio: editBio,
-        location: editLocation,
-        website: editWebsite,
-      },
-      {
-        fullName: setEditName,
-        email: setEditEmail,
-        bio: setEditBio,
-        location: setEditLocation,
-        website: setEditWebsite,
-      }
-    );
-  }, [
-    applyPrefillToFields,
-    editBio,
-    editEmail,
-    editLocation,
-    editName,
-    editWebsite,
-    formCacheLoading,
-    isEditing,
-    prefillValues,
-  ]);
+  // Progressive disclosure: advanced profile fields collapsed by default
+  const [showAdvancedFields, setShowAdvancedFields] = useState(false);
 
   if (isLoading) {
     const bg = isDark ? '#0f172a' : '#f8fafc';
@@ -312,7 +281,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
 
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
-        <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
+        <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }} removeClippedSubviews={true}>
           <View>
             <Skeleton width="100%" height={120} borderRadius={0} />
             <View style={styles.avatarRow}>
@@ -344,9 +313,6 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
       </SafeAreaView>
     );
   }
-  // Progressive disclosure: advanced profile fields collapsed by default
-  const [showAdvancedFields, setShowAdvancedFields] = useState(false);
-
   // Theme tokens
   const bg = isDark ? '#0f172a' : '#f8fafc';
   const cardBg = isDark ? '#1e293b' : '#fff';
@@ -354,14 +320,16 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
   const textSecondary = isDark ? '#94a3b8' : '#64748b';
   const borderColor = isDark ? '#334155' : '#e2e8f0';
 
-  const getInitials = useCallback((name: string) =>
-    name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2),
-  []);
+  const getInitials = useCallback(
+    (name: string) =>
+      name
+        .split(' ')
+        .map(n => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2),
+    []
+  );
 
   const handleStartEdit = useCallback(() => {
     setEditName(profile.name);
@@ -391,7 +359,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
   }, [profile, applyPrefillToFields]);
 
   const handleToggleAdvancedFields = useCallback(() => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    configureNext();
     setShowAdvancedFields(prev => !prev);
   }, []);
 
@@ -410,22 +378,21 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
       return;
     }
     setIsSaving(true);
-    // Simulate API call — replace with actual service call
     await new Promise(resolve => setTimeout(resolve, 800));
     setProfile(prev => ({
       ...prev,
-      name: editName.trim(),
-      bio: editBio.trim(),
-      email: editEmail.trim(),
-      location: editLocation.trim(),
-      website: editWebsite.trim(),
+      name: data.name.trim(),
+      bio: data.bio.trim(),
+      email: data.email.trim(),
+      location: data.location.trim(),
+      website: data.website.trim(),
     }));
-    await persistFields({
-      fullName: editName.trim(),
-      email: editEmail.trim(),
-      bio: editBio.trim(),
-      location: editLocation.trim(),
-      website: editWebsite.trim(),
+    await cacheFormValues({
+      fullName: data.name.trim(),
+      email: data.email.trim(),
+      bio: data.bio.trim(),
+      location: data.location.trim(),
+      website: data.website.trim(),
     });
     setIsSaving(false);
     setIsEditing(false);
@@ -495,7 +462,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
-      <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
+      <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }} removeClippedSubviews={true}>
         {/* ── Profile Header ─────────────────────────────────────────────── */}
         <View>
           <LinearGradient
@@ -509,7 +476,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
           <View style={styles.avatarRow}>
             <TouchableOpacity
               style={styles.avatarContainer}
-            onPress={handleOpenCamera}
+              onPress={handleOpenCamera}
               activeOpacity={0.85}
               accessibilityRole="button"
               accessibilityLabel="Change avatar"
@@ -554,7 +521,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.saveBtn}
-                  onPress={handleSave}
+                  onPress={() => void handleSave()}
                   disabled={isSaving}
                   accessibilityRole="button"
                   accessibilityLabel="Save profile changes"
@@ -623,7 +590,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
           </View>
 
           {/* Quick stats strip */}
-          <View style={styles.statsStrip, { backgroundColor: cardBg, borderColor }]}>
+          <View style={[styles.statsStrip, { backgroundColor: cardBg, borderColor }]}>
             {stripItems.map((s, i) => (
               <View
                 key={`stat-${i}-${s.label}`}
@@ -680,38 +647,61 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                   <Text style={[styles.cardTitle, { color: textPrimary }]}>Edit Profile</Text>
 
                   {/* ── Basic Fields (always visible) ── */}
-                  <MobileFormInput
-                    label="Full Name"
-                    value={editName}
-                    onChangeText={setEditName}
-                    placeholder="Your full name"
-                    required
-                    error={formErrors?.name}
-                    isDark={isDark}
-                    cacheKey="fullName"
-                    leftIcon={<User size={18} color="#94a3b8" />}
+                  <Controller
+                    control={control}
+                    name="name"
+                    rules={{ required: 'Name is required' }}
+                    render={({ field: { onChange, value } }) => (
+                      <MobileFormInput
+                        label="Full Name"
+                        value={value}
+                        onChangeText={onChange}
+                        placeholder="Your full name"
+                        required
+                        error={formErrors.name?.message}
+                        isDark={isDark}
+                        cacheKey="fullName"
+                        leftIcon={<User size={18} color="#94a3b8" />}
+                      />
+                    )}
                   />
-                  <MobileFormInput
-                    label="Email"
-                    value={editEmail}
-                    onChangeText={setEditEmail}
-                    placeholder="your@email.com"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    required
-                    error={formErrors?.email}
-                    isDark={isDark}
-                    cacheKey="email"
-                    leftIcon={<Mail size={18} color="#94a3b8" />}
+                  <Controller
+                    control={control}
+                    name="email"
+                    rules={{
+                      required: 'Email is required',
+                      pattern: { value: /\S+@\S+\.\S+/, message: 'Enter a valid email address' },
+                    }}
+                    render={({ field: { onChange, value } }) => (
+                      <MobileFormInput
+                        label="Email"
+                        value={value}
+                        onChangeText={onChange}
+                        placeholder="your@email.com"
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        required
+                        error={formErrors.email?.message}
+                        isDark={isDark}
+                        cacheKey="email"
+                        leftIcon={<Mail size={18} color="#94a3b8" />}
+                      />
+                    )}
                   />
-                  <MobileFormInput
-                    label="Bio"
-                    value={editBio}
-                    onChangeText={setEditBio}
-                    placeholder="Tell us about yourself..."
-                    multiline
-                    isDark={isDark}
-                    cacheKey="bio"
+                  <Controller
+                    control={control}
+                    name="bio"
+                    render={({ field: { onChange, value } }) => (
+                      <MobileFormInput
+                        label="Bio"
+                        value={value}
+                        onChangeText={onChange}
+                        placeholder="Tell us about yourself..."
+                        multiline
+                        isDark={isDark}
+                        cacheKey="bio"
+                      />
+                    )}
                   />
 
                   {/* ── Progressive Disclosure: Advanced Details ── */}
@@ -723,39 +713,55 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                     onPress={handleToggleAdvancedFields}
                     activeOpacity={0.7}
                     accessibilityRole="button"
-                    accessibilityLabel={showAdvancedFields ? 'Hide advanced details' : 'Show advanced details'}
+                    accessibilityLabel={
+                      showAdvancedFields ? 'Hide advanced details' : 'Show advanced details'
+                    }
                     accessibilityState={{ expanded: showAdvancedFields }}
                   >
                     <Text style={[styles.disclosureToggleText, { color: '#19c3e6' }]}>
                       {showAdvancedFields ? 'Hide Advanced Details' : 'Advanced Details'}
                     </Text>
-                    {showAdvancedFields
-                      ? <ChevronUp size={16} color="#19c3e6" />
-                      : <ChevronDown size={16} color="#19c3e6" />}
+                    {showAdvancedFields ? (
+                      <ChevronUp size={16} color="#19c3e6" />
+                    ) : (
+                      <ChevronDown size={16} color="#19c3e6" />
+                    )}
                   </TouchableOpacity>
 
                   {/* ── Advanced Fields (expandable) ── */}
                   {showAdvancedFields && (
                     <View style={styles.disclosureContent}>
-                      <MobileFormInput
-                        label="Location"
-                        value={editLocation}
-                        onChangeText={setEditLocation}
-                        placeholder="City, Country"
-                        isDark={isDark}
-                        cacheKey="location"
-                        leftIcon={<MapPin size={18} color="#94a3b8" />}
+                      <Controller
+                        control={control}
+                        name="location"
+                        render={({ field: { onChange, value } }) => (
+                          <MobileFormInput
+                            label="Location"
+                            value={value}
+                            onChangeText={onChange}
+                            placeholder="City, Country"
+                            isDark={isDark}
+                            cacheKey="location"
+                            leftIcon={<MapPin size={18} color="#94a3b8" />}
+                          />
+                        )}
                       />
-                      <MobileFormInput
-                        label="Website"
-                        value={editWebsite}
-                        onChangeText={setEditWebsite}
-                        placeholder="yourwebsite.com"
-                        keyboardType="url"
-                        autoCapitalize="none"
-                        isDark={isDark}
-                        cacheKey="website"
-                        leftIcon={<Globe size={18} color="#94a3b8" />}
+                      <Controller
+                        control={control}
+                        name="website"
+                        render={({ field: { onChange, value } }) => (
+                          <MobileFormInput
+                            label="Website"
+                            value={value}
+                            onChangeText={onChange}
+                            placeholder="yourwebsite.com"
+                            keyboardType="url"
+                            autoCapitalize="none"
+                            isDark={isDark}
+                            cacheKey="website"
+                            leftIcon={<Globe size={18} color="#94a3b8" />}
+                          />
+                        )}
                       />
                     </View>
                   )}
@@ -785,7 +791,10 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
                       value: profile.website || 'Not set',
                     },
                   ].map((item, i) => (
-                    <View key={`detail-${i}-${item.label}`} style={[styles.detailRow, { borderBottomColor: borderColor }]}>
+                    <View
+                      key={`detail-${i}-${item.label}`}
+                      style={[styles.detailRow, { borderBottomColor: borderColor }]}
+                    >
                       <View style={styles.detailIconLabel}>
                         {item.icon}
                         <Text style={[styles.detailLabel, { color: textSecondary }]}>

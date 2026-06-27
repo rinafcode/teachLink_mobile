@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+
 import {
     DEFAULT_NOTIFICATION_PREFERENCES,
     NotificationData,
@@ -28,7 +29,7 @@ interface NotificationState {
   unreadCount: number;
   notificationHistory: NotificationHistoryEntry[];
   lastEngagedAt: string | null;
-  lastNotificationSentAtByType: Partial<Record<NotificationType, string>>;
+  lastNotificationSentAtByType: Partial<Record<NotificationType, number>>;
 
   // Actions - Push token
   setPushToken: (token: string | null) => void;
@@ -75,14 +76,13 @@ export const useNotificationStore = create<NotificationState>()(
       lastNotificationSentAtByType: {},
 
       // Push token actions
-      setPushToken: (token) =>
+      setPushToken: token =>
         set({
           pushToken: token,
           tokenLastUpdated: token ? new Date().toISOString() : null,
         }),
 
-      setTokenRegistered: (registered) =>
-        set({ isTokenRegistered: registered }),
+      setTokenRegistered: registered => set({ isTokenRegistered: registered }),
 
       clearPushToken: () =>
         set({
@@ -92,49 +92,43 @@ export const useNotificationStore = create<NotificationState>()(
         }),
 
       // Permission actions
-      setHasPromptedForPermission: (prompted) =>
-        set({ hasPromptedForPermission: prompted }),
+      setHasPromptedForPermission: prompted => set({ hasPromptedForPermission: prompted }),
 
-      setPermissionDeniedAt: (date) =>
-        set({ permissionDeniedAt: date }),
+      setPermissionDeniedAt: date => set({ permissionDeniedAt: date }),
 
       // Preference actions
       setPreference: (key, value) =>
-        set((state) => ({
+        set(state => ({
           preferences: {
             ...state.preferences,
             [key]: value,
           },
         })),
 
-      setAllPreferences: (preferences) =>
-        set({ preferences }),
+      setAllPreferences: preferences => set({ preferences }),
 
-      resetPreferences: () =>
-        set({ preferences: DEFAULT_NOTIFICATION_PREFERENCES }),
+      resetPreferences: () => set({ preferences: DEFAULT_NOTIFICATION_PREFERENCES }),
 
       // Notification actions
-      addNotification: (notification) =>
-        set((state) => {
-          const now = new Date().toISOString();
+      addNotification: notification =>
+        set(state => {
+          const now = Date.now();
           const fingerprint = buildNotificationFingerprint(notification);
           const dedupeWindowMinutes = 10;
-          const cutoff = new Date(Date.now() - dedupeWindowMinutes * 60 * 1000);
+          const cutoff = Date.now() - dedupeWindowMinutes * 60 * 1000;
 
           const recentHistory = state.notificationHistory.filter(
-            (entry) => new Date(entry.receivedAt).getTime() >= cutoff.getTime()
+            entry => entry.receivedAt >= cutoff
           );
 
-          const isDuplicate = recentHistory.some((entry) => entry.fingerprint === fingerprint);
+          const isDuplicate = recentHistory.some(entry => entry.fingerprint === fingerprint);
           if (isDuplicate) {
-            return {
-              notificationHistory: [{ fingerprint, receivedAt: now }, ...recentHistory].slice(0, 200),
-            };
+            return {};
           }
 
           const groupKey = buildNotificationGroupKey(notification.type, notification.data);
-          const existingIndex = state.notifications.findIndex((item) =>
-            buildNotificationGroupKey(item.type, item.data) === groupKey
+          const existingIndex = state.notifications.findIndex(
+            item => buildNotificationGroupKey(item.type, item.data) === groupKey
           );
 
           let notifications: StoredNotification[];
@@ -142,7 +136,12 @@ export const useNotificationStore = create<NotificationState>()(
           if (existingIndex >= 0) {
             const existing = state.notifications[existingIndex];
             const groupCount = (existing.groupCount ?? 1) + 1;
-            const title = formatGroupedTitle(notification.type, groupCount, existing.title, notification.title);
+            const title = formatGroupedTitle(
+              notification.type,
+              groupCount,
+              existing.title,
+              notification.title
+            );
             const body = formatGroupedBody(existing.body, notification.body, groupCount);
 
             const updatedNotification: StoredNotification = {
@@ -154,7 +153,10 @@ export const useNotificationStore = create<NotificationState>()(
               receivedAt: now,
             };
 
-            notifications = [updatedNotification, ...state.notifications.filter((_, index) => index !== existingIndex)];
+            notifications = [
+              updatedNotification,
+              ...state.notifications.filter((_, index) => index !== existingIndex),
+            ];
           } else {
             const newNotification: StoredNotification = {
               ...notification,
@@ -167,7 +169,10 @@ export const useNotificationStore = create<NotificationState>()(
             notifications = [newNotification, ...state.notifications].slice(0, 100);
           }
 
-          const notificationHistory = [{ fingerprint, receivedAt: now }, ...recentHistory].slice(0, 200);
+          const notificationHistory = [
+            { fingerprint, receivedAt: now },
+            ...recentHistory,
+          ].slice(0, 200);
 
           return {
             notifications,
@@ -176,13 +181,13 @@ export const useNotificationStore = create<NotificationState>()(
           };
         }),
 
-      markAsRead: (notificationId) =>
-        set((state) => {
-          const notification = state.notifications.find((n) => n.id === notificationId);
+      markAsRead: notificationId =>
+        set(state => {
+          const notification = state.notifications.find(n => n.id === notificationId);
           if (!notification || notification.read) return state;
 
           return {
-            notifications: state.notifications.map((n) =>
+            notifications: state.notifications.map(n =>
               n.id === notificationId ? { ...n, read: true } : n
             ),
             unreadCount: Math.max(0, state.unreadCount - 1),
@@ -190,18 +195,18 @@ export const useNotificationStore = create<NotificationState>()(
         }),
 
       markAllAsRead: () =>
-        set((state) => ({
-          notifications: state.notifications.map((n) => ({ ...n, read: true })),
+        set(state => ({
+          notifications: state.notifications.map(n => ({ ...n, read: true })),
           unreadCount: 0,
         })),
 
-      removeNotification: (notificationId) =>
-        set((state) => {
-          const notification = state.notifications.find((n) => n.id === notificationId);
+      removeNotification: notificationId =>
+        set(state => {
+          const notification = state.notifications.find(n => n.id === notificationId);
           const wasUnread = notification && !notification.read;
 
           return {
-            notifications: state.notifications.filter((n) => n.id !== notificationId),
+            notifications: state.notifications.filter(n => n.id !== notificationId),
             unreadCount: wasUnread ? Math.max(0, state.unreadCount - 1) : state.unreadCount,
           };
         }),
@@ -224,8 +229,7 @@ export const useNotificationStore = create<NotificationState>()(
         const lastSentAt = state.lastNotificationSentAtByType[type];
 
         if (lastSentAt) {
-          const elapsedMinutes =
-            (now.getTime() - new Date(lastSentAt).getTime()) / (1000 * 60);
+          const elapsedMinutes = (now.getTime() - lastSentAt) / (1000 * 60);
           if (elapsedMinutes < thresholdMinutes) {
             return true;
           }
@@ -234,7 +238,7 @@ export const useNotificationStore = create<NotificationState>()(
         set({
           lastNotificationSentAtByType: {
             ...state.lastNotificationSentAtByType,
-            [type]: now.toISOString(),
+            [type]: now.getTime(),
           },
         });
         return false;
@@ -255,7 +259,7 @@ export const useNotificationStore = create<NotificationState>()(
       },
 
       // Helpers
-      isNotificationTypeEnabled: (type) => {
+      isNotificationTypeEnabled: type => {
         const { preferences } = get();
         switch (type) {
           case NotificationType.COURSE_UPDATE:
@@ -276,7 +280,37 @@ export const useNotificationStore = create<NotificationState>()(
     {
       name: 'notification-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({
+      version: 2,
+      migrate: (persistedState, version) => {
+        if (version < 2) {
+          const state = JSON.parse(persistedState as string) as any;
+          // Convert notification timestamps
+          if (Array.isArray(state.notifications)) {
+            state.notifications = state.notifications.map((n: any) => ({
+              ...n,
+              receivedAt: typeof n.receivedAt === 'string' ? new Date(n.receivedAt).getTime() : n.receivedAt,
+            }));
+          }
+          // Convert history timestamps
+          if (Array.isArray(state.notificationHistory)) {
+            state.notificationHistory = state.notificationHistory.map((h: any) => ({
+              ...h,
+              receivedAt: typeof h.receivedAt === 'string' ? new Date(h.receivedAt).getTime() : h.receivedAt,
+            }));
+          }
+          // Convert throttle timestamps
+          if (state.lastNotificationSentAtByType) {
+            const converted: Record<string, number> = {};
+            Object.entries(state.lastNotificationSentAtByType).forEach(([k, v]) => {
+              converted[k] = typeof v === 'string' ? new Date(v as string).getTime() : (v as number);
+            });
+            state.lastNotificationSentAtByType = converted;
+          }
+          return state;
+        }
+        return persistedState;
+      },
+      partialize: state => ({
         // Only persist these fields
         pushToken: state.pushToken,
         isTokenRegistered: state.isTokenRegistered,

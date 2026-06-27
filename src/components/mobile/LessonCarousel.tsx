@@ -10,6 +10,8 @@ import {
   View,
 } from 'react-native';
 
+import { useDeviceUiComplexity } from '../../hooks/useDeviceUiComplexity';
+import { useSettingsStore } from '../../store/settingsStore';
 import { CourseProgress, Lesson } from '../../types/course';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -34,9 +36,11 @@ const LessonCarousel = ({
   onLastLessonNext,
   isLastLessonInSection = false,
 }: LessonCarouselProps) => {
+  const dataSaverEnabled = useSettingsStore(state => state.dataSaverEnabled);
   const flatListRef = useRef<FlatList<Lesson>>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const progressBarWidth = useRef(new Animated.Value(0)).current;
+  const { shouldDisableHeavyEffects } = useDeviceUiComplexity();
 
   useEffect(() => {
     const index = lessons.findIndex(lesson => lesson.id === currentLessonId);
@@ -51,14 +55,19 @@ const LessonCarousel = ({
 
     const completedCount = lessons.filter(lesson => progress.lessons[lesson.id]?.completed).length;
     const progressPercent = (completedCount / lessons.length) * 100;
+    const toValue = (progressPercent / 100) * SCREEN_WIDTH;
 
-    Animated.spring(progressBarWidth, {
-      toValue: (progressPercent / 100) * SCREEN_WIDTH,
-      useNativeDriver: false,
-      tension: 50,
-      friction: 7,
-    }).start();
-  }, [lessons, progress, progressBarWidth]);
+    if (dataSaverEnabled) {
+      progressBarWidth.setValue(toValue);
+    } else {
+      Animated.spring(progressBarWidth, {
+        toValue,
+        useNativeDriver: false,
+        tension: 50,
+        friction: 7,
+      }).start();
+    }
+  }, [lessons, progress, progressBarWidth, dataSaverEnabled]);
 
   const getItemLayout = useCallback(
     (_: ArrayLike<Lesson> | null | undefined, index: number) => ({
@@ -82,6 +91,15 @@ const LessonCarousel = ({
 
   const currentLesson = lessons[currentIndex];
 
+  const renderItem = useCallback(
+    ({ item }: { item: Lesson }) => (
+      <View style={[styles.lessonContainer, { width: SCREEN_WIDTH }]}>
+        <View style={styles.lessonContent}>{renderLessonContent(item)}</View>
+      </View>
+    ),
+    [renderLessonContent]
+  );
+
   if (lessons.length === 0) {
     return (
       <View style={styles.emptyContainer}>
@@ -94,12 +112,16 @@ const LessonCarousel = ({
     <View style={styles.container} testID="LessonCarousel">
       <View style={styles.progressBarContainer}>
         <Animated.View style={{ width: progressBarWidth, height: '100%' }}>
-          <LinearGradient
-            colors={['#20afe7', '#2c8aec', '#586ce9']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.progressBarGradient}
-          />
+          {shouldDisableHeavyEffects ? (
+            <View style={[styles.progressBarGradient, { backgroundColor: '#20afe7' }]} />
+          ) : (
+            <LinearGradient
+              colors={['#20afe7', '#2c8aec', '#586ce9']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.progressBarGradient}
+            />
+          )}
         </Animated.View>
       </View>
 
@@ -139,11 +161,7 @@ const LessonCarousel = ({
       <FlatList
         ref={flatListRef}
         data={lessons}
-        renderItem={({ item }) => (
-          <View style={[styles.lessonContainer, { width: SCREEN_WIDTH }]}>
-            <View style={styles.lessonContent}>{renderLessonContent(item)}</View>
-          </View>
-        )}
+        renderItem={renderItem}
         keyExtractor={item => item.id}
         horizontal
         pagingEnabled
@@ -166,7 +184,7 @@ const LessonCarousel = ({
           onPress={() => {
             if (currentIndex === 0) return;
             const nextIndex = currentIndex - 1;
-            flatListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
+            flatListRef.current?.scrollToIndex({ index: nextIndex, animated: !dataSaverEnabled });
             setCurrentIndex(nextIndex);
             onLessonChange(lessons[nextIndex].id, nextIndex);
           }}
@@ -184,36 +202,50 @@ const LessonCarousel = ({
 
         {currentIndex === lessons.length - 1 ? (
           <TouchableOpacity onPress={onLastLessonNext} style={styles.navButton}>
-            <LinearGradient
-              colors={['#20afe7', '#2c8aec', '#586ce9']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.nextButtonGradient}
-            >
-              <Text style={styles.nextButtonText}>
-                {isLastLessonInSection ? 'Continue →' : 'Next →'}
-              </Text>
-            </LinearGradient>
+            {shouldDisableHeavyEffects ? (
+              <View style={[styles.nextButtonGradient, { backgroundColor: '#20afe7' }]}>
+                <Text style={styles.nextButtonText}>
+                  {isLastLessonInSection ? 'Continue →' : 'Next →'}
+                </Text>
+              </View>
+            ) : (
+              <LinearGradient
+                colors={['#20afe7', '#2c8aec', '#586ce9']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.nextButtonGradient}
+              >
+                <Text style={styles.nextButtonText}>
+                  {isLastLessonInSection ? 'Continue →' : 'Next →'}
+                </Text>
+              </LinearGradient>
+            )}
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
             onPress={() => {
               const nextIndex = currentIndex + 1;
               if (nextIndex >= lessons.length) return;
-              flatListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
+              flatListRef.current?.scrollToIndex({ index: nextIndex, animated: !dataSaverEnabled });
               setCurrentIndex(nextIndex);
               onLessonChange(lessons[nextIndex].id, nextIndex);
             }}
             style={styles.navButton}
           >
-            <LinearGradient
-              colors={['#20afe7', '#2c8aec', '#586ce9']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.nextButtonGradient}
-            >
-              <Text style={styles.nextButtonText}>Next →</Text>
-            </LinearGradient>
+            {shouldDisableHeavyEffects ? (
+              <View style={[styles.nextButtonGradient, { backgroundColor: '#20afe7' }]}>
+                <Text style={styles.nextButtonText}>Next →</Text>
+              </View>
+            ) : (
+              <LinearGradient
+                colors={['#20afe7', '#2c8aec', '#586ce9']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.nextButtonGradient}
+              >
+                <Text style={styles.nextButtonText}>Next →</Text>
+              </LinearGradient>
+            )}
           </TouchableOpacity>
         )}
       </View>

@@ -156,7 +156,26 @@ class StreamingApiService {
           });
         }
 
-        if (done) break;
+        if (done) {
+          if (format === 'ndjson' && buffer.trim()) {
+            try {
+              const parsed = JSON.parse(buffer.trim()) as T;
+              results.push(parsed);
+              onChunk?.({
+                data: parsed,
+                index: chunkIndex,
+                timestamp: Date.now(),
+                isLastChunk: true,
+              });
+            } catch (parseError) {
+              appLogger.warnSync('Failed to parse trailing NDJSON line', {
+                line: buffer.substring(0, 100),
+                error: parseError instanceof Error ? parseError.message : String(parseError),
+              });
+            }
+          }
+          break;
+        }
 
         bytesReceived += value.length;
         const chunk = decoder.decode(value, { stream: true });
@@ -303,7 +322,7 @@ class StreamingApiService {
       }
     }
 
-    throw lastError || new Error('Streaming failed after retries');
+    throw new Error(`Streaming failed after retries: ${lastError?.message || 'unknown error'}`);
   }
 
   /**

@@ -7,6 +7,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+
 import { PerformanceAuditor } from './PerformanceAuditor';
 
 interface CLIOptions {
@@ -157,10 +158,7 @@ For more information, visit: https://github.com/rinafcode/teachLink_mobile
     await audit();
 
     // Watch for changes
-    const watchDirs = [
-      path.join(process.cwd(), 'src'),
-      path.join(process.cwd(), 'package.json'),
-    ];
+    const watchDirs = [path.join(process.cwd(), 'src'), path.join(process.cwd(), 'package.json')];
 
     // Simple implementation using polling
     setInterval(() => {
@@ -199,10 +197,18 @@ For more information, visit: https://github.com/rinafcode/teachLink_mobile
       const baseline = JSON.parse(fs.readFileSync(baselinePath, 'utf-8'));
 
       console.log('\n📊 Audit Comparison\n');
-      console.log(`Score: ${baseline.overallScore} → ${currentAudit.overallScore} (${currentAudit.overallScore > baseline.overallScore ? '+' : ''}${currentAudit.overallScore - baseline.overallScore})`);
-      console.log(`Bundle: ${(baseline.bundleAnalysis.totalSize / 1000).toFixed(0)}KB → ${(currentAudit.bundleAnalysis.totalSize / 1000).toFixed(0)}KB`);
-      console.log(`Dependencies: ${baseline.dependencyAnalysis.totalDependencies} → ${currentAudit.dependencyAnalysis.totalDependencies}`);
-      console.log(`Vulnerabilities: ${baseline.dependencyAnalysis.vulnerabilities.length} → ${currentAudit.dependencyAnalysis.vulnerabilities.length}`);
+      console.log(
+        `Score: ${baseline.overallScore} → ${currentAudit.overallScore} (${currentAudit.overallScore > baseline.overallScore ? '+' : ''}${currentAudit.overallScore - baseline.overallScore})`
+      );
+      console.log(
+        `Bundle: ${(baseline.bundleAnalysis.totalSize / 1000).toFixed(0)}KB → ${(currentAudit.bundleAnalysis.totalSize / 1000).toFixed(0)}KB`
+      );
+      console.log(
+        `Dependencies: ${baseline.dependencyAnalysis.totalDependencies} → ${currentAudit.dependencyAnalysis.totalDependencies}`
+      );
+      console.log(
+        `Vulnerabilities: ${baseline.dependencyAnalysis.vulnerabilities.length} → ${currentAudit.dependencyAnalysis.vulnerabilities.length}`
+      );
     } catch (error) {
       console.error('Error comparing audits:', error);
     }

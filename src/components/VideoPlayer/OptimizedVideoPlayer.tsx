@@ -11,6 +11,17 @@ export interface OptimizedVideoPlayerProps {
   autoPlay?: boolean;
   onError?: (error: string) => void;
   style?: StyleProp<ViewStyle>;
+  /**
+   * When `false` the player is paused and the screen keep-awake lock is
+   * released. When it returns to `true` (and `autoPlay` is set) playback
+   * resumes automatically.
+   *
+   * Designed to be driven by `useIntersectionObserver` or
+   * `useViewabilityCallback` so off-screen players do not consume CPU/memory.
+   *
+   * Defaults to `true` so existing call-sites require no changes.
+   */
+  isVisible?: boolean;
 }
 
 const bufferOptions = {
@@ -30,6 +41,7 @@ const OptimizedVideoPlayer = ({
   autoPlay = false,
   onError,
   style,
+  isVisible = true,
 }: OptimizedVideoPlayerProps) => {
   const [isBuffering, setIsBuffering] = useState(true);
   const [playbackError, setPlaybackError] = useState<string | null>(null);
@@ -48,10 +60,8 @@ const OptimizedVideoPlayer = ({
   const player = useVideoPlayer(source, videoPlayer => {
     videoPlayer.keepScreenOnWhilePlaying = true;
     videoPlayer.bufferOptions = bufferOptions;
-
-    if (autoPlay) {
-      videoPlayer.play?.();
-    }
+    // autoPlay is intentionally NOT called here — the isVisible effect below
+    // handles play/pause so that visibility gating applies from the first render.
   });
 
   const handleStatusChange = useCallback(
@@ -82,12 +92,38 @@ const OptimizedVideoPlayer = ({
     [onError, recordBufferingEnd, recordBufferingStart, recordError, recordLoadComplete, uri]
   );
 
+  // Keep-awake: only lock screen while the player is visible.
   useEffect(() => {
-    activateKeepAwake();
+    if (isVisible) {
+      activateKeepAwake();
+    } else {
+      deactivateKeepAwake();
+    }
     return () => {
       deactivateKeepAwake();
     };
-  }, []);
+  }, [isVisible]);
+
+  // Pause / resume based on visibility.
+  useEffect(() => {
+    if (!player) return;
+
+    if (!isVisible) {
+      try {
+        player.pause();
+        appLogger.debug('OptimizedVideoPlayer paused (off-screen)', { uri });
+      } catch (error) {
+        appLogger.warn('OptimizedVideoPlayer: could not pause player', { error });
+      }
+    } else if (autoPlay) {
+      try {
+        player.play();
+        appLogger.debug('OptimizedVideoPlayer resumed (on-screen)', { uri });
+      } catch (error) {
+        appLogger.warn('OptimizedVideoPlayer: could not resume player', { error });
+      }
+    }
+  }, [isVisible, player, autoPlay, uri]);
 
   useEffect(() => {
     const subscription = player?.addListener('statusChange', handleStatusChange);

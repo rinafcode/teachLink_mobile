@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Camera, Check, ImageIcon, RefreshCw, X } from 'lucide-react-native';
-import React, { useCallback, useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -10,7 +10,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useCamera } from '../../hooks';
+
+import { useCamera, useFocusTrap, useFocusRestore } from '../../hooks';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 import { CachedImage } from '../ui/CachedImage';
 
@@ -67,11 +68,21 @@ export const AvatarCamera: React.FC<AvatarCameraProps> = ({
     onClose();
   }, [resetCapturedImage, onClose]);
 
+  const containerRef = useRef<View>(null);
+  useFocusRestore(visible);
+  const { containerProps } = useFocusTrap(containerRef, visible, { autoFocus: true });
+
   return (
     <ErrorBoundary boundaryName="AvatarCameraModal">
       <Modal visible={visible} transparent animationType="slide">
         <SafeAreaView style={styles.overlay}>
-          <View style={styles.container}>
+          <View
+            ref={containerRef}
+            style={styles.container}
+            accessibilityRole="dialog"
+            accessibilityLabel="Update profile photo dialog"
+            {...containerProps}
+          >
             {/* Header */}
             <View style={styles.header}>
               <Text style={styles.headerTitle}>Update Profile Photo</Text>

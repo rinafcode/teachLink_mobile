@@ -10,7 +10,7 @@ import React from 'react';
 /**
  * Generic loading skeleton
  */
-export function LoadingSkeleton({
+export const LoadingSkeleton = ({
   height = 100,
   width = '100%',
   count = 1,
@@ -18,7 +18,7 @@ export function LoadingSkeleton({
   height?: number;
   width?: string | number;
   count?: number;
-}) {
+}) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {Array.from({ length: count }).map((_, i) => (
@@ -46,7 +46,7 @@ export function LoadingSkeleton({
 /**
  * Video player loading skeleton
  */
-export function VideoPlayerSkeleton() {
+export const VideoPlayerSkeleton = () => {
   return (
     <div style={{ width: '100%', backgroundColor: '#000' }}>
       <div style={{ aspectRatio: '16/9', position: 'relative' }}>
@@ -82,7 +82,7 @@ export function VideoPlayerSkeleton() {
 /**
  * Data grid loading skeleton
  */
-export function DataGridSkeleton() {
+export const DataGridSkeleton = () => {
   return (
     <div style={{ padding: 16 }}>
       <div style={{ marginBottom: 16 }}>
@@ -100,7 +100,7 @@ export function DataGridSkeleton() {
 /**
  * Profile card loading skeleton
  */
-export function ProfileSkeleton() {
+export const ProfileSkeleton = () => {
   return (
     <div style={{ padding: 16 }}>
       {/* Avatar */}
@@ -146,7 +146,7 @@ export function ProfileSkeleton() {
 /**
  * Settings page loading skeleton
  */
-export function SettingsSkeleton() {
+export const SettingsSkeleton = () => {
   return (
     <div style={{ padding: 16 }}>
       {Array.from({ length: 6 }).map((_, i) => (
@@ -164,7 +164,7 @@ export function SettingsSkeleton() {
 /**
  * Quiz card loading skeleton
  */
-export function QuizSkeleton() {
+export const QuizSkeleton = () => {
   return (
     <div style={{ padding: 16 }}>
       {/* Question */}
@@ -188,7 +188,7 @@ export function QuizSkeleton() {
 /**
  * Search results loading skeleton
  */
-export function SearchResultsSkeleton() {
+export const SearchResultsSkeleton = () => {
   return (
     <div style={{ padding: 16 }}>
       {/* Search bar */}
@@ -226,7 +226,7 @@ export function SearchResultsSkeleton() {
 /**
  * Download queue loading skeleton
  */
-export function DownloadQueueSkeleton() {
+export const DownloadQueueSkeleton = () => {
   return (
     <div style={{ padding: 16 }}>
       {Array.from({ length: 3 }).map((_, i) => (
@@ -247,7 +247,7 @@ export function DownloadQueueSkeleton() {
 /**
  * Generic card loading skeleton
  */
-export function CardSkeleton({ count = 3 }: { count?: number }) {
+export const CardSkeleton = ({ count = 3 }: { count?: number }) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {Array.from({ length: count }).map((_, i) => (
@@ -265,7 +265,7 @@ export function CardSkeleton({ count = 3 }: { count?: number }) {
 /**
  * Course content loading skeleton
  */
-export function CourseContentSkeleton() {
+export const CourseContentSkeleton = () => {
   return (
     <div style={{ padding: 16 }}>
       {/* Syllabus/Tabs */}

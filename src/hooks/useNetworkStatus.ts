@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
 import { Network } from 'expo-network';
+import { useState, useEffect, useCallback } from 'react';
 
 export type ConnectionType = 'wifi' | 'cellular' | 'none' | 'unknown';
 

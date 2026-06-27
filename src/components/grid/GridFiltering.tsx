@@ -51,6 +51,7 @@ export const GridFiltering = <T extends GridRow = GridRow>({
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.row}
         keyboardShouldPersistTaps="handled"
+        removeClippedSubviews={true}
       >
         {filterableColumns.map(col => {
           const currentValue = getFilterValue(col.key);

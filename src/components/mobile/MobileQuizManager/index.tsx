@@ -7,6 +7,8 @@ import QuizCarousel from './QuizCarousel';
 import QuizProgress from './QuizProgress';
 import QuizResults from './QuizResults';
 import { useAnalytics } from '../../../hooks/useAnalytics';
+import { useInAppReview, useReviewMetrics } from '../../../hooks/useInAppReview';
+import { ReviewTrigger } from '../../../services/inAppReview';
 import { useQuizStore } from '../../../store/quizStore';
 import { Quiz, Course } from '../../../types/course';
 import logger from '../../../utils/logger';
@@ -48,6 +50,8 @@ export default function MobileQuizManager({
   const [currentView, setCurrentView] = useState<QuizView>('intro');
   const [quizResults, setQuizResults] = useState<{ score: number; passed: boolean } | null>(null);
   const { trackEvent, trackScreen } = useAnalytics();
+  const { requestReview } = useInAppReview();
+  const { trackPerfectQuiz } = useReviewMetrics();
 
   useEffect(() => {
     loadQuizProgress(courseId);
@@ -94,6 +98,11 @@ export default function MobileQuizManager({
         passed: results.passed,
       });
 
+      if (results.score === 100) {
+        trackPerfectQuiz();
+        requestReview(ReviewTrigger.PERFECT_QUIZ_SCORE);
+      }
+
       // If passed, navigate back to course with syllabus view
       if (results.passed && navigation && course) {
         // Small delay to show results briefly before navigating
@@ -134,6 +143,7 @@ export default function MobileQuizManager({
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          removeClippedSubviews={true}
         >
           {/* Header */}
           <View style={styles.header}>

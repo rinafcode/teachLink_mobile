@@ -1,7 +1,7 @@
-import React from 'react';
-import { TouchableOpacity, Text, View, ActivityIndicator, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Check, Zap, Lock } from 'lucide-react-native';
+import React from 'react';
+import { TouchableOpacity, Text, View, ActivityIndicator, StyleSheet } from 'react-native';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

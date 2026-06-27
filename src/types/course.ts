@@ -13,6 +13,8 @@ export interface Resource {
   title: string;
   url: string;
   type: 'pdf' | 'link' | 'code' | 'image';
+  width?: number;
+  height?: number;
 }
 
 export interface Section {
@@ -31,8 +33,12 @@ export interface Course {
     id: string;
     name: string;
     avatar?: string;
+    avatarWidth?: number;
+    avatarHeight?: number;
   };
   thumbnail?: string;
+  thumbnailWidth?: number;
+  thumbnailHeight?: number;
   sections: Section[];
   totalLessons: number;
   totalDuration: number; // in minutes

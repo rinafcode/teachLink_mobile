@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
+
 import { preloadService } from '../services/preloadService';
 
 /**
@@ -40,10 +41,19 @@ export function usePredictivePreload() {
     []
   );
 
+  /**
+   * Read the live prediction-accuracy metric (hits / evaluated transitions).
+   */
+  const getPredictionAccuracy = useCallback(
+    () => preloadService.getPredictionAccuracy(),
+    []
+  );
+
   return {
     preload,
     predictNextScreens,
     recordTransition,
+    getPredictionAccuracy,
     preloadService,
   };
 }

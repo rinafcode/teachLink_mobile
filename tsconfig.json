@@ -7,12 +7,16 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
-
     "paths": {
+      "@components/*": ["src/components/*"],
+      "@hooks/*": ["src/hooks/*"],
+      "@services/*": ["src/services/*"],
+      "@store/*": ["src/store/*"],
+      "@utils/*": ["src/utils/*"],
       "@/components/*": ["./src/components/*", "./components/*"],
       "@/hooks/*": ["./src/hooks/*", "./hooks/*"],
       "@/constants/*": ["./constants/*"],
-      "@/*": ["./*"]
+      "@/*": ["./src/*", "./*"]
     },
     "lib": ["ESNext", "DOM"],
     "noEmit": true,
@@ -21,5 +25,5 @@
     "types": ["jest", "node"]
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts", "nativewind-env.d.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "**/_tests_/**"]
 }

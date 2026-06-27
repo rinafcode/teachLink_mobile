@@ -62,8 +62,18 @@
       "output": "static",
       "favicon": "./assets/icon.png"
     },
+    "updates": {
+      "url": "https://u.expo.dev/teachlink-mobile",
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "plugins": [
       "expo-router",
+      "expo-updates",
       [
         "expo-splash-screen",
         {
@@ -87,7 +97,17 @@
         }
       ],
       "expo-speech-recognition",
-      "expo-video"
+      "expo-video",
+      "./plugins/withProguard.js",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ]
     ],
     "notification": {
       "icon": "./assets/notification-icon.png",

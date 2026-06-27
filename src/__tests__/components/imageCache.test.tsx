@@ -1,9 +1,10 @@
 import { render, waitFor } from '@testing-library/react-native';
 import React from 'react';
 
-import { CachedImage } from '@/components/ui/CachedImage';
-import { usePrefetchImages } from '@/hooks/usePrefetchImages';
-import { ImageCache } from '@/utils/imageCache';
+import { CachedImage } from '../../components/ui/CachedImage';
+import { usePrefetchImages } from '../../hooks/usePrefetchImages';
+import { useSettingsStore } from '../../store/settingsStore';
+import { ImageCache } from '../../utils/imageCache';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -14,12 +15,24 @@ jest.mock('expo-image', () => ({
   clearDiskCache: jest.fn(() => Promise.resolve()),
 }));
 
-jest.mock('@/utils/logger', () => ({
-  debug: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-}));
+jest.mock('@/utils/logger', () => {
+  const methods = {
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debugSync: jest.fn(),
+    infoSync: jest.fn(),
+    warnSync: jest.fn(),
+    errorSync: jest.fn(),
+  };
+  return {
+    __esModule: true,
+    default: methods,
+    appLogger: methods,
+    logger: methods,
+  };
+});
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
@@ -59,7 +72,10 @@ describe('Image Cache Integration - Issue #143', () => {
       render(<CachedImage uri={testUri} autoPrefetch={true} />);
 
       await waitFor(() => {
-        expect(prefetchSpy).toHaveBeenCalledWith([testUri]);
+        // CachedImage prefetches the optimized WebP URI, not the raw URI
+        expect(prefetchSpy).toHaveBeenCalledWith(
+          expect.arrayContaining([expect.stringContaining('example.com/image.jpg')])
+        );
       });
     });
 
@@ -143,7 +159,9 @@ describe('Image Cache Integration - Issue #143', () => {
       const { rerender } = render(<CachedImage uri={firstUri} autoPrefetch={true} />);
 
       await waitFor(() => {
-        expect(prefetchSpy).toHaveBeenCalledWith([firstUri]);
+        expect(prefetchSpy).toHaveBeenCalledWith(
+          expect.arrayContaining([expect.stringContaining('image1.jpg')])
+        );
       });
 
       prefetchSpy.mockClear();
@@ -151,7 +169,9 @@ describe('Image Cache Integration - Issue #143', () => {
       rerender(<CachedImage uri={secondUri} autoPrefetch={true} />);
 
       await waitFor(() => {
-        expect(prefetchSpy).toHaveBeenCalledWith([secondUri]);
+        expect(prefetchSpy).toHaveBeenCalledWith(
+          expect.arrayContaining([expect.stringContaining('image2.jpg')])
+        );
       });
     });
 
@@ -165,6 +185,43 @@ describe('Image Cache Integration - Issue #143', () => {
 
       const image = getByTestId('cached-image');
       expect(image.props.style).toContainEqual(customStyle);
+    });
+
+    it('should lower image quality and bypass prefetching when dataSaverEnabled is true', async () => {
+      useSettingsStore.setState({ dataSaverEnabled: true });
+      const testUri = 'https://example.com/image@2x.jpg?width=400';
+      const prefetchSpy = jest.spyOn(ImageCache, 'prefetchImages');
+
+      const { getByTestId } = render(
+        <CachedImage uri={testUri} testID="cached-image" autoPrefetch={true} />
+      );
+
+      const image = getByTestId('cached-image');
+      expect(Array.isArray(image.props.source)).toBe(true);
+      expect(image.props.source[0].uri).toContain('format=webp');
+      expect(image.props.source[1].uri).toContain('format=png');
+      expect(image.props.placeholder.uri).toContain('lqip=1');
+
+      expect(prefetchSpy).not.toHaveBeenCalled();
+
+      // Restore settings
+      useSettingsStore.setState({ dataSaverEnabled: false });
+    });
+
+    it('should build progressive image sources with LQIP placeholder', () => {
+      const testUri = 'https://example.com/avatar.jpg';
+
+      const { getByTestId } = render(
+        <CachedImage uri={testUri} targetWidth={100} targetHeight={100} testID="cached-image" />
+      );
+
+      const image = getByTestId('cached-image');
+      expect(image.props.source[0].uri).toContain('format=webp');
+      expect(image.props.source[0].uri).toContain('dpr=2');
+      expect(image.props.source[0].uri).toContain('w=200');
+      expect(image.props.source[1].uri).toContain('format=png');
+      expect(image.props.placeholder.uri).toContain('lqip=1');
+      expect(image.props.transition).toBe(250);
     });
   });
 
@@ -346,6 +403,26 @@ describe('Image Cache Integration - Issue #143', () => {
         expect(onError).toHaveBeenCalled();
       });
     });
+
+    it('should bypass prefetching when dataSaverEnabled is true', async () => {
+      useSettingsStore.setState({ dataSaverEnabled: true });
+      const urls = ['https://example.com/image1.jpg'];
+      const prefetchSpy = jest.spyOn(ImageCache, 'prefetchImages');
+
+      const TestComponent = () => {
+        usePrefetchImages(urls, { auto: true });
+        return null;
+      };
+
+      render(<TestComponent />);
+
+      await waitFor(() => {
+        expect(prefetchSpy).not.toHaveBeenCalled();
+      });
+
+      // Restore
+      useSettingsStore.setState({ dataSaverEnabled: false });
+    });
   });
 
   // ─── Integration Tests ─────────────────────────────────────────────────────
@@ -376,7 +453,8 @@ describe('Image Cache Integration - Issue #143', () => {
       const prefetchSpy = jest.spyOn(ImageCache, 'prefetchImages');
 
       const TestComponent = () => {
-        usePrefetchImages(imageUrls, { auto: true });
+        // Explicitly pass limit: 10 so all images are fetched (default limit is 5)
+        usePrefetchImages(imageUrls, { auto: true, limit: 10 });
         return null;
       };
 
@@ -498,7 +576,10 @@ describe('Image Cache Integration - Issue #143', () => {
       // Advance time to delay
       jest.advanceTimersByTime(1000);
 
-      expect(prefetchSpy).toHaveBeenCalled();
+      // Hook's network check is async, so we need waitFor to flush microtasks
+      await waitFor(() => {
+        expect(prefetchSpy).toHaveBeenCalled();
+      });
 
       jest.useRealTimers();
     });

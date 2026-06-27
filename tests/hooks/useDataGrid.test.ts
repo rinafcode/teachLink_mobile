@@ -118,7 +118,7 @@ describe('useDataGrid — filtering', () => {
   it('filters rows by a text value', () => {
     const { result } = setup();
     act(() => result.current.setFilter('category', 'fruit'));
-    const names = result.current.paginatedRows.map((r) => r.name);
+    const names = result.current.paginatedRows.map(r => r.name);
     expect(names).toEqual(expect.arrayContaining(['Apple', 'Banana', 'Elderberry']));
     expect(names).not.toContain('Carrot');
   });

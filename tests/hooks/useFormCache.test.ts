@@ -80,7 +80,7 @@ describe('useFormCache', () => {
     expect(result.current.prefillValues).toEqual({});
   });
 
-  it('shares persisted values across form sessions', async () => {
+  it('shares persisted values across form sessions via flushCache', async () => {
     let storedValue: string | null = null;
     mockGetItem.mockImplementation(async () => storedValue);
     mockSetItem.mockImplementation(async (_key, value) => {
@@ -90,16 +90,106 @@ describe('useFormCache', () => {
     const firstForm = renderHook(() => useFormCache(['fullName', 'email']));
     await waitFor(() => expect(firstForm.result.current.isLoading).toBe(false));
 
-    await act(async () => {
-      await firstForm.result.current.persistFields({
+    act(() => {
+      firstForm.result.current.persistFields({
         fullName: 'Persisted User',
         email: 'persisted@teachlink.dev',
       });
+    });
+
+    await act(async () => {
+      await firstForm.result.current.flushCache();
     });
 
     const secondForm = renderHook(() => useFormCache(['fullName']));
     await waitFor(() => expect(secondForm.result.current.isLoading).toBe(false));
 
     expect(secondForm.result.current.prefillValues.fullName).toBe('Persisted User');
+  });
+
+  describe('debounce behavior', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('does not write to AsyncStorage before 800ms', async () => {
+      const { result } = renderHook(() => useFormCache(['email']));
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      act(() => {
+        result.current.persistFields({ email: 'a' });
+      });
+      act(() => {
+        result.current.persistFields({ email: 'ab' });
+      });
+      act(() => {
+        result.current.persistFields({ email: 'abc' });
+      });
+
+      expect(mockSetItem).not.toHaveBeenCalled();
+    });
+
+    it('writes exactly once after 800ms burst', async () => {
+      const { result } = renderHook(() => useFormCache(['email']));
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      act(() => {
+        result.current.persistFields({ email: 'a' });
+      });
+      act(() => {
+        result.current.persistFields({ email: 'ab' });
+      });
+      act(() => {
+        result.current.persistFields({ email: 'abc' });
+      });
+
+      await act(async () => {
+        jest.advanceTimersByTime(800);
+      });
+
+      expect(mockSetItem).toHaveBeenCalledTimes(1);
+    });
+
+    it('cancels pending write on unmount', async () => {
+      const { result, unmount } = renderHook(() => useFormCache(['email']));
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      act(() => {
+        result.current.persistFields({ email: 'test' });
+      });
+      unmount();
+
+      await act(async () => {
+        jest.advanceTimersByTime(800);
+      });
+
+      expect(mockSetItem).not.toHaveBeenCalled();
+    });
+
+    it('flushCache writes immediately and prevents double write', async () => {
+      const { result } = renderHook(() => useFormCache(['email']));
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      act(() => {
+        result.current.persistFields({ email: 'flush-me' });
+      });
+
+      await act(async () => {
+        await result.current.flushCache();
+      });
+
+      expect(mockSetItem).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        jest.advanceTimersByTime(800);
+      });
+
+      // Still only 1 write — debounce was cancelled
+      expect(mockSetItem).toHaveBeenCalledTimes(1);
+    });
   });
 });

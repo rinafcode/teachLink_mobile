@@ -1,5 +1,6 @@
 import { renderHook } from '@testing-library/react-native';
 import * as Battery from 'expo-battery';
+
 import { useAdaptiveFrameRate } from '../../hooks/useAdaptiveFrameRate';
 
 const mockUseLowPowerMode = Battery.useLowPowerMode as jest.Mock;
@@ -76,11 +77,12 @@ describe('useAdaptiveFrameRate', () => {
       expect(result.current.isLowEndDevice).toBe(true);
     });
 
-    it('stays at 60 fps when RAM is exactly 2 GB (boundary)', () => {
+    it('reduces to 30 fps when RAM is exactly 2 GB (boundary — mid-range)', () => {
       mockDevice().deviceYearClass = 2021;
       mockDevice().totalMemory = 2 * GB;
       const { result } = renderAdaptiveHook();
-      expect(result.current.targetFPS).toBe(60);
+      // 2 GB sits in the mid range (2 GB <= RAM < 4 GB) → shouldReduceAnimations → 30 fps
+      expect(result.current.targetFPS).toBe(30);
     });
 
     it('stays at 60 fps when totalMemory is null', () => {

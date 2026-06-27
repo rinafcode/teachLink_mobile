@@ -8,6 +8,13 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    
+    env:
+      EXPO_PUBLIC_API_BASE_URL: https://api.teachlink.com
+      EXPO_PUBLIC_SOCKET_URL: wss://api.teachlink.com
+      EXPO_PUBLIC_APP_ENV: production
+      EXPO_PUBLIC_ENABLE_PUSH_NOTIFICATIONS: true
+      
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js
@@ -16,7 +23,7 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - name: Install dependencies
-        run: npm ci
+        run: npm install
       - name: Run unit tests
         run: npm test -- --runInBand
       - name: Run performance regression tests

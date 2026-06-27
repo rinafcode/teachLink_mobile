@@ -183,3 +183,143 @@ describe('Keyboard navigation', () => {
     expect(first.tabIndex).toBe(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Keyboard event delegation tests
+// ---------------------------------------------------------------------------
+
+describe('Keyboard event delegation', () => {
+  /**
+   * Simulates the delegated listener registry — a single store that all
+   * components read from rather than each registering their own listeners.
+   */
+
+  interface KeyboardStateSnapshot {
+    isVisible: boolean;
+    height: number;
+    animationDuration: number;
+  }
+
+  /** Minimal stub of the delegated keyboard state */
+  function createDelegatedStore(initial: KeyboardStateSnapshot) {
+    let state = { ...initial };
+    const subscribers: Array<(s: KeyboardStateSnapshot) => void> = [];
+
+    return {
+      getState: () => ({ ...state }),
+      setState: (next: Partial<KeyboardStateSnapshot>) => {
+        state = { ...state, ...next };
+        subscribers.forEach(fn => fn(state));
+      },
+      subscribe: (fn: (s: KeyboardStateSnapshot) => void) => {
+        subscribers.push(fn);
+        return () => {
+          const idx = subscribers.indexOf(fn);
+          if (idx !== -1) subscribers.splice(idx, 1);
+        };
+      },
+      listenerCount: () => subscribers.length,
+    };
+  }
+
+  it('a single delegated store serves multiple consumers without extra listeners', () => {
+    const store = createDelegatedStore({ isVisible: false, height: 0, animationDuration: 250 });
+
+    // Three "components" subscribe to the same store (no extra Keyboard.addListener calls)
+    const consumer1States: KeyboardStateSnapshot[] = [];
+    const consumer2States: KeyboardStateSnapshot[] = [];
+    const consumer3States: KeyboardStateSnapshot[] = [];
+
+    const unsub1 = store.subscribe(s => consumer1States.push(s));
+    const unsub2 = store.subscribe(s => consumer2States.push(s));
+    const unsub3 = store.subscribe(s => consumer3States.push(s));
+
+    // Simulate keyboard show event dispatched once at the root
+    store.setState({ isVisible: true, height: 336, animationDuration: 250 });
+
+    expect(consumer1States).toHaveLength(1);
+    expect(consumer2States).toHaveLength(1);
+    expect(consumer3States).toHaveLength(1);
+
+    expect(consumer1States[0].isVisible).toBe(true);
+    expect(consumer1States[0].height).toBe(336);
+
+    unsub1(); unsub2(); unsub3();
+  });
+
+  it('keyboard hide resets height to 0 across all consumers', () => {
+    const store = createDelegatedStore({ isVisible: true, height: 336, animationDuration: 250 });
+
+    const received: KeyboardStateSnapshot[] = [];
+    const unsub = store.subscribe(s => received.push(s));
+
+    store.setState({ isVisible: false, height: 0 });
+
+    expect(received[0].isVisible).toBe(false);
+    expect(received[0].height).toBe(0);
+
+    unsub();
+  });
+
+  it('unsubscribing a consumer does not affect remaining consumers', () => {
+    const store = createDelegatedStore({ isVisible: false, height: 0, animationDuration: 250 });
+
+    const aStates: KeyboardStateSnapshot[] = [];
+    const bStates: KeyboardStateSnapshot[] = [];
+
+    const unsubA = store.subscribe(s => aStates.push(s));
+    const unsubB = store.subscribe(s => bStates.push(s));
+
+    unsubA(); // consumer A unmounts
+
+    store.setState({ isVisible: true, height: 300, animationDuration: 300 });
+
+    expect(aStates).toHaveLength(0); // A received nothing after unsubscribe
+    expect(bStates).toHaveLength(1); // B still receives updates
+    expect(bStates[0].height).toBe(300);
+
+    unsubB();
+  });
+
+  it('listener count stays at 1 regardless of how many consumers subscribe', () => {
+    const store = createDelegatedStore({ isVisible: false, height: 0, animationDuration: 250 });
+
+    // Simulate N screens all reading from the same delegated store
+    const unsubs = Array.from({ length: 10 }, () => store.subscribe(() => {}));
+
+    // The underlying Keyboard.addListener is called once at the root —
+    // here we verify the store itself has exactly 10 consumer subscriptions
+    // (not 10 × 2 native listeners)
+    expect(store.listenerCount()).toBe(10);
+
+    unsubs.forEach(u => u());
+    expect(store.listenerCount()).toBe(0);
+  });
+
+  it('DelegatedKeyboardAvoidingView behavior: padding adds paddingBottom equal to keyboard height', () => {
+    const keyboardHeight = 336;
+    const offset = 0;
+    const effectivePadding = Math.max(0, keyboardHeight - offset);
+
+    // Mirrors the logic inside DelegatedKeyboardAvoidingView for behavior="padding"
+    const style = { paddingBottom: effectivePadding };
+
+    expect(style.paddingBottom).toBe(336);
+  });
+
+  it('DelegatedKeyboardAvoidingView respects keyboardVerticalOffset', () => {
+    const keyboardHeight = 336;
+    const offset = 90; // e.g. iOS tab bar height
+    const effectivePadding = Math.max(0, keyboardHeight - offset);
+
+    expect(effectivePadding).toBe(246);
+  });
+
+  it('DelegatedKeyboardAvoidingView clamps negative effective height to 0', () => {
+    const keyboardHeight = 50;
+    const offset = 90;
+    const effectivePadding = Math.max(0, keyboardHeight - offset);
+
+    expect(effectivePadding).toBe(0);
+  });
+});

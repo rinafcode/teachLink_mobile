@@ -2,27 +2,27 @@ import { Audio, AVPlaybackStatus, AVPlaybackStatusToSet, ResizeMode, Video } fro
 import * as Network from 'expo-network';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Modal,
-  Pressable,
-  StyleProp,
-  StyleSheet,
-  Text,
-  View,
-  ViewStyle,
+    ActivityIndicator,
+    Modal,
+    Pressable,
+    StyleProp,
+    StyleSheet,
+    Text,
+    View,
+    ViewStyle,
 } from 'react-native';
 
 import VideoControls from './VideoControls';
 import { usePictureInPicture, useVideoGestures } from '../../hooks';
 import {
-  AUTO_QUALITY_ID,
-  deriveNetworkType,
-  getQualityOptions,
-  normalizeSources,
-  selectSourceById,
-  type NetworkType,
-  type NormalizedVideoSource,
-  type VideoSource,
+    AUTO_QUALITY_ID,
+    deriveNetworkType,
+    getQualityOptions,
+    normalizeSources,
+    selectSourceById,
+    type NetworkType,
+    type NormalizedVideoSource,
+    type VideoSource,
 } from '../../services/videoQuality';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 
@@ -56,8 +56,8 @@ export type MobileVideoPlayerProps = {
   onPlaybackStatusUpdate?: (status: AVPlaybackStatus) => void;
   /** Callback when video quality changes */
   onQualityChange?: (qualityId: string) => void;
-  /** Pass true when the connection is known to be slow (2G / slow-3G) */
-  isSlowConnection?: boolean;
+  /** Whether the player is currently active (on-screen) */
+  isActive?: boolean;
 };
 
 const MobileVideoPlayer = ({
@@ -72,12 +72,12 @@ const MobileVideoPlayer = ({
   onError,
   onPlaybackStatusUpdate,
   onQualityChange,
-  isSlowConnection,
+  isActive = true,
 }: MobileVideoPlayerProps) => {
   const videoRef = useRef<Video | null>(null);
   const autoPlayHandledRef = useRef(false);
   const lastToggleRef = useRef(0);
-  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | (() => void) | null>(null);
   const resumeStatusRef = useRef<AVPlaybackStatusToSet | null>(null);
 
   const [networkType, setNetworkType] = useState<NetworkType>('unknown');
@@ -119,9 +119,13 @@ const MobileVideoPlayer = ({
       return;
     }
     if (hideTimerRef.current) {
-      clearTimeout(hideTimerRef.current);
+      if (typeof hideTimerRef.current === 'function') {
+        hideTimerRef.current();
+      } else {
+        clearTimeout(hideTimerRef.current);
+      }
     }
-    hideTimerRef.current = setTimeout(() => {
+    hideTimerRef.current = scheduleAnimationFrame(() => {
       setControlsVisible(false);
     }, AUTO_HIDE_MS);
   }, []);
@@ -181,6 +185,12 @@ const MobileVideoPlayer = ({
   useEffect(() => {
     errorRef.current = error;
   }, [error]);
+
+  useEffect(() => {
+    if (!isActive) {
+      videoRef.current?.pauseAsync().catch(() => {});
+    }
+  }, [isActive]);
 
   const handleOverlayPress = useCallback(() => {
     setControlsVisible(true);
@@ -308,7 +318,11 @@ const MobileVideoPlayer = ({
     }
     return () => {
       if (hideTimerRef.current) {
-        clearTimeout(hideTimerRef.current);
+        if (typeof hideTimerRef.current === 'function') {
+          hideTimerRef.current();
+        } else {
+          clearTimeout(hideTimerRef.current);
+        }
       }
     };
   }, [controlsVisibleEffective, error, isPlaying, isScrubbing, scheduleAutoHide]);
@@ -460,7 +474,9 @@ const MobileVideoPlayer = ({
             source={videoSource}
             resizeMode={ResizeMode.CONTAIN}
             posterSource={posterUri ? { uri: posterUri } : undefined}
-            usePoster={!!posterUri}
+            usePoster={!isActive ? true : !!posterUri}
+            preload={isActive ? 'auto' : 'none'}
+            shouldPlay={!isActive ? false : undefined}
             onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
             onLoadStart={() => setIsLoading(true)}
             onReadyForDisplay={event => {

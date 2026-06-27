@@ -255,6 +255,7 @@ describe('notificationStore', () => {
           type: NotificationType.MESSAGE,
           title: `Message ${i}`,
           body: `Body ${i}`,
+          data: { conversationId: `conv-${i}` },
         });
       }
 

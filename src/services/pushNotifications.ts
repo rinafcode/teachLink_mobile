@@ -1,10 +1,12 @@
 import Constants from 'expo-constants';
-import * as Device from 'expo-device';
+import { isDevice } from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+
+import { featureCapabilities, FeatureStatus, FeatureType } from './featureCapabilities';
+import { useDegradationStore } from '../store/degradationStore';
 import { NotificationData, NotificationType } from '../types/notifications';
 import logger from '../utils/logger';
-import apiClient from './api/axios.config';
 
 // Configure how notifications are handled when app is in foreground
 Notifications.setNotificationHandler({
@@ -19,10 +21,20 @@ Notifications.setNotificationHandler({
 
 /**
  * Register for push notifications and get the Expo push token
+ * Includes graceful degradation: if push notifications unavailable, falls back to in-app notifications
  */
 export async function registerForPushNotifications(): Promise<string | null> {
-  if (!Device.isDevice) {
-    logger.warn('Push notifications require a physical device');
+  // Check device type using the proper 'isDevice' check from expo-device
+  if (!isDevice) {
+    logger.warn('Push notifications require a physical device (simulator detected)');
+    featureCapabilities.getFeatureInfo(FeatureType.PUSH_NOTIFICATIONS);
+    const degradationStore = useDegradationStore.getState(); // Fixed: Accessing Zustand store state cleanly outside a component
+    degradationStore.setFeatureStatus(FeatureType.PUSH_NOTIFICATIONS, FeatureStatus.HARDWARE_UNAVAILABLE);
+    degradationStore.addNotification({
+      feature: FeatureType.PUSH_NOTIFICATIONS,
+      status: FeatureStatus.HARDWARE_UNAVAILABLE,
+      message: 'Push notifications are not available in the simulator. In-app notifications will be used instead.',
+    });
     return null;
   }
 
@@ -39,6 +51,13 @@ export async function registerForPushNotifications(): Promise<string | null> {
 
     if (finalStatus !== 'granted') {
       logger.warn('Push notification permission not granted');
+      const degradationStore = useDegradationStore.getState();
+      degradationStore.setFeatureStatus(FeatureType.PUSH_NOTIFICATIONS, FeatureStatus.PERMISSION_DENIED);
+      degradationStore.addNotification({
+        feature: FeatureType.PUSH_NOTIFICATIONS,
+        status: FeatureStatus.PERMISSION_DENIED,
+        message: 'Push notifications are disabled. In-app notifications will be shown instead. You can enable them in Settings.',
+      });
       return null;
     }
 
@@ -50,72 +69,109 @@ export async function registerForPushNotifications(): Promise<string | null> {
 
     // Set up Android notification channel
     if (Platform.OS === 'android') {
-      await setupAndroidNotificationChannels();
+      try {
+        await setupAndroidNotificationChannels();
+      } catch (channelError) {
+        logger.error('Error setting up Android notification channels:', channelError);
+        // Continue anyway - channels are nice to have but not critical
+      }
     }
+
+    // Update feature capability on success
+    featureCapabilities.getFeatureInfo(FeatureType.PUSH_NOTIFICATIONS);
+    const degradationStore = useDegradationStore.getState();
+    degradationStore.setFeatureStatus(FeatureType.PUSH_NOTIFICATIONS, FeatureStatus.AVAILABLE);
 
     return token.data;
   } catch (error) {
     logger.error('Error registering for push notifications:', error);
+    const degradationStore = useDegradationStore.getState();
+    degradationStore.setFeatureStatus(FeatureType.PUSH_NOTIFICATIONS, FeatureStatus.UNAVAILABLE);
+    degradationStore.addNotification({
+      feature: FeatureType.PUSH_NOTIFICATIONS,
+      status: FeatureStatus.UNAVAILABLE,
+      message: 'Push notifications failed to initialize. In-app notifications will be used instead.',
+    });
     return null;
   }
 }
 
 /**
  * Set up Android notification channels for different notification types
+ * Each channel setup is wrapped in try-catch to ensure one failure doesn't prevent others
  */
 async function setupAndroidNotificationChannels(): Promise<void> {
-  // Default channel for general notifications
-  await Notifications.setNotificationChannelAsync('default', {
-    name: 'Default',
-    importance: Notifications.AndroidImportance.HIGH,
-    vibrationPattern: [0, 250, 250, 250],
-    lightColor: '#4F46E5',
-  });
+  const channels = [
+    {
+      id: 'default',
+      config: {
+        name: 'Default',
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#4F46E5',
+      },
+    },
+    {
+      id: 'course-updates',
+      config: {
+        name: 'Course Updates',
+        description: 'Notifications about new course content and updates',
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#4F46E5',
+      },
+    },
+    {
+      id: 'messages',
+      config: {
+        name: 'Messages',
+        description: 'New message notifications',
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#10B981',
+      },
+    },
+    {
+      id: 'reminders',
+      config: {
+        name: 'Learning Reminders',
+        description: 'Daily learning reminder notifications',
+        importance: Notifications.AndroidImportance.DEFAULT,
+        vibrationPattern: [0, 250],
+        lightColor: '#F59E0B',
+      },
+    },
+    {
+      id: 'achievements',
+      config: {
+        name: 'Achievements',
+        description: 'Achievement unlock notifications',
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 500, 250, 500],
+        lightColor: '#8B5CF6',
+      },
+    },
+    {
+      id: 'community',
+      config: {
+        name: 'Community Activity',
+        description: 'Notifications about community posts and interactions',
+        importance: Notifications.AndroidImportance.DEFAULT,
+        vibrationPattern: [0, 250],
+        lightColor: '#EC4899',
+      },
+    },
+  ];
 
-  // Course updates channel
-  await Notifications.setNotificationChannelAsync('course-updates', {
-    name: 'Course Updates',
-    description: 'Notifications about new course content and updates',
-    importance: Notifications.AndroidImportance.HIGH,
-    vibrationPattern: [0, 250, 250, 250],
-    lightColor: '#4F46E5',
-  });
-
-  // Messages channel
-  await Notifications.setNotificationChannelAsync('messages', {
-    name: 'Messages',
-    description: 'New message notifications',
-    importance: Notifications.AndroidImportance.HIGH,
-    vibrationPattern: [0, 250, 250, 250],
-    lightColor: '#10B981',
-  });
-
-  // Learning reminders channel
-  await Notifications.setNotificationChannelAsync('reminders', {
-    name: 'Learning Reminders',
-    description: 'Daily learning reminder notifications',
-    importance: Notifications.AndroidImportance.DEFAULT,
-    vibrationPattern: [0, 250],
-    lightColor: '#F59E0B',
-  });
-
-  // Achievements channel
-  await Notifications.setNotificationChannelAsync('achievements', {
-    name: 'Achievements',
-    description: 'Achievement unlock notifications',
-    importance: Notifications.AndroidImportance.HIGH,
-    vibrationPattern: [0, 500, 250, 500],
-    lightColor: '#8B5CF6',
-  });
-
-  // Community channel
-  await Notifications.setNotificationChannelAsync('community', {
-    name: 'Community Activity',
-    description: 'Notifications about community posts and interactions',
-    importance: Notifications.AndroidImportance.DEFAULT,
-    vibrationPattern: [0, 250],
-    lightColor: '#EC4899',
-  });
+  // Set up each channel with graceful error handling
+  for (const channel of channels) {
+    try {
+      await Notifications.setNotificationChannelAsync(channel.id, channel.config as any);
+    } catch (error) {
+      logger.warn(`Failed to set up notification channel '${channel.id}':`, error);
+      // Continue setting up other channels if one fails
+    }
+  }
 }
 
 /**
@@ -148,7 +204,6 @@ export async function registerTokenWithBackend(token: string): Promise<boolean> 
     // const response = await apiClient.post('/api/notifications/register', {
     //   token,
     //   platform: Platform.OS,
-    //   deviceId: Device.deviceName,
     // });
     // return response.data.success;
 
@@ -181,7 +236,12 @@ export async function unregisterTokenFromBackend(token: string): Promise<boolean
 }
 
 /**
- * Schedule a local notification (useful for testing and reminders)
+ * Schedule a local notification (useful for testing and reminders).
+ *
+ * The `data` argument is validated and sanitised through
+ * `validateNotificationPayload` before being embedded in the notification
+ * content, preventing prototype-pollution vectors from reaching the
+ * notification subsystem.
  */
 export async function scheduleLocalNotification(
   title: string,
@@ -189,13 +249,18 @@ export async function scheduleLocalNotification(
   data: NotificationData,
   trigger?: Notifications.NotificationTriggerInput
 ): Promise<string> {
-  const channelId = getChannelId(data.type);
+  const safeData = validateNotificationPayload(data);
+  if (!safeData) {
+    throw new Error('scheduleLocalNotification: invalid or unsafe notification payload');
+  }
+
+  const channelId = getChannelId(safeData.type);
 
   return await Notifications.scheduleNotificationAsync({
     content: {
       title,
       body,
-      data: data as unknown as Record<string, unknown>,
+      data: safeData as unknown as Record<string, unknown>,
       sound: true,
       ...(Platform.OS === 'android' && { channelId }),
     },
@@ -260,7 +325,7 @@ export function addNotificationResponseListener(
  * Remove a notification listener
  */
 export function removeNotificationListener(subscription: Notifications.Subscription): void {
-  subscription.remove(); // Use the subscription's remove method instead
+  subscription.remove(); 
 }
 
 /**

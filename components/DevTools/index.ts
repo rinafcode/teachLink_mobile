@@ -19,6 +19,14 @@ const loadMemoryProfilerOverlay = (): ComponentType => {
   return overlayModule?.default ?? NullComponent;
 };
 
+const loadCacheStatusOverlay = (): ComponentType => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const overlayModule = require('./CacheStatusOverlay');
+  return overlayModule?.default ?? NullComponent;
+};
+
 export const MemoryProfilerOverlay: ComponentType = __DEV__
   ? loadMemoryProfilerOverlay()
   : NullComponent;
+
+export const CacheStatusOverlay: ComponentType = __DEV__ ? loadCacheStatusOverlay() : NullComponent;

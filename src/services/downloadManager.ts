@@ -1,7 +1,8 @@
 import * as Network from 'expo-network';
+
+import { offlineStorage } from './offlineStorage';
 import { useSettingsStore } from '../store/settingsStore';
 import logger from '../utils/logger';
-import { offlineStorage } from './offlineStorage';
 
 export type DownloadStatus = 'queued' | 'downloading' | 'paused' | 'completed' | 'failed';
 

@@ -1,15 +1,18 @@
-import type { PropsWithChildren, ReactElement } from 'react';
 import { StyleSheet } from 'react-native';
 import Animated, {
   interpolate,
   useAnimatedRef,
   useAnimatedStyle,
   useScrollOffset,
+  useSharedValue,
 } from 'react-native-reanimated';
 
 import { ThemedView } from '@/components/themed-view';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useDeviceUiComplexity } from '@/hooks/useDeviceUiComplexity';
 import { useTheme } from '@/store';
+
+import type { PropsWithChildren, ReactElement } from 'react';
 
 const HEADER_HEIGHT = 250;
 
@@ -18,16 +21,18 @@ type Props = PropsWithChildren<{
   headerBackgroundColor: { dark: string; light: string };
 }>;
 
-export default function ParallaxScrollView({
-  children,
-  headerImage,
-  headerBackgroundColor,
-}: Props) {
+const ParallaxScrollView = ({ children, headerImage, headerBackgroundColor }: Props) => {
   const backgroundColor = useThemeColor({}, 'background');
   const colorScheme = useTheme();
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollOffset(scrollRef);
+  const { shouldDisableHeavyEffects } = useDeviceUiComplexity();
+  const disableEffects = useSharedValue(shouldDisableHeavyEffects);
+  disableEffects.value = shouldDisableHeavyEffects;
+
   const headerAnimatedStyle = useAnimatedStyle(() => {
+    if (disableEffects.value) return {};
+
     return {
       transform: [
         {
@@ -59,10 +64,11 @@ export default function ParallaxScrollView({
       >
         {headerImage}
       </Animated.View>
+
       <ThemedView style={styles.content}>{children}</ThemedView>
     </Animated.ScrollView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -79,3 +85,5 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 });
+
+export default ParallaxScrollView;

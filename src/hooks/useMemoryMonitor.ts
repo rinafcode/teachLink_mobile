@@ -1,6 +1,8 @@
+import * as Device from 'expo-device';
 import { useEffect, useRef, useState } from 'react';
 import { Platform, Alert } from 'react-native';
-import * as Device from 'expo-device';
+
+import { mobileAnalyticsService } from '../services/mobileAnalytics';
 import logger from '../utils/logger';
 import {
   captureMemorySnapshot,
@@ -8,7 +10,6 @@ import {
   formatBytes,
   MemorySnapshot,
 } from '../utils/memoryProfiler';
-import { mobileAnalyticsService } from '../services/mobileAnalytics';
 import { AnalyticsEvent } from '../utils/trackingEvents';
 
 interface MemoryMonitorOptions {

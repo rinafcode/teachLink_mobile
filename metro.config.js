@@ -158,6 +158,43 @@ const projectRoot = __dirname;
 
 const config = getDefaultConfig(projectRoot);
 
+// ---------------------------------------------------------------------------
+// Tree-shaking configuration for bundle size optimization (Issue #217)
+// ---------------------------------------------------------------------------
+// Enable tree-shaking optimizations for better bundle size
+config.transformer.minifierConfig = {
+  ...config.transformer.minifierConfig,
+  keep_classnames: true,
+  keep_fnames: true,
+  mangle: {
+    ...config.transformer.minifierConfig?.mangle,
+    keep_classnames: true,
+    keep_fnames: true,
+  },
+};
+
+// Enable inline requires for better dead code elimination
+config.transformer.inlineRequires = true;
+
+// Enable additional optimization in production
+if (process.env.NODE_ENV === 'production') {
+  config.transformer.minifierConfig = {
+    ...config.transformer.minifierConfig,
+    compress: {
+      ...config.transformer.minifierConfig?.compress,
+      dead_code: true,
+      unused: true,
+      conditionals: true,
+      evaluate: true,
+      booleans: true,
+      loops: true,
+      if_return: true,
+      join_vars: true,
+      drop_console: true,
+    },
+  };
+}
+
 const defaultResolveRequest = config.resolver.resolveRequest;
 
 const tryResolve = (context, candidate, platform) => {
@@ -221,4 +258,12 @@ nativewindConfig.serializer.customSerializer = wrapWithRouteSizeAnalyzer(
   nativewindConfig.serializer.customSerializer,
 );
 
+// Register Metro asset inlining plugin for Issue #369
+nativewindConfig.transformer ??= {};
+nativewindConfig.transformer.assetPlugins = [
+  ...(nativewindConfig.transformer.assetPlugins || []),
+  require.resolve('./tools/metro-plugins/imageInlinePlugin.js'),
+];
+
 module.exports = nativewindConfig;
+

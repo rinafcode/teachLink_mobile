@@ -1,3 +1,5 @@
+import './backgroundTaskScheduler';
+
 /**
  * CENTRALIZED LOGGER WRAPPER — Issue #176
  *
@@ -47,7 +49,7 @@ import {
   pushLogContext,
   popLogContext,
   clearLogContext as clearCtx,
-  enqueueLogEntry,
+  persistLogEntry,
   sendToRemoteLogging,
   loggingConfig,
 } from '../config/logging';
@@ -226,8 +228,8 @@ class AppLogger {
     // Output to console
     this.outputToConsole(level, message, entry, error);
 
-    // Enqueue for async batched persistence (non-blocking)
-    enqueueLogEntry(entry);
+    // Persist to storage
+    await persistLogEntry(entry);
 
     // Send to remote logging
     sendToRemoteLogging(entry, error);
@@ -361,6 +363,11 @@ class AppLogger {
   infoSync(message: string, meta?: any): void {
     const entry = this.buildEntry(LogLevel.INFO, message, meta);
     this.outputToConsole(LogLevel.INFO, message, entry);
+  }
+
+  debugSync(message: string, meta?: any): void {
+    const entry = this.buildEntry(LogLevel.DEBUG, message, meta);
+    this.outputToConsole(LogLevel.DEBUG, message, entry);
   }
 }
 

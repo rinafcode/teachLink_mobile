@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
+
 import { useCustomFonts, FONT_CONFIGS } from '../../hooks/useCustomFonts';
 
 interface FontLoaderProps {
@@ -10,13 +11,13 @@ interface FontLoaderProps {
   loadingText?: string;
 }
 
-export function FontLoader({
+export const FontLoader = ({
   children,
   onFontsLoaded,
   onFontsFailed,
   showLoadingIndicator = true,
   loadingText = 'Loading fonts...',
-}: FontLoaderProps) {
+}: FontLoaderProps) => {
   const { loaded, error, progress } = useCustomFonts(Object.values(FONT_CONFIGS), {
     autoLoad: true,
     onComplete: (status) => {

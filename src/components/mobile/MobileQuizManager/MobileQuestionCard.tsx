@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { Question } from '../../../types/course';
+
 import { useHapticFeedback } from '../../../hooks';
+import { Question } from '../../../types/course';
 
 interface MobileQuestionCardProps {
   /** The question data to display */
@@ -37,11 +38,13 @@ const MobileQuestionCard = React.memo(function MobileQuestionCard({
   }, [selectedAnswer]);
 
   const handleOptionSelect = (optionIndex: number) => {
+     
     useHapticFeedback('light');
     onAnswerSelect(question.id, optionIndex, question.multiple);
   };
 
   const handleTrueFalse = (value: number) => {
+     
     useHapticFeedback('light');
     onAnswerSelect(question.id, value, false);
   };
@@ -68,6 +71,7 @@ const MobileQuestionCard = React.memo(function MobileQuestionCard({
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
+      removeClippedSubviews={true}
     >
       {/* Question Header */}
       <View style={styles.header}>

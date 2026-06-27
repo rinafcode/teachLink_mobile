@@ -92,5 +92,7 @@ npx jest src/__tests__/utils/lazyRoute.test.tsx
 
 ## Related
 
+- Closes [#216](https://github.com/rinafcode/teachLink_mobile/issues/216) — Code splitting for route bundles to reduce initial app load time
+- Closes [#223](https://github.com/rinafcode/teachLink_mobile/issues/223) — Add React.lazy and Suspense boundaries for route screens
 - Closes [#377](https://github.com/rinafcode/teachLink_mobile/issues/377)
 - Legacy helper: `lazyScreen` in `src/utils/LazyScreen.tsx` (deprecated — use `createLazyRoute`)

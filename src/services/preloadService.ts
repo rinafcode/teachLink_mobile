@@ -1,14 +1,15 @@
 import * as Network from 'expo-network';
+
+import { mobileAnalyticsService } from './mobileAnalytics';
+import { offlineStorage } from './offlineStorage';
 import { useCourseProgressStore } from '../store/courseProgressStore';
 import { useAppStore } from '../store/index';
 import { useQuizStore } from '../store/quizStore';
 import { useSettingsStore } from '../store/settingsStore';
-import { ImageCache } from '../utils/imageCache';
-import logger from '../utils/logger';
 import { courseApi } from './api/courseApi';
 import { userApi } from './api/userApi';
-import { mobileAnalyticsService } from './mobileAnalytics';
-import { offlineStorage } from './offlineStorage';
+import { ImageCache } from '../utils/imageCache';
+import logger from '../utils/logger';
 
 // Default navigation transitions to use when no history is available
 const STATIC_DEFAULTS: Record<string, string[]> = {
@@ -20,10 +21,24 @@ const STATIC_DEFAULTS: Record<string, string[]> = {
   '/profile/[userId]': ['/(tabs)', '/settings'],
 };
 
+export interface PredictionAccuracy {
+  /** Real transitions that had at least one prediction to compare against. */
+  evaluated: number;
+  /** Transitions whose actual destination was among the predictions. */
+  hits: number;
+  /** Accuracy in the range 0..1 (hits / evaluated). */
+  accuracy: number;
+}
+
 export class PreloadService {
   private transitionMatrix: Record<string, Record<string, number>> = {};
   private isInitialized = false;
   private prefetchPaused = false;
+
+  // Online prediction-accuracy measurement. On every real transition we check
+  // whether the model would have predicted the actual destination.
+  private predictionHits = 0;
+  private predictionEvaluated = 0;
 
   /**
    * Initialize PreloadService by restoring the transition matrix from storage.
@@ -79,6 +94,17 @@ export class PreloadService {
       return;
     }
 
+    // Measure prediction accuracy: before learning this transition, check
+    // whether the predictions we would have made for `cleanFrom` already
+    // contained the actual destination.
+    const predictedForFrom = this.getPredictiveDestinations(cleanFrom);
+    if (predictedForFrom.length > 0) {
+      this.predictionEvaluated += 1;
+      if (predictedForFrom.includes(cleanTo)) {
+        this.predictionHits += 1;
+      }
+    }
+
     try {
       if (!this.transitionMatrix[cleanFrom]) {
         this.transitionMatrix[cleanFrom] = {};
@@ -131,6 +157,11 @@ export class PreloadService {
     // 1. Guard checks: Network state and User Settings
     const settings = useSettingsStore.getState();
     
+    if (settings.dataSaverEnabled) {
+      logger.debug('PreloadService: Skipped preloading — Data Saver mode enabled');
+      return;
+    }
+
     let isWifi = true;
     let isOnline = true;
     
@@ -261,6 +292,24 @@ export class PreloadService {
     this.transitionMatrix = {};
     await offlineStorage.remove('@teachlink_nav_matrix');
     logger.info('PreloadService: Cleared transition matrix data successfully');
+  }
+
+  /**
+   * Live prediction-accuracy measurement: how often the predicted next
+   * destinations actually contained the screen the user navigated to.
+   */
+  public getPredictionAccuracy(): PredictionAccuracy {
+    return {
+      evaluated: this.predictionEvaluated,
+      hits: this.predictionHits,
+      accuracy: this.predictionEvaluated === 0 ? 0 : this.predictionHits / this.predictionEvaluated,
+    };
+  }
+
+  /** Reset the accuracy counters (e.g. between measurement windows). */
+  public resetPredictionAccuracy(): void {
+    this.predictionHits = 0;
+    this.predictionEvaluated = 0;
   }
 }
 

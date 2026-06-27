@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { StyleSheet, Text, type TextProps } from 'react-native';
 
 import { useThemeColor } from '@/hooks/use-theme-color';
@@ -9,13 +10,13 @@ export type ThemedTextProps = TextProps & {
   type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link';
 };
 
-export function ThemedText({
+const ThemedTextComponent = ({
   style,
   lightColor,
   darkColor,
   type = 'default',
   ...rest
-}: ThemedTextProps) {
+}: ThemedTextProps) => {
   const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
   const { scale } = useDynamicFontSize();
 
@@ -69,3 +70,5 @@ const styles = StyleSheet.create({
     color: '#0a7ea4',
   },
 });
+
+export const ThemedText = memo(ThemedTextComponent);

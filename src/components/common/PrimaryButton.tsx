@@ -1,4 +1,5 @@
-import React from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { memo } from 'react';
 import {
   TouchableOpacity,
   Text,
@@ -6,9 +7,8 @@ import {
   View,
   ViewStyle,
   TextStyle,
-  StyleSheet,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import { useDynamicFontSize } from '../../hooks';
 
 /**
@@ -37,7 +37,7 @@ interface PrimaryButtonProps {
   accessibilityLabel?: string;
 }
 
-export default function PrimaryButton({
+const PrimaryButton = ({
   onPress,
   title,
   loading = false,
@@ -49,7 +49,7 @@ export default function PrimaryButton({
   icon,
   accessibilityHint,
   accessibilityLabel,
-}: PrimaryButtonProps) {
+}: PrimaryButtonProps) => {
   const isDisabled = loading || disabled;
   const { scale } = useDynamicFontSize();
   const buttonLabel = accessibilityLabel ?? title;
@@ -93,15 +93,12 @@ export default function PrimaryButton({
           colors={['#20afe7', '#2c8aec', '#586ce9']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
-          style={[
-            styles.button,
-            styles.gradientButton,
-            {
-              paddingHorizontal: config.paddingHorizontal,
-              paddingVertical: config.paddingVertical,
-              borderRadius: config.borderRadius,
-            },
-          ]}
+          className="elevation-4 flex-row items-center justify-center gap-2 shadow-sm shadow-[#20afe7]/30"
+          style={{
+            paddingHorizontal: config.paddingHorizontal,
+            paddingVertical: config.paddingVertical,
+            borderRadius: config.borderRadius,
+          }}
         >
           {loading ? (
             <ActivityIndicator color="white" size="small" />
@@ -110,11 +107,8 @@ export default function PrimaryButton({
               {icon}
               <Text
                 allowFontScaling={false}
-                style={[
-                  styles.buttonText,
-                  { fontSize: config.fontSize, color: '#ffffff' },
-                  textStyle,
-                ]}
+                className="font-semibold"
+                style={[{ fontSize: config.fontSize, color: '#ffffff' }, textStyle]}
               >
                 {title}
               </Text>
@@ -135,8 +129,8 @@ export default function PrimaryButton({
         accessibilityLabel={buttonLabel}
         accessibilityHint={accessibilityHint}
         accessibilityState={{ disabled: isDisabled, busy: loading }}
+        className="flex-row items-center justify-center gap-2"
         style={[
-          styles.button,
           {
             backgroundColor: '#19c3e6',
             paddingHorizontal: config.paddingHorizontal,
@@ -154,11 +148,8 @@ export default function PrimaryButton({
             {icon}
             <Text
               allowFontScaling={false}
-              style={[
-                styles.buttonText,
-                { fontSize: config.fontSize, color: '#ffffff' },
-                textStyle,
-              ]}
+              className="font-semibold"
+              style={[{ fontSize: config.fontSize, color: '#ffffff' }, textStyle]}
             >
               {title}
             </Text>
@@ -178,8 +169,8 @@ export default function PrimaryButton({
       accessibilityLabel={buttonLabel}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: isDisabled, busy: loading }}
+      className="flex-row items-center justify-center gap-2"
       style={[
-        styles.button,
         {
           borderWidth: 2,
           borderColor: '#19c3e6',
@@ -199,7 +190,8 @@ export default function PrimaryButton({
           {icon}
           <Text
             allowFontScaling={false}
-            style={[styles.buttonText, { fontSize: config.fontSize, color: '#19c3e6' }, textStyle]}
+            className="font-semibold"
+            style={[{ fontSize: config.fontSize, color: '#19c3e6' }, textStyle]}
           >
             {title}
           </Text>
@@ -209,21 +201,4 @@ export default function PrimaryButton({
   );
 }
 
-const styles = StyleSheet.create({
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  gradientButton: {
-    shadowColor: '#20afe7',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  buttonText: {
-    fontWeight: '600',
-  },
-});
+export default memo(PrimaryButton);

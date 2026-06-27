@@ -13,6 +13,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+
 import { streamingApi, StreamChunk, StreamingConfig } from '../services/api/streaming';
 import { appLogger } from '../utils/logger';
 
@@ -81,14 +82,7 @@ export function useStreamingData<T extends object = unknown>(
   endpoint: string,
   options: UseStreamingDataOptions = {}
 ): UseStreamingDataResult<T> {
-  const {
-    autoFetch = true,
-    maxRetries = 3,
-    deduplicateKey,
-    transform,
-    onChunk: externalOnChunk,
-    ...streamConfig
-  } = options;
+  const { autoFetch = true } = options;
 
   const [data, setData] = useState<T[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -103,54 +97,21 @@ export function useStreamingData<T extends object = unknown>(
   const dataRef = useRef<T[]>([]);
   const startTimeRef = useRef<number | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
-
-  /**
-   * Handle incoming chunk - update state and deduplicate if needed
-   */
-  const handleChunk = useCallback(
-    (chunk: StreamChunk<T>) => {
-      let item = chunk.data;
-
-      // Apply transformation if provided
-      if (transform) {
-        item = transform(item);
-      }
-
-      setData((prev) => {
-        // Deduplicate if key is specified
-        if (deduplicateKey && typeof item === 'object' && item !== null) {
-          const key = (item as Record<string, any>)[deduplicateKey];
-          const isDuplicate = prev.some(
-            (existing) =>
-              typeof existing === 'object' &&
-              existing !== null &&
-              (existing as Record<string, any>)[deduplicateKey] === key
-          );
-          if (isDuplicate) return prev;
-        }
-
-        const updated = [...prev, item];
-        dataRef.current = updated;
-        return updated;
-      });
-
-      setChunkCount((c) => c + 1);
-
-      // Call external chunk handler if provided
-      externalOnChunk?.(chunk);
-    },
-    [transform, deduplicateKey, externalOnChunk]
-  );
+  const activeFetchRef = useRef(false);
+  
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
 
   /**
    * Execute the streaming request
    */
   const doFetch = useCallback(async () => {
-    if (isLoading || isStreaming) {
+    if (activeFetchRef.current) {
       appLogger.warnSync('Stream already in progress');
       return;
     }
 
+    activeFetchRef.current = true;
     startTimeRef.current = Date.now();
     setIsLoading(true);
     setIsStreaming(true);
@@ -163,15 +124,45 @@ export function useStreamingData<T extends object = unknown>(
     setBytesReceived(0);
     dataRef.current = [];
 
+    const currentOptions = optionsRef.current;
+    const {
+      maxRetries = 3,
+      deduplicateKey,
+      transform,
+      onChunk: externalOnChunk,
+      ...streamConfig
+    } = currentOptions;
+
     try {
       await streamingApi.streamWithRetry<T>(endpoint, {
         ...streamConfig,
-        onChunk: handleChunk,
+        onChunk: (chunk) => {
+          let item = chunk.data;
+          if (transform) {
+            item = transform(item);
+          }
+          setData((prev) => {
+            if (deduplicateKey && typeof item === 'object' && item !== null) {
+              const key = (item as Record<string, any>)[deduplicateKey];
+              const isDuplicate = prev.some(
+                (existing) =>
+                  typeof existing === 'object' &&
+                  existing !== null &&
+                  (existing as Record<string, any>)[deduplicateKey] === key
+              );
+              if (isDuplicate) return prev;
+            }
+            const updated = [...prev, item];
+            dataRef.current = updated;
+            return updated;
+          });
+          setChunkCount((c) => c + 1);
+          externalOnChunk?.(chunk);
+        },
         onProgress: setProgress,
         onFirstByte: setTtfb,
         onError: (err) => {
-          setError(err);
-          streamConfig.onError?.(err);
+          // Individual attempt error is handled by streamWithRetry
         },
         maxRetries,
       });
@@ -182,7 +173,6 @@ export function useStreamingData<T extends object = unknown>(
       appLogger.infoSync('Streaming data loaded successfully', {
         endpoint,
         items: dataRef.current.length,
-        ttfb,
         totalTime: elapsed,
       });
     } catch (err) {
@@ -196,8 +186,9 @@ export function useStreamingData<T extends object = unknown>(
     } finally {
       setIsLoading(false);
       setIsStreaming(false);
+      activeFetchRef.current = false;
     }
-  }, [endpoint, isLoading, isStreaming, streamConfig, handleChunk, maxRetries, ttfb]);
+  }, [endpoint]);
 
   /**
    * Reset state to initial
@@ -234,7 +225,7 @@ export function useStreamingData<T extends object = unknown>(
       // Clean up abort controller if needed
       abortControllerRef.current?.abort();
     };
-  }, [autoFetch, endpoint, doFetch]);
+  }, [autoFetch, doFetch]);
 
   return {
     data,

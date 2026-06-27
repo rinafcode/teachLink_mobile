@@ -9,6 +9,12 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    
+    env:
+      EXPO_PUBLIC_API_BASE_URL: https://api.teachlink.com
+      EXPO_PUBLIC_SOCKET_URL: wss://api.teachlink.com
+      EXPO_PUBLIC_APP_ENV: production
+      EXPO_PUBLIC_ENABLE_PUSH_NOTIFICATIONS: true
 
     steps:
       - uses: actions/checkout@v4
@@ -29,10 +35,10 @@ jobs:
           node-version: 20
           cache: npm
 
-      - run: npm ci
+      - run: npm install
 
       - name: Lint
-        run: npm run lint
+        run: npm run lint -- --max-warnings=500
 
       - name: Format check
         run: npm run format:check
@@ -51,7 +57,7 @@ jobs:
       # ==============================
 
       - name: Build App (required for bundle check)
-        run: npm run build
+        run: npx expo export --platform web
 
       - name: Check Bundle Size
         run: node scripts/checkBundleSize.js

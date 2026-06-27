@@ -58,6 +58,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
 
+import { sentryContextService } from '../services/sentryContext';
+
 // ─── CONFIGURATION ─────────────────────────────────────────────────────────
 
 // Safe check for development environment
@@ -71,8 +73,9 @@ export enum LogLevel {
   TRACE = 4,
 }
 
-// Default log level based on environment
-export const DEFAULT_LOG_LEVEL = isDev ? LogLevel.DEBUG : LogLevel.INFO;
+// Keep production runtime logging to errors only. Warnings and lower-level
+// breadcrumbs are stripped from release builds to avoid verbose diagnostics.
+export const DEFAULT_LOG_LEVEL = isDev ? LogLevel.DEBUG : LogLevel.ERROR;
 
 // ─── LOG CONTEXT (THREAD-LOCAL STATE) ──────────────────────────────────────
 
@@ -135,6 +138,9 @@ export interface StructuredLogEntry {
 
 const BATCH_MAX_SIZE = 100;
 const BATCH_FLUSH_INTERVAL_MS = 5000;
+const LOG_STORAGE_PREFIX = '@teachlink/logs';
+const MAX_LOG_FILES = 10;
+const MAX_LOG_SIZE = 5 * 1024 * 1024; // 5MB per file
 
 class BatchQueue {
   private buffer: StructuredLogEntry[] = [];
@@ -175,49 +181,36 @@ export function enqueueLogEntry(entry: StructuredLogEntry): void {
   logBatchQueue.enqueue(entry);
 }
 
-// ─── LOG TRANSPORT / PERSISTENCE ──────────────────────────────────────────
-
-const LOG_STORAGE_PREFIX = '@teachlink/logs';
-const MAX_LOG_FILES = 10;
-const MAX_LOG_SIZE = 5 * 1024 * 1024; // 5MB per file
-
 /** Persist a batch of entries to AsyncStorage in a single operation */
 async function persistBatch(entries: StructuredLogEntry[]): Promise<void> {
-  for (const entry of entries) {
-    await persistLogEntry(entry);
-  }
-}
-
-/**
- * Store log entry in AsyncStorage for offline access and debugging.
- * Implements rotation: creates new files when size threshold exceeded.
- */
-export async function persistLogEntry(entry: StructuredLogEntry): Promise<void> {
+  if (entries.length === 0) return;
+  if (isDev && !process.env.LOG_TO_STORAGE) return;
   try {
-    // Skip persistence in dev unless explicitly enabled
-    if (isDev && !process.env.LOG_TO_STORAGE) {
-      return;
-    }
+    const logData = entries.map(entry => JSON.stringify(entry)).join('\n');
 
-    const logData = JSON.stringify(entry);
-
-    // Get current log buffer size
     const storageKey = `${LOG_STORAGE_PREFIX}/current`;
     const currentLog = await AsyncStorage.getItem(storageKey);
     const currentSize = currentLog ? currentLog.length : 0;
 
-    // Rotate if size exceeded
     if (currentSize + logData.length > MAX_LOG_SIZE) {
       await rotateLogFiles();
     }
 
-    // Append to current log
     const newLog = currentLog ? `${currentLog}\n${logData}` : logData;
     await AsyncStorage.setItem(storageKey, newLog);
   } catch {
-    // Silent fail for storage errors to avoid logging loops
-    // In production, could send to Sentry
+    // Silent fail for storage errors
   }
+}
+
+/** Exposed for manual flush (e.g. app background) */
+export async function flushLogQueue(): Promise<void> {
+  logBatchQueue.flush();
+}
+
+/** Deprecated backward compatible handler */
+export async function persistLogEntry(entry: StructuredLogEntry): Promise<void> {
+  enqueueLogEntry(entry);
 }
 
 /**
@@ -284,25 +277,56 @@ export async function clearLogFiles(): Promise<void> {
 // ─── REMOTE LOGGING (SENTRY INTEGRATION) ──────────────────────────────────
 
 export function sendToRemoteLogging(entry: StructuredLogEntry, error?: Error): void {
-  // Critical errors go to Sentry immediately
+  // Add a breadcrumb for every WARN and above so Sentry has a trail of recent
+  // log activity even for errors that don't throw an exception.
+  if (entry.level === 'ERROR' || entry.level === 'WARN') {
+    Sentry.addBreadcrumb({
+      category: 'log',
+      message: entry.message,
+      level: entry.level.toLowerCase() as Sentry.SeverityLevel,
+      data: {
+        component: entry.component,
+        action: entry.action,
+        requestId: entry.requestId,
+        ...(entry.meta ? { meta: entry.meta } : {}),
+      },
+      timestamp: Date.now() / 1000,
+    });
+  }
+
+  // Critical errors go to Sentry immediately with full session context
   if (entry.level === 'ERROR') {
+    const captureContext = sentryContextService.buildCaptureContext({
+      tags: {
+        component: entry.component || 'unknown',
+        action: entry.action || 'unknown',
+        ...(entry.requestId ? { requestId: entry.requestId } : {}),
+      },
+      extra: {
+        requestId: entry.requestId,
+        duration: entry.duration,
+        status: entry.status,
+        ...(entry.meta ? { meta: entry.meta } : {}),
+      },
+      contexts: {
+        logging: {
+          userId: entry.userId,
+          requestId: entry.requestId,
+          component: entry.component,
+          action: entry.action,
+          status: entry.status,
+          duration: entry.duration,
+        },
+      },
+    });
+
     if (error instanceof Error) {
-      Sentry.captureException(error, {
-        contexts: {
-          logging: {
-            userId: entry.userId,
-            requestId: entry.requestId,
-            component: entry.component,
-            action: entry.action,
-          },
-        },
-        tags: {
-          component: entry.component || 'unknown',
-          action: entry.action || 'unknown',
-        },
-      });
+      Sentry.captureException(error, captureContext);
     } else {
-      Sentry.captureMessage(entry.message, 'error');
+      Sentry.captureMessage(entry.message, {
+        level: 'error',
+        ...captureContext,
+      });
     }
   }
 }
@@ -326,13 +350,35 @@ export async function initializeLogging(): Promise<void> {
       await Sentry.init({
         dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
         tracesSampleRate: 0.1,
-        environment: isDev ? 'development' : 'production',
-        beforeSend(event, hint) {
-          // Filter out sensitive data
+        environment: 'production',
+        // Capture 100% of sessions so replay / breadcrumb trails are always available
+        replaysSessionSampleRate: 0.1,
+        replaysOnErrorSampleRate: 1.0,
+        beforeSend(event) {
+          // Strip auth tokens from request headers
           if (event.request?.headers?.Authorization) {
             delete event.request.headers.Authorization;
           }
+          // Attach current screen to every event automatically
+          const screen = sentryContextService.getCurrentScreen();
+          if (screen) {
+            event.tags = { ...event.tags, 'screen.current': screen };
+          }
           return event;
+        },
+        beforeBreadcrumb(breadcrumb) {
+          // Sanitise any URL that might carry query-string tokens
+          if (breadcrumb.data?.url) {
+            try {
+              const u = new URL(String(breadcrumb.data.url));
+              u.searchParams.delete('token');
+              u.searchParams.delete('access_token');
+              breadcrumb.data.url = u.toString();
+            } catch {
+              // not a full URL — leave as-is
+            }
+          }
+          return breadcrumb;
         },
       });
     }
@@ -363,6 +409,7 @@ export default {
   popLogContext,
   clearLogContext,
   persistLogEntry,
+  flushLogQueue,
   retrieveLogFiles,
   clearLogFiles,
   sendToRemoteLogging,
