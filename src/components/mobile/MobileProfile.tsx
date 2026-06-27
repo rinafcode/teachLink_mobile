@@ -17,10 +17,10 @@ import {
     Users,
     X,
 } from 'lucide-react-native';
-import React, { useCallback, useEffect, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
+    Animated,
     Platform,
     SafeAreaView,
     ScrollView,
@@ -29,6 +29,7 @@ import {
     UIManager,
     View
 } from 'react-native';
+import { Controller, useForm } from 'react-hook-form';
 
 import { Achievement, AchievementBadges } from './AchievementBadges';
 import { AvatarCamera } from './AvatarCamera';
@@ -39,6 +40,11 @@ import { PROFILE_FORM_CACHE_KEYS } from '../../services/formCache';
 import { configureNext } from '../../utils/layoutAnimation';
 import { AppText as Text } from '../common/AppText';
 import { CachedImage } from '../ui/CachedImage';
+import { ShimmerItem as Skeleton } from '../common/SkeletonLoader';
+import { Achievement, AchievementBadges } from './AchievementBadges';
+import { AvatarCamera } from './AvatarCamera';
+import { MobileFormInput } from './MobileFormInput';
+import { StatisticsDisplay } from './StatisticsDisplay';
 import { Skeleton } from '../ui/Skeleton';
 
 // Enable LayoutAnimation on Android
@@ -262,6 +268,20 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
   const [isCameraVisible, setIsCameraVisible] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  const fadeAnim = useRef(new Animated.Value(isLoading ? 0 : 1)).current;
+
+  useEffect(() => {
+    if (!isLoading) {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      fadeAnim.setValue(0);
+    }
+  }, [isLoading, fadeAnim]);
+
   const {
     control,
     handleSubmit,
@@ -283,31 +303,31 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
       <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
         <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }} removeClippedSubviews={true}>
           <View>
-            <Skeleton width="100%" height={120} borderRadius={0} />
+            <Skeleton width="100%" height={120} borderRadius={0} isDark={isDark} />
             <View style={styles.avatarRow}>
-              <Skeleton width={88} height={88} circle style={styles.avatarGradient} />
-              <Skeleton width={110} height={36} borderRadius={20} style={styles.editButton} />
+              <Skeleton width={88} height={88} circle style={styles.avatarGradient} isDark={isDark} />
+              <Skeleton width={110} height={36} borderRadius={20} style={styles.editButton} isDark={isDark} />
             </View>
             <View style={styles.profileInfo}>
-              <Skeleton width="50%" height={24} style={{ marginBottom: 8 }} />
-              <Skeleton width="80%" height={16} style={{ marginBottom: 6 }} />
-              <Skeleton width="40%" height={14} style={{ marginBottom: 12 }} />
+              <Skeleton width="50%" height={24} style={{ marginBottom: 8 }} isDark={isDark} />
+              <Skeleton width="80%" height={16} style={{ marginBottom: 6 }} isDark={isDark} />
+              <Skeleton width="40%" height={14} style={{ marginBottom: 12 }} isDark={isDark} />
             </View>
             <View style={[styles.statsStrip, { backgroundColor: cardBg, borderColor }]}>
-              <Skeleton width="25%" height={48} />
-              <Skeleton width="25%" height={48} />
-              <Skeleton width="25%" height={48} />
-              <Skeleton width="25%" height={48} />
+              <Skeleton width="25%" height={48} isDark={isDark} />
+              <Skeleton width="25%" height={48} isDark={isDark} />
+              <Skeleton width="25%" height={48} isDark={isDark} />
+              <Skeleton width="25%" height={48} isDark={isDark} />
             </View>
           </View>
           <View style={[styles.tabNav, { backgroundColor: cardBg, borderColor, marginTop: 8 }]}>
-            <Skeleton width="25%" height={40} />
-            <Skeleton width="25%" height={40} />
-            <Skeleton width="25%" height={40} />
-            <Skeleton width="25%" height={40} />
+            <Skeleton width="25%" height={40} isDark={isDark} />
+            <Skeleton width="25%" height={40} isDark={isDark} />
+            <Skeleton width="25%" height={40} isDark={isDark} />
+            <Skeleton width="25%" height={40} isDark={isDark} />
           </View>
           <View style={{ padding: 16 }}>
-            <Skeleton width="100%" height={180} borderRadius={16} />
+            <Skeleton width="100%" height={180} borderRadius={16} isDark={isDark} />
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -462,7 +482,8 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
-      <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }} removeClippedSubviews={true}>
+      <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+        <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }} removeClippedSubviews={true}>
         {/* ── Profile Header ─────────────────────────────────────────────── */}
         <View>
           <LinearGradient
@@ -933,6 +954,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
         onConfirm={handleAvatarConfirm}
         onClose={handleCloseCamera}
       />
+      </Animated.View>
     </SafeAreaView>
   );
 };

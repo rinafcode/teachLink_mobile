@@ -262,6 +262,83 @@ describe('useQuizStore', () => {
     });
   });
 
+  // ── initializeQuiz & resetQuiz ───────────────────────────────────────────
+
+  describe('initializeQuiz and resetQuiz', () => {
+    it('clears currentQuestionIndex, selectedAnswers, startedAt, and other transient fields when resetting', () => {
+      useQuizStore.setState({
+        quizId: 'quiz-01',
+        session: {
+          quizId: 'quiz-01',
+          sectionId: 'section-01',
+          courseId: 'course-01',
+          currentQuestionIndex: 2,
+          selectedAnswers: { q1: 'A' },
+          startedAt: 'some-timestamp',
+          answers: { q1: 'A' },
+          startTime: 'some-timestamp',
+          selectedOption: 'option-a',
+        },
+      });
+
+      useQuizStore.getState().resetQuiz();
+
+      const state = useQuizStore.getState();
+      expect(state.quizId).toBeNull();
+      expect(state.session.quizId).toBeNull();
+      expect(state.session.currentQuestionIndex).toBe(0);
+      expect(state.session.selectedAnswers).toEqual({});
+      expect(state.session.startedAt).toBeNull();
+      expect(state.session.answers).toEqual({});
+      expect(state.session.startTime).toBeNull();
+      expect(state.session.selectedOption).toBeNull();
+    });
+
+    it('does not reset state when initializing the same quiz', () => {
+      useQuizStore.setState({
+        quizId: 'quiz-01',
+        session: {
+          quizId: 'quiz-01',
+          sectionId: 'section-01',
+          courseId: 'course-01',
+          currentQuestionIndex: 1,
+          selectedAnswers: { q1: 'A' },
+          startedAt: 'some-timestamp',
+        },
+      });
+
+      useQuizStore.getState().initializeQuiz('quiz-01');
+
+      const state = useQuizStore.getState();
+      expect(state.session.quizId).toBe('quiz-01');
+      expect(state.session.currentQuestionIndex).toBe(1);
+      expect(state.session.selectedAnswers).toEqual({ q1: 'A' });
+    });
+
+    it('resets state when initializing a different quiz (start quiz A -> navigate away -> start quiz B)', () => {
+      useQuizStore.setState({
+        quizId: 'quiz-01',
+        session: {
+          quizId: 'quiz-01',
+          sectionId: 'section-01',
+          courseId: 'course-01',
+          currentQuestionIndex: 1,
+          selectedAnswers: { q1: 'A' },
+          startedAt: 'some-timestamp',
+        },
+      });
+
+      useQuizStore.getState().initializeQuiz('quiz-02');
+
+      const state = useQuizStore.getState();
+      expect(state.quizId).toBe('quiz-02');
+      expect(state.session.quizId).toBe('quiz-02');
+      expect(state.session.currentQuestionIndex).toBe(0);
+      expect(state.session.selectedAnswers).toEqual({});
+      expect(state.session.startedAt).toBeNull();
+    });
+  });
+
   // ── getQuizProgress / hasCompletedQuiz ───────────────────────────────────
 
   describe('getQuizProgress and hasCompletedQuiz', () => {

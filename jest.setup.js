@@ -314,13 +314,8 @@ jest.mock('expo-battery', () => ({
     Promise.resolve({ batteryLevel: 1, batteryState: 1, lowPowerMode: false })
   ),
   addLowPowerModeListener: jest.fn(() => ({ remove: jest.fn() })),
-  BatteryState: {
-    UNKNOWN: 0,
-    UNPLUGGED: 1,
-    CHARGING: 2,
-    FULL: 3,
-  },
 }));
+
 
 // Lightweight mock for expo-router to avoid pulling in navigation internals during tests
 jest.mock(
@@ -479,3 +474,12 @@ jest.mock('expo-store-review', () => ({
   hasAction: jest.fn(() => Promise.resolve(true)),
   storeUrl: jest.fn(() => Promise.resolve('https://apps.apple.com/app/teachlink/id1234567890')),
 }));
+
+// Mock expo-linear-gradient for jest tests
+jest.mock('expo-linear-gradient', () => {
+  const RN = require('react-native');
+  return {
+    LinearGradient: RN.View,
+  };
+});
+

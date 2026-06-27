@@ -1,7 +1,8 @@
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
+  Animated,
   Modal,
   ScrollView,
   StyleSheet,
@@ -85,6 +86,20 @@ const MobileCourseViewer = ({
     course,
     autoSync: true,
   });
+
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!isLoading) {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      fadeAnim.setValue(0);
+    }
+  }, [isLoading, fadeAnim]);
 
   // Get all lessons in order
   const allLessons = course.sections.flatMap(section => section.lessons.map(lesson => lesson));
@@ -395,8 +410,9 @@ const MobileCourseViewer = ({
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
+      <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+        {/* Header */}
+        <View style={styles.header}>
         <View style={styles.headerContent}>
           {onBack && (
             <TouchableOpacity onPress={onBack} style={styles.backButton}>
@@ -616,6 +632,7 @@ const MobileCourseViewer = ({
           </View>
         </ErrorBoundary>
       </Modal>
+      </Animated.View>
     </SafeAreaView>
   );
 };

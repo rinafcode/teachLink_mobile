@@ -1,25 +1,32 @@
 import React from 'react';
 import { Dimensions, StyleSheet, View } from 'react-native';
-
-import { Skeleton } from '../ui/Skeleton';
+import { ShimmerItem as Skeleton } from '../common/SkeletonLoader';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-export const CourseViewerSkeleton = () => {
+interface CourseViewerSkeletonProps {
+  isDark?: boolean;
+}
+
+export const CourseViewerSkeleton = ({ isDark = false }: CourseViewerSkeletonProps) => {
+  const containerBg = isDark ? '#0f172a' : '#F0F1F5';
+  const sectionBg = isDark ? '#1e293b' : '#FFFFFF';
+  const borderCol = isDark ? '#334155' : '#E5E7EB';
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View style={[styles.container, { backgroundColor: containerBg }]}>
+      <View style={[styles.header, { backgroundColor: sectionBg, borderBottomColor: borderCol }]}>
         <View style={styles.headerRow}>
-          <Skeleton width={32} height={32} borderRadius={8} />
-          <Skeleton width="60%" height={20} style={styles.headerTitle} />
-          <Skeleton width={28} height={28} borderRadius={6} />
+          <Skeleton width={32} height={32} borderRadius={8} isDark={isDark} />
+          <Skeleton width="60%" height={20} style={styles.headerTitle} isDark={isDark} />
+          <Skeleton width={28} height={28} borderRadius={6} isDark={isDark} />
         </View>
-        <Skeleton width="100%" height={6} borderRadius={3} style={styles.progressBar} />
-        <Skeleton width={80} height={12} style={styles.progressText} />
+        <Skeleton width="100%" height={6} borderRadius={3} style={styles.progressBar} isDark={isDark} />
+        <Skeleton width={80} height={12} style={styles.progressText} isDark={isDark} />
       </View>
-      <View style={styles.tabBar}>
-        <Skeleton width="45%" height={38} borderRadius={0} />
-        <Skeleton width="45%" height={38} borderRadius={0} />
+      <View style={[styles.tabBar, { backgroundColor: sectionBg, borderBottomColor: borderCol }]}>
+        <Skeleton width="45%" height={38} borderRadius={0} isDark={isDark} />
+        <Skeleton width="45%" height={38} borderRadius={0} isDark={isDark} />
       </View>
       <View style={styles.content}>
         <Skeleton
@@ -27,16 +34,17 @@ export const CourseViewerSkeleton = () => {
           height={200}
           borderRadius={12}
           style={styles.contentBlock}
+          isDark={isDark}
         />
-        <Skeleton width="60%" height={18} style={styles.sectionTitle} />
-        <Skeleton width="100%" height={14} style={styles.contentLine} />
-        <Skeleton width="95%" height={14} style={styles.contentLine} />
-        <Skeleton width="80%" height={14} style={styles.contentLine} />
-        <Skeleton width="90%" height={14} style={styles.contentLine} />
+        <Skeleton width="60%" height={18} style={styles.sectionTitle} isDark={isDark} />
+        <Skeleton width="100%" height={14} style={styles.contentLine} isDark={isDark} />
+        <Skeleton width="95%" height={14} style={styles.contentLine} isDark={isDark} />
+        <Skeleton width="80%" height={14} style={styles.contentLine} isDark={isDark} />
+        <Skeleton width="90%" height={14} style={styles.contentLine} isDark={isDark} />
       </View>
-      <View style={styles.bottomBar}>
-        <Skeleton width={SCREEN_WIDTH / 2 - 24} height={44} borderRadius={10} />
-        <Skeleton width={SCREEN_WIDTH / 2 - 24} height={44} borderRadius={10} />
+      <View style={[styles.bottomBar, { backgroundColor: sectionBg, borderTopColor: borderCol }]}>
+        <Skeleton width={SCREEN_WIDTH / 2 - 24} height={44} borderRadius={10} isDark={isDark} />
+        <Skeleton width={SCREEN_WIDTH / 2 - 24} height={44} borderRadius={10} isDark={isDark} />
       </View>
     </View>
   );
@@ -45,15 +53,12 @@ export const CourseViewerSkeleton = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0F1F5',
   },
   header: {
-    backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
     paddingTop: 56,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
   },
   headerRow: {
     flexDirection: 'row',
@@ -71,9 +76,7 @@ const styles = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
     paddingVertical: 8,
   },
   content: {
@@ -94,8 +97,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
   },
 });
+
+export default CourseViewerSkeleton;
