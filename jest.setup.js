@@ -67,7 +67,8 @@ jest.mock('react-native', () => ({
     createAnimatedComponent: jest.fn(component => component),
   },
   Alert: { alert: jest.fn() },
-  Keyboard: { avoidView: 'KeyboardAvoidingView', dismiss: jest.fn() },
+  KeyboardAvoidingView: ({ children }) => children,
+  Keyboard: { dismiss: jest.fn() },
   FlatList: 'FlatList',
   SectionList: 'SectionList',
   StatusBar: 'StatusBar',
@@ -253,48 +254,15 @@ jest.mock('expo-notifications', () => ({
   PermissionStatus: { GRANTED: 'granted', DENIED: 'denied', UNDETERMINED: 'undetermined' },
 }));
 
-// Mock expo-device
-jest.mock('expo-device', () => ({
-  isDevice: true,
-  deviceName: 'Test Device',
-}));
-
-// Mock expo-constants
-jest.mock('expo-constants', () => ({
-  expoConfig: {
-    extra: {
-      eas: {
-        projectId: 'test-project-id',
-      },
-    },
-  },
-}));
-
-// Mock expo-linking
-jest.mock('expo-linking', () => ({
-  createURL: jest.fn(path => `teachlink://${path}`),
-  addEventListener: jest.fn(() => ({ remove: jest.fn() })),
-  getInitialURL: jest.fn(() => Promise.resolve(null)),
-}));
-
-// Mock expo-notifications (override jest-expo's mock to add removed methods)
-jest.mock('expo-notifications', () => ({
-  setNotificationHandler: jest.fn(),
-  getPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'undetermined' })),
-  requestPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
-  getExpoPushTokenAsync: jest.fn(() =>
-    Promise.resolve({ data: 'ExponentPushToken[test-token-123]' })
-  ),
-  setNotificationChannelAsync: jest.fn(() => Promise.resolve()),
-  scheduleNotificationAsync: jest.fn(() => Promise.resolve('notification-id')),
-  cancelScheduledNotificationAsync: jest.fn(() => Promise.resolve()),
-  cancelAllScheduledNotificationsAsync: jest.fn(() => Promise.resolve()),
-  getBadgeCountAsync: jest.fn(() => Promise.resolve(0)),
-  setBadgeCountAsync: jest.fn(() => Promise.resolve()),
-  addNotificationReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
-  addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
-  removeNotificationSubscription: jest.fn(), // deprecated but used in codebase
-  getLastNotificationResponseAsync: jest.fn(() => Promise.resolve(null)),
-  AndroidImportance: { HIGH: 4, DEFAULT: 3 },
-  PermissionStatus: { GRANTED: 'granted', DENIED: 'denied', UNDETERMINED: 'undetermined' },
+// Mock @sentry/react-native to prevent native module import issues in tests
+jest.mock('@sentry/react-native', () => ({
+  init: jest.fn(),
+  captureException: jest.fn(),
+  captureMessage: jest.fn(),
+  withScope: jest.fn(),
+  configureScope: jest.fn(),
+  setContext: jest.fn(),
+  setExtra: jest.fn(),
+  addBreadcrumb: jest.fn(),
+  Severity: { Error: 'error', Warning: 'warning', Log: 'log' },
 }));

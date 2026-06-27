@@ -196,16 +196,21 @@ class AppLogger {
           console.log(fullMessage, entry.meta);
       }
     } else {
-      // Production: structured JSON output
+      // Production: structured JSON output (stack traces stripped to prevent internal path leaks)
+      const sanitizedEntry = { ...entry };
+      delete sanitizedEntry.stack;
+      delete sanitizedEntry.meta;
+      const jsonOutput = JSON.stringify(sanitizedEntry);
+
       switch (level) {
         case LogLevel.ERROR:
-          console.error(JSON.stringify(entry));
+          console.error(jsonOutput);
           break;
         case LogLevel.WARN:
-          console.warn(JSON.stringify(entry));
+          console.warn(jsonOutput);
           break;
         case LogLevel.INFO:
-          console.log(JSON.stringify(entry));
+          console.log(jsonOutput);
           break;
         // DEBUG and TRACE silenced in production
       }

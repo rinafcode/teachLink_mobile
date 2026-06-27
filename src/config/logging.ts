@@ -289,7 +289,9 @@ export async function initializeLogging(): Promise<void> {
 
     isLoggingInitialized = true;
   } catch (error) {
-    console.error('[Logging] Failed to initialize', error);
+    if (typeof __DEV__ !== 'undefined' ? __DEV__ : process.env.NODE_ENV !== 'production') {
+      console.error('[Logging] Failed to initialize', error);
+    }
   }
 }
 

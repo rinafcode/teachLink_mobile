@@ -13,7 +13,8 @@ import { AuthProvider } from './src/hooks';
 import AppNavigator from './src/navigation/AppNavigator';
 import { setupNotificationNavigation } from './src/navigation/linking';
 import { apiClient } from './src/services/api';
-import { crashReportingService } from './src/services/cashReporting';
+import { initializeSecureStorage } from './src/services/secureStorage';
+import { crashReportingService } from './src/services/crashReporting';
 import { mobileAuthService } from './src/services/mobileAuth';
 import {
   addNotificationReceivedListener,
@@ -40,7 +41,9 @@ requireEnvVariables();
 
 // Initialize centralized logging on app start
 initializeLogging().catch(err => {
-  console.error('[App] Failed to initialize logging:', err);
+  if (__DEV__) {
+    console.error('[App] Failed to initialize logging:', err);
+  }
 });
 
 if (__DEV__) {
@@ -75,7 +78,7 @@ const App = () => {
         // 3. Initial data fetch (simulate or add real fetch)
         await new Promise(resolve => setTimeout(resolve, 500));
       } catch (e) {
-        console.warn('Error during app initialization:', e);
+        appLogger.warnSync('Error during app initialization', { error: String(e) });
       } finally {
         setAppIsReady(true);
         await SplashScreen.hideAsync();
@@ -93,7 +96,7 @@ const App = () => {
 
     // Initialize secure storage (Keychain/Keystore) for encrypted token storage
     initializeSecureStorage().catch((error) => {
-      logger.error('Failed to initialize secure storage:', error);
+      appLogger.errorSync('Failed to initialize secure storage:', error as Error);
       // Continue app startup even if secure storage init fails
       // (user will be prompted to re-authenticate if needed)
     });
