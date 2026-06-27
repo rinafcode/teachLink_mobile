@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist, subscribeWithSelector } from 'zustand/middleware';
 
-import { toUnixMs } from './persistence';
+import { secureStorageJSONStorage, toUnixMs } from './persistence';
 import { sentryContextService } from '../services/sentryContext';
 
 export interface User {
@@ -23,6 +23,7 @@ interface AppState {
   sessionExpiringSoon: boolean;
   isLoading: boolean;
   error: string | null;
+  theme: 'light' | 'dark';
   setUser: (user: User | null) => void;
   setTheme: (theme: 'light' | 'dark') => void;
   setTokens: (accessToken: string, refreshToken: string, expiresAt: number | Date) => void;
@@ -103,7 +104,7 @@ export const useAppStore = create<AppState>()(
       })),
       {
         name: 'app-auth-storage',
-        storage: createJSONStorage(() => secureStorageAdapter),
+        storage: secureStorageJSONStorage,
         /**
          * Only persist auth-related and UI preference state.
          * Transient flags (isLoading, isAuthLoading, error, authError)

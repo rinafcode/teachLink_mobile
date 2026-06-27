@@ -143,7 +143,7 @@ export const PullToRefresh = (props: PullToRefreshProps) => {
     [scrollProps]
   );
 
-  const canStartPull = () => !refreshing && scrollYRef.current <= 0;
+  const canStartPull = React.useCallback(() => !refreshing && scrollYRef.current <= 0, [refreshing]);
 
   const responderHandlers = React.useMemo(
     () => ({
@@ -201,7 +201,7 @@ export const PullToRefresh = (props: PullToRefreshProps) => {
       },
       onResponderTerminationRequest: () => true,
     }),
-    [animatePullTo, maxPull, pullY, refreshing, runRefresh, threshold]
+    [animatePullTo, canStartPull, maxPull, pullY, refreshing, runRefresh, threshold]
   );
 
   const progress = pullY.interpolate({

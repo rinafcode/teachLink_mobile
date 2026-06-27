@@ -42,6 +42,7 @@ interface AchievementState {
   achievements: Achievement[];
   achievementProgress: Record<string, AchievementProgress>;
   unlockedCount: number;
+  isLoaded: boolean;
   loadAchievements: () => void;
   unlockAchievement: (id: string) => void;
   updateProgress: (id: string, current: number) => void;

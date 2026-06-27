@@ -221,9 +221,10 @@ export function useStreamingData<T extends object = unknown>(
       void doFetch();
     }
 
+    const currentAbortController = abortControllerRef.current;
     return () => {
       // Clean up abort controller if needed
-      abortControllerRef.current?.abort();
+      currentAbortController?.abort();
     };
   }, [autoFetch, doFetch]);
 

@@ -1,3 +1,4 @@
+// @ts-ignore
 import AssetSourceResolver from 'react-native/Libraries/Image/AssetSourceResolver';
 
 const originalDefaultAsset = AssetSourceResolver.prototype.defaultAsset;

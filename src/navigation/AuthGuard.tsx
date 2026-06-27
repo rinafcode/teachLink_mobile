@@ -25,7 +25,7 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
       });
       router.replace("/login");
     }
-  }, [isAuthenticated, isLoading]);
+  }, [isAuthenticated, isLoading, router]);
 
   if (isLoading || !isAuthenticated) {
     return null;

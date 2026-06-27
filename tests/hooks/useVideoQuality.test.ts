@@ -150,7 +150,7 @@ describe('useVideoQuality', () => {
   it('re-runs network detection when isSlowConnection changes', async () => {
     mockGetNetworkState.mockResolvedValue({ type: 'CELLULAR' });
     const { result, rerender } = renderHook(
-      ({ isSlowConnection }) => useVideoQuality({ sources: [LOW, MID, HIGH], isSlowConnection }),
+      ({ isSlowConnection }: any) => useVideoQuality({ sources: [LOW, MID, HIGH], isSlowConnection }),
       { initialProps: { isSlowConnection: false } }
     );
     await act(async () => {});

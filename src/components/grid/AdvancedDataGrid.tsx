@@ -337,7 +337,7 @@ const GridToolbar = ({
       setActiveType(null);
       setProgress(null);
     }
-  }, [activeType, onImport, onImportComplete]);
+  }, [activeType, onImportComplete]);
 
   return (
     <View style={styles.toolbar}>

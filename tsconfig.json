@@ -26,5 +26,5 @@
     "types": ["jest", "node"]
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts", "nativewind-env.d.ts"],
-  "exclude": ["node_modules", "**/_tests_/**"]
+  "exclude": ["node_modules", "tests", "**/__tests__/**", "**/_tests_/**"]
 }

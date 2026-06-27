@@ -62,7 +62,7 @@ export default function MobileQuizManager({
     void init();
     trackScreen(ScreenName.QUIZ, { quizId: quiz.id, courseId });
     setCurrentView('intro');
-  }, [courseId, quiz.id, loadQuizProgress, initializeQuiz]);
+  }, [courseId, quiz.id, loadQuizProgress, initializeQuiz, trackScreen]);
 
   const handleStartQuiz = async () => {
     try {
@@ -126,7 +126,7 @@ export default function MobileQuizManager({
     } catch (error) {
       logger.error('Error completing quiz:', error);
     }
-  }, [quiz, completeQuiz, navigation, course, onBack]);
+  }, [quiz, completeQuiz, navigation, course, onBack, courseId, requestReview, trackEvent, trackPerfectQuiz]);
 
   const handleRetakeQuiz = useCallback(async () => {
     await resetSession();

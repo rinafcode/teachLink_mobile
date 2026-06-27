@@ -8,7 +8,7 @@
  * <DegradationBanner feature={FeatureType.CAMERA} />
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Text, TouchableOpacity, View } from 'react-native';
 
 import { useThemeColor } from './themed-view';
@@ -52,17 +52,7 @@ export const DegradationBanner: React.FC<DegradationBannerProps> = ({
   const message = customMessage || featureCapabilities.getUnavailabilityMessage(feature);
   const fallbackDescription = featureInfo.fallbackDescription;
 
-  // Auto-dismiss logic
-  useEffect(() => {
-    if (autoDismissAfter > 0 && visible) {
-      const timer = setTimeout(() => {
-        handleDismiss();
-      }, autoDismissAfter);
-      return () => clearTimeout(timer);
-    }
-  }, [visible, autoDismissAfter]);
-
-  const handleDismiss = () => {
+  const handleDismiss = useCallback(() => {
     Animated.timing(animationValue, {
       toValue: 0,
       duration: 300,
@@ -77,7 +67,17 @@ export const DegradationBanner: React.FC<DegradationBannerProps> = ({
         actionTaken: 'dismissed',
       });
     });
-  };
+  }, [animationValue, onActionTaken, degradationStore, feature, featureInfo.status, message]);
+
+  // Auto-dismiss logic
+  useEffect(() => {
+    if (autoDismissAfter > 0 && visible) {
+      const timer = setTimeout(() => {
+        handleDismiss();
+      }, autoDismissAfter);
+      return () => clearTimeout(timer);
+    }
+  }, [visible, autoDismissAfter, handleDismiss]);
 
   const handleRetry = async () => {
     if (!onRetry) return;
