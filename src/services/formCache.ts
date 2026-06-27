@@ -1,15 +1,9 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { encryptedGetItem, encryptedRemoveItem, encryptedSetItem } from '../utils/encryptedStorage';
 
 /** Returns an AsyncStorage key scoped to the given user (versioned for future migrations). */
 export function getFormCacheStorageKey(userId: string): string {
   return `@teachlink/form-cache/${userId}/v1`;
 }
-
-/** @deprecated Use getFormCacheStorageKey(userId) instead. Kept for migration only. */
-import { safeStorageWrite } from '../utils/storage';
-
-/** AsyncStorage key for the form value cache (versioned for future migrations). */
-export const FORM_CACHE_STORAGE_KEY = '@teachlink/form-cache/v1';
 
 /** Cached entries older than this are pruned on read/write (90 days). */
 export const FORM_CACHE_TTL_MS = 90 * 24 * 60 * 60 * 1000;
@@ -55,7 +49,7 @@ export function pruneExpiredCache(store: FormCacheStore, now = Date.now()): Form
 }
 
 export async function loadFormCache(storageKey: string): Promise<FormCacheStore> {
-  const raw = await AsyncStorage.getItem(storageKey);
+  const raw = await encryptedGetItem(storageKey);
   if (!raw) return {};
   try {
     const parsed = JSON.parse(raw) as FormCacheStore;
@@ -70,9 +64,7 @@ export async function loadFormCache(storageKey: string): Promise<FormCacheStore>
 }
 
 export async function saveFormCache(storageKey: string, store: FormCacheStore): Promise<void> {
-  await AsyncStorage.setItem(storageKey, JSON.stringify(store));
-export async function saveFormCache(store: FormCacheStore): Promise<void> {
-  await safeStorageWrite(FORM_CACHE_STORAGE_KEY, JSON.stringify(store));
+  await encryptedSetItem(storageKey, JSON.stringify(store));
 }
 
 export async function getCachedFieldValue(
@@ -143,7 +135,7 @@ export function getSuggestionForField(
 }
 
 export async function clearFormCache(storageKey: string): Promise<void> {
-  await AsyncStorage.removeItem(storageKey);
+  await encryptedRemoveItem(storageKey);
 }
 
 /** Maps profile/edit labels to shared cache keys. */

@@ -1,8 +1,6 @@
 /**
  * Tests for #616: useFormCache cache key is user-scoped.
  */
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
 import {
   cacheFormValues,
   clearFormCache,
@@ -10,17 +8,20 @@ import {
   getFormCacheStorageKey,
   loadFormCache,
 } from '../../services/formCache';
+import { encryptedGetItem, encryptedRemoveItem, encryptedSetItem } from '../../utils/encryptedStorage';
 
-jest.mock('@react-native-async-storage/async-storage');
+jest.mock('../../utils/encryptedStorage');
 
-const mockStorage = AsyncStorage as jest.Mocked<typeof AsyncStorage>;
+const mockGetItem = jest.mocked(encryptedGetItem);
+const mockSetItem = jest.mocked(encryptedSetItem);
+const mockRemoveItem = jest.mocked(encryptedRemoveItem);
 
 describe('formCache – user-scoped storage key (#616)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockStorage.getItem.mockResolvedValue(null);
-    mockStorage.setItem.mockResolvedValue(undefined);
-    mockStorage.removeItem.mockResolvedValue(undefined);
+    mockGetItem.mockResolvedValue(null);
+    mockSetItem.mockResolvedValue(undefined);
+    mockRemoveItem.mockResolvedValue(undefined);
   });
 
   it('generates distinct keys for different users', () => {
@@ -34,13 +35,13 @@ describe('formCache – user-scoped storage key (#616)', () => {
   it('uses user-scoped key when reading cache', async () => {
     const key = getFormCacheStorageKey('user-1');
     await loadFormCache(key);
-    expect(mockStorage.getItem).toHaveBeenCalledWith(key);
+    expect(mockGetItem).toHaveBeenCalledWith(key);
   });
 
   it('uses user-scoped key when writing cache', async () => {
     const key = getFormCacheStorageKey('user-1');
     await cacheFormValues(key, { fullName: 'Alice' });
-    expect(mockStorage.setItem).toHaveBeenCalledWith(key, expect.any(String));
+    expect(mockSetItem).toHaveBeenCalledWith(key, expect.any(String));
   });
 
   it('does not read or write to another user key', async () => {
@@ -49,7 +50,7 @@ describe('formCache – user-scoped storage key (#616)', () => {
 
     await cacheFormValues(keyA, { fullName: 'Alice' });
 
-    const allSetCalls = mockStorage.setItem.mock.calls.map(([k]) => k);
+    const allSetCalls = mockSetItem.mock.calls.map(([k]) => k);
     expect(allSetCalls).not.toContain(keyB);
   });
 
@@ -57,9 +58,8 @@ describe('formCache – user-scoped storage key (#616)', () => {
     const keyA = getFormCacheStorageKey('user-A');
     const keyB = getFormCacheStorageKey('user-B');
 
-    // Seed user-A cache with data
     const now = Date.now();
-    mockStorage.getItem.mockImplementation(k => {
+    mockGetItem.mockImplementation(k => {
       if (k === keyA)
         return Promise.resolve(JSON.stringify({ fullName: { value: 'Alice', updatedAt: now } }));
       return Promise.resolve(null);
@@ -75,7 +75,7 @@ describe('formCache – user-scoped storage key (#616)', () => {
   it('clears only the correct user key', async () => {
     const keyA = getFormCacheStorageKey('user-A');
     await clearFormCache(keyA);
-    expect(mockStorage.removeItem).toHaveBeenCalledWith(keyA);
-    expect(mockStorage.removeItem).toHaveBeenCalledTimes(1);
+    expect(mockRemoveItem).toHaveBeenCalledWith(keyA);
+    expect(mockRemoveItem).toHaveBeenCalledTimes(1);
   });
 });
