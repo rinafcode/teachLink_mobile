@@ -6,6 +6,9 @@ export function getFormCacheStorageKey(userId: string): string {
 }
 
 /** @deprecated Use getFormCacheStorageKey(userId) instead. Kept for migration only. */
+import { safeStorageWrite } from '../utils/storage';
+
+/** AsyncStorage key for the form value cache (versioned for future migrations). */
 export const FORM_CACHE_STORAGE_KEY = '@teachlink/form-cache/v1';
 
 /** Cached entries older than this are pruned on read/write (90 days). */
@@ -68,6 +71,8 @@ export async function loadFormCache(storageKey: string): Promise<FormCacheStore>
 
 export async function saveFormCache(storageKey: string, store: FormCacheStore): Promise<void> {
   await AsyncStorage.setItem(storageKey, JSON.stringify(store));
+export async function saveFormCache(store: FormCacheStore): Promise<void> {
+  await safeStorageWrite(FORM_CACHE_STORAGE_KEY, JSON.stringify(store));
 }
 
 export async function getCachedFieldValue(
