@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, devtools, persist, subscribeWithSelector } from 'zustand/middleware';
 
 import { secureStorageJSONStorage, toUnixMs } from './persistence';
+import { clearFormCache, getFormCacheStorageKey } from '../services/formCache';
 import { sentryContextService } from '../services/sentryContext';
 
 export interface User {
@@ -38,7 +39,7 @@ interface AppState {
 export const useAppStore = create<AppState>()(
   devtools(
     persist(
-      subscribeWithSelector(set => ({
+      subscribeWithSelector((set, get) => ({
         user: null,
         isAuthenticated: false,
         isAuthLoading: false,
@@ -81,6 +82,7 @@ export const useAppStore = create<AppState>()(
         setAuthLoading: isAuthLoading => set({ isAuthLoading }, false, 'setAuthLoading'),
         setAuthError: authError => set({ authError }, false, 'setAuthError'),
         logout: () => {
+          const userId = get().user?.id;
           set(
             {
               user: null,
@@ -98,6 +100,9 @@ export const useAppStore = create<AppState>()(
           // Clear Sentry user scope and reset breadcrumb trail on logout
           sentryContextService.clearUser();
           sentryContextService.resetSession();
+          if (userId) {
+            clearFormCache(getFormCacheStorageKey(userId)).catch(() => {});
+          }
         },
         setLoading: isLoading => set({ isLoading }, false, 'setLoading'),
         setError: error => set({ error }, false, 'setError'),
