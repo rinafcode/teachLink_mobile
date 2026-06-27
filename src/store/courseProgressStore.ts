@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-import { asyncStorageJSONStorage } from './persistence';
+import { asyncStorageJSONStorage, createHydrationErrorRecovery } from './persistence';
 
 import type { CourseProgress } from '../types/course';
 
@@ -12,20 +12,34 @@ interface CourseProgressState {
   getCourseProgress: (courseId: string) => CourseProgress | null;
 }
 
+const INITIAL_COURSE_PROGRESS_STATE = {
+  progressMap: {},
+};
+
+let resetCourseProgressStoreAfterHydrationError = () => {};
+
 export const useCourseProgressStore = create<CourseProgressState>()(
   persist(
-    (set, get) => ({
-      progressMap: {},
+    (set, get): CourseProgressState => {
+      resetCourseProgressStoreAfterHydrationError = () => set(INITIAL_COURSE_PROGRESS_STATE);
 
-      setCourseProgress: (courseId, progress) =>
-        set(s => ({ progressMap: { ...s.progressMap, [courseId]: progress } })),
+      return {
+        ...INITIAL_COURSE_PROGRESS_STATE,
 
-      getCourseProgress: courseId => get().progressMap[courseId] ?? null,
-    }),
+        setCourseProgress: (courseId, progress) =>
+          set(s => ({ progressMap: { ...s.progressMap, [courseId]: progress } })),
+
+        getCourseProgress: courseId => get().progressMap[courseId] ?? null,
+      };
+    },
     {
       name: 'course-progress-storage',
       version: 1,
       storage: asyncStorageJSONStorage,
+      onRehydrateStorage: createHydrationErrorRecovery(
+        'course-progress-storage',
+        resetCourseProgressStoreAfterHydrationError
+      ),
       partialize: state => ({
         progressMap: state.progressMap,
       }),

@@ -18,7 +18,6 @@ import { ErrorBoundary } from './src/components/common/ErrorBoundary';
 import { initializeLogging } from './src/config/logging';
 import { AuthProvider, useAdaptiveTheme, useReviewMetrics } from './src/hooks';
 import AppNavigator from './src/navigation/AppNavigator';
-import { setupNotificationNavigation } from './src/navigation/linking';
 import {
   apiClient,
   getCacheStatus,
@@ -29,7 +28,6 @@ import { warmCriticalCaches } from './src/services/cacheWarming';
 import { crashReportingService } from './src/services/crashReporting';
 import { featureCapabilities } from './src/services/featureCapabilities';
 import { inAppReviewService } from './src/services/inAppReview';
-import { initializeSecureStorage } from './src/services/secureStorage';
 import { mobileAuthService } from './src/services/mobileAuth';
 import {
   registerForPushNotifications, // Added missing native push helpers
@@ -38,11 +36,15 @@ import {
 } from './src/services/pushNotifications';
 import { requestQueue } from './src/services/requestQueue';
 import { searchIndexService } from './src/services/searchIndex';
-import { initializeSecureStorage } from './src/services/secureStorage'; // Added missing storage helper mock path
+import { initializeSecureStorage } from './src/services/secureStorage';
 import socketService from './src/services/socket';
 import { syncService } from './src/services/syncService'; // Fixed naming convention from the merge conflict
 import { useAppStore, useDeviceStore, useNotificationStore } from './src/store'; // Added missing store imports
 import { useDegradationStore } from './src/store/degradationStore';
+import {
+  consumeHydrationResetToast,
+  subscribeToHydrationResetToast,
+} from './src/store/persistence';
 import { handleCacheVersionUpdate } from './src/utils/cacheVersioning';
 import { requireEnvVariables } from './src/utils/env';
 import { appLogger } from './src/utils/logger';
@@ -118,6 +120,29 @@ const CacheRevalidationBanner = () => {
   );
 };
 
+const PreferencesResetToast = () => (
+  <View
+    style={{
+      position: 'absolute',
+      left: 16,
+      right: 16,
+      bottom: 32,
+      zIndex: 10000,
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      backgroundColor: '#111827',
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      elevation: 6,
+    }}
+  >
+    <Text style={{ color: '#f9fafb', fontWeight: '600' }}>Your preferences were reset</Text>
+  </View>
+);
+
 let _compromisedAlertShown = false;
 
 function showCompromisedAlert(): void {
@@ -139,6 +164,32 @@ const App = () => {
 
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const [appIsReady, setAppIsReady] = React.useState(false);
+  const [showPreferencesResetToast, setShowPreferencesResetToast] = useState(false);
+
+  useEffect(() => {
+    let hideTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const showToastIfNeeded = () => {
+      if (!consumeHydrationResetToast()) {
+        return;
+      }
+
+      setShowPreferencesResetToast(true);
+      hideTimer = setTimeout(() => {
+        setShowPreferencesResetToast(false);
+      }, 4000);
+    };
+
+    showToastIfNeeded();
+    const unsubscribe = subscribeToHydrationResetToast(showToastIfNeeded);
+
+    return () => {
+      unsubscribe();
+      if (hideTimer) {
+        clearTimeout(hideTimer);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     async function prepareApp() {
@@ -393,6 +444,7 @@ const App = () => {
         <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
         <CacheRevalidationBanner />
         <AppNavigator />
+        {showPreferencesResetToast ? <PreferencesResetToast /> : null}
       </AuthProvider>
     </ErrorBoundary>
   );

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { createJSONStorage, devtools, persist, subscribeWithSelector } from 'zustand/middleware';
+import { devtools, persist, subscribeWithSelector } from 'zustand/middleware';
 
-import { toUnixMs } from './persistence';
+import { createHydrationErrorRecovery, secureStorageJSONStorage, toUnixMs } from './persistence';
 import { sentryContextService } from '../services/sentryContext';
 
 export interface User {
@@ -21,6 +21,7 @@ interface AppState {
   refreshToken: string | null;
   sessionExpiresAt: number | null;
   sessionExpiringSoon: boolean;
+  theme: 'light' | 'dark';
   isLoading: boolean;
   error: string | null;
   setUser: (user: User | null) => void;
@@ -34,76 +35,91 @@ interface AppState {
   setError: (error: string | null) => void;
 }
 
+const INITIAL_APP_STATE = {
+  user: null,
+  isAuthenticated: false,
+  isAuthLoading: false,
+  authError: null,
+  accessToken: null,
+  refreshToken: null,
+  sessionExpiresAt: null,
+  sessionExpiringSoon: false,
+  theme: 'light' as const,
+  isLoading: false,
+  error: null,
+};
+
+let resetAppStoreAfterHydrationError = () => {};
+
 export const useAppStore = create<AppState>()(
   devtools(
     persist(
-      subscribeWithSelector(set => ({
-        user: null,
-        isAuthenticated: false,
-        isAuthLoading: false,
-        authError: null,
-        accessToken: null,
-        refreshToken: null,
-        sessionExpiresAt: null,
-        sessionExpiringSoon: false,
-        theme: 'light',
-        isLoading: false,
-        error: null,
-        setUser: user => {
-          set({ user, isAuthenticated: !!user }, false, 'setUser');
-          // Sync Sentry scope with the signed-in user so every subsequent
-          // error report is automatically tagged with user identity.
-          if (user) {
-            sentryContextService.setUser({
-              id: user.id,
-              email: user.email,
-              username: user.name,
-              role: user.role,
-            });
-          } else {
+      subscribeWithSelector(set => {
+        resetAppStoreAfterHydrationError = () =>
+          set(INITIAL_APP_STATE, false, 'hydrationErrorReset');
+
+        return {
+          ...INITIAL_APP_STATE,
+          setUser: user => {
+            set({ user, isAuthenticated: !!user }, false, 'setUser');
+            // Sync Sentry scope with the signed-in user so every subsequent
+            // error report is automatically tagged with user identity.
+            if (user) {
+              sentryContextService.setUser({
+                id: user.id,
+                email: user.email,
+                username: user.name,
+                role: user.role,
+              });
+            } else {
+              sentryContextService.clearUser();
+            }
+          },
+          setTheme: theme => set({ theme }, false, 'setTheme'),
+          setTokens: (accessToken, refreshToken, sessionExpiresAt) =>
+            set(
+              {
+                accessToken,
+                refreshToken,
+                sessionExpiresAt: toUnixMs(sessionExpiresAt),
+              },
+              false,
+              'setTokens'
+            ),
+          setSessionExpiringSoon: sessionExpiringSoon =>
+            set({ sessionExpiringSoon }, false, 'setSessionExpiringSoon'),
+          setAuthLoading: isAuthLoading => set({ isAuthLoading }, false, 'setAuthLoading'),
+          setAuthError: authError => set({ authError }, false, 'setAuthError'),
+          logout: () => {
+            set(
+              {
+                user: null,
+                isAuthenticated: false,
+                isAuthLoading: false,
+                authError: null,
+                accessToken: null,
+                refreshToken: null,
+                sessionExpiresAt: null,
+                sessionExpiringSoon: false,
+              },
+              false,
+              'logout'
+            );
+            // Clear Sentry user scope and reset breadcrumb trail on logout
             sentryContextService.clearUser();
-          }
-        },
-        setTheme: theme => set({ theme }, false, 'setTheme'),
-        setTokens: (accessToken, refreshToken, sessionExpiresAt) =>
-          set(
-            {
-              accessToken,
-              refreshToken,
-              sessionExpiresAt: toUnixMs(sessionExpiresAt),
-            },
-            false,
-            'setTokens'
-          ),
-        setSessionExpiringSoon: sessionExpiringSoon =>
-          set({ sessionExpiringSoon }, false, 'setSessionExpiringSoon'),
-        setAuthLoading: isAuthLoading => set({ isAuthLoading }, false, 'setAuthLoading'),
-        setAuthError: authError => set({ authError }, false, 'setAuthError'),
-        logout: () => {
-          set(
-            {
-              user: null,
-              isAuthenticated: false,
-              isAuthLoading: false,
-              authError: null,
-              accessToken: null,
-              refreshToken: null,
-              sessionExpiresAt: null,
-              sessionExpiringSoon: false,
-            },
-            false,
-            'logout'
-          );
-          // Clear Sentry user scope and reset breadcrumb trail on logout
-          sentryContextService.clearUser();
-          sentryContextService.resetSession();
-        },
-        setLoading: isLoading => set({ isLoading }, false, 'setLoading'),
-        setError: error => set({ error }, false, 'setError'),
-      })),
+            sentryContextService.resetSession();
+          },
+          setLoading: isLoading => set({ isLoading }, false, 'setLoading'),
+          setError: error => set({ error }, false, 'setError'),
+        };
+      }),
       {
         name: 'app-auth-storage',
-        storage: createJSONStorage(() => secureStorageAdapter),
+        storage: secureStorageJSONStorage,
+        onRehydrateStorage: createHydrationErrorRecovery(
+          'app-auth-storage',
+          resetAppStoreAfterHydrationError
+        ),
         /**
          * Only persist auth-related and UI preference state.
          * Transient flags (isLoading, isAuthLoading, error, authError)
