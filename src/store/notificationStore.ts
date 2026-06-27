@@ -20,6 +20,7 @@ interface NotificationState {
   // Permission state
   hasPromptedForPermission: boolean;
   permissionDeniedAt: string | null;
+  showNotificationExplainer: boolean;
 
   // Notification preferences
   preferences: NotificationPreferences;
@@ -39,6 +40,7 @@ interface NotificationState {
   // Actions - Permission
   setHasPromptedForPermission: (prompted: boolean) => void;
   setPermissionDeniedAt: (date: string | null) => void;
+  setShowNotificationExplainer: (show: boolean) => void;
 
   // Actions - Preferences
   setPreference: (key: keyof NotificationPreferences, value: boolean) => void;
@@ -68,6 +70,7 @@ export const useNotificationStore = create<NotificationState>()(
       tokenLastUpdated: null,
       hasPromptedForPermission: false,
       permissionDeniedAt: null,
+      showNotificationExplainer: false,
       preferences: DEFAULT_NOTIFICATION_PREFERENCES,
       notifications: [],
       unreadCount: 0,
@@ -95,6 +98,8 @@ export const useNotificationStore = create<NotificationState>()(
       setHasPromptedForPermission: prompted => set({ hasPromptedForPermission: prompted }),
 
       setPermissionDeniedAt: date => set({ permissionDeniedAt: date }),
+
+      setShowNotificationExplainer: show => set({ showNotificationExplainer: show }),
 
       // Preference actions
       setPreference: (key, value) =>
