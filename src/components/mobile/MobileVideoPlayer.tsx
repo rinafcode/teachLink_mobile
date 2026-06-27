@@ -58,6 +58,8 @@ export type MobileVideoPlayerProps = {
   onQualityChange?: (qualityId: string) => void;
   /** Whether the player is currently active (on-screen) */
   isActive?: boolean;
+  /** Whether to simulate a slow connection */
+  isSlowConnection?: boolean;
 };
 
 const MobileVideoPlayer = ({
@@ -73,6 +75,7 @@ const MobileVideoPlayer = ({
   onPlaybackStatusUpdate,
   onQualityChange,
   isActive = true,
+  isSlowConnection = false,
 }: MobileVideoPlayerProps) => {
   const videoRef = useRef<Video | null>(null);
   const autoPlayHandledRef = useRef(false);

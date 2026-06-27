@@ -38,6 +38,7 @@ beforeEach(() => {
       autoDismissDegradationAlerts: true,
       remindPermissionRetry: true,
       enableFallbackUX: true,
+      respectRemoteFlags: true,
     },
   });
 });

@@ -1,5 +1,5 @@
 import * as Device from 'expo-device';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform, Alert } from 'react-native';
 
 import { mobileAnalyticsService } from '../services/mobileAnalytics';
@@ -45,7 +45,7 @@ export function useMemoryMonitor({
 
   const snapshotsRef = useRef<MemorySnapshot[]>([]);
 
-  const logMemorySnapshot = (pointName: string, snapshot: MemorySnapshot) => {
+  const logMemorySnapshot = useCallback((pointName: string, snapshot: MemorySnapshot) => {
     if (snapshot.available) {
       logger.info(
         `[Memory Monitor] ${componentId} Snapshot [${pointName}]: ` +
@@ -57,7 +57,7 @@ export function useMemoryMonitor({
         `[Memory Monitor] ${componentId} Snapshot [${pointName}]: Hermes stats unavailable`
       );
     }
-  };
+  }, [componentId]);
 
   const performCheckRef = useRef<(trigger: string) => void>(() => {});
   performCheckRef.current = (trigger: string) => {
@@ -185,7 +185,7 @@ export function useMemoryMonitor({
       const final = captureMemorySnapshot();
       logMemorySnapshot('Unmount', final);
     };
-  }, []);
+  }, [logMemorySnapshot]);
 
   useEffect(() => {
     if (Platform.OS === 'android' && itemCount > thresholdWarning) {

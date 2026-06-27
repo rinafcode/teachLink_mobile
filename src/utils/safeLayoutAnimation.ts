@@ -1,3 +1,4 @@
+import { LayoutAnimation } from 'react-native';
 import {
     cancelPendingAnimation,
     configureNext,

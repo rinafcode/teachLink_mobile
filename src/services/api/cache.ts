@@ -472,6 +472,24 @@ export function invalidateCache(key: string): void {
   void removePersistentCache(key);
 }
 
+export function invalidateByPattern(pattern: RegExp): number {
+  let removed = 0;
+
+  for (const key of Array.from(store.keys())) {
+    if (pattern.test(key) && removeMemoryEntry(key)) {
+      removed++;
+    }
+  }
+
+  if (removed > 0) {
+    invalidations += removed;
+    maybeReportCacheStats('invalidate:pattern');
+  }
+
+  void invalidatePersistentWhere(key => pattern.test(key));
+  return removed;
+}
+
 export function invalidateCacheByPrefix(prefix: string): number {
   let removed = 0;
 

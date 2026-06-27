@@ -2,9 +2,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { InternalAxiosRequestConfig } from 'axios';
 import * as Network from 'expo-network';
 
+import { useAppStore } from '../../store';
 import logger from '../../utils/logger';
 import { healthMetricsService } from '../healthMetrics';
 import { mobileAnalyticsService } from '../mobileAnalytics';
+import { isSessionValid, refreshAccessToken } from '../secureStorage';
 
 export type RequestPriority = 'critical' | 'high' | 'normal' | 'low';
 
@@ -158,6 +160,19 @@ class RequestQueue {
     }
   }
 
+  async clear(): Promise<void> {
+    try {
+      await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify([]));
+      this.metrics.totalQueued = 0;
+      this.metrics.byPriority = { critical: 0, high: 0, normal: 0, low: 0 };
+      this.metrics.byMethod = {};
+      await this.persistMetrics();
+      this.notifyListeners(0);
+    } catch (error) {
+      logger.error('Error clearing request queue:', error);
+    }
+  }
+
   async processQueue(apiClient?: any): Promise<void> {
     if (this.isProcessing) return;
 
@@ -172,6 +187,29 @@ class RequestQueue {
     try {
       const queue = await this.getQueue();
       if (queue.length === 0) return;
+
+      const sessionValid = await isSessionValid();
+      if (!sessionValid) {
+        try {
+          const refreshedTokens = await refreshAccessToken();
+          useAppStore
+            .getState()
+            .setTokens(
+              refreshedTokens.accessToken,
+              refreshedTokens.refreshToken,
+              refreshedTokens.expiresAt,
+            );
+          logger.info('RequestQueue: session refreshed before replaying queued requests');
+        } catch (error) {
+          await this.clear();
+          useAppStore.getState().logout();
+          logger.warn(
+            'RequestQueue: queued requests cleared after session refresh failed; re-authentication required',
+            error,
+          );
+          return;
+        }
+      }
 
       const validRequests = queue.filter(
         (req) => req.retries < req.maxRetries,

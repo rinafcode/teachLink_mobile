@@ -2,9 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-
-import apiService from '../services/api';
-import logger from '../utils/logger';
+import { apiService } from '../services/api';
+import { logger } from '../utils/logger';
 
 export interface BookmarkItem {
   itemId: string;
@@ -19,6 +18,17 @@ interface BookmarkState {
   addBookmark: (item: BookmarkItem) => Promise<void>;
   removeBookmark: (itemId: string) => Promise<void>;
   isBookmarked: (itemId: string) => boolean;
+  validateBookmarks: () => Promise<void>;
+}
+
+/** Returns true if the course exists — checks API as the source of truth. */
+async function courseExists(courseId: string): Promise<boolean> {
+  try {
+    await apiService.get(`/api/courses/${courseId}/exists`);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export const useBookmarkStore = create<BookmarkState>()(
@@ -27,8 +37,17 @@ export const useBookmarkStore = create<BookmarkState>()(
       bookmarks: [],
       isLoading: false,
 
-      addBookmark: async (item) => {
-        set((s) => ({ bookmarks: [...s.bookmarks, item] }));
+      addBookmark: async item => {
+        if (item.itemType === 'course') {
+          const exists = await courseExists(item.itemId);
+          if (!exists) {
+            logger.warn('bookmarkStore: course not found, bookmark rejected', {
+              courseId: item.itemId,
+            });
+            return;
+          }
+        }
+        set(s => ({ bookmarks: [...s.bookmarks, item] }));
         try {
           await apiService.post('/api/bookmarks', { itemId: item.itemId, itemType: item.itemType });
         } catch (error: any) {
@@ -38,8 +57,8 @@ export const useBookmarkStore = create<BookmarkState>()(
         }
       },
 
-      removeBookmark: async (itemId) => {
-        set((s) => ({ bookmarks: s.bookmarks.filter((b) => b.itemId !== itemId) }));
+      removeBookmark: async itemId => {
+        set(s => ({ bookmarks: s.bookmarks.filter(b => b.itemId !== itemId) }));
         try {
           await apiService.delete(`/api/bookmarks/${itemId}`);
         } catch (error: any) {
@@ -49,12 +68,23 @@ export const useBookmarkStore = create<BookmarkState>()(
         }
       },
 
-      isBookmarked: (itemId) => get().bookmarks.some((b) => b.itemId === itemId),
+      isBookmarked: itemId => get().bookmarks.some(b => b.itemId === itemId),
+
+      validateBookmarks: async () => {
+        const courseBookmarks = get().bookmarks.filter(b => b.itemType === 'course');
+        for (const bookmark of courseBookmarks) {
+          const exists = await courseExists(bookmark.itemId);
+          if (!exists) {
+            logger.info('bookmarkStore: removing stale bookmark', { itemId: bookmark.itemId });
+            set(s => ({ bookmarks: s.bookmarks.filter(b => b.itemId !== bookmark.itemId) }));
+          }
+        }
+      },
     }),
     {
       name: 'bookmarks',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({ bookmarks: state.bookmarks }),
-    },
-  ),
+      partialize: state => ({ bookmarks: state.bookmarks }),
+    }
+  )
 );

@@ -35,13 +35,13 @@ export const LazyAdvancedDataGrid = createLazyComponent<any>(
 // Profile Components
 export const LazyMobileProfile = createLazyComponent<any>(
   'MobileProfile',
-  () => import('../components/mobile/MobileProfile'),
+  () => import('../components/mobile/MobileProfile').then(mod => ({ default: mod.MobileProfile })),
   'LazyMobileProfile'
 );
 
 export const LazyAvatarCamera = createLazyComponent<any>(
   'AvatarCamera',
-  () => import('../components/mobile/AvatarCamera'),
+  () => import('../components/mobile/AvatarCamera').then(mod => ({ default: mod.AvatarCamera })),
   'LazyAvatarCamera'
 );
 
@@ -57,7 +57,7 @@ export const LazyCourseViewerContent = createLazyComponent<any>(
   'CourseViewerContent',
   () =>
     import('../components/mobile/MobileCourseViewer').then(mod => ({
-      default: mod.CourseViewerContent || mod.default,
+      default: mod.default,
     })),
   'LazyCourseViewerContent'
 );
@@ -72,7 +72,7 @@ export const LazyMobileQuizManager = createLazyComponent<any>(
 // Search Components
 export const LazyMobileSearch = createLazyComponent<any>(
   'MobileSearch',
-  () => import('../components/mobile/MobileSearch'),
+  () => import('../components/mobile/MobileSearch').then(mod => ({ default: mod.MobileSearch })),
   'LazyMobileSearch'
 );
 
@@ -86,14 +86,14 @@ export const LazyQRScanner = createLazyComponent<any>(
 // Download Manager
 export const LazyDownloadQueue = createLazyComponent<any>(
   'DownloadQueue',
-  () => import('../components/mobile/DownloadQueue'),
+  () => import('../components/mobile/DownloadQueue').then(mod => ({ default: mod.DownloadQueue })),
   'LazyDownloadQueue'
 );
 
 // Virtual List for large data
 export const LazyVirtualList = createLazyComponent<any>(
   'VirtualList',
-  () => import('../components/mobile/VirtualList'),
+  () => import('../components/mobile/VirtualList').then(mod => ({ default: mod.VirtualList })),
   'LazyVirtualList'
 );
 

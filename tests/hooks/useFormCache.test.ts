@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 
 import { useFormCache } from '../../src/hooks/useFormCache';
-import { FORM_CACHE_STORAGE_KEY } from '../../src/services/formCache';
+import { getFormCacheStorageKey } from '../../src/services/formCache';
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   getItem: jest.fn(),
@@ -11,9 +11,17 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   removeItem: jest.fn(),
 }));
 
+// Mock the app store so we control the userId
+jest.mock('../../src/store', () => ({
+  useAppStore: (selector: (state: { user: { id: string } | null }) => unknown) =>
+    selector({ user: { id: 'test-user-1' } }),
+}));
+
 const mockGetItem = AsyncStorage.getItem as jest.Mock;
 const mockSetItem = AsyncStorage.setItem as jest.Mock;
 const mockRemoveItem = AsyncStorage.removeItem as jest.Mock;
+
+const EXPECTED_KEY = getFormCacheStorageKey('test-user-1');
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -38,6 +46,12 @@ describe('useFormCache', () => {
 
     expect(result.current.prefillValues.fullName).toBe('Cached User');
     expect(result.current.prefillValues.email).toBe('c@d.com');
+  });
+
+  it('reads from the user-scoped storage key', async () => {
+    const { result } = renderHook(() => useFormCache(['fullName']));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(mockGetItem).toHaveBeenCalledWith(EXPECTED_KEY);
   });
 
   it('applyPrefillToFields only fills empty fields', async () => {
@@ -67,7 +81,7 @@ describe('useFormCache', () => {
     expect(setEmail).toHaveBeenCalledWith('cached@e.com');
   });
 
-  it('clearCache removes storage and resets state', async () => {
+  it('clearCache removes the user-scoped storage key and resets state', async () => {
     const { result } = renderHook(() => useFormCache(['fullName']));
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -76,7 +90,7 @@ describe('useFormCache', () => {
       await result.current.clearCache();
     });
 
-    expect(mockRemoveItem).toHaveBeenCalledWith(FORM_CACHE_STORAGE_KEY);
+    expect(mockRemoveItem).toHaveBeenCalledWith(EXPECTED_KEY);
     expect(result.current.prefillValues).toEqual({});
   });
 

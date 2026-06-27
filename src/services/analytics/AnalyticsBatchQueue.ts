@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
 
 import { appLogger } from '../../utils/logger';
+import { safeStorageWrite } from '../../utils/storage';
 import { AnalyticsEvent, EventProperties } from '../../utils/trackingEvents';
 import apiClient from '../api/axios.config';
 
@@ -115,7 +116,7 @@ export class AnalyticsBatchQueue {
 
   private async storeBatch(events: AnalyticsEventEntry[], retryCount: number): Promise<void> {
     try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ events, retryCount }));
+      await safeStorageWrite(STORAGE_KEY, JSON.stringify({ events, retryCount }));
     } catch {
       /* silent */
     }

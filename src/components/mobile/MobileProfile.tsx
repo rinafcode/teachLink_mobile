@@ -36,16 +36,11 @@ import { AvatarCamera } from './AvatarCamera';
 import { MobileFormInput } from './MobileFormInput';
 import { StatisticsDisplay } from './StatisticsDisplay';
 import { useFormCache } from '../../hooks/useFormCache';
-import { PROFILE_FORM_CACHE_KEYS } from '../../services/formCache';
+import { PROFILE_FORM_CACHE_KEYS, cacheFormValues } from '../../services/formCache';
 import { configureNext } from '../../utils/layoutAnimation';
 import { AppText as Text } from '../common/AppText';
 import { CachedImage } from '../ui/CachedImage';
 import { ShimmerItem as Skeleton } from '../common/SkeletonLoader';
-import { Achievement, AchievementBadges } from './AchievementBadges';
-import { AvatarCamera } from './AvatarCamera';
-import { MobileFormInput } from './MobileFormInput';
-import { StatisticsDisplay } from './StatisticsDisplay';
-import { Skeleton } from '../ui/Skeleton';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -352,51 +347,23 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
   );
 
   const handleStartEdit = useCallback(() => {
-    setEditName(profile.name);
-    setEditBio(profile.bio);
-    setEditEmail(profile.email);
-    setEditLocation(profile.location);
-    setEditWebsite(profile.website);
-    applyPrefillToFields(
-      {
-        fullName: profile.name,
-        email: profile.email,
-        bio: profile.bio,
-        location: profile.location,
-        website: profile.website,
-      },
-      {
-        fullName: setEditName,
-        email: setEditEmail,
-        bio: setEditBio,
-        location: setEditLocation,
-        website: setEditWebsite,
-      }
-    );
-    setFormErrors({});
+    reset({
+      name: profile.name,
+      email: profile.email,
+      bio: profile.bio,
+      location: profile.location,
+      website: profile.website,
+    });
     setShowAdvancedFields(false); // reset disclosure state on each edit session
     setIsEditing(true);
-  }, [profile, applyPrefillToFields]);
+  }, [profile, reset]);
 
   const handleToggleAdvancedFields = useCallback(() => {
     configureNext();
     setShowAdvancedFields(prev => !prev);
   }, []);
 
-  const validateForm = useCallback((): Record<string, string> => {
-    const errors: Record<string, string> = {};
-    if (!editName.trim()) errors.name = 'Name is required';
-    if (!editEmail.trim()) errors.email = 'Email is required';
-    else if (!/\S+@\S+\.\S+/.test(editEmail)) errors.email = 'Enter a valid email address';
-    return errors;
-  }, [editName, editEmail]);
-
-  const handleSave = useCallback(async () => {
-    const errors = validateForm();
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
-      return;
-    }
+  const handleSave = handleSubmit(async (data) => {
     setIsSaving(true);
     await new Promise(resolve => setTimeout(resolve, 800));
     setProfile(prev => ({
@@ -416,11 +383,10 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
     });
     setIsSaving(false);
     setIsEditing(false);
-  }, [validateForm, editName, editBio, editEmail, editLocation, editWebsite, persistFields]);
+  });
 
   const handleCancelEdit = useCallback(() => {
     setIsEditing(false);
-    setFormErrors({});
   }, []);
 
   const handleAvatarConfirm = useCallback((uri: string) => {

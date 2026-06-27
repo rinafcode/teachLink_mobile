@@ -1,18 +1,23 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   cacheFormValues,
   clearFormCache,
   formCacheService,
   getCachedFieldValues,
+  getFormCacheStorageKey,
   type FormCacheFieldKey,
   type FormCacheStore,
   loadFormCache,
 } from '../services/formCache';
+import { useAppStore } from '../store';
 
 const DEBOUNCE_MS = 800;
 
 export function useFormCache(fieldKeys: FormCacheFieldKey[]) {
+  const userId = useAppStore(state => state.user?.id);
+  const storageKey = useMemo(() => getFormCacheStorageKey(userId ?? 'anonymous'), [userId]);
+
   const [prefillValues, setPrefillValues] = useState<Partial<Record<FormCacheFieldKey, string>>>(
     {}
   );
@@ -31,14 +36,15 @@ export function useFormCache(fieldKeys: FormCacheFieldKey[]) {
   const refresh = useCallback(async () => {
     setIsLoading(true);
     const [values, store] = await Promise.all([
-      getCachedFieldValues(stableFieldKeysRef.current),
-      loadFormCache(),
+      getCachedFieldValues(storageKey, stableFieldKeysRef.current),
+      loadFormCache(storageKey),
     ]);
     setPrefillValues(values);
     setCacheStore(store);
     setIsLoading(false);
-  }, []);
+  }, [storageKey]);
 
+  // Re-load cache when userId changes (user switches account)
   useEffect(() => {
     void refresh();
   }, [refresh]);
@@ -54,11 +60,11 @@ export function useFormCache(fieldKeys: FormCacheFieldKey[]) {
 
   const _commitWrite = useCallback(
     async (values: Partial<Record<FormCacheFieldKey, string>>) => {
-      await cacheFormValues(values);
+      await cacheFormValues(storageKey, values);
       writeCountRef.current += 1;
       await refresh();
     },
-    [refresh]
+    [storageKey, refresh]
   );
 
   const persistFields = useCallback(
@@ -115,10 +121,10 @@ export function useFormCache(fieldKeys: FormCacheFieldKey[]) {
   );
 
   const clearCache = useCallback(async () => {
-    await clearFormCache();
+    await clearFormCache(storageKey);
     setPrefillValues({});
     setCacheStore({});
-  }, []);
+  }, [storageKey]);
 
   return {
     prefillValues,

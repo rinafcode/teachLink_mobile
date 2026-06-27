@@ -1,5 +1,5 @@
 import * as Device from 'expo-device';
-import { Platform, LayoutAnimation as RNLayoutAnimation, UIManager } from 'react-native';
+import { Platform, LayoutAnimation as RNLayoutAnimation, UIManager, LayoutAnimationConfig } from 'react-native';
 
 /**
  * Centralized LayoutAnimation utility with device capability detection
@@ -64,64 +64,52 @@ export function shouldEnableLayoutAnimation(): boolean {
 /**
  * Optimized animation configurations based on device capabilities
  */
-export const LayoutAnimationPresets = {
+export const LayoutAnimationPresets: Record<string, LayoutAnimationConfig> = {
   /**
    * Fast spring animation for high-performance devices
    */
-  spring: RNLayoutAnimation.create(
-    {
-      duration: 250,
-      create: { type: 'spring', property: 'opacity', springDamping: 0.7 },
-      update: { type: 'spring', property: 'opacity', springDamping: 0.7 },
-      delete: { type: 'spring', property: 'opacity', springDamping: 0.7 },
-    },
-    'spring'
-  ),
+  spring: {
+    duration: 250,
+    create: { type: 'spring', property: 'opacity', springDamping: 0.7 },
+    update: { type: 'spring', property: 'opacity', springDamping: 0.7 },
+    delete: { type: 'spring', property: 'opacity', springDamping: 0.7 },
+  },
 
   /**
    * Smooth ease-in-ease-out for mid-range devices
    */
-  easeInEaseOut: RNLayoutAnimation.create(
-    {
-      duration: 300,
-      create: { type: 'easeInEaseOut', property: 'opacity' },
-      update: { type: 'easeInEaseOut', property: 'opacity' },
-      delete: { type: 'easeInEaseOut', property: 'opacity' },
-    },
-    'easeInEaseOut'
-  ),
+  easeInEaseOut: {
+    duration: 300,
+    create: { type: 'easeInEaseOut', property: 'opacity' },
+    update: { type: 'easeInEaseOut', property: 'opacity' },
+    delete: { type: 'easeInEaseOut', property: 'opacity' },
+  },
 
   /**
    * Fast linear animation for low-end devices (minimal overhead)
    */
-  fast: RNLayoutAnimation.create(
-    {
-      duration: 150,
-      create: { type: 'linear', property: 'opacity' },
-      update: { type: 'linear', property: 'opacity' },
-      delete: { type: 'linear', property: 'opacity' },
-    },
-    'fast'
-  ),
+  fast: {
+    duration: 150,
+    create: { type: 'linear', property: 'opacity' },
+    update: { type: 'linear', property: 'opacity' },
+    delete: { type: 'linear', property: 'opacity' },
+  },
 
   /**
    * Minimal animation for very low-end devices (almost instant)
    */
-  minimal: RNLayoutAnimation.create(
-    {
-      duration: 100,
-      create: { type: 'linear', property: 'opacity' },
-      update: { type: 'linear', property: 'opacity' },
-      delete: { type: 'linear', property: 'opacity' },
-    },
-    'minimal'
-  ),
+  minimal: {
+    duration: 100,
+    create: { type: 'linear', property: 'opacity' },
+    update: { type: 'linear', property: 'opacity' },
+    delete: { type: 'linear', property: 'opacity' },
+  },
 };
 
 /**
  * Get the appropriate animation preset based on device capabilities
  */
-export function getOptimizedPreset(): RNLayoutAnimation.AnimationConfig {
+export function getOptimizedPreset(): LayoutAnimationConfig {
   const capabilities = getDeviceCapabilities();
 
   switch (capabilities.deviceClass) {
@@ -147,7 +135,7 @@ const ANIMATION_DEBOUNCE_MS = 100;
  * Debounced LayoutAnimation configuration to prevent layout thrashing
  * from rapid successive state updates
  */
-export function configureNext(config?: RNLayoutAnimation.AnimationConfig): void {
+export function configureNext(config?: LayoutAnimationConfig): void {
   // Clear any pending animation
   if (animationTimeout) {
     clearTimeout(animationTimeout);
@@ -179,7 +167,7 @@ export function configureNext(config?: RNLayoutAnimation.AnimationConfig): void 
 /**
  * Configure the next LayoutAnimation without debouncing.
  */
-export function configureNextImmediate(config?: RNLayoutAnimation.AnimationConfig): void {
+export function configureNextImmediate(config?: LayoutAnimationConfig): void {
   if (!isLayoutAnimationSupported()) {
     return;
   }

@@ -61,10 +61,22 @@ interface SettingsState {
 
 const DEFAULT_SETTINGS: Omit<
   SettingsState,
-  keyof Omit<
-    SettingsState,
-    ProfileVisibility | DownloadQuality | StorageLimit | AppLanguage | FontSize | boolean
-  >
+  | 'setProfileVisibility'
+  | 'setTwoFactorEnabled'
+  | 'setDataSharing'
+  | 'setAnalyticsEnabled'
+  | 'setLocationServices'
+  | 'setDownloadOverWifiOnly'
+  | 'setAutoDownload'
+  | 'setDownloadQuality'
+  | 'setStorageLimit'
+  | 'setLanguage'
+  | 'setFontSize'
+  | 'setAutoplay'
+  | 'setHapticFeedback'
+  | 'setAdaptiveThemeEnabled'
+  | 'setDataSaverEnabled'
+  | 'resetSettings'
 > = {
   profileVisibility: 'public' as ProfileVisibility,
   twoFactorEnabled: false,

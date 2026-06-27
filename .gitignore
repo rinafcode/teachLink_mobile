@@ -85,4 +85,5 @@ GoogleService-Info.plist
 # Documentation files (except README.md)
 *.md
 !README.md
+!CONTRIBUTING.md
 !docs/**/*.md

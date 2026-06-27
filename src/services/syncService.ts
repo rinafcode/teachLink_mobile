@@ -4,10 +4,12 @@ import { apiService } from './api';
 import { batchClient } from './api/batchClient';
 import { offlineStorage, SyncOperation, SyncOperationType } from './offlineStorage';
 import { syncEntityManager } from './sync/syncEntityManager';
+import { useBookmarkStore } from '../store/bookmarkStore';
 import { useDeviceStore } from '../store/deviceStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { useSyncStore } from '../store/syncStore';
 import { logger } from '../utils/logger';
+import { backgroundScheduler } from '../utils/backgroundTaskScheduler';
 
 import type {
   ConflictResolutionStrategy as VersionedConflictResolutionStrategy,
@@ -209,6 +211,27 @@ export class SyncService {
   }
 
   /**
+   * Run sync as a bounded background task (25-second limit for iOS).
+   * Checkpoints progress on timeout so partial work is not lost.
+   */
+  async runBackgroundSync(): Promise<void> {
+    const result = await backgroundScheduler.runWithTimeout(
+      async () => {
+        await this.syncPendingOperations(false);
+      },
+      'syncService.runBackgroundSync'
+    );
+
+    if (result.timedOut) {
+      // Checkpoint: persist current isSyncing=false so next launch can resume
+      this.isSyncing = false;
+      logger.warn('SyncService: Background sync timed out — checkpointed for next run', {
+        taskDurationMs: result.taskDurationMs,
+      });
+    }
+  }
+
+  /**
    * Manual sync trigger
    */
   async manualSync(): Promise<void> {
@@ -277,6 +300,8 @@ export class SyncService {
       if (syncSucceeded) {
         logger.info('Sync completed successfully');
         this.emitEvent({ type: 'syncCompleted', timestamp: Date.now() });
+        // Prune stale bookmarks after each successful catalog sync
+        void useBookmarkStore.getState().validateBookmarks();
       }
 
       return syncSucceeded;

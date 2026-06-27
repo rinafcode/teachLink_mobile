@@ -188,7 +188,7 @@ export const useLocation = (defaultOptions: GetPositionOptions = {}): UseLocatio
     };
 
     initLocation();
-  }, []);
+  }, [degradationStore, refresh]);
 
   return {
     position,

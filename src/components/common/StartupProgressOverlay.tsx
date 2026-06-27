@@ -42,7 +42,7 @@ export const StartupProgressOverlay = () => {
     });
 
     return unsubscribe;
-  }, []);
+  }, [getProgress, getRemainingTime, getInProgressStep, getCompletedSteps, progressAnim]);
 
   // Format time as MM:SS
   const formatTime = (ms: number) => {

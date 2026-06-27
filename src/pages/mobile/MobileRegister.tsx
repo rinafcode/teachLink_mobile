@@ -1,7 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { AlertCircle, BookOpen, Lock, Mail, User } from 'lucide-react-native';
-import React, { useRef, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Platform,
@@ -61,6 +60,12 @@ export const MobileRegister: React.FC<MobileRegisterProps> = ({
     confirmPassword: { validator: v => validateConfirmPassword(password, v) },
   });
 
+  const {
+    applyPrefillToFields,
+    isLoading: formCacheLoading,
+    prefillValues,
+  } = useFormCache(['fullName', 'email']);
+
   const { scale } = useDynamicFontSize();
   const styles = createStyles(scale);
   const bg = isDark ? '#0f172a' : '#f8fafc';
@@ -83,7 +88,7 @@ export const MobileRegister: React.FC<MobileRegisterProps> = ({
     setIsLoading(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 1000));
-      await cacheFormValues({ fullName: data.name.trim(), email: data.email.trim().toLowerCase() });
+      await cacheFormValues({ fullName: name.trim(), email: email.trim().toLowerCase() });
       onRegisterSuccess?.();
     } finally {
       setIsLoading(false);

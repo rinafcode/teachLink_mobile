@@ -1,9 +1,11 @@
-# Contributing Guidelines
+# Contributing to TeachLink Mobile
 
-Thank you for your interest in contributing to teachLink_mobile!
+Thank you for contributing to TeachLink Mobile!
 
-## Pull Request Process
-When submitting a Pull Request, you must fill out the provided PR template. The template ensures that all necessary considerations are accounted for before merge.
+## Pull Request Guidelines
+
+When submitting a Pull Request, you must fill out the provided PR template.  
+The template ensures that all necessary considerations are accounted for before merge.
 
 Please review the `.github/pull_request_template.md` which includes:
 - **Summary & Type of Change**: Describe what the PR does.
@@ -12,5 +14,25 @@ Please review the `.github/pull_request_template.md` which includes:
 - **Performance Considerations**: Address concerns like hook optimization (`useCallback`, `useMemo`), `FlatList` optimization, and asynchronous patterns.
 - **Checklist**: General checks, including checking whether an Architectural Decision Record (ADR) is needed.
 
-## Architectural Changes
-If your PR introduces a significant architectural change, please ensure an Architectural Decision Record (ADR) has been discussed or created and that it is checked off in the PR template.
+## Fast-Fail Syntax Gate
+
+We have a dedicated **Syntax Gate** workflow (`.github/workflows/syntax.yml`) that runs on every pull request `opened` or `synchronize` event.
+
+- Checks TypeScript compiler errors (`tsc --noEmit`) and ESLint (`eslint --max-warnings=0`)
+- Optimized to complete in **under 90 seconds** using caching
+- Required for branch protection — PRs cannot be merged if it fails
+- Run checks locally before pushing to avoid CI failures
+
+## Local Quality Checks
+
+You can run the checks locally:
+
+```bash
+# Run ESLint linting
+npm run lint
+
+# Check formatting
+npm run format:check
+
+# Run TypeScript type check
+npx tsc --noEmit
