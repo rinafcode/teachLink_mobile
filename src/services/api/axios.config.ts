@@ -16,6 +16,7 @@ import { invalidateCacheForBatchRequests, invalidateCacheForMutation, invalidate
 import { requestQueue } from './requestQueue';
 import { getEnv } from '../../config';
 import { MUTATION_INVALIDATION_MAP } from '../../config/apiCacheConfig';
+import { useAppStore } from '../../store';
 import { appLogger } from '../../utils/logger';
 import { startTiming, notifyEntry } from '../../utils/performanceTiming';
 import { healthMetricsService } from '../healthMetrics';
@@ -171,6 +172,12 @@ apiClient.interceptors.response.use(
       statusCode: response.status,
     });
     invalidateSuccessfulMutationCache(cfg);
+
+    // Successful login clears the client-side lockout counter
+    if (cfg.url?.includes('/auth/login')) {
+      useAppStore.getState().resetAuthFailures();
+    }
+
     return response;
   },
   async (error: AxiosError) => {
@@ -230,6 +237,12 @@ apiClient.interceptors.response.use(
 
     // ─── 401: Token refresh flow ───────────────────────────────────────────
 
+    // Count consecutive bad-credential 401s on the login endpoint so the
+    // client can enforce a lockout before the 5th attempt reaches the server.
+    if (status === 401 && originalRequest.url?.includes('/auth/login') && !originalRequest._retry) {
+      useAppStore.getState().incrementAuthFailure();
+    }
+
     if (
       status === 401 &&
       !originalRequest._retry &&
@@ -269,6 +282,11 @@ apiClient.interceptors.response.use(
 
         return apiClient(originalRequest);
       } catch (refreshError) {
+        // Three consecutive refresh 401s indicate the refresh token is invalid;
+        // force a full logout rather than leaving the user in a broken auth state.
+        if ((refreshError as AxiosError)?.response?.status === 401) {
+          useAppStore.getState().incrementRefreshFailure();
+        }
         processRefreshQueue(null, refreshError);
         return Promise.reject(refreshError);
       } finally {

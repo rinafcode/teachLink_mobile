@@ -33,6 +33,7 @@ import { MobileFormInput } from '../../components/mobile/MobileFormInput';
 import { useBiometricAuth, useDynamicFontSize, useFormValidation } from '../../hooks';
 import authService, { AuthResult } from '../../services/mobileAuth';
 import * as secureStorage from '../../services/secureStorage';
+import { useAppStore } from '../../store';
 import { validateEmail, validateRequired } from '../../utils/validation';
 
 interface LoginFormValues {
@@ -74,6 +75,23 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [showBiometricModal, setShowBiometricModal] = useState(false);
+
+  // ── Auth lockout ─────────────────────────────────────────────────────────
+  const authLockedUntil = useAppStore(state => state.authLockedUntil);
+  const [lockSecondsLeft, setLockSecondsLeft] = useState(0);
+
+  useEffect(() => {
+    if (!authLockedUntil) {
+      setLockSecondsLeft(0);
+      return;
+    }
+    const tick = () => setLockSecondsLeft(Math.max(0, Math.ceil((authLockedUntil - Date.now()) / 1000)));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [authLockedUntil]);
+
+  const isLocked = lockSecondsLeft > 0;
 
   const passwordRef = useRef<TextInput>(null);
 
@@ -212,6 +230,16 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
 
           {/* ── Card ── */}
           <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
+            {/* Lockout banner */}
+            {isLocked && (
+              <View style={styles.lockoutBanner}>
+                <AlertCircle size={scale(14)} color="#b45309" />
+                <Text allowFontScaling={false} style={styles.lockoutText}>
+                  Too many failed attempts. Try again in {lockSecondsLeft}s.
+                </Text>
+              </View>
+            )}
+
             {/* Error banner */}
             {displayError && (
               <View style={styles.errorBanner}>
@@ -331,9 +359,9 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
 
             {/* Primary CTA */}
             <TouchableOpacity
-              style={[styles.loginBtn, { opacity: isLoading ? 0.7 : 1 }]}
+              style={[styles.loginBtn, { opacity: isLoading || isLocked ? 0.5 : 1 }]}
               onPress={handleSubmit(onSubmit)}
-              disabled={isLoading}
+              disabled={isLoading || isLocked}
               activeOpacity={0.85}
             >
               <LinearGradient
@@ -507,6 +535,22 @@ const createStyles = (scale: (size: number) => number, isDark: boolean) =>
       shadowOpacity: 0.07,
       shadowRadius: scale(16),
       elevation: 4,
+    },
+    lockoutBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: scale(8),
+      backgroundColor: '#fef3c7',
+      borderRadius: scale(10),
+      paddingHorizontal: scale(14),
+      paddingVertical: scale(10),
+      marginBottom: scale(4),
+    },
+    lockoutText: {
+      color: '#b45309',
+      fontSize: scale(13),
+      fontWeight: '500',
+      flex: 1,
     },
     errorBanner: {
       flexDirection: 'row',
