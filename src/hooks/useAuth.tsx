@@ -9,6 +9,7 @@ import React, {
 } from 'react';
 
 import mobileAuth, { AuthUser } from '../services/mobileAuth';
+import { getAuthErrorMessage } from '../utils/authErrorMessages';
 import { appLogger } from '../utils/logger';
 
 interface AuthState {
@@ -83,7 +84,16 @@ export const AuthProvider = ({ children }: AuthProviderProps): React.ReactElemen
         });
       } catch (error) {
         setState(prev => ({ ...prev, isLoading: false }));
-        throw error;
+
+        const authErrorCode = (error as { response?: { data?: { error?: string } } })?.response
+          ?.data?.error;
+
+        await appLogger.error('Auth login failed', error, {
+          response: (error as { response?: { data?: unknown } })?.response?.data,
+          status: (error as { response?: { status?: number } })?.response?.status,
+        });
+
+        throw new Error(getAuthErrorMessage(authErrorCode));
       }
     },
     [] // stable: credentials come in as an argument, not a dep
