@@ -227,7 +227,10 @@ class MobilePaymentsService {
         };
       });
     } catch (error) {
-      log.error('[Payments] getProducts error:', error);
+      appLogger.errorSync(
+        '[Payments] getProducts error',
+        error instanceof Error ? error : new Error(String(error))
+      );
       return SUBSCRIPTION_PLANS.filter(p => productIds.includes(p.productId));
     }
   }
@@ -269,7 +272,10 @@ class MobilePaymentsService {
       await this._setTier(plan.tier);
       return record;
     } catch (error) {
-      log.error('[Payments] purchaseSubscription error:', error);
+      appLogger.errorSync(
+        '[Payments] purchaseSubscription error',
+        error instanceof Error ? error : new Error(String(error))
+      );
       throw error;
     }
   }
@@ -296,7 +302,10 @@ class MobilePaymentsService {
       await this._savePurchaseRecord(record);
       return record;
     } catch (error) {
-      log.error('[Payments] purchaseProduct error:', error);
+      appLogger.errorSync(
+        '[Payments] purchaseProduct error',
+        error instanceof Error ? error : new Error(String(error))
+      );
       throw error;
     }
   }
@@ -336,8 +345,21 @@ class MobilePaymentsService {
               receiptData: receipt,
             });
             await IAP.finishTransaction({ purchase, isConsumable: false });
+          } else {
+            appLogger.infoSync(
+              `[Payments] restorePurchases: invalid receipt skipped for ${purchase.productId}`
+            );
           }
         }
+      }
+
+      // Update subscription tier for the most recently valid restored subscription
+      const activeSub = validated
+        .filter(p => p.type === 'subscription')
+        .sort((a, b) => new Date(b.purchasedAt).getTime() - new Date(a.purchasedAt).getTime())[0];
+      if (activeSub) {
+        const plan = SUBSCRIPTION_PLANS.find(p => p.productId === activeSub.productId);
+        if (plan) await this._setTier(plan.tier);
       }
 
       if (validated.length === 0) {
@@ -364,7 +386,10 @@ class MobilePaymentsService {
 
       return validated;
     } catch (error) {
-      log.error('[Payments] restorePurchases error:', error);
+      appLogger.errorSync(
+        '[Payments] restorePurchases error',
+        error instanceof Error ? error : new Error(String(error))
+      );
       throw error;
     }
   }

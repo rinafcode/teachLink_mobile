@@ -4,9 +4,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   cacheFormValues,
   clearFormCache,
-  FORM_CACHE_STORAGE_KEY,
   FORM_CACHE_TTL_MS,
   getCachedFieldValue,
+  getFormCacheStorageKey,
   getSuggestionForField,
   isExpired,
   loadFormCache,
@@ -23,6 +23,8 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 const mockGetItem = AsyncStorage.getItem as jest.Mock;
 const mockSetItem = AsyncStorage.setItem as jest.Mock;
 const mockRemoveItem = AsyncStorage.removeItem as jest.Mock;
+
+const TEST_KEY = getFormCacheStorageKey('test-user');
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -60,7 +62,11 @@ describe('formCache', () => {
 
   describe('getSuggestionForField', () => {
     it('returns null when current matches cache', () => {
-      const s = getSuggestionForField({ email: { value: 'a@b.com', updatedAt: Date.now() } }, 'email', 'a@b.com');
+      const s = getSuggestionForField(
+        { email: { value: 'a@b.com', updatedAt: Date.now() } },
+        'email',
+        'a@b.com'
+      );
       expect(s).toBeNull();
     });
 
@@ -77,7 +83,7 @@ describe('formCache', () => {
   describe('loadFormCache', () => {
     it('returns empty object when storage is empty', async () => {
       mockGetItem.mockResolvedValueOnce(null);
-      expect(await loadFormCache()).toEqual({});
+      expect(await loadFormCache(TEST_KEY)).toEqual({});
     });
 
     it('parses valid JSON and persists prune when expired keys exist', async () => {
@@ -87,7 +93,7 @@ describe('formCache', () => {
         city: { value: 'gone', updatedAt: now - FORM_CACHE_TTL_MS - 10 },
       });
       mockGetItem.mockResolvedValueOnce(raw);
-      const result = await loadFormCache();
+      const result = await loadFormCache(TEST_KEY);
       expect(result.city).toBeUndefined();
       expect(result.email?.value).toBe('keep@x.com');
       expect(mockSetItem).toHaveBeenCalled();
@@ -97,23 +103,23 @@ describe('formCache', () => {
   describe('setCachedFieldValue', () => {
     it('does not persist empty strings', async () => {
       mockGetItem.mockResolvedValueOnce('{}');
-      await setCachedFieldValue('fullName', '   ');
+      await setCachedFieldValue(TEST_KEY, 'fullName', '   ');
       expect(mockSetItem).not.toHaveBeenCalled();
     });
 
     it('merges with existing store', async () => {
       mockGetItem.mockResolvedValueOnce(JSON.stringify({}));
-      await setCachedFieldValue('fullName', 'Jane');
+      await setCachedFieldValue(TEST_KEY, 'fullName', 'Jane');
       const written = JSON.parse(mockSetItem.mock.calls[0][1] as string);
       expect(written.fullName.value).toBe('Jane');
-      expect(mockSetItem.mock.calls[0][0]).toBe(FORM_CACHE_STORAGE_KEY);
+      expect(mockSetItem.mock.calls[0][0]).toBe(TEST_KEY);
     });
   });
 
   describe('cacheFormValues', () => {
     it('writes multiple keys', async () => {
       mockGetItem.mockResolvedValueOnce('{}');
-      await cacheFormValues({ fullName: 'A', email: 'a@b.com' });
+      await cacheFormValues(TEST_KEY, { fullName: 'A', email: 'a@b.com' });
       const written = JSON.parse(mockSetItem.mock.calls[0][1] as string);
       expect(written.fullName.value).toBe('A');
       expect(written.email.value).toBe('a@b.com');
@@ -123,14 +129,14 @@ describe('formCache', () => {
   describe('getCachedFieldValue', () => {
     it('returns null for missing key', async () => {
       mockGetItem.mockResolvedValueOnce('{}');
-      expect(await getCachedFieldValue('phone')).toBeNull();
+      expect(await getCachedFieldValue(TEST_KEY, 'phone')).toBeNull();
     });
   });
 
   describe('clearFormCache', () => {
     it('removes storage key', async () => {
-      await clearFormCache();
-      expect(mockRemoveItem).toHaveBeenCalledWith(FORM_CACHE_STORAGE_KEY);
+      await clearFormCache(TEST_KEY);
+      expect(mockRemoveItem).toHaveBeenCalledWith(TEST_KEY);
     });
   });
 });

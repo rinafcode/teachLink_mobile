@@ -1,5 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+/** Returns an AsyncStorage key scoped to the given user (versioned for future migrations). */
+export function getFormCacheStorageKey(userId: string): string {
+  return `@teachlink/form-cache/${userId}/v1`;
+}
+
+/** @deprecated Use getFormCacheStorageKey(userId) instead. Kept for migration only. */
 import { safeStorageWrite } from '../utils/storage';
 
 /** AsyncStorage key for the form value cache (versioned for future migrations). */
@@ -48,14 +54,14 @@ export function pruneExpiredCache(store: FormCacheStore, now = Date.now()): Form
   return pruned;
 }
 
-export async function loadFormCache(): Promise<FormCacheStore> {
-  const raw = await AsyncStorage.getItem(FORM_CACHE_STORAGE_KEY);
+export async function loadFormCache(storageKey: string): Promise<FormCacheStore> {
+  const raw = await AsyncStorage.getItem(storageKey);
   if (!raw) return {};
   try {
     const parsed = JSON.parse(raw) as FormCacheStore;
     const pruned = pruneExpiredCache(parsed);
     if (Object.keys(pruned).length !== Object.keys(parsed).length) {
-      await saveFormCache(pruned);
+      await saveFormCache(storageKey, pruned);
     }
     return pruned;
   } catch {
@@ -63,21 +69,27 @@ export async function loadFormCache(): Promise<FormCacheStore> {
   }
 }
 
+export async function saveFormCache(storageKey: string, store: FormCacheStore): Promise<void> {
+  await AsyncStorage.setItem(storageKey, JSON.stringify(store));
 export async function saveFormCache(store: FormCacheStore): Promise<void> {
   await safeStorageWrite(FORM_CACHE_STORAGE_KEY, JSON.stringify(store));
 }
 
-export async function getCachedFieldValue(key: FormCacheFieldKey): Promise<string | null> {
-  const store = await loadFormCache();
+export async function getCachedFieldValue(
+  storageKey: string,
+  key: FormCacheFieldKey
+): Promise<string | null> {
+  const store = await loadFormCache(storageKey);
   const entry = store[key];
   if (!entry || isExpired(entry)) return null;
   return entry.value;
 }
 
 export async function getCachedFieldValues(
+  storageKey: string,
   keys: FormCacheFieldKey[]
 ): Promise<Partial<Record<FormCacheFieldKey, string>>> {
-  const store = await loadFormCache();
+  const store = await loadFormCache(storageKey);
   const result: Partial<Record<FormCacheFieldKey, string>> = {};
   for (const key of keys) {
     const entry = store[key];
@@ -88,19 +100,24 @@ export async function getCachedFieldValues(
   return result;
 }
 
-export async function setCachedFieldValue(key: FormCacheFieldKey, value: string): Promise<void> {
+export async function setCachedFieldValue(
+  storageKey: string,
+  key: FormCacheFieldKey,
+  value: string
+): Promise<void> {
   const trimmed = value.trim();
   if (!trimmed || SENSITIVE_FIELD_KEYS.includes(key)) return;
 
-  const store = await loadFormCache();
+  const store = await loadFormCache(storageKey);
   store[key] = { value: trimmed, updatedAt: Date.now() };
-  await saveFormCache(pruneExpiredCache(store));
+  await saveFormCache(storageKey, pruneExpiredCache(store));
 }
 
 export async function cacheFormValues(
+  storageKey: string,
   values: Partial<Record<FormCacheFieldKey, string>>
 ): Promise<void> {
-  const store = await loadFormCache();
+  const store = await loadFormCache(storageKey);
   const now = Date.now();
 
   for (const [key, value] of Object.entries(values) as [FormCacheFieldKey, string][]) {
@@ -109,7 +126,7 @@ export async function cacheFormValues(
     store[key] = { value: trimmed, updatedAt: now };
   }
 
-  await saveFormCache(pruneExpiredCache(store));
+  await saveFormCache(storageKey, pruneExpiredCache(store));
 }
 
 export function getSuggestionForField(
@@ -125,8 +142,8 @@ export function getSuggestionForField(
   return suggestion;
 }
 
-export async function clearFormCache(): Promise<void> {
-  await AsyncStorage.removeItem(FORM_CACHE_STORAGE_KEY);
+export async function clearFormCache(storageKey: string): Promise<void> {
+  await AsyncStorage.removeItem(storageKey);
 }
 
 /** Maps profile/edit labels to shared cache keys. */
@@ -139,6 +156,7 @@ export const PROFILE_FORM_CACHE_KEYS: FormCacheFieldKey[] = [
 ];
 
 export const formCacheService = {
+  getFormCacheStorageKey,
   loadFormCache,
   getCachedFieldValue,
   getCachedFieldValues,
