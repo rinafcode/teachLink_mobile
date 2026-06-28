@@ -4,9 +4,9 @@ import {
   TouchableOpacity,
   Text,
   ActivityIndicator,
-  View,
   ViewStyle,
   TextStyle,
+  Platform,
 } from 'react-native';
 
 import { useDynamicFontSize } from '../../hooks';
@@ -35,6 +35,8 @@ interface PrimaryButtonProps {
   icon?: React.ReactNode;
   accessibilityHint?: string;
   accessibilityLabel?: string;
+  /** Test ID for automated tests */
+  testID?: string;
 }
 
 const PrimaryButton = ({
@@ -88,6 +90,17 @@ const PrimaryButton = ({
         accessibilityLabel={buttonLabel}
         accessibilityHint={accessibilityHint}
         accessibilityState={{ disabled: isDisabled, busy: loading }}
+        {...Platform.select({
+          web: {
+            // WCAG 2.4.7: Focus Visible — show outline on keyboard focus
+            style: [
+              { opacity: isDisabled ? 0.6 : 1 },
+              style,
+              { outlineStyle: 'auto', outlineColor: '#586ce9', outlineOffset: 2 },
+            ] as any,
+          } as any,
+          default: {},
+        })}
       >
         <LinearGradient
           colors={['#20afe7', '#2c8aec', '#586ce9']}
@@ -199,6 +212,6 @@ const PrimaryButton = ({
       )}
     </TouchableOpacity>
   );
-}
+};
 
 export default memo(PrimaryButton);
