@@ -68,6 +68,7 @@
     "expo-battery": "^55.0.13",
     "expo-build-properties": "~1.0.10",
     "expo-constants": "~18.0.13",
+    "expo-crypto": "~14.0.1",
     "expo-device": "~8.0.10",
     "expo-document-picker": "~14.0.8",
     "expo-file-system": "~19.0.23",

@@ -10,6 +10,7 @@ import { RetryErrorBoundary } from '../components/ErrorBoundary/RetryErrorBounda
 import '../global.css'; // NativeWind CSS
 import { AnalyticsProvider, ErrorBoundary, OfflineIndicatorProvider } from '../src/components';
 import AppLifecycleManager from '../src/components/AppLifecycleManager';
+import { ConflictResolutionModal } from '../src/components/common/ConflictResolutionModal';
 import { KeyboardDelegateProvider } from '../src/components/common/KeyboardDelegateProvider';
 import { UpdateNotificationModal } from '../src/components/common/UpdateNotificationModal';
 import { useAnalytics } from '../src/hooks';
@@ -173,6 +174,7 @@ const RootLayout = () => {
             <ScreenTracker />
             <ThemeSync />
             <UpdateChecker />
+            <ConflictResolutionModal />
             <AppLifecycleManager />
             <GestureHandlerRootView style={{ flex: 1 }}>
               <OfflineIndicatorProvider>

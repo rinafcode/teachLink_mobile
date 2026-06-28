@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { encryptedGetItem, encryptedRemoveItem, encryptedSetItem } from '../utils/encryptedStorage';
 
 import { safeStorageWrite } from '../utils/storage';
 
@@ -161,7 +161,7 @@ export function getSuggestionForField(
 }
 
 export async function clearFormCache(storageKey: string): Promise<void> {
-  await AsyncStorage.removeItem(storageKey);
+  await encryptedRemoveItem(storageKey);
 }
 
 /** Maps profile/edit labels to shared cache keys. */

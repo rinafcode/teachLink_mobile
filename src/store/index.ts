@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { devtools, persist, subscribeWithSelector } from 'zustand/middleware';
 
-import { createHydrationErrorRecovery, secureStorageJSONStorage, toUnixMs } from './persistence';
+import {  createHydrationErrorRecovery, secureStorageJSONStorage, toUnixMs } from './persistence';
+import { clearFormCache, getFormCacheStorageKey } from '../services/formCache';
 import { sentryContextService } from '../services/sentryContext';
 
 export interface User {
@@ -24,6 +25,10 @@ interface AppState {
   isLoading: boolean;
   error: string | null;
   theme: 'light' | 'dark';
+  // ── Client-side auth lockout ─────────────────────────────────────────────
+  authFailureCount: number;
+  authLockedUntil: number | null;
+  refreshFailureCount: number;
   setUser: (user: User | null) => void;
   setTheme: (theme: 'light' | 'dark') => void;
   setTokens: (accessToken: string, refreshToken: string, expiresAt: number | Date) => void;
@@ -33,6 +38,10 @@ interface AppState {
   logout: () => void;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
+  incrementAuthFailure: () => void;
+  resetAuthFailures: () => void;
+  incrementRefreshFailure: () => void;
+  resetRefreshFailures: () => void;
 }
 
 const INITIAL_APP_STATE = {
@@ -91,6 +100,7 @@ export const useAppStore = create<AppState>()(
         setAuthLoading: isAuthLoading => set({ isAuthLoading }, false, 'setAuthLoading'),
         setAuthError: authError => set({ authError }, false, 'setAuthError'),
         logout: () => {
+          const userId = get().user?.id;
           set(
             {
               user: null,
@@ -101,6 +111,9 @@ export const useAppStore = create<AppState>()(
               refreshToken: null,
               sessionExpiresAt: null,
               sessionExpiringSoon: false,
+              authFailureCount: 0,
+              authLockedUntil: null,
+              refreshFailureCount: 0,
             },
             false,
             'logout'
@@ -108,11 +121,38 @@ export const useAppStore = create<AppState>()(
           // Clear Sentry user scope and reset breadcrumb trail on logout
           sentryContextService.clearUser();
           sentryContextService.resetSession();
+          if (userId) {
+            clearFormCache(getFormCacheStorageKey(userId)).catch(() => {});
+          }
         },
         setLoading: isLoading => set({ isLoading }, false, 'setLoading'),
         setError: error => set({ error }, false, 'setError'),
-        };
-      }),
+        incrementAuthFailure: () =>
+          set(
+            state => {
+              const next = state.authFailureCount + 1;
+              if (next >= 5) {
+                return { authFailureCount: 0, authLockedUntil: Date.now() + 30_000 };
+              }
+              return { authFailureCount: next };
+            },
+            false,
+            'incrementAuthFailure'
+          ),
+        resetAuthFailures: () =>
+          set({ authFailureCount: 0, authLockedUntil: null }, false, 'resetAuthFailures'),
+        incrementRefreshFailure: () => {
+          const next = get().refreshFailureCount + 1;
+          if (next >= 3) {
+            get().logout();
+            set({ refreshFailureCount: 0 }, false, 'forceLogoutOnRefreshFailure');
+          } else {
+            set({ refreshFailureCount: next }, false, 'incrementRefreshFailure');
+          }
+        },
+        resetRefreshFailures: () =>
+          set({ refreshFailureCount: 0 }, false, 'resetRefreshFailures'),
+      })),
       {
         name: 'app-auth-storage',
         storage: secureStorageJSONStorage,
@@ -132,6 +172,7 @@ export const useAppStore = create<AppState>()(
           refreshToken: state.refreshToken,
           sessionExpiresAt: toUnixMs(state.sessionExpiresAt),
           theme: state.theme,
+          authLockedUntil: state.authLockedUntil,
         }),
         merge: (persistedState, currentState) => {
           const hydratedState = (persistedState ?? {}) as Partial<AppState>;
@@ -140,6 +181,7 @@ export const useAppStore = create<AppState>()(
             ...currentState,
             ...hydratedState,
             sessionExpiresAt: toUnixMs(hydratedState.sessionExpiresAt),
+            authLockedUntil: hydratedState.authLockedUntil ?? null,
           };
         },
       }

@@ -12,17 +12,22 @@
 
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-import { invalidateCacheForBatchRequests, invalidateCacheForMutation, invalidateByPattern } from './cache';
+import {
+  invalidateCacheForBatchRequests,
+  invalidateCacheForMutation,
+  invalidateByPattern,
+} from './cache';
 import { requestQueue } from './requestQueue';
 import { getEnv } from '../../config';
 import { MUTATION_INVALIDATION_MAP } from '../../config/apiCacheConfig';
 import { SSL_PINNING } from '../../config/security';
 import { useAppStore } from '../../store';
+import { useConflictStore, type ConflictData } from '../../store/conflictStore';
 import { appLogger } from '../../utils/logger';
 import { startTiming, notifyEntry } from '../../utils/performanceTiming';
 import { healthMetricsService } from '../healthMetrics';
-import { sentryContextService } from '../sentryContext';
 import { getAccessToken, getRefreshToken, saveTokens } from '../secureStorage';
+import { sentryContextService } from '../sentryContext';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -202,6 +207,12 @@ apiClient.interceptors.response.use(
       statusCode: response.status,
     });
     invalidateSuccessfulMutationCache(cfg);
+
+    // Successful login clears the client-side lockout counter
+    if (cfg.url?.includes('/auth/login')) {
+      useAppStore.getState().resetAuthFailures();
+    }
+
     return response;
   },
   async (error: AxiosError) => {
@@ -259,17 +270,14 @@ apiClient.interceptors.response.use(
       isCertPinFailure(error)
     ) {
       // Report to Sentry — endpoint and method only; no token, headers, or body
-      sentryContextService.captureException(
-        new Error('SSL certificate pin validation failed'),
-        {
-          tags: { 'security.event': 'ssl_pin_failure' },
-          extra: {
-            endpoint: originalRequest?.url,
-            method: originalRequest?.method?.toUpperCase(),
-          },
-          fingerprint: ['ssl-pin-failure'],
-        }
-      );
+      sentryContextService.captureException(new Error('SSL certificate pin validation failed'), {
+        tags: { 'security.event': 'ssl_pin_failure' },
+        extra: {
+          endpoint: originalRequest?.url,
+          method: originalRequest?.method?.toUpperCase(),
+        },
+        fingerprint: ['ssl-pin-failure'],
+      });
 
       appLogger.errorSync('SSL pin validation failed — possible MITM attack', undefined, {
         endpoint: originalRequest?.url,
@@ -280,7 +288,8 @@ apiClient.interceptors.response.use(
       useAppStore.getState().logout();
 
       return Promise.reject({
-        message: 'Secure connection could not be established. Please check your network and try again.',
+        message:
+          'Secure connection could not be established. Please check your network and try again.',
         code: 'SSL_PIN_FAILURE',
         status: 0,
       });
@@ -297,6 +306,12 @@ apiClient.interceptors.response.use(
     const status = error.response?.status;
 
     // ─── 401: Token refresh flow ───────────────────────────────────────────
+
+    // Count consecutive bad-credential 401s on the login endpoint so the
+    // client can enforce a lockout before the 5th attempt reaches the server.
+    if (status === 401 && originalRequest.url?.includes('/auth/login') && !originalRequest._retry) {
+      useAppStore.getState().incrementAuthFailure();
+    }
 
     if (
       status === 401 &&
@@ -337,6 +352,11 @@ apiClient.interceptors.response.use(
 
         return apiClient(originalRequest);
       } catch (refreshError) {
+        // Three consecutive refresh 401s indicate the refresh token is invalid;
+        // force a full logout rather than leaving the user in a broken auth state.
+        if ((refreshError as AxiosError)?.response?.status === 401) {
+          useAppStore.getState().incrementRefreshFailure();
+        }
         processRefreshQueue(null, refreshError);
         return Promise.reject(refreshError);
       } finally {
@@ -355,6 +375,69 @@ apiClient.interceptors.response.use(
       return Promise.reject({
         message: 'You are not allowed to perform this action',
         status: 403,
+      });
+    }
+
+    // ─── 409: Conflict — offline mutation conflicts with server state ─────
+    //
+    // Server returns 409 when the client's lastKnownVersion is behind the
+    // server's current version. The response body contains:
+    // - serverVersion: the current server data
+    // - serverVersionNumber: the current version number
+    // - localVersion: echoed back from client headers (if provided)
+    // - entityType: type of entity (note, quiz, profile, etc.)
+    // - entityId: identifier of the conflicting entity
+
+    if (status === 409) {
+      const responseData = error.response?.data as
+        | {
+            serverVersion?: unknown;
+            serverVersionNumber?: number;
+            localVersion?: unknown;
+            entityType?: string;
+            entityId?: string;
+            message?: string;
+          }
+        | undefined;
+
+      // Extract version metadata from request headers
+      const clientVersionHeader = originalRequest.headers?.['X-Last-Known-Version'];
+      const clientTimestampHeader = originalRequest.headers?.['X-Client-Timestamp'];
+      const entityTypeHeader = originalRequest.headers?.['X-Entity-Type'];
+      const entityIdHeader = originalRequest.headers?.['X-Entity-Id'];
+
+      const conflictData: ConflictData = {
+        id: `conflict_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        entityId: responseData?.entityId ?? String(entityIdHeader ?? ''),
+        entityType: responseData?.entityType ?? String(entityTypeHeader ?? 'unknown'),
+        localData: originalRequest.data,
+        serverData: responseData?.serverVersion,
+        localVersion: clientVersionHeader ? Number(clientVersionHeader) : undefined,
+        serverVersion: responseData?.serverVersionNumber,
+        clientTimestamp: clientTimestampHeader ? Number(clientTimestampHeader) : Date.now(),
+        serverTimestamp: Date.now(),
+        endpoint: originalRequest.url ?? '',
+        method: (originalRequest.method ?? 'UNKNOWN').toUpperCase(),
+        detectedAt: Date.now(),
+      };
+
+      appLogger.warnSync('409 Conflict - mutation conflicts with server state', {
+        endpoint: originalRequest.url,
+        method: originalRequest.method,
+        entityType: conflictData.entityType,
+        entityId: conflictData.entityId,
+        localVersion: conflictData.localVersion,
+        serverVersion: conflictData.serverVersion,
+      });
+
+      // Add to conflict store for UI resolution
+      useConflictStore.getState().addConflict(conflictData);
+
+      return Promise.reject({
+        message: responseData?.message ?? 'Your changes conflict with newer server data',
+        status: 409,
+        code: 'CONFLICT',
+        conflict: conflictData,
       });
     }
 
@@ -446,7 +529,8 @@ apiClient.interceptors.response.use(
     // ─── ECONNABORTED: Timeout — user-friendly message ──────────────────────
 
     if (error.code === 'ECONNABORTED') {
-      const isUpload = originalRequest.method?.toUpperCase() === 'POST' &&
+      const isUpload =
+        originalRequest.method?.toUpperCase() === 'POST' &&
         originalRequest.data instanceof FormData;
       return Promise.reject({
         message: isUpload
