@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { devtools, persist, subscribeWithSelector } from 'zustand/middleware';
 
 import { createHydrationErrorRecovery, secureStorageJSONStorage, toUnixMs } from './persistence';
+import { clearFormCache, getFormCacheStorageKey } from '../services/formCache';
 import { sentryContextService } from '../services/sentryContext';
 
 export interface User {
@@ -24,9 +25,13 @@ interface AppState {
   isLoading: boolean;
   error: string | null;
   theme: 'light' | 'dark';
-  // ── Subscription ────────────────────────────────────────────────────────────
+  // ── Subscription ──────────────────────────────────────────────────────────
   subscriptionTier: 'free' | 'pro' | 'premium';
   receiptValidationPending: boolean;
+  // ── Client-side auth lockout ──────────────────────────────────────────────
+  authFailureCount: number;
+  authLockedUntil: number | null;
+  refreshFailureCount: number;
   setUser: (user: User | null) => void;
   setTheme: (theme: 'light' | 'dark') => void;
   setTokens: (accessToken: string, refreshToken: string, expiresAt: number | Date) => void;
@@ -38,6 +43,10 @@ interface AppState {
   setError: (error: string | null) => void;
   setSubscriptionTier: (tier: 'free' | 'pro' | 'premium') => void;
   setReceiptValidationPending: (pending: boolean) => void;
+  incrementAuthFailure: () => void;
+  resetAuthFailures: () => void;
+  incrementRefreshFailure: () => void;
+  resetRefreshFailures: () => void;
 }
 
 const INITIAL_APP_STATE = {
@@ -59,7 +68,7 @@ let resetAppStoreAfterHydrationError = () => {};
 export const useAppStore = create<AppState>()(
   devtools(
     persist(
-      subscribeWithSelector(set => {
+      subscribeWithSelector((set, get) => {
         resetAppStoreAfterHydrationError = () =>
           set(INITIAL_APP_STATE, false, 'hydrationErrorReset');
 
@@ -67,6 +76,9 @@ export const useAppStore = create<AppState>()(
           ...INITIAL_APP_STATE,
           subscriptionTier: 'free' as const,
           receiptValidationPending: false,
+          authFailureCount: 0,
+          authLockedUntil: null,
+          refreshFailureCount: 0,
           setUser: (user: User | null) => {
             set({ user, isAuthenticated: !!user }, false, 'setUser');
             // Sync Sentry scope with the signed-in user so every subsequent
@@ -95,9 +107,12 @@ export const useAppStore = create<AppState>()(
             ),
           setSessionExpiringSoon: (sessionExpiringSoon: boolean) =>
             set({ sessionExpiringSoon }, false, 'setSessionExpiringSoon'),
-          setAuthLoading: (isAuthLoading: boolean) => set({ isAuthLoading }, false, 'setAuthLoading'),
-          setAuthError: (authError: string | null) => set({ authError }, false, 'setAuthError'),
+          setAuthLoading: (isAuthLoading: boolean) =>
+            set({ isAuthLoading }, false, 'setAuthLoading'),
+          setAuthError: (authError: string | null) =>
+            set({ authError }, false, 'setAuthError'),
           logout: () => {
+            const userId = get().user?.id;
             set(
               {
                 user: null,
@@ -110,13 +125,18 @@ export const useAppStore = create<AppState>()(
                 sessionExpiringSoon: false,
                 subscriptionTier: 'free',
                 receiptValidationPending: false,
+                authFailureCount: 0,
+                authLockedUntil: null,
+                refreshFailureCount: 0,
               },
               false,
               'logout'
             );
-            // Clear Sentry user scope and reset breadcrumb trail on logout
             sentryContextService.clearUser();
             sentryContextService.resetSession();
+            if (userId) {
+              clearFormCache(getFormCacheStorageKey(userId)).catch(() => {});
+            }
           },
           setLoading: (isLoading: boolean) => set({ isLoading }, false, 'setLoading'),
           setError: (error: string | null) => set({ error }, false, 'setError'),
@@ -124,6 +144,31 @@ export const useAppStore = create<AppState>()(
             set({ subscriptionTier: tier }, false, 'setSubscriptionTier'),
           setReceiptValidationPending: (pending: boolean) =>
             set({ receiptValidationPending: pending }, false, 'setReceiptValidationPending'),
+          incrementAuthFailure: () =>
+            set(
+              state => {
+                const next = state.authFailureCount + 1;
+                if (next >= 5) {
+                  return { authFailureCount: 0, authLockedUntil: Date.now() + 30_000 };
+                }
+                return { authFailureCount: next };
+              },
+              false,
+              'incrementAuthFailure'
+            ),
+          resetAuthFailures: () =>
+            set({ authFailureCount: 0, authLockedUntil: null }, false, 'resetAuthFailures'),
+          incrementRefreshFailure: () => {
+            const next = get().refreshFailureCount + 1;
+            if (next >= 3) {
+              get().logout();
+              set({ refreshFailureCount: 0 }, false, 'forceLogoutOnRefreshFailure');
+            } else {
+              set({ refreshFailureCount: next }, false, 'incrementRefreshFailure');
+            }
+          },
+          resetRefreshFailures: () =>
+            set({ refreshFailureCount: 0 }, false, 'resetRefreshFailures'),
         };
       }),
       {
@@ -145,6 +190,7 @@ export const useAppStore = create<AppState>()(
           refreshToken: state.refreshToken,
           sessionExpiresAt: toUnixMs(state.sessionExpiresAt),
           theme: state.theme,
+          authLockedUntil: state.authLockedUntil,
         }),
         merge: (persistedState, currentState) => {
           const hydratedState = (persistedState ?? {}) as Partial<AppState>;
@@ -153,6 +199,7 @@ export const useAppStore = create<AppState>()(
             ...currentState,
             ...hydratedState,
             sessionExpiresAt: toUnixMs(hydratedState.sessionExpiresAt),
+            authLockedUntil: hydratedState.authLockedUntil ?? null,
           };
         },
       }
