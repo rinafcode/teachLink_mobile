@@ -66,6 +66,32 @@ import { safeStorageWrite } from '../utils/storage';
 // Safe check for development environment
 const isDev = typeof __DEV__ !== 'undefined' ? __DEV__ : process.env.NODE_ENV !== 'production';
 
+// ─── BREADCRUMB PII SCRUBBING ─────────────────────────────────────────────
+
+const SENSITIVE_FIELDS = [
+  'password',
+  'oldPassword',
+  'newPassword',
+  'email',
+  'cardNumber',
+  'cvv',
+  'token',
+  'refreshToken',
+] as const;
+
+function scrubSensitiveFields(obj: unknown): unknown {
+  if (typeof obj !== 'object' || obj === null) return obj;
+  if (Array.isArray(obj)) return obj.map(scrubSensitiveFields);
+
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+    result[key] = (SENSITIVE_FIELDS as readonly string[]).includes(key)
+      ? '[REDACTED]'
+      : scrubSensitiveFields(value);
+  }
+  return result;
+}
+
 export enum LogLevel {
   ERROR = 0,
   WARN = 1,
@@ -379,6 +405,19 @@ export async function initializeLogging(): Promise<void> {
               // not a full URL — leave as-is
             }
           }
+
+          // Scrub PII from request bodies captured by xhr/http breadcrumbs
+          if (breadcrumb.type === 'xhr' || breadcrumb.type === 'http') {
+            if (breadcrumb.data?.body !== undefined) {
+              breadcrumb.data.body = scrubSensitiveFields(breadcrumb.data.body);
+            }
+            if (breadcrumb.data?.request?.data !== undefined) {
+              breadcrumb.data.request.data = scrubSensitiveFields(
+                breadcrumb.data.request.data
+              );
+            }
+          }
+
           return breadcrumb;
         },
       });
