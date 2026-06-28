@@ -23,6 +23,12 @@ We have a dedicated **Syntax Gate** workflow (`.github/workflows/syntax.yml`) th
 - Required for branch protection — PRs cannot be merged if it fails
 - Run checks locally before pushing to avoid CI failures
 
+## Testing Conventions
+
+All test files must be colocated with the source code they are testing and must follow the naming convention `*.test.{ts,tsx}`. This ensures that Jest can automatically discover and run the tests.
+
+For example, a test file for `src/services/auth.ts` should be located at `src/services/__tests__/auth.test.ts`.
+
 ## Local Quality Checks
 
 You can run the checks locally:
