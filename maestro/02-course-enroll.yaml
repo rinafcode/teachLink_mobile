@@ -1,0 +1,7 @@
+appId: com.teachlink
+---
+- launchApp
+- tapOn: "Courses"
+- tapOn: "Introduction to React Native"
+- tapOn: "Enroll"
+- assertVisible: "You are now enrolled in this course"

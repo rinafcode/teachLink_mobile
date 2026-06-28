@@ -1,0 +1,10 @@
+appId: com.teachlink
+---
+- launchApp
+- tapOn: "My Courses"
+- tapOn: "Introduction to React Native"
+- tapOn: "Chapter 1 Quiz"
+- tapOn: "Answer 1"
+- tapOn: "Answer 2"
+- tapOn: "Submit"
+- assertVisible: "Quiz Submitted"
