@@ -101,6 +101,14 @@
       "expo-video",
       "./plugins/withProguard.js",
       [
+        "./plugins/withSSLPinning",
+        {
+          "domain": "api.teachlink.com",
+          "primaryPin": "REPLACE_WITH_PRIMARY_SPKI_SHA256_BASE64==",
+          "backupPin": "REPLACE_WITH_BACKUP_SPKI_SHA256_BASE64=="
+        }
+      ],
+      [
         "expo-build-properties",
         {
           "android": {

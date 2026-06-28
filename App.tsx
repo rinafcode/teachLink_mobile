@@ -44,6 +44,10 @@ import socketService from './src/services/socket';
 import { syncService } from './src/services/syncService'; // Fixed naming convention from the merge conflict
 import { useAppStore, useDeviceStore, useNotificationStore } from './src/store'; // Added missing store imports
 import { useDegradationStore } from './src/store/degradationStore';
+import {
+  consumeHydrationResetToast,
+  subscribeToHydrationResetToast,
+} from './src/store/persistence';
 import { handleCacheVersionUpdate } from './src/utils/cacheVersioning';
 import { requireEnvVariables } from './src/utils/env';
 import { appLogger } from './src/utils/logger';
@@ -119,6 +123,29 @@ const CacheRevalidationBanner = () => {
   );
 };
 
+const PreferencesResetToast = () => (
+  <View
+    style={{
+      position: 'absolute',
+      left: 16,
+      right: 16,
+      bottom: 32,
+      zIndex: 10000,
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      backgroundColor: '#111827',
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      elevation: 6,
+    }}
+  >
+    <Text style={{ color: '#f9fafb', fontWeight: '600' }}>Your preferences were reset</Text>
+  </View>
+);
+
 let _compromisedAlertShown = false;
 
 function showCompromisedAlert(): void {
@@ -140,6 +167,32 @@ const App = () => {
 
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const [appIsReady, setAppIsReady] = React.useState(false);
+  const [showPreferencesResetToast, setShowPreferencesResetToast] = useState(false);
+
+  useEffect(() => {
+    let hideTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const showToastIfNeeded = () => {
+      if (!consumeHydrationResetToast()) {
+        return;
+      }
+
+      setShowPreferencesResetToast(true);
+      hideTimer = setTimeout(() => {
+        setShowPreferencesResetToast(false);
+      }, 4000);
+    };
+
+    showToastIfNeeded();
+    const unsubscribe = subscribeToHydrationResetToast(showToastIfNeeded);
+
+    return () => {
+      unsubscribe();
+      if (hideTimer) {
+        clearTimeout(hideTimer);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     async function prepareApp() {
@@ -419,6 +472,7 @@ const App = () => {
         <CacheRevalidationBanner />
         <AppNavigator />
         <NotificationPermissionExplanationSheet />
+        {showPreferencesResetToast ? <PreferencesResetToast /> : null}
       </AuthProvider>
     </ErrorBoundary>
   );

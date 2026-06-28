@@ -21,12 +21,12 @@
  *   the store starts fresh with correct defaults.
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
 
-import { FeatureStatus, FeatureType } from '../services/featureCapabilities';
+import { asyncStorageJSONStorage, createHydrationErrorRecovery } from './persistence';
 import { useFeatureFlagStore } from './featureFlagStore';
+import { FeatureStatus, FeatureType } from '../services/featureCapabilities';
 
 export interface DegradationNotification {
   id: string;
@@ -87,6 +87,19 @@ const DEFAULT_PREFERENCES: DegradationPreferences = {
 
 let notificationIdCounter = 0;
 
+const createInitialDegradationState = () => ({
+  degradedFeatures: [],
+  featureStatuses: {
+    [FeatureType.CAMERA]: FeatureStatus.UNAVAILABLE,
+    [FeatureType.PUSH_NOTIFICATIONS]: FeatureStatus.UNAVAILABLE,
+    [FeatureType.LOCATION]: FeatureStatus.AVAILABLE,
+  },
+  notifications: [],
+  preferences: DEFAULT_PREFERENCES,
+});
+
+let resetDegradationStoreAfterHydrationError = () => {};
+
 /**
  * Convert the stored `degradedFeatures` array to a Set for O(1) membership
  * tests.  This is the canonical read-time selector; it does not mutate state.
@@ -99,17 +112,13 @@ export function selectDegradedFeaturesSet(
 
 export const useDegradationStore = create<DegradationState>()(
   persist(
-    (set, get) => ({
+    (set, get): DegradationState => {
+      resetDegradationStoreAfterHydrationError = () => set(createInitialDegradationState());
+
+      return {
       // Initial state
       // Stored as FeatureType[] — not Set — to survive JSON round-trips.
-      degradedFeatures: [],
-      featureStatuses: {
-        [FeatureType.CAMERA]: FeatureStatus.UNAVAILABLE,
-        [FeatureType.PUSH_NOTIFICATIONS]: FeatureStatus.UNAVAILABLE,
-        [FeatureType.LOCATION]: FeatureStatus.AVAILABLE,
-      },
-      notifications: [],
-      preferences: DEFAULT_PREFERENCES,
+      ...createInitialDegradationState(),
 
       // Feature status actions
       setFeatureStatus: (feature, status) =>
@@ -224,10 +233,15 @@ export const useDegradationStore = create<DegradationState>()(
           preferences: { ...state.preferences, respectRemoteFlags: respect },
         }));
       },
-    }),
+      };
+    },
     {
       name: 'degradation-store',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: asyncStorageJSONStorage,
+      onRehydrateStorage: createHydrationErrorRecovery(
+        'degradation-store',
+        resetDegradationStoreAfterHydrationError
+      ),
       /**
        * Version 2: bumped from 1 (implicit) to discard any previously-persisted
        * state where `degradedFeatures` was serialised as `{}` (empty object)

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { createJSONStorage, devtools, persist, subscribeWithSelector } from 'zustand/middleware';
+import { devtools, persist, subscribeWithSelector } from 'zustand/middleware';
 
-import { secureStorageJSONStorage, toUnixMs } from './persistence';
+import {  createHydrationErrorRecovery, secureStorageJSONStorage, toUnixMs } from './persistence';
 import { clearFormCache, getFormCacheStorageKey } from '../services/formCache';
 import { sentryContextService } from '../services/sentryContext';
 
@@ -36,21 +36,31 @@ interface AppState {
   setError: (error: string | null) => void;
 }
 
+const INITIAL_APP_STATE = {
+  user: null,
+  isAuthenticated: false,
+  isAuthLoading: false,
+  authError: null,
+  accessToken: null,
+  refreshToken: null,
+  sessionExpiresAt: null,
+  sessionExpiringSoon: false,
+  theme: 'light' as const,
+  isLoading: false,
+  error: null,
+};
+
+let resetAppStoreAfterHydrationError = () => {};
+
 export const useAppStore = create<AppState>()(
   devtools(
     persist(
-      subscribeWithSelector((set, get) => ({
-        user: null,
-        isAuthenticated: false,
-        isAuthLoading: false,
-        authError: null,
-        accessToken: null,
-        refreshToken: null,
-        sessionExpiresAt: null,
-        sessionExpiringSoon: false,
-        theme: 'light',
-        isLoading: false,
-        error: null,
+      subscribeWithSelector(set => {
+        resetAppStoreAfterHydrationError = () =>
+          set(INITIAL_APP_STATE, false, 'hydrationErrorReset');
+
+        return {
+          ...INITIAL_APP_STATE,
         setUser: user => {
           set({ user, isAuthenticated: !!user }, false, 'setUser');
           // Sync Sentry scope with the signed-in user so every subsequent
@@ -106,10 +116,15 @@ export const useAppStore = create<AppState>()(
         },
         setLoading: isLoading => set({ isLoading }, false, 'setLoading'),
         setError: error => set({ error }, false, 'setError'),
-      })),
+        };
+      }),
       {
         name: 'app-auth-storage',
         storage: secureStorageJSONStorage,
+        onRehydrateStorage: createHydrationErrorRecovery(
+          'app-auth-storage',
+          resetAppStoreAfterHydrationError
+        ),
         /**
          * Only persist auth-related and UI preference state.
          * Transient flags (isLoading, isAuthLoading, error, authError)
