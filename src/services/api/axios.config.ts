@@ -12,22 +12,22 @@
 
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-import {
-  invalidateCacheForBatchRequests,
-  invalidateCacheForMutation,
-  invalidateByPattern,
-} from './cache';
-import { requestQueue } from './requestQueue';
 import { getEnv } from '../../config';
 import { MUTATION_INVALIDATION_MAP } from '../../config/apiCacheConfig';
 import { SSL_PINNING } from '../../config/security';
 import { useAppStore } from '../../store';
 import { useConflictStore, type ConflictData } from '../../store/conflictStore';
 import { appLogger } from '../../utils/logger';
-import { startTiming, notifyEntry } from '../../utils/performanceTiming';
+import { notifyEntry, startTiming } from '../../utils/performanceTiming';
 import { healthMetricsService } from '../healthMetrics';
 import { getAccessToken, getRefreshToken, saveTokens } from '../secureStorage';
 import { sentryContextService } from '../sentryContext';
+import {
+  invalidateByPattern,
+  invalidateCacheForBatchRequests,
+  invalidateCacheForMutation,
+} from './cache';
+import { requestQueue } from './requestQueue';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -147,6 +147,10 @@ function processRefreshQueue(token: string | null, error: unknown) {
 
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig & { _requestStartMs?: number }) => {
+    const requestId = uuidv4();
+    config.headers['X-Request-ID'] = requestId;
+    pushLogContext({ requestId });
+
     // Stamp request start time for latency tracking
     config._requestStartMs = Date.now();
 
@@ -210,6 +214,15 @@ apiClient.interceptors.request.use(
 
 apiClient.interceptors.response.use(
   response => {
+    const sentRequestId = response.config.headers['X-Request-ID'];
+    const receivedRequestId = response.headers['x-request-id'];
+
+    if (sentRequestId && receivedRequestId && sentRequestId !== receivedRequestId) {
+      appLogger.warnSync('Request ID mismatch', { sent: sentRequestId, received: receivedRequestId });
+    }
+
+    popLogContext();
+
     // Record successful API call for health metrics
     const cfg = response.config as InternalAxiosRequestConfig & { _requestStartMs?: number };
     const durationMs = cfg._requestStartMs ? Date.now() - cfg._requestStartMs : 0;
@@ -229,6 +242,8 @@ apiClient.interceptors.response.use(
     return response;
   },
   async (error: AxiosError) => {
+    popLogContext();
+
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;
       _retryCount?: number;
