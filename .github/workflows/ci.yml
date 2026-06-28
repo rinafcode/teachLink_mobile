@@ -163,6 +163,7 @@ jobs:
             ${{ runner.os }}-eslint-
 
       - name: Lint
+        run: npm run lint -- --max-warnings=250
         run: npm run lint -- --cache --cache-location .eslintcache
 
       - name: Format check
