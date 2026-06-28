@@ -1,11 +1,4 @@
-/**
- * healthDashboardStore — Zustand store for the real-time health dashboard.
- *
- * Holds the latest health snapshot, active alerts, user-configured thresholds,
- * and polling state. Intentionally NOT persisted — always starts fresh.
- */
-
-import { create } from 'zustand';
+﻿import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
 import {
@@ -15,33 +8,29 @@ import {
   MetricAlert,
 } from '../services/healthMetrics';
 import { shallowDiff } from '../utils/stateDiff';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { isServiceDegraded, HEALTH_TO_FEATURE_MAP, ServiceName } from '../config/degradationConfig';
+import { useFeatureFlagStore } from './featureFlagStore';
 
 export type DashboardStatus = 'idle' | 'polling' | 'error';
 
+export interface ServiceHealthStatus {
+  service: ServiceName;
+  status: string;
+}
+
 interface HealthDashboardState {
-  // Data
   snapshot: HealthSnapshot | null;
   alerts: MetricAlert[];
   thresholds: AlertThresholds;
-
-  // UI state
+  serviceHealthStatuses: ServiceHealthStatus[];
   status: DashboardStatus;
   lastUpdated: number | null;
-  /** Timestamp of last successful data read (cache or network) */
   lastChecked: number | null;
-  /** Timestamp of last actual network API call */
   lastNetworkCheck: number | null;
-  /** How often to refresh in ms */
   refreshIntervalMs: number;
-  /** Whether auto-refresh is active */
   isAutoRefresh: boolean;
-  /** Dismissed alert IDs (cleared on next full refresh) */
   dismissedAlertIds: Set<string>;
-
-  // Actions
-  setSnapshot: (snapshot: HealthSnapshot) => void;
+  setSnapshot: (snapshot: HealthSnapshot, serviceStatuses?: ServiceHealthStatus[]) => void;
   setAlerts: (alerts: MetricAlert[]) => void;
   setThresholds: (thresholds: Partial<AlertThresholds>) => void;
   setStatus: (status: DashboardStatus) => void;
@@ -54,38 +43,65 @@ interface HealthDashboardState {
   reset: () => void;
 }
 
-// ─── Initial state ────────────────────────────────────────────────────────────
-
 const initialState = {
   snapshot: null,
   alerts: [],
   thresholds: DEFAULT_THRESHOLDS,
+  serviceHealthStatuses: [] as ServiceHealthStatus[],
   status: 'idle' as DashboardStatus,
   lastUpdated: null,
   lastChecked: null,
   lastNetworkCheck: null,
-  refreshIntervalMs: 10_000, // 10 seconds default
+  refreshIntervalMs: 10_000,
   isAutoRefresh: true,
   dismissedAlertIds: new Set<string>(),
 };
 
-// ─── Store ────────────────────────────────────────────────────────────────────
+function applyDegradationFlags(serviceStatuses: ServiceHealthStatus[]): void {
+  const flagStore = useFeatureFlagStore.getState();
+  for (const { service, status } of serviceStatuses) {
+    const flagEntries = HEALTH_TO_FEATURE_MAP[service];
+    if (!flagEntries) continue;
+    const degraded = isServiceDegraded(status);
+    for (const entry of flagEntries) {
+      if (entry.adminOverride) continue;
+      const currentDef = flagStore.getDefinition(entry.flagKey);
+      const updatedDef = { ...(currentDef ?? {}), enabled: !degraded };
+      useFeatureFlagStore.setState(state => ({
+        flags: {
+          ...state.flags,
+          flags: { ...state.flags.flags, [entry.flagKey]: updatedDef },
+        },
+      }));
+    }
+  }
+}
 
 export const useHealthDashboardStore = create<HealthDashboardState>()(
   devtools(
     set => ({
       ...initialState,
 
-      setSnapshot: snapshot =>
+      setSnapshot: (snapshot, serviceStatuses) =>
         set(
           state => {
             if (!state.snapshot && !snapshot) return state;
-            if (!state.snapshot) return { snapshot, lastUpdated: Date.now() };
-            const diff = shallowDiff(state.snapshot, snapshot);
-            if (!diff) return state;
+            let nextSnapshot: HealthSnapshot;
+            if (!state.snapshot) {
+              nextSnapshot = snapshot;
+            } else {
+              const diff = shallowDiff(state.snapshot, snapshot);
+              if (!diff) {
+                if (serviceStatuses && serviceStatuses.length > 0) applyDegradationFlags(serviceStatuses);
+                return state;
+              }
+              nextSnapshot = { ...state.snapshot, ...diff } as HealthSnapshot;
+            }
+            if (serviceStatuses && serviceStatuses.length > 0) applyDegradationFlags(serviceStatuses);
             return {
-              snapshot: { ...state.snapshot, ...diff } as HealthSnapshot,
+              snapshot: nextSnapshot,
               lastUpdated: Date.now(),
+              serviceHealthStatuses: serviceStatuses ?? state.serviceHealthStatuses,
             };
           },
           false,
@@ -98,7 +114,7 @@ export const useHealthDashboardStore = create<HealthDashboardState>()(
         set(
           state => {
             const diff = shallowDiff(state.thresholds, partial);
-            if (!diff) return state; // Return unchanged state to bypass allocation
+            if (!diff) return state;
             return { thresholds: { ...state.thresholds, ...diff } };
           },
           false,
@@ -106,51 +122,37 @@ export const useHealthDashboardStore = create<HealthDashboardState>()(
         ),
 
       setStatus: status => set({ status }, false, 'setStatus'),
-
       setLastChecked: () => set({ lastChecked: Date.now() }, false, 'setLastChecked'),
-
-      setLastNetworkCheck: () =>
-        set(
-          { lastNetworkCheck: Date.now(), lastChecked: Date.now() },
-          false,
-          'setLastNetworkCheck'
-        ),
-
-      setRefreshInterval: refreshIntervalMs =>
-        set({ refreshIntervalMs }, false, 'setRefreshInterval'),
-
-      toggleAutoRefresh: () =>
-        set(state => ({ isAutoRefresh: !state.isAutoRefresh }), false, 'toggleAutoRefresh'),
-
+      setLastNetworkCheck: () => set({ lastNetworkCheck: Date.now(), lastChecked: Date.now() }, false, 'setLastNetworkCheck'),
+      setRefreshInterval: refreshIntervalMs => set({ refreshIntervalMs }, false, 'setRefreshInterval'),
+      toggleAutoRefresh: () => set(state => ({ isAutoRefresh: !state.isAutoRefresh }), false, 'toggleAutoRefresh'),
       dismissAlert: id =>
         set(
-          state => {
-            const next = new Set(state.dismissedAlertIds);
-            next.add(id);
-            return { dismissedAlertIds: next };
-          },
+          state => { const next = new Set(state.dismissedAlertIds); next.add(id); return { dismissedAlertIds: next }; },
           false,
           'dismissAlert'
         ),
-
       clearDismissed: () => set({ dismissedAlertIds: new Set() }, false, 'clearDismissed'),
-
       reset: () => set({ ...initialState, dismissedAlertIds: new Set() }, false, 'reset'),
     }),
     { name: 'HealthDashboardStore' }
   )
 );
 
-// ─── Selectors ────────────────────────────────────────────────────────────────
-
-/** Returns only non-dismissed alerts */
 export const selectVisibleAlerts = (state: HealthDashboardState): MetricAlert[] =>
   state.alerts.filter(a => !state.dismissedAlertIds.has(a.id));
 
-/** Returns the highest severity across all visible alerts */
 export const selectOverallStatus = (state: HealthDashboardState): 'ok' | 'warning' | 'critical' => {
   const visible = selectVisibleAlerts(state);
   if (visible.some(a => a.severity === 'critical')) return 'critical';
   if (visible.some(a => a.severity === 'warning')) return 'warning';
   return 'ok';
 };
+
+export const selectIsServiceDegraded =
+  (service: ServiceName) =>
+  (state: HealthDashboardState): boolean => {
+    const entry = state.serviceHealthStatuses.find(s => s.service === service);
+    if (!entry) return false;
+    return isServiceDegraded(entry.status);
+  };
