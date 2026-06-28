@@ -1,0 +1,8 @@
+appId: com.teachlink
+---
+- launchApp
+- tapOn: "My Courses"
+- tapOn: "Introduction to React Native"
+- tapOn: "Chapter 1: Getting Started"
+- tapOn: "Mark as Complete"
+- assertVisible: "Lesson Complete"

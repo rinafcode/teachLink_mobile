@@ -1,0 +1,10 @@
+appId: com.teachlink
+---
+- launchApp
+- tapOn: "Login"
+- tapOn: "Email"
+- inputText: "test@example.com"
+- tapOn: "Password"
+- inputText: "password"
+- tapOn: "Log In"
+- assertVisible: "Welcome, Test User"

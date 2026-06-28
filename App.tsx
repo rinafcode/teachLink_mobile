@@ -462,7 +462,9 @@ const App = () => {
       <AuthProvider>
         <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
         <CacheRevalidationBanner />
-        <AppNavigator />
+        <ScreenErrorBoundary screenName="AppNavigator">
+          <AppNavigator />
+        </ScreenErrorBoundary>
         <NotificationPermissionExplanationSheet />
         {showPreferencesResetToast ? <PreferencesResetToast /> : null}
       </AuthProvider>

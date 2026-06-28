@@ -31,6 +31,10 @@ npx expo start --android # Launch directly in Android Emulator
 npx expo start --web    # Run in browser (limited functionality)
 ```
 
+## Architecture
+
+We use Architecture Decision Records (ADRs) to document important architectural choices. You can find them in the [docs/adr](docs/adr) directory.
+
 ## Storybook
 
 - **Start:** `npm run storybook` to start the app in Storybook mode.
