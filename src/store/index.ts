@@ -24,6 +24,9 @@ interface AppState {
   isLoading: boolean;
   error: string | null;
   theme: 'light' | 'dark';
+  // ── Subscription ────────────────────────────────────────────────────────────
+  subscriptionTier: 'free' | 'pro' | 'premium';
+  receiptValidationPending: boolean;
   setUser: (user: User | null) => void;
   setTheme: (theme: 'light' | 'dark') => void;
   setTokens: (accessToken: string, refreshToken: string, expiresAt: number | Date) => void;
@@ -33,6 +36,8 @@ interface AppState {
   logout: () => void;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
+  setSubscriptionTier: (tier: 'free' | 'pro' | 'premium') => void;
+  setReceiptValidationPending: (pending: boolean) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -50,6 +55,8 @@ export const useAppStore = create<AppState>()(
         theme: 'light',
         isLoading: false,
         error: null,
+        subscriptionTier: 'free',
+        receiptValidationPending: false,
         setUser: user => {
           set({ user, isAuthenticated: !!user }, false, 'setUser');
           // Sync Sentry scope with the signed-in user so every subsequent
@@ -91,6 +98,8 @@ export const useAppStore = create<AppState>()(
               refreshToken: null,
               sessionExpiresAt: null,
               sessionExpiringSoon: false,
+              subscriptionTier: 'free',
+              receiptValidationPending: false,
             },
             false,
             'logout'
@@ -101,6 +110,9 @@ export const useAppStore = create<AppState>()(
         },
         setLoading: isLoading => set({ isLoading }, false, 'setLoading'),
         setError: error => set({ error }, false, 'setError'),
+        setSubscriptionTier: tier => set({ subscriptionTier: tier }, false, 'setSubscriptionTier'),
+        setReceiptValidationPending: pending =>
+          set({ receiptValidationPending: pending }, false, 'setReceiptValidationPending'),
       })),
       {
         name: 'app-auth-storage',

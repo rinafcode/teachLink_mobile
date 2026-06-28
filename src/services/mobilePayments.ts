@@ -16,6 +16,7 @@ import { Platform } from 'react-native';
 import * as IAP from 'react-native-iap';
 
 import { apiService } from './api';
+import { useAppStore } from '../store';
 import { useDeviceStore } from '../store/deviceStore';
 import { appLogger } from '../utils/logger';
 
@@ -157,6 +158,11 @@ const STORAGE_KEYS = {
   SUBSCRIPTION_TIER: '@teachlink:subscription_tier',
 } as const;
 
+// ─── Validation constants ─────────────────────────────────────────────────────
+
+const MAX_VALIDATION_ATTEMPTS = 4; // up to 3 retries on network error
+const VALIDATION_BASE_DELAY_MS = 1_000;
+
 // ─── Service ──────────────────────────────────────────────────────────────────
 
 class MobilePaymentsService {
@@ -173,11 +179,42 @@ class MobilePaymentsService {
 
       IAP.purchaseUpdatedListener(async purchase => {
         const receipt = purchase.transactionReceipt;
-        if (receipt) {
-          const result = await this.validateReceipt(receipt, Platform.OS as 'ios' | 'android');
+        if (!receipt) return;
+
+        const store = useAppStore.getState();
+        if (store.receiptValidationPending) {
+          appLogger.warnSync('[Payments] Receipt validation already in progress — skipping duplicate');
+          return;
+        }
+
+        store.setReceiptValidationPending(true);
+        try {
+          const result = await this.validateReceipt(
+            receipt,
+            Platform.OS as 'ios' | 'android',
+            purchase.productId
+          );
+
           if (result.valid) {
             await IAP.finishTransaction({ purchase, isConsumable: false });
+            if (result.tier) {
+              await this._setTier(result.tier);
+            }
+          } else {
+            appLogger.errorSync(
+              '[Payments] Receipt rejected by server',
+              new Error(result.error ?? 'Receipt validation failed'),
+              { productId: purchase.productId }
+            );
           }
+        } catch (error) {
+          appLogger.errorSync(
+            '[Payments] Receipt validation failed after retries — purchase not completed',
+            error instanceof Error ? error : new Error(String(error)),
+            { productId: purchase.productId }
+          );
+        } finally {
+          useAppStore.getState().setReceiptValidationPending(false);
         }
       });
 
@@ -396,7 +433,11 @@ class MobilePaymentsService {
 
   /**
    * Validates a purchase receipt against the server.
-   * The server should verify with Apple / Google using their validation APIs.
+   * The server verifies with Apple (/verifyReceipt) or Google (Play Developer API).
+   *
+   * Retries up to 3 times (4 total attempts) on network-level failures.
+   * Throws immediately on any server-returned error (4xx / 5xx) so the
+   * caller can distinguish a rejected receipt from a connectivity problem.
    *
    * Apple server validation:  https://buy.itunes.apple.com/verifyReceipt
    * Google server validation: https://www.googleapis.com/androidpublisher/v3/...
@@ -406,22 +447,32 @@ class MobilePaymentsService {
     platform: 'ios' | 'android',
     productId?: string
   ): Promise<ReceiptValidationResult> {
-    try {
-      const response = await apiService.post('/payments/validate', {
-        receipt: receiptData,
-        platform,
-        productId,
-      });
-      return response.data as ReceiptValidationResult;
-    } catch {
-      // Fallback mock for development — remove in production
-      return {
-        valid: true,
-        expiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        productId: productId ?? PRODUCT_IDS.PRO_MONTHLY,
-        tier: 'pro',
-      };
+    let lastNetworkError: unknown;
+
+    for (let attempt = 0; attempt < MAX_VALIDATION_ATTEMPTS; attempt++) {
+      try {
+        const response = await apiService.post('/api/payments/validate-receipt', {
+          receipt: receiptData,
+          platform,
+          productId,
+        });
+        return response.data as ReceiptValidationResult;
+      } catch (error) {
+        // Only retry on network-level failures (no response from server).
+        // 4xx / 5xx responses carry a body and must not be retried blindly.
+        const hasResponse = !!(error as { response?: unknown }).response;
+        if (hasResponse) throw error;
+
+        lastNetworkError = error;
+        if (attempt < MAX_VALIDATION_ATTEMPTS - 1) {
+          await new Promise(resolve =>
+            setTimeout(resolve, VALIDATION_BASE_DELAY_MS * Math.pow(2, attempt))
+          );
+        }
+      }
     }
+
+    throw lastNetworkError;
   }
 
   // ─── Storage helpers ────────────────────────────────────────────────────────
@@ -472,6 +523,7 @@ class MobilePaymentsService {
 
   private async _setTier(tier: SubscriptionTier): Promise<void> {
     await AsyncStorage.setItem(STORAGE_KEYS.SUBSCRIPTION_TIER, tier);
+    useAppStore.getState().setSubscriptionTier(tier);
   }
 }
 
