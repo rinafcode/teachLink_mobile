@@ -1,45 +1,40 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import {
-    AlertCircle,
-    Apple,
-    BookOpen,
-    Chrome,
-    Eye,
-    EyeOff,
-    Lock,
-    LogIn,
-    Mail,
+  AlertCircle,
+  Apple,
+  BookOpen,
+  Chrome,
+  Eye,
+  EyeOff,
+  Lock,
+  LogIn,
+  Mail,
 } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
 import {
-    ActivityIndicator,
-    Alert,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
-
-import { BiometricInlineButton, BiometricPrompt } from '../../components/mobile/BiometricPrompt';
 import { DelegatedKeyboardAvoidingView } from '../../components/common/DelegatedKeyboardAvoidingView';
+import { BiometricInlineButton, BiometricPrompt } from '../../components/mobile/BiometricPrompt';
 import { MobileFormInput } from '../../components/mobile/MobileFormInput';
 import { useBiometricAuth, useDynamicFontSize, useFormValidation } from '../../hooks';
 import authService, { AuthResult } from '../../services/mobileAuth';
 import * as secureStorage from '../../services/secureStorage';
 import { useAppStore } from '../../store';
+import { getAuthErrorMessage } from '../../utils/authErrorMessages';
+import { appLogger } from '../../utils/logger';
 import { validateEmail, validateRequired } from '../../utils/validation';
-
-interface LoginFormValues {
-  email: string;
-  password: string;
-}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -63,17 +58,12 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
   isDark = false,
 }) => {
   // ── Form ─────────────────────────────────────────────────────────────────
-  const {
-    control,
-    handleSubmit,
-    setValue,
-    formState: { errors },
-  } = useForm<LoginFormValues>({ defaultValues: { email: '', password: '' } });
-
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [serverError, setServerError] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [passwordFocused, setPasswordFocused] = useState(false);
   const [showBiometricModal, setShowBiometricModal] = useState(false);
 
   // ── Auth lockout ─────────────────────────────────────────────────────────
@@ -93,6 +83,9 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
 
   const isLocked = lockSecondsLeft > 0;
 
+  const [displayError, setDisplayError] = useState<string | null>(null);
+  const emailRef = useRef<TextInput>(null);
+  const setError = (message: string | null) => setDisplayError(message);
   const passwordRef = useRef<TextInput>(null);
 
   const {
@@ -125,11 +118,11 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
         authService.getRememberedEmail(),
         secureStorage.isRememberMeEnabled(),
       ]);
-      if (savedEmail) setValue('email', savedEmail);
+      if (savedEmail) setEmail(savedEmail);
       if (savedRememberMe) setRememberMe(true);
     }
     loadRemembered();
-  }, [setValue]);
+  }, []);
 
   // ── Auto-trigger biometric on mount if enabled ───────────────────────────
   useEffect(() => {
@@ -149,19 +142,30 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
 
   // ── Password login ───────────────────────────────────────────────────────
   const handlePasswordLogin = async () => {
-    if (!validateAll({ email, password })) return;
+    const formValues = { email, password };
+
+    if (!validateAll(formValues)) return;
 
     setError(null);
     setIsLoading(true);
     try {
       const result = await authService.login({
-        email: data.email.trim().toLowerCase(),
-        password: data.password,
+        email: formValues.email.trim().toLowerCase(),
+        password: formValues.password,
         rememberMe,
       });
       onLoginSuccess(result);
     } catch (err) {
-      setServerError(err instanceof Error ? err.message : 'Login failed. Please try again.');
+      const authErrorCode = (err as { response?: { data?: { error?: string } } })?.response?.data
+        ?.error;
+
+      await appLogger.error('MobileLogin login failed', err, {
+        response: (err as { response?: { data?: unknown } })?.response?.data,
+        status: (err as { response?: { status?: number } })?.response?.status,
+      });
+
+      const friendlyMessage = getAuthErrorMessage(authErrorCode);
+      setError(friendlyMessage);
     } finally {
       setIsLoading(false);
     }
@@ -359,9 +363,9 @@ export const MobileLogin: React.FC<MobileLoginProps> = ({
 
             {/* Primary CTA */}
             <TouchableOpacity
-              style={[styles.loginBtn, { opacity: isLoading || isLocked ? 0.5 : 1 }]}
-              onPress={handleSubmit(onSubmit)}
-              disabled={isLoading || isLocked}
+              style={[styles.loginBtn, { opacity: isLoading ? 0.7 : 1 }]}
+              onPress={handlePasswordLogin}
+              disabled={isLoading}
               activeOpacity={0.85}
             >
               <LinearGradient

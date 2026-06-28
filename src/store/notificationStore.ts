@@ -1,7 +1,7 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
 
+import { asyncStorageJSONStorage, createHydrationErrorRecovery } from './persistence';
 import {
     DEFAULT_NOTIFICATION_PREFERENCES,
     NotificationData,
@@ -61,22 +61,31 @@ interface NotificationState {
   isNotificationTypeEnabled: (type: NotificationType) => boolean;
 }
 
+const createInitialNotificationState = () => ({
+  pushToken: null,
+  isTokenRegistered: false,
+  tokenLastUpdated: null,
+  hasPromptedForPermission: false,
+  permissionDeniedAt: null,
+  showNotificationExplainer: false,
+  preferences: DEFAULT_NOTIFICATION_PREFERENCES,
+  notifications: [],
+  unreadCount: 0,
+  notificationHistory: [],
+  lastEngagedAt: null,
+  lastNotificationSentAtByType: {},
+});
+
+let resetNotificationStoreAfterHydrationError = () => {};
+
 export const useNotificationStore = create<NotificationState>()(
   persist(
-    (set, get) => ({
+    (set, get): NotificationState => {
+      resetNotificationStoreAfterHydrationError = () => set(createInitialNotificationState());
+
+      return {
       // Initial state
-      pushToken: null,
-      isTokenRegistered: false,
-      tokenLastUpdated: null,
-      hasPromptedForPermission: false,
-      permissionDeniedAt: null,
-      showNotificationExplainer: false,
-      preferences: DEFAULT_NOTIFICATION_PREFERENCES,
-      notifications: [],
-      unreadCount: 0,
-      notificationHistory: [],
-      lastEngagedAt: null,
-      lastNotificationSentAtByType: {},
+      ...createInitialNotificationState(),
 
       // Push token actions
       setPushToken: token =>
@@ -281,14 +290,18 @@ export const useNotificationStore = create<NotificationState>()(
             return true;
         }
       },
-    }),
+      };
+    },
     {
       name: 'notification-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: asyncStorageJSONStorage,
       version: 2,
       migrate: (persistedState, version) => {
         if (version < 2) {
-          const state = JSON.parse(persistedState as string) as any;
+          const state =
+            typeof persistedState === 'string'
+              ? (JSON.parse(persistedState) as any)
+              : { ...(persistedState as any) };
           // Convert notification timestamps
           if (Array.isArray(state.notifications)) {
             state.notifications = state.notifications.map((n: any) => ({
@@ -315,6 +328,10 @@ export const useNotificationStore = create<NotificationState>()(
         }
         return persistedState;
       },
+      onRehydrateStorage: createHydrationErrorRecovery(
+        'notification-storage',
+        resetNotificationStoreAfterHydrationError
+      ),
       partialize: state => ({
         // Only persist these fields
         pushToken: state.pushToken,

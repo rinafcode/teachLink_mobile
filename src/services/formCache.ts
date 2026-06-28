@@ -1,12 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { safeStorageWrite } from '../utils/storage';
+
 /** Returns an AsyncStorage key scoped to the given user (versioned for future migrations). */
 export function getFormCacheStorageKey(userId: string): string {
   return `@teachlink/form-cache/${userId}/v1`;
 }
-
-/** @deprecated Use getFormCacheStorageKey(userId) instead. Kept for migration only. */
-import { safeStorageWrite } from '../utils/storage';
 
 /** AsyncStorage key for the form value cache (versioned for future migrations). */
 export const FORM_CACHE_STORAGE_KEY = '@teachlink/form-cache/v1';
@@ -54,7 +53,7 @@ export function pruneExpiredCache(store: FormCacheStore, now = Date.now()): Form
   return pruned;
 }
 
-export async function loadFormCache(storageKey: string): Promise<FormCacheStore> {
+export async function loadFormCache(storageKey = FORM_CACHE_STORAGE_KEY): Promise<FormCacheStore> {
   const raw = await AsyncStorage.getItem(storageKey);
   if (!raw) return {};
   try {
@@ -69,10 +68,18 @@ export async function loadFormCache(storageKey: string): Promise<FormCacheStore>
   }
 }
 
-export async function saveFormCache(storageKey: string, store: FormCacheStore): Promise<void> {
-  await AsyncStorage.setItem(storageKey, JSON.stringify(store));
-export async function saveFormCache(store: FormCacheStore): Promise<void> {
-  await safeStorageWrite(FORM_CACHE_STORAGE_KEY, JSON.stringify(store));
+export async function saveFormCache(storageKey: string, store: FormCacheStore): Promise<void>;
+export async function saveFormCache(store: FormCacheStore): Promise<void>;
+export async function saveFormCache(
+  storageKeyOrStore: string | FormCacheStore,
+  maybeStore?: FormCacheStore
+): Promise<void> {
+  if (typeof storageKeyOrStore === 'string') {
+    await AsyncStorage.setItem(storageKeyOrStore, JSON.stringify(maybeStore ?? {}));
+    return;
+  }
+
+  await safeStorageWrite(FORM_CACHE_STORAGE_KEY, JSON.stringify(storageKeyOrStore));
 }
 
 export async function getCachedFieldValue(
@@ -104,7 +111,18 @@ export async function setCachedFieldValue(
   storageKey: string,
   key: FormCacheFieldKey,
   value: string
+): Promise<void>;
+export async function setCachedFieldValue(key: FormCacheFieldKey, value: string): Promise<void>;
+export async function setCachedFieldValue(
+  storageKeyOrKey: string,
+  keyOrValue: FormCacheFieldKey | string,
+  maybeValue?: string
 ): Promise<void> {
+  const storageKey = maybeValue ? storageKeyOrKey : FORM_CACHE_STORAGE_KEY;
+  const key = maybeValue
+    ? (keyOrValue as FormCacheFieldKey)
+    : (storageKeyOrKey as FormCacheFieldKey);
+  const value = maybeValue ?? keyOrValue;
   const trimmed = value.trim();
   if (!trimmed || SENSITIVE_FIELD_KEYS.includes(key)) return;
 

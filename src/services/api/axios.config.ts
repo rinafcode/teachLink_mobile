@@ -16,15 +16,45 @@ import { invalidateCacheForBatchRequests, invalidateCacheForMutation, invalidate
 import { requestQueue } from './requestQueue';
 import { getEnv } from '../../config';
 import { MUTATION_INVALIDATION_MAP } from '../../config/apiCacheConfig';
+import { SSL_PINNING } from '../../config/security';
 import { useAppStore } from '../../store';
 import { appLogger } from '../../utils/logger';
 import { startTiming, notifyEntry } from '../../utils/performanceTiming';
 import { healthMetricsService } from '../healthMetrics';
+import { sentryContextService } from '../sentryContext';
 import { getAccessToken, getRefreshToken, saveTokens } from '../secureStorage';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Returns true when a network-layer error is consistent with an SSL certificate
+ * pin validation failure rather than a routine connectivity loss.
+ *
+ * Platform manifestations:
+ *   iOS  — NSURLErrorSecureConnectionFailed (-1200), NSURLErrorServerCertificateUntrusted (-1202)
+ *   Android — javax.net.ssl.SSLHandshakeException / SSLPeerUnverifiedException
+ *
+ * These surface in JavaScript as ERR_NETWORK / "Network Error" with SSL keywords
+ * in the underlying cause or message. We check both so a future RN version that
+ * exposes more detail is covered automatically.
+ */
+function isCertPinFailure(error: AxiosError): boolean {
+  if (SSL_PINNING.bypassEnabled) return false;
+  const msg = (error.message ?? '').toLowerCase();
+  const cause = String((error as unknown as { cause?: unknown }).cause ?? '').toLowerCase();
+  return (
+    msg.includes('ssl') ||
+    msg.includes('certificate') ||
+    msg.includes('tls') ||
+    cause.includes('sslhandshakeexception') ||
+    cause.includes('sslpeerunverifiedexception') ||
+    cause.includes('certificateexpired') ||
+    cause.includes('nsurlErrorSecureConnectionFailed'.toLowerCase()) ||
+    cause.includes('nsurlErrorServerCertificateUntrusted'.toLowerCase())
+  );
+}
 
 /**
  * Issue #225 — Exponential backoff with ±10 % jitter.
@@ -223,6 +253,43 @@ apiClient.interceptors.response.use(
       const entry = originalRequest._timingFinish(false, error.response?.status);
       notifyEntry(entry);
       originalRequest._timingFinish = undefined;
+    }
+
+    // ── SSL pin failure — force logout, report to Sentry, surface clean error ─
+    //
+    // Platform-level pinning (NSPinnedDomains / network_security_config) raises
+    // SSL errors that reach JS as network-layer failures. Detect them before the
+    // general ERR_NETWORK retry path so we never silently retry a MITM'd request.
+    if (
+      (error.code === 'ERR_NETWORK' || error.message === 'Network Error') &&
+      isCertPinFailure(error)
+    ) {
+      // Report to Sentry — endpoint and method only; no token, headers, or body
+      sentryContextService.captureException(
+        new Error('SSL certificate pin validation failed'),
+        {
+          tags: { 'security.event': 'ssl_pin_failure' },
+          extra: {
+            endpoint: originalRequest?.url,
+            method: originalRequest?.method?.toUpperCase(),
+          },
+          fingerprint: ['ssl-pin-failure'],
+        }
+      );
+
+      appLogger.errorSync('SSL pin validation failed — possible MITM attack', undefined, {
+        endpoint: originalRequest?.url,
+        method: originalRequest?.method,
+      });
+
+      // Force full logout — session may be compromised
+      useAppStore.getState().logout();
+
+      return Promise.reject({
+        message: 'Secure connection could not be established. Please check your network and try again.',
+        code: 'SSL_PIN_FAILURE',
+        status: 0,
+      });
     }
 
     // ── Queue network errors for retry ───────────────────────────────────

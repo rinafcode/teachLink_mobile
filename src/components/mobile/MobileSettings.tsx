@@ -2,6 +2,7 @@ import {
   BarChart2,
   ChevronDown,
   ChevronUp,
+  CreditCard,
   Database,
   Download,
   Eye,
@@ -10,6 +11,7 @@ import {
   LogOut,
   RefreshCw,
   Settings2,
+  ShieldAlert,
   Sun,
   Trash2,
   User,
@@ -18,11 +20,12 @@ import {
 } from 'lucide-react-native';
 import React, { memo, useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, TouchableOpacity, View } from 'react-native';
+import { useRouter } from 'expo-router';
 
 import { NativeToggle } from './NativeToggle';
 import { PickerOption, SettingsPicker } from './SettingsPicker';
 import { SettingsSection } from './SettingsSection';
-import { useDynamicFontSize } from '../../hooks';
+import { useDynamicFontSize, useRequireReauth } from '../../hooks';
 import { useBiometricAuth } from '../../hooks/useBiometricAuth';
 import { useFormCache } from '../../hooks/useFormCache';
 import { useAppStore, useTheme } from '../../store';
@@ -145,6 +148,8 @@ const AdvancedToggle = ({ expanded, onToggle }: AdvancedToggleProps) => {
 export const MobileSettings = ({ onSignOut, onChangePassword, onLinkedAccounts }: any) => {
   const theme = useTheme();
   const setTheme = useAppStore(state => state.setTheme);
+  const router = useRouter();
+  const { performReauthCheck } = useRequireReauth();
   // Progressive disclosure: advanced settings collapsed by default
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
 
@@ -242,6 +247,42 @@ export const MobileSettings = ({ onSignOut, onChangePassword, onLinkedAccounts }
     setShowAdvancedSettings(prev => !prev);
   }, []);
 
+  const handleChangePaymentMethod = useCallback(async () => {
+    const authorized = await performReauthCheck();
+    if (authorized) {
+      Alert.alert('Payment Method', 'Payment method updated successfully.');
+    } else {
+      Alert.alert('Re-authentication Failed', 'Verification required to change payment method.');
+    }
+  }, [performReauthCheck]);
+
+  const handleViewFullCardNumber = useCallback(async () => {
+    const authorized = await performReauthCheck();
+    if (authorized) {
+      Alert.alert('Card Details', 'Card Number: **** **** **** 4242');
+    } else {
+      Alert.alert('Re-authentication Failed', 'Verification required to view card details.');
+    }
+  }, [performReauthCheck]);
+
+  const handleExportData = useCallback(async () => {
+    const authorized = await performReauthCheck();
+    if (authorized) {
+      Alert.alert('Export Data', 'Your personal data export request has been submitted successfully.');
+    } else {
+      Alert.alert('Re-authentication Failed', 'Verification required to export personal data.');
+    }
+  }, [performReauthCheck]);
+
+  const handleAdminDashboard = useCallback(async () => {
+    const authorized = await performReauthCheck();
+    if (authorized) {
+      router.push('/health-dashboard');
+    } else {
+      Alert.alert('Re-authentication Failed', 'Verification required to access Admin Dashboard.');
+    }
+  }, [performReauthCheck, router]);
+
   return (
     <ScrollView className="flex-1 bg-gray-50 dark:bg-gray-900">
       {/* ── ESSENTIAL: ACCOUNT ─────────────────────────────── */}
@@ -287,6 +328,16 @@ export const MobileSettings = ({ onSignOut, onChangePassword, onLinkedAccounts }
         )}
 
         <SettingRow icon={<User size={18} />} label="Change Password" onPress={onChangePassword} />
+        <SettingRow
+          icon={<CreditCard size={18} color="#f59e0b" />}
+          label="Change Payment Method"
+          onPress={handleChangePaymentMethod}
+        />
+        <SettingRow
+          icon={<CreditCard size={18} color="#10b981" />}
+          label="View Full Card Number"
+          onPress={handleViewFullCardNumber}
+        />
       </SettingsSection>
 
       {/* ── ESSENTIAL: APP ─────────────────────────────────── */}
@@ -331,6 +382,13 @@ export const MobileSettings = ({ onSignOut, onChangePassword, onLinkedAccounts }
               description="Remove saved autofill values from this device"
               onPress={handleClearFormCache}
               destructive
+            />
+
+            <SettingRow
+              icon={<Download size={18} color="#6366f1" />}
+              label="Export Personal Data"
+              description="Export your account details and learning progress"
+              onPress={handleExportData}
             />
           </SettingsSection>
 
@@ -383,6 +441,13 @@ export const MobileSettings = ({ onSignOut, onChangePassword, onLinkedAccounts }
               icon={<Zap size={18} color="#06b6d4" />}
               label="Clipboard Optimizer"
               description="Test & profile asynchronous clipboard operations"
+            />
+
+            <SettingRow
+              icon={<ShieldAlert size={18} color="#ef4444" />}
+              label="Admin Dashboard"
+              description="Access systems health & performance diagnostics"
+              onPress={handleAdminDashboard}
             />
           </SettingsSection>
         </>

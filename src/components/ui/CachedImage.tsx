@@ -264,8 +264,6 @@ const CachedImageComponent: React.FC<CachedImageProps> = ({
         />
       </Animated.View>
 
-      </Animated.View>
-
       {/* Loading indicator overlay */}
       {isLoading && showLoadingIndicator && (
         <View style={styles.loadingOverlay}>

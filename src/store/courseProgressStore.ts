@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-import { asyncStorageJSONStorage } from './persistence';
+import { asyncStorageJSONStorage, createHydrationErrorRecovery } from './persistence';
 
 import type { CourseProgress, LessonProgress } from '../types/course';
 
@@ -19,59 +19,75 @@ interface CourseProgressState {
   isCourseComplete: (courseId: string, totalLessons: number) => boolean;
 }
 
+const INITIAL_COURSE_PROGRESS_STATE = {
+  progressMap: {},
+};
+
+let resetCourseProgressStoreAfterHydrationError = () => {};
+
 export const useCourseProgressStore = create<CourseProgressState>()(
   persist(
-    (set, get) => ({
-      progressMap: {},
+    (set, get): CourseProgressState => {
+      resetCourseProgressStoreAfterHydrationError = () => set(INITIAL_COURSE_PROGRESS_STATE);
 
-      setCourseProgress: (courseId, progress) =>
-        set(s => ({ progressMap: { ...s.progressMap, [courseId]: progress } })),
+      return {
+        ...INITIAL_COURSE_PROGRESS_STATE,
 
-      getCourseProgress: courseId => get().progressMap[courseId] ?? null,
+        setCourseProgress: (courseId, progress) =>
+          set(s => ({ progressMap: { ...s.progressMap, [courseId]: progress } })),
 
-      markLessonComplete: (courseId, lessonId, totalLessons, lessonData) => {
-        set(s => {
-          const existing = s.progressMap[courseId];
-          if (!existing) return s;
+        getCourseProgress: courseId => get().progressMap[courseId] ?? null,
 
-          const lessonProgress: LessonProgress = {
-            lessonId,
-            completed: true,
-            lastPosition: 0,
-            timeSpent: 0,
-            completedAt: new Date().toISOString(),
-            ...lessonData,
-          };
+        markLessonComplete: (courseId, lessonId, totalLessons, lessonData) => {
+          set(s => {
+            const existing = s.progressMap[courseId];
+            if (!existing) return s;
 
-          const updatedLessons = { ...existing.lessons, [lessonId]: lessonProgress };
-          const completedLessons = Object.values(updatedLessons).filter(l => l.completed).length;
+            const lessonProgress: LessonProgress = {
+              lessonId,
+              completed: true,
+              lastPosition: 0,
+              timeSpent: 0,
+              completedAt: new Date().toISOString(),
+              ...lessonData,
+            };
 
-          // Use integer comparison as primary check; >= 99.5 as float fallback
-          const computedPercentage = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0;
-          const isComplete =
-            completedLessons === totalLessons || computedPercentage >= 99.5;
-          const overallProgress = isComplete ? 100 : Math.min(99, Math.round(computedPercentage * 10) / 10);
+            const updatedLessons = { ...existing.lessons, [lessonId]: lessonProgress };
+            const completedLessons = Object.values(updatedLessons).filter(l => l.completed).length;
 
-          return {
-            progressMap: {
-              ...s.progressMap,
-              [courseId]: { ...existing, lessons: updatedLessons, overallProgress },
-            },
-          };
-        });
-      },
+            // Use integer comparison as primary check; >= 99.5 as float fallback
+            const computedPercentage =
+              totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0;
+            const isComplete = completedLessons === totalLessons || computedPercentage >= 99.5;
+            const overallProgress = isComplete
+              ? 100
+              : Math.min(99, Math.round(computedPercentage * 10) / 10);
 
-      isCourseComplete: (courseId, totalLessons) => {
-        const progress = get().progressMap[courseId];
-        if (!progress) return false;
-        const completedLessons = Object.values(progress.lessons).filter(l => l.completed).length;
-        return completedLessons === totalLessons || progress.overallProgress >= 99.5;
-      },
-    }),
+            return {
+              progressMap: {
+                ...s.progressMap,
+                [courseId]: { ...existing, lessons: updatedLessons, overallProgress },
+              },
+            };
+          });
+        },
+
+        isCourseComplete: (courseId, totalLessons) => {
+          const progress = get().progressMap[courseId];
+          if (!progress) return false;
+          const completedLessons = Object.values(progress.lessons).filter(l => l.completed).length;
+          return completedLessons === totalLessons || progress.overallProgress >= 99.5;
+        },
+      };
+    },
     {
       name: 'course-progress-storage',
       version: 1,
       storage: asyncStorageJSONStorage,
+      onRehydrateStorage: createHydrationErrorRecovery(
+        'course-progress-storage',
+        resetCourseProgressStoreAfterHydrationError
+      ),
       partialize: state => ({
         progressMap: state.progressMap,
       }),
