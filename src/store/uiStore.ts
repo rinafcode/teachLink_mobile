@@ -1,21 +1,36 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+
+import { asyncStorageJSONStorage, createHydrationErrorRecovery } from './persistence';
 
 interface UiState {
   theme: 'light' | 'dark';
   setTheme: (theme: 'light' | 'dark') => void;
 }
 
+const INITIAL_UI_STATE = {
+  theme: 'light' as const,
+};
+
+let resetUiStoreAfterHydrationError = () => {};
+
 export const useUiStore = create<UiState>()(
   persist(
-    (set) => ({
-      theme: 'light',
-      setTheme: (theme) => set({ theme }),
-    }),
+    (set): UiState => {
+      resetUiStoreAfterHydrationError = () => set(INITIAL_UI_STATE);
+
+      return {
+        ...INITIAL_UI_STATE,
+        setTheme: theme => set({ theme }),
+      };
+    },
     {
       name: 'ui-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: asyncStorageJSONStorage,
+      onRehydrateStorage: createHydrationErrorRecovery(
+        'ui-storage',
+        resetUiStoreAfterHydrationError
+      ),
     }
   )
 );

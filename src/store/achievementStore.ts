@@ -1,10 +1,15 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-import { asyncStorageJSONStorage, isRecord, unwrapPersistedState } from './persistence';
+import {
+  asyncStorageJSONStorage,
+  createHydrationErrorRecovery,
+  isRecord,
+  unwrapPersistedState,
+} from './persistence';
 import { useReviewStore } from './reviewStore';
-import { inAppReviewService, ReviewTrigger } from '../services/inAppReview';
 import apiService from '../services/api';
+import { inAppReviewService, ReviewTrigger } from '../services/inAppReview';
 import { appLogger } from '../utils/logger';
 
 const triggerAchievementReview = () => {
@@ -263,13 +268,22 @@ function normalizeAchievementState(rawState: unknown): {
   };
 }
 
+const createInitialAchievementState = () => ({
+  achievements: buildAchievementsFromProgress({}),
+  achievementProgress: {},
+  unlockedCount: 0,
+  isLoaded: false,
+});
+
+let resetAchievementStoreAfterHydrationError = () => {};
+
 export const useAchievementStore = create<AchievementState>()(
   persist(
-    (set, get) => ({
-      achievements: buildAchievementsFromProgress({}),
-      achievementProgress: {},
-      unlockedCount: 0,
-      isLoaded: false,
+    (set, get): AchievementState => {
+      resetAchievementStoreAfterHydrationError = () => set(createInitialAchievementState());
+
+      return {
+        ...createInitialAchievementState(),
 
       loadAchievements: () => {
         const { isLoaded, achievements } = get();
@@ -373,11 +387,16 @@ export const useAchievementStore = create<AchievementState>()(
           achievementProgress: snapshotAchievementProgress(achievements),
           unlockedCount: achievements.filter(a => !a.isLocked).length,
         }),
-    }),
+      };
+    },
     {
       name: 'achievement-storage',
       version: 1,
       storage: asyncStorageJSONStorage,
+      onRehydrateStorage: createHydrationErrorRecovery(
+        'achievement-storage',
+        resetAchievementStoreAfterHydrationError
+      ),
       partialize: state => ({
         achievementProgress: state.achievementProgress,
         unlockedCount: state.unlockedCount,
