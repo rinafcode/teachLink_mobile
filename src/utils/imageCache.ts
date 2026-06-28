@@ -1,11 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'expo-image';
 
-import { mobileAnalyticsService } from '../services/mobileAnalytics';
 import { logger } from './logger';
+import { mobileAnalyticsService } from '../services/mobileAnalytics';
 
 const CACHE_METADATA_KEY = '@image-cache-metadata';
 const MAX_CACHE_SIZE_BYTES = 100 * 1024 * 1024;
+/** Eviction fires when cache reaches 80% of max (80 MB) */
+const EVICTION_THRESHOLD_BYTES = MAX_CACHE_SIZE_BYTES * 0.8;
 const LOW_STORAGE_THRESHOLD_BYTES = 50 * 1024 * 1024;
 
 interface CacheEntry {
@@ -47,13 +49,34 @@ async function saveMetadata(): Promise<void> {
   }
 }
 
-function evictLRU(): void {
+/**
+ * Evict least-recently-used entries until totalSize is below targetBytes.
+ * Called automatically when cache reaches EVICTION_THRESHOLD_BYTES (80 MB).
+ *
+ * @param targetBytes - Reduce total size to this value. Defaults to 70% of max.
+ */
+function evictLRU(targetBytes: number = MAX_CACHE_SIZE_BYTES * 0.7): void {
   metadata.entries.sort((a, b) => a.lastAccessed - b.lastAccessed);
-  while (metadata.totalSize > MAX_CACHE_SIZE_BYTES && metadata.entries.length > 0) {
+  while (metadata.totalSize > targetBytes && metadata.entries.length > 0) {
     const evicted = metadata.entries.shift();
     if (evicted) {
       metadata.totalSize -= evicted.size;
+      logger.debug(`[ImageCache] Evicted ${evicted.url} (${evicted.size} bytes)`);
     }
+  }
+}
+
+/**
+ * Check if eviction is needed (cache at or above 80% threshold) and run it.
+ * Called after every prefetch write.
+ */
+function maybeEvict(): void {
+  if (metadata.totalSize >= EVICTION_THRESHOLD_BYTES) {
+    logger.warn(
+      `[ImageCache] Cache at ${Math.round(metadata.totalSize / (1024 * 1024))}MB, ` +
+        `triggering LRU eviction (threshold: ${Math.round(EVICTION_THRESHOLD_BYTES / (1024 * 1024))}MB)`
+    );
+    evictLRU();
   }
 }
 
@@ -73,7 +96,13 @@ export function getCacheHitRate(): number {
   return total === 0 ? 0 : cacheHits / total;
 }
 
-export function getCacheStats(): { hitRate: number; totalSize: number; entryCount: number; hits: number; misses: number } {
+export function getCacheStats(): {
+  hitRate: number;
+  totalSize: number;
+  entryCount: number;
+  hits: number;
+  misses: number;
+} {
   return {
     hitRate: getCacheHitRate(),
     totalSize: metadata.totalSize,
@@ -108,7 +137,7 @@ export class ImageCache {
             hitCount: 0,
           });
           metadata.totalSize += size;
-          evictLRU();
+          maybeEvict();
           await saveMetadata();
           await recordMiss(url);
         }
@@ -130,6 +159,35 @@ export class ImageCache {
     cacheMisses = 0;
     metadataLoaded = true;
     await AsyncStorage.removeItem(CACHE_METADATA_KEY);
+  }
+
+  /**
+   * Clear all non-pinned cached images. Called on critical memory pressure.
+   * Preserves metadata structure but removes all entries and resets size.
+   */
+  static async clearNonCritical(): Promise<void> {
+    await loadMetadata();
+    logger.warn('[ImageCache] clearNonCritical: removing all cached image entries');
+    metadata.entries = [];
+    metadata.totalSize = 0;
+    await Image.clearMemoryCache();
+    await Image.clearDiskCache();
+    await saveMetadata();
+  }
+
+  /**
+   * Returns current total cache size in bytes.
+   * Used by memoryPressureService to expose cache size as a metric.
+   */
+  static getCacheSizeBytes(): number {
+    return metadata.totalSize;
+  }
+
+  /**
+   * Returns the 80% eviction threshold in bytes.
+   */
+  static getEvictionThresholdBytes(): number {
+    return EVICTION_THRESHOLD_BYTES;
   }
 
   static async clearMemoryCache(): Promise<void> {

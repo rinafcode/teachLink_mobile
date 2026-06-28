@@ -1,14 +1,14 @@
+import { preloadService } from './preloadService';
+import { syncService } from './syncService';
 import { ImageCache } from '../utils/imageCache';
 import { appLogger } from '../utils/logger';
 import {
-    captureMemorySnapshot,
-    detectMemoryPressure,
-    MEMORY_PRESSURE_THRESHOLD,
-    type MemorySnapshot
+  captureMemorySnapshot,
+  detectMemoryPressure,
+  MEMORY_PRESSURE_THRESHOLD,
+  type MemorySnapshot,
 } from '../utils/memoryProfiler';
 import { requestQueue } from './api/requestQueue';
-import { preloadService } from './preloadService';
-import { syncService } from './syncService';
 
 const MEMORY_PRESSURE_CHECK_INTERVAL_MS = 10_000;
 
@@ -65,12 +65,12 @@ export class MemoryPressureService {
     appLogger.warnSync('High memory pressure detected', {
       usedHeapBytes: snapshot.usedHeapBytes,
       heapSizeBytes: snapshot.heapSizeBytes,
-      utilization: `${(utilization * 100).toFixed(0)}%`, 
+      utilization: `${(utilization * 100).toFixed(0)}%`,
       threshold: `${MEMORY_PRESSURE_THRESHOLD * 100}%`,
     });
 
     await Promise.allSettled([
-      ImageCache.clearCache(),
+      ImageCache.clearNonCritical(),
       (async () => {
         preloadService.pausePrefetch();
       })(),
@@ -88,7 +88,7 @@ export class MemoryPressureService {
     appLogger.infoSync('Memory pressure recovered', {
       usedHeapBytes: snapshot.usedHeapBytes,
       heapSizeBytes: snapshot.heapSizeBytes,
-      utilization: `${(utilization * 100).toFixed(0)}%`, 
+      utilization: `${(utilization * 100).toFixed(0)}%`,
     });
 
     preloadService.resumePrefetch();
