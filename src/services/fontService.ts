@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Asset } from 'expo-asset';
-import { loadAsync } from 'expo-font';
+import * as Font from 'expo-font';
 import { Platform } from 'react-native';
 
 // Font metadata interface
@@ -151,7 +151,7 @@ class FontService {
 
     try {
       // Load the font
-      await loadAsync({ [name]: source });
+      await Font.loadAsync({ [name]: source });
       this.loadedFonts.add(name);
 
       // Update metadata
@@ -256,6 +256,20 @@ class FontService {
     };
   }
 
+  // Load an array of font entries with timing tracking
+  async loadFonts(fonts: { name: string; source: string | number }[]): Promise<void> {
+    const start = Date.now();
+    const entries = fonts.map(f => ({ [f.name]: f.source }));
+    const flat = Object.assign({}, ...entries);
+    await Font.loadAsync(flat);
+    entries.forEach(e => {
+      const name = Object.keys(e)[0];
+      this.loadedFonts.add(name);
+    });
+    const elapsed = Date.now() - start;
+    console.log(`[FontService] Loaded ${fonts.length} font(s) in ${elapsed}ms`);
+  }
+
   // Preload critical fonts
   async preloadCriticalFonts(fonts: { name: string; source: string | number }[]): Promise<{
     loaded: string[];
@@ -293,6 +307,32 @@ class FontService {
 
 // Singleton instance
 export const fontService = new FontService();
+
+// Font entry for loading
+export interface FontEntry {
+  name: string;
+  source: any;
+}
+
+// All available font variants mapped to asset sources
+export const FONTS = {
+  'Inter-Regular': require('../../assets/fonts/Inter-Regular.ttf'),
+  'Inter-Bold': require('../../assets/fonts/Inter-Bold.ttf'),
+  'Inter-Medium': require('../../assets/fonts/Inter-Medium.ttf'),
+  'Inter-SemiBold': require('../../assets/fonts/Inter-SemiBold.ttf'),
+} as const;
+
+// Fonts required for the initial screen render (loaded before splash hide)
+export const CRITICAL_FONTS: FontEntry[] = [
+  { name: 'Inter-Regular', source: FONTS['Inter-Regular'] },
+  { name: 'Inter-Medium', source: FONTS['Inter-Medium'] },
+  { name: 'Inter-Bold', source: FONTS['Inter-Bold'] },
+];
+
+// Fonts loaded lazily after initial render completes
+export const SECONDARY_FONTS: FontEntry[] = [
+  { name: 'Inter-SemiBold', source: FONTS['Inter-SemiBold'] },
+];
 
 // Utility functions for font optimization
 export const fontOptimization = {

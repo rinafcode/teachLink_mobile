@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Font from 'expo-font';
 import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -28,6 +27,11 @@ import {
   subscribeToCacheStatus,
 } from './src/services/api';
 import { warmCriticalCaches } from './src/services/cacheWarming';
+import {
+  CRITICAL_FONTS,
+  fontService,
+  SECONDARY_FONTS,
+} from './src/services/fontService';
 import { crashReportingService } from './src/services/crashReporting';
 import { featureCapabilities } from './src/services/featureCapabilities';
 import { inAppReviewService } from './src/services/inAppReview';
@@ -197,11 +201,10 @@ const App = () => {
   useEffect(() => {
     async function prepareApp() {
       try {
-        // 1. Load fonts
-        await Font.loadAsync({
-          'Inter-Regular': require('./assets/fonts/Inter-Regular.ttf'),
-          'Inter-Bold': require('./assets/fonts/Inter-Bold.ttf'),
-        });
+        // 1. Load critical fonts (used on first screen) synchronously before splash hides
+        const fontStart = Date.now();
+        await fontService.loadFonts(CRITICAL_FONTS);
+        console.log(`[App] Critical fonts loaded in ${Date.now() - fontStart}ms`);
 
         // 2. Version-based cache invalidation: clear stale caches on app/data version bump
         const appVersion = require('./package.json').version as string;
@@ -219,6 +222,16 @@ const App = () => {
 
     prepareApp();
   }, []);
+
+  useEffect(() => {
+    if (!appIsReady) return;
+
+    InteractionManager.runAfterInteractions(async () => {
+      const start = Date.now();
+      await fontService.loadFonts(SECONDARY_FONTS);
+      console.log(`[App] Secondary fonts loaded in ${Date.now() - start}ms`);
+    });
+  }, [appIsReady]);
 
   useEffect(() => {
     // ===== CRITICAL PATH — runs immediately =====
