@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { createJSONStorage, devtools, persist, subscribeWithSelector } from 'zustand/middleware';
+import { devtools, persist, subscribeWithSelector } from 'zustand/middleware';
 
-import { secureStorageJSONStorage, toUnixMs } from './persistence';
+import { createHydrationErrorRecovery, secureStorageJSONStorage, toUnixMs } from './persistence';
 import { sentryContextService } from '../services/sentryContext';
 
 export interface User {
@@ -40,83 +40,99 @@ interface AppState {
   setReceiptValidationPending: (pending: boolean) => void;
 }
 
+const INITIAL_APP_STATE = {
+  user: null,
+  isAuthenticated: false,
+  isAuthLoading: false,
+  authError: null,
+  accessToken: null,
+  refreshToken: null,
+  sessionExpiresAt: null,
+  sessionExpiringSoon: false,
+  theme: 'light' as const,
+  isLoading: false,
+  error: null,
+};
+
+let resetAppStoreAfterHydrationError = () => {};
+
 export const useAppStore = create<AppState>()(
   devtools(
     persist(
-      subscribeWithSelector(set => ({
-        user: null,
-        isAuthenticated: false,
-        isAuthLoading: false,
-        authError: null,
-        accessToken: null,
-        refreshToken: null,
-        sessionExpiresAt: null,
-        sessionExpiringSoon: false,
-        theme: 'light',
-        isLoading: false,
-        error: null,
-        subscriptionTier: 'free',
-        receiptValidationPending: false,
-        setUser: user => {
-          set({ user, isAuthenticated: !!user }, false, 'setUser');
-          // Sync Sentry scope with the signed-in user so every subsequent
-          // error report is automatically tagged with user identity.
-          if (user) {
-            sentryContextService.setUser({
-              id: user.id,
-              email: user.email,
-              username: user.name,
-              role: user.role,
-            });
-          } else {
+      subscribeWithSelector(set => {
+        resetAppStoreAfterHydrationError = () =>
+          set(INITIAL_APP_STATE, false, 'hydrationErrorReset');
+
+        return {
+          ...INITIAL_APP_STATE,
+          subscriptionTier: 'free' as const,
+          receiptValidationPending: false,
+          setUser: (user: User | null) => {
+            set({ user, isAuthenticated: !!user }, false, 'setUser');
+            // Sync Sentry scope with the signed-in user so every subsequent
+            // error report is automatically tagged with user identity.
+            if (user) {
+              sentryContextService.setUser({
+                id: user.id,
+                email: user.email,
+                username: user.name,
+                role: user.role,
+              });
+            } else {
+              sentryContextService.clearUser();
+            }
+          },
+          setTheme: (theme: 'light' | 'dark') => set({ theme }, false, 'setTheme'),
+          setTokens: (accessToken: string, refreshToken: string, sessionExpiresAt: number | Date) =>
+            set(
+              {
+                accessToken,
+                refreshToken,
+                sessionExpiresAt: toUnixMs(sessionExpiresAt),
+              },
+              false,
+              'setTokens'
+            ),
+          setSessionExpiringSoon: (sessionExpiringSoon: boolean) =>
+            set({ sessionExpiringSoon }, false, 'setSessionExpiringSoon'),
+          setAuthLoading: (isAuthLoading: boolean) => set({ isAuthLoading }, false, 'setAuthLoading'),
+          setAuthError: (authError: string | null) => set({ authError }, false, 'setAuthError'),
+          logout: () => {
+            set(
+              {
+                user: null,
+                isAuthenticated: false,
+                isAuthLoading: false,
+                authError: null,
+                accessToken: null,
+                refreshToken: null,
+                sessionExpiresAt: null,
+                sessionExpiringSoon: false,
+                subscriptionTier: 'free',
+                receiptValidationPending: false,
+              },
+              false,
+              'logout'
+            );
+            // Clear Sentry user scope and reset breadcrumb trail on logout
             sentryContextService.clearUser();
-          }
-        },
-        setTheme: theme => set({ theme }, false, 'setTheme'),
-        setTokens: (accessToken, refreshToken, sessionExpiresAt) =>
-          set(
-            {
-              accessToken,
-              refreshToken,
-              sessionExpiresAt: toUnixMs(sessionExpiresAt),
-            },
-            false,
-            'setTokens'
-          ),
-        setSessionExpiringSoon: sessionExpiringSoon =>
-          set({ sessionExpiringSoon }, false, 'setSessionExpiringSoon'),
-        setAuthLoading: isAuthLoading => set({ isAuthLoading }, false, 'setAuthLoading'),
-        setAuthError: authError => set({ authError }, false, 'setAuthError'),
-        logout: () => {
-          set(
-            {
-              user: null,
-              isAuthenticated: false,
-              isAuthLoading: false,
-              authError: null,
-              accessToken: null,
-              refreshToken: null,
-              sessionExpiresAt: null,
-              sessionExpiringSoon: false,
-              subscriptionTier: 'free',
-              receiptValidationPending: false,
-            },
-            false,
-            'logout'
-          );
-          // Clear Sentry user scope and reset breadcrumb trail on logout
-          sentryContextService.clearUser();
-          sentryContextService.resetSession();
-        },
-        setLoading: isLoading => set({ isLoading }, false, 'setLoading'),
-        setError: error => set({ error }, false, 'setError'),
-        setSubscriptionTier: tier => set({ subscriptionTier: tier }, false, 'setSubscriptionTier'),
-        setReceiptValidationPending: pending =>
-          set({ receiptValidationPending: pending }, false, 'setReceiptValidationPending'),
-      })),
+            sentryContextService.resetSession();
+          },
+          setLoading: (isLoading: boolean) => set({ isLoading }, false, 'setLoading'),
+          setError: (error: string | null) => set({ error }, false, 'setError'),
+          setSubscriptionTier: (tier: 'free' | 'pro' | 'premium') =>
+            set({ subscriptionTier: tier }, false, 'setSubscriptionTier'),
+          setReceiptValidationPending: (pending: boolean) =>
+            set({ receiptValidationPending: pending }, false, 'setReceiptValidationPending'),
+        };
+      }),
       {
         name: 'app-auth-storage',
         storage: secureStorageJSONStorage,
+        onRehydrateStorage: createHydrationErrorRecovery(
+          'app-auth-storage',
+          resetAppStoreAfterHydrationError
+        ),
         /**
          * Only persist auth-related and UI preference state.
          * Transient flags (isLoading, isAuthLoading, error, authError)

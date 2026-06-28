@@ -1,6 +1,7 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist, type PersistStorage } from 'zustand/middleware';
+
+import { asyncStorageJSONStorage, createHydrationErrorRecovery } from './persistence';
 
 export type ProfileVisibility = 'public' | 'private' | 'friends_only';
 export type DownloadQuality = 'low' | 'medium' | 'high';
@@ -59,42 +60,6 @@ interface SettingsState {
   resetSettings: () => void;
 }
 
-const DEFAULT_SETTINGS: Omit<
-  SettingsState,
-  | 'setProfileVisibility'
-  | 'setTwoFactorEnabled'
-  | 'setDataSharing'
-  | 'setAnalyticsEnabled'
-  | 'setLocationServices'
-  | 'setDownloadOverWifiOnly'
-  | 'setAutoDownload'
-  | 'setDownloadQuality'
-  | 'setStorageLimit'
-  | 'setLanguage'
-  | 'setFontSize'
-  | 'setAutoplay'
-  | 'setHapticFeedback'
-  | 'setAdaptiveThemeEnabled'
-  | 'setDataSaverEnabled'
-  | 'resetSettings'
-> = {
-  profileVisibility: 'public' as ProfileVisibility,
-  twoFactorEnabled: false,
-  dataSharing: true,
-  analyticsEnabled: true,
-  locationServices: false,
-  downloadOverWifiOnly: true,
-  autoDownload: false,
-  downloadQuality: 'medium' as DownloadQuality,
-  storageLimit: '2GB' as StorageLimit,
-  language: 'english' as AppLanguage,
-  fontSize: 'medium' as FontSize,
-  autoplay: true,
-  hapticFeedback: true,
-  adaptiveThemeEnabled: false,
-  dataSaverEnabled: false,
-};
-
 const INITIAL_STATE = {
   profileVisibility: 'public' as ProfileVisibility,
   twoFactorEnabled: false,
@@ -113,40 +78,52 @@ const INITIAL_STATE = {
   dataSaverEnabled: false,
 };
 
+type PersistedSettingsState = typeof INITIAL_STATE;
+
+let resetSettingsStoreAfterHydrationError = () => {};
+
 export const useSettingsStore = create<SettingsState>()(
-  persist(
-    set => ({
-      ...INITIAL_STATE,
+  persist<SettingsState, [], [], PersistedSettingsState>(
+    set => {
+      resetSettingsStoreAfterHydrationError = () => set(INITIAL_STATE);
 
-      // Account
-      setProfileVisibility: v => set({ profileVisibility: v }),
-      setTwoFactorEnabled: v => set({ twoFactorEnabled: v }),
+      return {
+        ...INITIAL_STATE,
 
-      // Privacy
-      setDataSharing: v => set({ dataSharing: v }),
-      setAnalyticsEnabled: v => set({ analyticsEnabled: v }),
-      setLocationServices: v => set({ locationServices: v }),
+        // Account
+        setProfileVisibility: v => set({ profileVisibility: v }),
+        setTwoFactorEnabled: v => set({ twoFactorEnabled: v }),
 
-      // Downloads
-      setDownloadOverWifiOnly: v => set({ downloadOverWifiOnly: v }),
-      setAutoDownload: v => set({ autoDownload: v }),
-      setDownloadQuality: v => set({ downloadQuality: v }),
-      setStorageLimit: v => set({ storageLimit: v }),
+        // Privacy
+        setDataSharing: v => set({ dataSharing: v }),
+        setAnalyticsEnabled: v => set({ analyticsEnabled: v }),
+        setLocationServices: v => set({ locationServices: v }),
 
-      // App Preferences
-      setLanguage: (v) => set({ language: v }),
-      setFontSize: (v) => set({ fontSize: v }),
-      setAutoplay: (v) => set({ autoplay: v }),
-      setHapticFeedback: (v) => set({ hapticFeedback: v }),
-      setAdaptiveThemeEnabled: (v) => set({ adaptiveThemeEnabled: v }),
-      setDataSaverEnabled: (v) => set({ dataSaverEnabled: v }),
+        // Downloads
+        setDownloadOverWifiOnly: v => set({ downloadOverWifiOnly: v }),
+        setAutoDownload: v => set({ autoDownload: v }),
+        setDownloadQuality: v => set({ downloadQuality: v }),
+        setStorageLimit: v => set({ storageLimit: v }),
 
-      resetSettings: () => set(INITIAL_STATE),
-    }),
+        // App Preferences
+        setLanguage: v => set({ language: v }),
+        setFontSize: v => set({ fontSize: v }),
+        setAutoplay: v => set({ autoplay: v }),
+        setHapticFeedback: v => set({ hapticFeedback: v }),
+        setAdaptiveThemeEnabled: v => set({ adaptiveThemeEnabled: v }),
+        setDataSaverEnabled: v => set({ dataSaverEnabled: v }),
+
+        resetSettings: () => set(INITIAL_STATE),
+      };
+    },
     {
       name: 'settings-storage',
       version: 1,
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: asyncStorageJSONStorage as PersistStorage<PersistedSettingsState>,
+      onRehydrateStorage: createHydrationErrorRecovery(
+        'settings-storage',
+        resetSettingsStoreAfterHydrationError
+      ),
       partialize: state => ({
         profileVisibility: state.profileVisibility,
         twoFactorEnabled: state.twoFactorEnabled,
@@ -164,7 +141,6 @@ export const useSettingsStore = create<SettingsState>()(
         adaptiveThemeEnabled: state.adaptiveThemeEnabled,
         dataSaverEnabled: state.dataSaverEnabled,
       }),
-      migrate: persistedState => (persistedState ?? {}) as Partial<SettingsState>,
     }
   )
 );
