@@ -1,6 +1,8 @@
+import { User } from '../../store';
+import { UserSchema } from '../../types/api/schemas';
 import { batchClient } from './batchClient';
 import { fetchWithSWR, invalidateCacheByTags } from './cache';
-import { User } from '../../store';
+import { validateResponse } from './validation';
 
 const userKey = (id: string) => `users:${id}`;
 const USER_TAG = 'users';
@@ -11,12 +13,13 @@ const TTL = 5 * 60_000;
 const STALE_TTL = 15 * 60_000;
 
 export const userApi = {
-  getUser(id: string): Promise<User> {
-    return fetchWithSWR(userKey(id), () => batchClient.get(`/users/${id}`), TTL, STALE_TTL, {
+  async getUser(id: string): Promise<User> {
+    const response = await fetchWithSWR(userKey(id), () => batchClient.get(`/users/${id}`), TTL, STALE_TTL, {
       dataType: 'user-profile',
       tags: [USER_TAG, userTag(id)],
       critical: true,
     });
+    return validateResponse(UserSchema, response, { api: 'getUser', id });
   },
 
   invalidateUser(id: string): void {
