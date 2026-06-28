@@ -23,6 +23,12 @@ We have a dedicated **Syntax Gate** workflow (`.github/workflows/syntax.yml`) th
 - Required for branch protection — PRs cannot be merged if it fails
 - Run checks locally before pushing to avoid CI failures
 
+## Testing Conventions
+
+All test files must be colocated with the source code they are testing and must follow the naming convention `*.test.{ts,tsx}`. This ensures that Jest can automatically discover and run the tests.
+
+For example, a test file for `src/services/auth.ts` should be located at `src/services/__tests__/auth.test.ts`.
+
 ## Local Quality Checks
 
 You can run the checks locally:
@@ -36,14 +42,3 @@ npm run format:check
 
 # Run TypeScript type check
 npx tsc --noEmit
-```
-
-## E2E Testing with Maestro
-
-We use [Maestro](https://maestro.mobile.dev/) for End-to-End (E2E) testing. The test flows are located in the `maestro/` directory.
-
-To run the tests locally:
-
-1.  Install Maestro: `curl -Ls "https://get.maestro.mobile.dev" | bash`
-2.  Start your app in a simulator or on a device.
-3.  Run the tests: `maestro test maestro/`
