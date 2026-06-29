@@ -24,8 +24,9 @@
  * showModal('confirm', <ConfirmDialog onClose={() => hideModal('confirm')} />);
  */
 
-import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
+import { modalStackManager } from './ModalStackManager';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -90,6 +91,42 @@ export const ModalPortalProvider: React.FC<{ children: React.ReactNode }> = ({ c
   );
 };
 
+// ─── Wrapper ──────────────────────────────────────────────────────────────────
+
+/**
+ * Subscribes to ModalStackManager to dynamically apply the computed z-index
+ * style wrapper to the portal modal child when other modals open or close.
+ */
+const ModalPortalWrapper: React.FC<{ id: string; children: React.ReactNode }> = ({
+  id,
+  children,
+}) => {
+  const [zIndex, setZIndex] = useState(() => modalStackManager.getZIndex(id));
+
+  useEffect(() => {
+    const unsubscribe = modalStackManager.subscribe(() => {
+      setZIndex(modalStackManager.getZIndex(id));
+    });
+    // Immediately sync in case stack changed during subscribe
+    setZIndex(modalStackManager.getZIndex(id));
+    return unsubscribe;
+  }, [id]);
+
+  return (
+    <View
+      collapsable={false}
+      style={{
+        position: 'absolute',
+        width: 0,
+        height: 0,
+        zIndex,
+      }}
+    >
+      {children}
+    </View>
+  );
+};
+
 // ─── Host ─────────────────────────────────────────────────────────────────────
 
 /**
@@ -104,9 +141,9 @@ const ModalPortalHost: React.FC<{ _modals: ModalEntry[] }> = React.memo(function
   return (
     <>
       {_modals.map(({ id, content }) => (
-        <View key={id} collapsable={false} style={{ position: 'absolute', width: 0, height: 0 }}>
+        <ModalPortalWrapper key={id} id={id}>
           {content}
-        </View>
+        </ModalPortalWrapper>
       ))}
     </>
   );
