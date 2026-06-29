@@ -27,6 +27,7 @@ import {
   invalidateCacheForBatchRequests,
   invalidateCacheForMutation,
 } from './cache';
+import { buildSanitizedApiError } from './errorSanitization';
 import { requestQueue } from './requestQueue';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -218,7 +219,10 @@ apiClient.interceptors.response.use(
     const receivedRequestId = response.headers['x-request-id'];
 
     if (sentRequestId && receivedRequestId && sentRequestId !== receivedRequestId) {
-      appLogger.warnSync('Request ID mismatch', { sent: sentRequestId, received: receivedRequestId });
+      appLogger.warnSync('Request ID mismatch', {
+        sent: sentRequestId,
+        received: receivedRequestId,
+      });
     }
 
     popLogContext();
@@ -572,7 +576,19 @@ apiClient.interceptors.response.use(
 
     // ─── Default fallback ──────────────────────────────────────────────────
 
-    return Promise.reject(error);
+    sentryContextService.captureException(error, {
+      tags: { 'api.error': 'unhandled_response' },
+      contexts: {
+        request: {
+          url: originalRequest?.url,
+          method: originalRequest?.method?.toUpperCase(),
+          status: status ?? null,
+        },
+      },
+      fingerprint: ['api-unhandled-error', String(status ?? 'unknown')],
+    });
+
+    return Promise.reject(buildSanitizedApiError(status, error.code));
   }
 );
 
