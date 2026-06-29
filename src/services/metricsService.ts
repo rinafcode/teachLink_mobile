@@ -106,6 +106,8 @@ export interface DashboardSnapshot {
 const METRICS_STORAGE_KEY = '@teachlink/dashboard_metrics';
 const SESSION_START_KEY = '@teachlink/session_start_ts';
 
+const perfNow = () => global.performance?.now() ?? Date.now();
+
 // New buffer size constant (capped at 500 entries)
 const MAX_METRICS_BUFFER = 500;
 
@@ -119,7 +121,7 @@ const DEFAULT_THRESHOLDS: AlertThresholds = {
 // ─── Service ─────────────────────────────────────────────────────────────────
 
 class MetricsService {
-  private sessionStartTs: number = Date.now();
+  private sessionStartTs: number = perfNow();
   private screensViewedCount: number = 0;
   private eventsTrackedCount: number = 0;
   private apiResponseTimes: number[] = [];
@@ -136,8 +138,8 @@ class MetricsService {
     try {
       const storedStart = await AsyncStorage.getItem(SESSION_START_KEY);
       if (!storedStart) {
-        this.sessionStartTs = Date.now();
-        await AsyncStorage.setItem(SESSION_START_KEY, String(this.sessionStartTs));
+        this.sessionStartTs = perfNow();
+        await AsyncStorage.setItem(SESSION_START_KEY, String(Math.round(this.sessionStartTs)));
       } else {
         this.sessionStartTs = parseInt(storedStart, 10);
       }
@@ -183,7 +185,7 @@ class MetricsService {
   }
 
   public recordError(category: string = 'unknown'): void {
-    this.addToBuffer(this.errorTimestamps, Date.now());
+    this.addToBuffer(this.errorTimestamps, perfNow());
     this.errorCategories[category] = (this.errorCategories[category] ?? 0) + 1;
     // Keep category map reasonably sized – no explicit cap required
   }
@@ -191,16 +193,17 @@ class MetricsService {
   // ── Snapshot collection ────────────────────────────────────────────────────
 
   public async collectSnapshot(): Promise<DashboardSnapshot> {
-    const now = Date.now();
+    const wallNow = Date.now();
+    const perfNowTime = perfNow();
 
     const appHealth = this.collectAppHealth();
     const performance = this.collectPerformance();
-    const errorRate = this.collectErrorRate(now);
-    const userMetrics = this.collectUserMetrics(now);
+    const errorRate = this.collectErrorRate(perfNowTime);
+    const userMetrics = this.collectUserMetrics(perfNowTime);
     const alerts = this.generateAlerts(appHealth, performance, errorRate);
 
     const snapshot: DashboardSnapshot = {
-      collectedAt: now,
+      collectedAt: wallNow,
       appHealth,
       performance,
       errorRate,
@@ -343,7 +346,7 @@ class MetricsService {
     thresholds: AlertThresholds = DEFAULT_THRESHOLDS,
   ): DashboardAlert[] {
     const alerts: DashboardAlert[] = [];
-    const now = Date.now();
+    const wallNow = Date.now();
 
     if (health.healthScore < thresholds.minHealthScore) {
       alerts.push({
@@ -351,7 +354,7 @@ class MetricsService {
         severity: health.healthScore < 40 ? 'critical' : 'warning',
         title: 'App health degraded',
         message: `Health score is ${health.healthScore}/100. Check error logs.`,
-        timestamp: now,
+        timestamp: wallNow,
       });
     }
 
@@ -361,7 +364,7 @@ class MetricsService {
         severity: 'critical',
         title: 'High error rate',
         message: `${errors.errorsPerMinute} errors/min (threshold: ${thresholds.maxErrorsPerMinute}).`,
-        timestamp: now,
+        timestamp: wallNow,
       });
     }
 
@@ -371,7 +374,7 @@ class MetricsService {
         severity: 'warning',
         title: 'High memory usage',
         message: `Heap utilisation at ${perf.heapUtilPercent}% (threshold: ${thresholds.maxHeapUtilPercent}%).`,
-        timestamp: now,
+        timestamp: wallNow,
       });
     }
 
@@ -381,7 +384,7 @@ class MetricsService {
         severity: 'warning',
         title: 'Slow API responses',
         message: `Average API time: ${perf.avgApiResponseMs}ms (threshold: ${thresholds.maxAvgApiResponseMs}ms).`,
-        timestamp: now,
+        timestamp: wallNow,
         source: 'api',
       });
     }
@@ -392,7 +395,7 @@ class MetricsService {
         severity: 'warning',
         title: 'Potential memory leak',
         message: 'Heap usage is growing monotonically. Investigate component subscriptions.',
-        timestamp: now,
+        timestamp: wallNow,
       });
     }
 

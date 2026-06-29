@@ -10,6 +10,7 @@ import {
     NotificationType,
     StoredNotification,
 } from '../types/notifications';
+import { appLogger } from '../utils/logger';
 
 interface NotificationState {
   // Push token state
@@ -59,6 +60,10 @@ interface NotificationState {
 
   // Helpers
   isNotificationTypeEnabled: (type: NotificationType) => boolean;
+
+  // Badge sync
+  syncBadgeFromServer: (unreadCount: number) => void;
+  getLastBadgeSyncAt: () => number | null;
 }
 
 const createInitialNotificationState = () => ({
@@ -74,6 +79,7 @@ const createInitialNotificationState = () => ({
   notificationHistory: [],
   lastEngagedAt: null,
   lastNotificationSentAtByType: {},
+  lastBadgeSyncAt: null as number | null,
 });
 
 let resetNotificationStoreAfterHydrationError = () => {};
@@ -290,6 +296,13 @@ export const useNotificationStore = create<NotificationState>()(
             return true;
         }
       },
+
+      // Badge sync
+      syncBadgeFromServer: (unreadCount: number) => {
+        set({ unreadCount, lastBadgeSyncAt: Date.now() });
+        appLogger.infoSync('Badge count synced from server', { unreadCount });
+      },
+      getLastBadgeSyncAt: () => get().lastBadgeSyncAt,
       };
     },
     {

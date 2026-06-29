@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
@@ -39,6 +40,7 @@ const KEYS = {
   BIOMETRIC_ENABLED: 'teachlink_biometric_enabled',
   REMEMBERED_EMAIL: 'teachlink_remembered_email',
   REMEMBER_ME: 'teachlink_remember_me',
+  INSTALL_UUID: 'teachlink_install_uuid',
 } as const;
 
 // ─── Sensitive Keys (enforce Keychain/Keystore) ────────────────────────────────
@@ -324,6 +326,41 @@ export async function setBiometricEnabled(enabled: boolean): Promise<void> {
 export async function isBiometricEnabled(): Promise<boolean> {
   const value = await getItem(KEYS.BIOMETRIC_ENABLED, false);
   return value === '1';
+}
+
+// ─── Install UUID & biometric reinstall guard ─────────────────────────────────
+
+const INSTALL_UUID_KEY = '@teachlink/install_uuid';
+
+function generateInstallUUID(): string {
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${Platform.OS}`;
+}
+
+async function checkHardwareBiometricEnrollment(): Promise<boolean> {
+  try {
+    const LocalAuthentication = require('expo-local-authentication');
+    const level = await LocalAuthentication.getEnrolledLevelAsync();
+    return level > 0;
+  } catch {
+    return true;
+  }
+}
+
+export async function verifyBiometricOnReinstall(): Promise<void> {
+  try {
+    const installUUID = await AsyncStorage.getItem(INSTALL_UUID_KEY);
+    if (installUUID) return;
+
+    const enrolled = await checkHardwareBiometricEnrollment();
+    if (!enrolled) {
+      await setBiometricEnabled(false);
+      logger.info('Biometric state reset on reinstall: no hardware enrollment');
+    }
+
+    await AsyncStorage.setItem(INSTALL_UUID_KEY, generateInstallUUID());
+  } catch (error) {
+    logger.error('Biometric reinstall verification failed:', error);
+  }
 }
 
 // ─── Remember Me ──────────────────────────────────────────────────────────────
