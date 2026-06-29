@@ -14,10 +14,7 @@
       "@services/*": ["src/services/*"],
       "@store/*": ["src/store/*"],
       "@utils/*": ["src/utils/*"],
-      "@/components/*": ["./src/components/*", "./components/*"],
-      "@/hooks/*": ["./src/hooks/*", "./hooks/*"],
-      "@/constants/*": ["./constants/*"],
-      "@/*": ["./src/*", "./*"]
+      "@/*": ["src/*"]
     },
     "lib": ["ESNext", "DOM"],
     "noEmit": true,

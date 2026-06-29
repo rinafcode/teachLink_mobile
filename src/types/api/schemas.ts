@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const-BaseAPISchema = z.object({
+const BaseAPISchema = z.object({
   id: z.string(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
