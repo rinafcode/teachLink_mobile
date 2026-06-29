@@ -1,8 +1,8 @@
 import {
-    buildCursor,
-    CursorPageRequest,
-    paginateWithCursor,
-    parseCursor,
+  buildCursor,
+  CursorPageRequest,
+  paginateWithCursor,
+  parseCursor,
 } from '@/services/api/cursorPagination';
 
 describe('cursorPagination', () => {
@@ -33,7 +33,7 @@ describe('cursorPagination', () => {
       };
 
       const response = paginateWithCursor(items, request);
-      response.items.forEach((item) => {
+      response.items.forEach(item => {
         expect(seen.has(item.id)).toBe(false);
         seen.add(item.id);
         results.push(item.id);

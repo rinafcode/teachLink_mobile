@@ -1,10 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { SearchResultItem } from '../components/mobile/SearchResultCard';
 import { FilterValues } from '../components/mobile/FilterSheet';
+import { SearchResultItem } from '../components/mobile/SearchResultCard';
 import { Course } from '../types/course';
-import { buildTrie, Trie } from '../utils/trie';
 import { appLogger } from '../utils/logger';
+import { buildTrie, Trie } from '../utils/trie';
 
 const INDEX_STORAGE_KEY = '@teachlink_search_index';
 // Bump this when the index schema changes to force a rebuild on existing installs.
@@ -20,12 +20,64 @@ const FIELD_WEIGHTS = {
 } as const;
 
 const STOP_WORDS = new Set([
-  'a', 'an', 'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
-  'of', 'with', 'by', 'from', 'is', 'are', 'was', 'be', 'been', 'being',
-  'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
-  'should', 'may', 'might', 'can', 'this', 'that', 'these', 'those',
-  'it', 'its', 'you', 'your', 'we', 'our', 'they', 'their', 'he', 'she',
-  'as', 'if', 'not', 'no', 'so', 'up', 'out', 'about', 'more', 'also',
+  'a',
+  'an',
+  'the',
+  'and',
+  'or',
+  'but',
+  'in',
+  'on',
+  'at',
+  'to',
+  'for',
+  'of',
+  'with',
+  'by',
+  'from',
+  'is',
+  'are',
+  'was',
+  'be',
+  'been',
+  'being',
+  'have',
+  'has',
+  'had',
+  'do',
+  'does',
+  'did',
+  'will',
+  'would',
+  'could',
+  'should',
+  'may',
+  'might',
+  'can',
+  'this',
+  'that',
+  'these',
+  'those',
+  'it',
+  'its',
+  'you',
+  'your',
+  'we',
+  'our',
+  'they',
+  'their',
+  'he',
+  'she',
+  'as',
+  'if',
+  'not',
+  'no',
+  'so',
+  'up',
+  'out',
+  'about',
+  'more',
+  'also',
 ]);
 
 interface IndexEntry {
@@ -62,7 +114,7 @@ function addEntry(
   entries: Record<string, IndexEntry[]>,
   token: string,
   docId: string,
-  score: number,
+  score: number
 ): void {
   const list = (entries[token] ??= []);
   const existing = list.find(e => e.docId === docId);
@@ -190,7 +242,7 @@ class SearchIndexService {
     const idx = buildIndex(courses);
     this._mount(idx);
     appLogger.infoSync(
-      `[SearchIndex] built ${idx.courseIds.length} docs in ${Date.now() - start}ms`,
+      `[SearchIndex] built ${idx.courseIds.length} docs in ${Date.now() - start}ms`
     );
     await this._persist(idx);
   }
@@ -237,7 +289,7 @@ class SearchIndexService {
       }
     }
 
-    const results: Array<{ item: SearchResultItem; score: number }> = [];
+    const results: { item: SearchResultItem; score: number }[] = [];
 
     for (const [docId, matched] of matchedTokens) {
       // AND gate — every query token must be satisfied.

@@ -1,3 +1,16 @@
+import { LinearGradient } from 'expo-linear-gradient';
+import {
+  ArrowLeft,
+  Calendar,
+  CheckCircle,
+  Clock,
+  CreditCard,
+  Receipt,
+  RefreshCw,
+  RotateCcw,
+  TrendingUp,
+  XCircle,
+} from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -10,26 +23,14 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
+
 import { AppText as Text } from '../../components/common/AppText';
 import { useDynamicFontSize, useInAppPurchase } from '../../hooks';
-import { LinearGradient } from 'expo-linear-gradient';
 import {
-    ArrowLeft,
-    Calendar,
-    CheckCircle,
-    Clock,
-    CreditCard,
-    Receipt,
-    RefreshCw,
-    RotateCcw,
-    TrendingUp,
-    XCircle,
-} from 'lucide-react-native';
-import {
-    PurchaseRecord,
-    PurchaseStatus,
-    PurchaseType,
-    mobilePaymentsService,
+  PurchaseRecord,
+  PurchaseStatus,
+  PurchaseType,
+  mobilePaymentsService,
 } from '../../services/mobilePayments';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -86,18 +87,10 @@ interface PaymentHistoryProps {
   onBack?: () => void;
 }
 
-export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
-  isDark = false,
-  onBack,
-}) => {
+export const PaymentHistory: React.FC<PaymentHistoryProps> = ({ isDark = false, onBack }) => {
   const { scale } = useDynamicFontSize();
-  const {
-    purchaseHistory,
-    currentTier,
-    isRestoring,
-    restorePurchases,
-    refreshHistory,
-  } = useInAppPurchase();
+  const { purchaseHistory, currentTier, isRestoring, restorePurchases, refreshHistory } =
+    useInAppPurchase();
 
   const [filter, setFilter] = useState<FilterType>('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -116,20 +109,18 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
   // ── Derived data ──────────────────────────────────────────────────────────
 
   const filtered =
-    filter === 'all'
-      ? purchaseHistory
-      : purchaseHistory.filter((p) => p.type === filter);
+    filter === 'all' ? purchaseHistory : purchaseHistory.filter(p => p.type === filter);
 
   const totalSpent = purchaseHistory
-    .filter((p) => p.status === 'completed' || p.status === 'restored')
+    .filter(p => p.status === 'completed' || p.status === 'restored')
     .reduce((sum, p) => sum + p.amount, 0);
 
   const activeSubscription = purchaseHistory.find(
-    (p) =>
+    p =>
       p.type === 'subscription' &&
       p.status === 'completed' &&
       p.expiresAt &&
-      new Date(p.expiresAt) > new Date(),
+      new Date(p.expiresAt) > new Date()
   );
 
   // ── Pull-to-refresh ─────────────────────────────────────────────────────
@@ -144,10 +135,7 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
 
   const handleRestore = async () => {
     const result = await restorePurchases();
-    Alert.alert(
-      result.count > 0 ? 'Purchases Restored' : 'Nothing to Restore',
-      result.message,
-    );
+    Alert.alert(result.count > 0 ? 'Purchases Restored' : 'Nothing to Restore', result.message);
   };
 
   // ── Helpers ──────────────────────────────────────────────────────────────
@@ -191,9 +179,7 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
       <View style={styles.summaryRow}>
         <View style={styles.summaryItem}>
           <TrendingUp size={20} color="rgba(255,255,255,0.7)" />
-          <Text style={styles.summaryValue}>
-            {mobilePaymentsService.formatPrice(totalSpent)}
-          </Text>
+          <Text style={styles.summaryValue}>{mobilePaymentsService.formatPrice(totalSpent)}</Text>
           <Text style={styles.summaryLabel}>Total Spent</Text>
         </View>
 
@@ -219,9 +205,7 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
       {activeSubscription?.expiresAt && (
         <View style={styles.renewalBanner}>
           <Calendar size={13} color="rgba(255,255,255,0.7)" />
-          <Text style={styles.renewalText}>
-            Renews {formatDate(activeSubscription.expiresAt)}
-          </Text>
+          <Text style={styles.renewalText}>Renews {formatDate(activeSubscription.expiresAt)}</Text>
         </View>
       )}
     </LinearGradient>
@@ -239,12 +223,12 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
       {
         key: 'subscription',
         label: 'Subscriptions',
-        count: purchaseHistory.filter((p) => p.type === 'subscription').length,
+        count: purchaseHistory.filter(p => p.type === 'subscription').length,
       },
       {
         key: 'one_time',
         label: 'One-time',
-        count: purchaseHistory.filter((p) => p.type === 'one_time').length,
+        count: purchaseHistory.filter(p => p.type === 'one_time').length,
       },
     ];
 
@@ -255,25 +239,20 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
         contentContainerStyle={styles.tabsRow}
         removeClippedSubviews={true}
       >
-        {tabs.map((tab) => (
+        {tabs.map(tab => (
           <TouchableOpacity
             key={tab.key}
             onPress={() => setFilter(tab.key)}
             style={[
               styles.filterTab,
               {
-                backgroundColor:
-                  filter === tab.key ? '#19c3e6' : cardBg,
-                borderColor:
-                  filter === tab.key ? '#19c3e6' : borderColor,
+                backgroundColor: filter === tab.key ? '#19c3e6' : cardBg,
+                borderColor: filter === tab.key ? '#19c3e6' : borderColor,
               },
             ]}
           >
             <Text
-              style={[
-                styles.filterTabText,
-                { color: filter === tab.key ? '#fff' : textSecondary },
-              ]}
+              style={[styles.filterTabText, { color: filter === tab.key ? '#fff' : textSecondary }]}
             >
               {tab.label}
             </Text>
@@ -281,10 +260,7 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
               style={[
                 styles.filterBadge,
                 {
-                  backgroundColor:
-                    filter === tab.key
-                      ? 'rgba(255,255,255,0.25)'
-                      : borderColor,
+                  backgroundColor: filter === tab.key ? 'rgba(255,255,255,0.25)' : borderColor,
                 },
               ]}
             >
@@ -307,7 +283,9 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
 
   const renderTransaction = (record: PurchaseRecord) => {
     const statusCfg = STATUS_CONFIG[record.status];
-    const statusIcon = React.cloneElement(statusCfg.icon as React.ReactElement, { size: scale(14) });
+    const statusIcon = React.cloneElement(statusCfg.icon as React.ReactElement, {
+      size: scale(14),
+    });
 
     return (
       <View
@@ -319,8 +297,7 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
           style={[
             styles.transactionIcon,
             {
-              backgroundColor:
-                record.type === 'subscription' ? '#e0f2fe' : '#ede9fe',
+              backgroundColor: record.type === 'subscription' ? '#e0f2fe' : '#ede9fe',
             },
           ]}
         >
@@ -333,10 +310,7 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
 
         {/* Details */}
         <View style={styles.transactionDetails}>
-          <Text
-            style={[styles.transactionProduct, { color: textPrimary }]}
-            numberOfLines={1}
-          >
+          <Text style={[styles.transactionProduct, { color: textPrimary }]} numberOfLines={1}>
             {getProductLabel(record.productId)}
           </Text>
 
@@ -354,9 +328,7 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
             </Text>
           )}
 
-          <Text style={[styles.txnId, { color: textSecondary }]}>
-            #{record.transactionId}
-          </Text>
+          <Text style={[styles.txnId, { color: textSecondary }]}>#{record.transactionId}</Text>
         </View>
 
         {/* Right: amount + status */}
@@ -366,9 +338,7 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
           </Text>
           <View style={[styles.statusBadge, { backgroundColor: statusCfg.bg }]}>
             {statusIcon}
-            <Text style={[styles.statusText, { color: statusCfg.color }]}>
-              {statusCfg.label}
-            </Text>
+            <Text style={[styles.statusText, { color: statusCfg.color }]}>{statusCfg.label}</Text>
           </View>
         </View>
       </View>
@@ -382,9 +352,7 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
       <View style={styles.emptyIconBg}>
         <Receipt size={32} color="#94a3b8" />
       </View>
-      <Text style={[styles.emptyTitle, { color: textPrimary }]}>
-        No transactions yet
-      </Text>
+      <Text style={[styles.emptyTitle, { color: textPrimary }]}>No transactions yet</Text>
       <Text style={[styles.emptyText, { color: textSecondary }]}>
         {filter === 'all'
           ? 'Your purchase history will appear here.'
@@ -407,11 +375,7 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
         <Text style={[styles.headerTitle, { color: textPrimary, fontSize: scale(18) }]}>
           Payment History
         </Text>
-        <TouchableOpacity
-          onPress={handleRestore}
-          disabled={isRestoring}
-          style={styles.restoreBtn}
-        >
+        <TouchableOpacity onPress={handleRestore} disabled={isRestoring} style={styles.restoreBtn}>
           {isRestoring ? (
             <ActivityIndicator size="small" color="#19c3e6" />
           ) : (
@@ -424,11 +388,7 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
         showsVerticalScrollIndicator={false}
         removeClippedSubviews={true}
         refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            tintColor="#19c3e6"
-          />
+          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor="#19c3e6" />
         }
         contentContainerStyle={styles.scroll}
       >
@@ -446,8 +406,7 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
             <>
               {filtered.map(renderTransaction)}
               <Text style={[styles.endNote, { color: textSecondary }]}>
-                {filtered.length} transaction{filtered.length !== 1 ? 's' : ''}{' '}
-                shown
+                {filtered.length} transaction{filtered.length !== 1 ? 's' : ''} shown
               </Text>
             </>
           )}

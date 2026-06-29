@@ -1,6 +1,6 @@
 import { useAppStore } from '../store';
-import logger from '../utils/logger';
 import mobileAuthService from './mobileAuth';
+import logger from '../utils/logger';
 
 export type { AuthResult, AuthTokens, AuthUser, LoginCredentials } from './mobileAuth';
 
@@ -55,11 +55,7 @@ export async function login(credentials: {
     });
 
     store.setUser(result.user);
-    store.setTokens(
-      result.tokens.accessToken,
-      result.tokens.refreshToken,
-      result.tokens.expiresAt,
-    );
+    store.setTokens(result.tokens.accessToken, result.tokens.refreshToken, result.tokens.expiresAt);
 
     logger.info('AuthService: login successful', { userId: result.user.id });
   } catch (error) {
@@ -121,7 +117,7 @@ export async function checkAuthStatus(): Promise<boolean> {
     store.setTokens(
       session.tokens.accessToken,
       session.tokens.refreshToken,
-      session.tokens.expiresAt,
+      session.tokens.expiresAt
     );
 
     logger.info('AuthService: session restored', { userId: session.user.id });

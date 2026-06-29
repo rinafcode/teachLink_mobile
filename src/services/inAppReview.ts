@@ -1,9 +1,9 @@
 import * as StoreReview from 'expo-store-review';
 import { Platform } from 'react-native';
 
+import mobileAnalyticsService from './mobileAnalytics';
 import { appLogger } from '../utils/logger';
 import { AnalyticsEvent } from '../utils/trackingEvents';
-import mobileAnalyticsService from './mobileAnalytics';
 
 /**
  * Optimal moments to request app store reviews.
@@ -74,17 +74,17 @@ export interface ReviewRequestResult {
 
 /**
  * InAppReviewService manages app store review requests at optimal times.
- * 
+ *
  * Key features:
  * - Smart timing based on positive user experiences
  * - Respects platform guidelines (iOS/Android)
  * - Tracks metrics to avoid over-requesting
  * - Configurable thresholds and behavior
- * 
+ *
  * Usage:
  * ```typescript
  * import { inAppReviewService, ReviewTrigger } from '@/services/inAppReview';
- * 
+ *
  * // After a positive user experience
  * await inAppReviewService.requestReview(ReviewTrigger.COURSE_MILESTONE);
  * ```
@@ -99,7 +99,7 @@ class InAppReviewService {
   public async init(): Promise<void> {
     try {
       this.isAvailable = await StoreReview.isAvailableAsync();
-      
+
       if (!this.isAvailable) {
         appLogger.warn('InAppReview: Store review not available on this device');
       } else {
@@ -138,13 +138,13 @@ class InAppReviewService {
 
   /**
    * Request an app store review at an optimal moment.
-   * 
+   *
    * This method:
    * 1. Checks if review is available on the platform
    * 2. Validates eligibility based on config and metrics
    * 3. Shows the native review prompt if eligible
    * 4. Tracks the request for analytics and future eligibility
-   * 
+   *
    * @param trigger The positive experience that triggered this request
    * @param metrics Current user engagement metrics
    * @returns Result indicating whether the prompt was shown and why
@@ -161,7 +161,7 @@ class InAppReviewService {
     }
   ): Promise<ReviewRequestResult> {
     const timestamp = Date.now();
-    
+
     // Check platform support
     if (!this.isAvailable) {
       const result: ReviewRequestResult = {
@@ -170,14 +170,14 @@ class InAppReviewService {
         trigger,
         timestamp,
       };
-      
+
       this.trackReviewRequest(result, metrics);
       return result;
     }
 
     // Check eligibility
     const eligibility = this.checkEligibility(metrics);
-    
+
     if (!eligibility.eligible) {
       const result: ReviewRequestResult = {
         shown: false,
@@ -185,7 +185,7 @@ class InAppReviewService {
         trigger,
         timestamp,
       };
-      
+
       this.trackReviewRequest(result, metrics);
       return result;
     }
@@ -193,30 +193,30 @@ class InAppReviewService {
     // Request the review
     try {
       appLogger.info(`InAppReview: Requesting review for trigger: ${trigger}`);
-      
+
       // Show the native review prompt
       await StoreReview.requestReview();
-      
+
       const result: ReviewRequestResult = {
         shown: true,
         reason: 'Review prompt displayed successfully',
         trigger,
         timestamp,
       };
-      
+
       this.trackReviewRequest(result, metrics);
-      
+
       return result;
     } catch (error) {
       appLogger.error('InAppReview: Failed to request review', error);
-      
+
       const result: ReviewRequestResult = {
         shown: false,
         reason: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
         trigger,
         timestamp,
       };
-      
+
       this.trackReviewRequest(result, metrics);
       return result;
     }
@@ -235,7 +235,7 @@ class InAppReviewService {
   }): { eligible: boolean; reason: string } {
     const now = Date.now();
     const daysSinceInstall = (now - metrics.installDate) / (1000 * 60 * 60 * 24);
-    
+
     // Check "Don't ask again" preference
     if (this.config.respectDoNotAskAgain && metrics.doNotAskAgain) {
       return { eligible: false, reason: 'User opted out of review requests' };
@@ -251,9 +251,8 @@ class InAppReviewService {
 
     // Check minimum days since last request
     if (metrics.lastReviewRequestDate) {
-      const daysSinceLastRequest =
-        (now - metrics.lastReviewRequestDate) / (1000 * 60 * 60 * 24);
-      
+      const daysSinceLastRequest = (now - metrics.lastReviewRequestDate) / (1000 * 60 * 60 * 24);
+
       if (daysSinceLastRequest < this.config.minDaysSinceLastRequest) {
         return {
           eligible: false,
@@ -313,7 +312,9 @@ class InAppReviewService {
       reason: result.reason,
       trigger: result.trigger,
       platform: Platform.OS,
-      daysSinceInstall: Math.floor((result.timestamp - metrics.installDate) / (1000 * 60 * 60 * 24)),
+      daysSinceInstall: Math.floor(
+        (result.timestamp - metrics.installDate) / (1000 * 60 * 60 * 24)
+      ),
       daysSinceLastRequest: metrics.lastReviewRequestDate
         ? Math.floor((result.timestamp - metrics.lastReviewRequestDate) / (1000 * 60 * 60 * 24))
         : null,

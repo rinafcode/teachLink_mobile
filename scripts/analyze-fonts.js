@@ -2,10 +2,10 @@
 
 /**
  * Font Analysis Script
- * 
+ *
  * This script analyzes font usage in the project to determine which characters
  * are actually needed, helping optimize font subsetting.
- * 
+ *
  * Usage: node scripts/analyze-fonts.js
  */
 
@@ -27,17 +27,17 @@ let characterFrequency = new Map();
 // Recursively find all relevant files
 function findFiles(dir, excludeDirs) {
   const files = [];
-  
+
   if (!fs.existsSync(dir)) {
     return files;
   }
 
   const items = fs.readdirSync(dir);
-  
+
   for (const item of items) {
     const fullPath = path.join(dir, item);
     const stat = fs.statSync(fullPath);
-    
+
     if (stat.isDirectory()) {
       if (!excludeDirs.includes(item)) {
         files.push(...findFiles(fullPath, excludeDirs));
@@ -46,7 +46,7 @@ function findFiles(dir, excludeDirs) {
       files.push(fullPath);
     }
   }
-  
+
   return files;
 }
 
@@ -54,18 +54,18 @@ function findFiles(dir, excludeDirs) {
 function extractTextFromFile(filePath) {
   try {
     const content = fs.readFileSync(filePath, 'utf-8');
-    
+
     // Extract string literals
     const stringRegex = /(["'`])(?:(?!\1|\\).|\\.)*\1/g;
     const matches = content.match(stringRegex) || [];
-    
+
     // Extract JSX text content
     const jsxTextRegex = />([^<]+)</g;
     const jsxMatches = content.match(jsxTextRegex) || [];
-    
+
     // Combine all text
     const allText = [...matches, ...jsxMatches].join('');
-    
+
     // Remove quotes and clean
     return allText.replace(/["'`<>]/g, '');
   } catch (error) {
@@ -97,7 +97,7 @@ function categorizeCharacters() {
 
   characterFrequency.forEach((_, char) => {
     const code = char.codePointAt(0);
-    
+
     // Latin (A-Z, a-z)
     if ((code >= 65 && code <= 90) || (code >= 97 && code <= 122)) {
       categories.latin.add(char);
@@ -119,17 +119,18 @@ function categorizeCharacters() {
       categories.greek.add(char);
     }
     // Symbols and punctuation
-    else if (code >= 33 && code <= 47 || 
-             code >= 58 && code <= 64 ||
-             code >= 91 && code <= 96 ||
-             code >= 123 && code <= 126) {
+    else if (
+      (code >= 33 && code <= 47) ||
+      (code >= 58 && code <= 64) ||
+      (code >= 91 && code <= 96) ||
+      (code >= 123 && code <= 126)
+    ) {
       categories.punctuation.add(char);
     }
     // Common symbols
     else if ([169, 174, 8482, 8364, 163, 165].includes(code)) {
       categories.symbols.add(char);
-    }
-    else {
+    } else {
       categories.other.add(char);
     }
   });
@@ -140,13 +141,13 @@ function categorizeCharacters() {
 // Generate character set for subsetting
 function generateCharacterSet(categories) {
   const sets = [];
-  
+
   if (categories.latin.size > 0) sets.push('latin');
   if (categories.latinExtended.size > 0) sets.push('latinExtended');
   if (categories.cyrillic.size > 0) sets.push('cyrillic');
   if (categories.greek.size > 0) sets.push('greek');
   if (categories.symbols.size > 0) sets.push('symbols');
-  
+
   return sets;
 }
 
@@ -201,12 +202,12 @@ function main() {
   // Analyze each file
   console.log('📊 Analyzing character usage...');
   let totalCharacters = 0;
-  
+
   files.forEach((file, index) => {
     const text = extractTextFromFile(file);
     analyzeCharacterUsage(text);
     totalCharacters += text.length;
-    
+
     if ((index + 1) % 100 === 0) {
       console.log(`   Processed ${index + 1}/${files.length} files...`);
     }

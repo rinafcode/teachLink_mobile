@@ -18,11 +18,7 @@ export const CourseListScreen = () => {
   });
 
   return (
-    <ScrollView
-      ref={scrollRef}
-      onScroll={onScroll}
-      scrollEventThrottle={16}
-    >
+    <ScrollView ref={scrollRef} onScroll={onScroll} scrollEventThrottle={16}>
       {/* Your content */}
     </ScrollView>
   );
@@ -38,12 +34,9 @@ import { useFlatListScrollRestoration } from '@/hooks/useFlatListScrollRestorati
 
 export const SearchScreen = () => {
   const flatListRef = useRef<FlatList>(null);
-  const { onScroll, onScrollToIndexFailed } = useFlatListScrollRestoration(
-    flatListRef,
-    {
-      screenId: 'search',
-    }
-  );
+  const { onScroll, onScrollToIndexFailed } = useFlatListScrollRestoration(flatListRef, {
+    screenId: 'search',
+  });
 
   return (
     <FlatList
@@ -53,7 +46,7 @@ export const SearchScreen = () => {
       onScrollToIndexFailed={onScrollToIndexFailed}
       scrollEventThrottle={16}
       renderItem={({ item }) => <SearchResultItem item={item} />}
-      keyExtractor={(item) => item.id}
+      keyExtractor={item => item.id}
     />
   );
 };
@@ -99,14 +92,11 @@ import { useFlatListScrollRestoration } from '@/hooks/useFlatListScrollRestorati
 export const ProfileCoursesScreen = ({ userId }: { userId: string }) => {
   const [courses, setCourses] = useState([]);
   const flatListRef = useRef<FlatList>(null);
-  
-  const { onScroll, onScrollToIndexFailed } = useFlatListScrollRestoration(
-    flatListRef,
-    {
-      screenId: `profile-courses-${userId}`,
-      clearOnDataChange: true, // Auto-clears when data changes
-    }
-  );
+
+  const { onScroll, onScrollToIndexFailed } = useFlatListScrollRestoration(flatListRef, {
+    screenId: `profile-courses-${userId}`,
+    clearOnDataChange: true, // Auto-clears when data changes
+  });
 
   useEffect(() => {
     fetchUserCourses(userId).then(setCourses);
@@ -152,12 +142,8 @@ export const ComplexScreen = () => {
         scrollEventThrottle={16}
         renderItem={/* ... */}
       />
-      
-      <ScrollView
-        ref={bottomScrollRef}
-        onScroll={onBottomScroll}
-        scrollEventThrottle={16}
-      >
+
+      <ScrollView ref={bottomScrollRef} onScroll={onBottomScroll} scrollEventThrottle={16}>
         {/* ... */}
       </ScrollView>
     </View>
@@ -192,12 +178,8 @@ export const CourseViewerScreen = () => {
       <Animated.View style={{ opacity: headerOpacity }}>
         <Header />
       </Animated.View>
-      
-      <ScrollView
-        ref={scrollRef}
-        onScroll={onScroll}
-        scrollEventThrottle={16}
-      >
+
+      <ScrollView ref={scrollRef} onScroll={onScroll} scrollEventThrottle={16}>
         {/* Content */}
       </ScrollView>
     </>
@@ -219,10 +201,9 @@ export const RefreshableListScreen = () => {
   const [data, setData] = useState<Course[]>([]);
   const flatListRef = useRef<FlatList>(null);
 
-  const { onScroll, onScrollToIndexFailed } = useFlatListScrollRestoration(
-    flatListRef,
-    { screenId: 'refreshable-courses' }
-  );
+  const { onScroll, onScrollToIndexFailed } = useFlatListScrollRestoration(flatListRef, {
+    screenId: 'refreshable-courses',
+  });
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -242,9 +223,7 @@ export const RefreshableListScreen = () => {
       onScroll={onScroll}
       onScrollToIndexFailed={onScrollToIndexFailed}
       scrollEventThrottle={16}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-      }
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
       renderItem={({ item }) => <CourseCard course={item} />}
     />
   );
@@ -260,7 +239,7 @@ import { useFlatListScrollRestoration } from '@/hooks/useFlatListScrollRestorati
 
 export const VirtualListScreen = () => {
   const virtualListRef = useRef<VirtualizedList>(null);
-  
+
   const { onScroll } = useFlatListScrollRestoration(virtualListRef, {
     screenId: 'virtual-courses',
     saveDelay: 300, // More frequent saves for smooth scrolling
@@ -272,8 +251,8 @@ export const VirtualListScreen = () => {
       data={largeDataset}
       initialNumToRender={10}
       renderItem={({ item }) => <Item item={item} />}
-      keyExtractor={(item) => item.id}
-      getItemCount={(data) => data.length}
+      keyExtractor={item => item.id}
+      getItemCount={data => data.length}
       getItem={(data, index) => data[index]}
       onScroll={onScroll}
       scrollEventThrottle={16}
@@ -325,9 +304,9 @@ export const SettingsScreen = () => {
 // Increase debounce and threshold to reduce storage writes
 useScrollRestoration(scrollRef, {
   screenId: 'heavy-content',
-  saveDelay: 1000,        // Save after 1 second of inactivity
+  saveDelay: 1000, // Save after 1 second of inactivity
   minDistanceThreshold: 100, // Only save for significant scrolls
-})
+});
 ```
 
 ### For snappy, frequent scrolls
@@ -336,9 +315,9 @@ useScrollRestoration(scrollRef, {
 // Decrease delays for more responsive position tracking
 useFlatListScrollRestoration(flatListRef, {
   screenId: 'quick-scroll',
-  saveDelay: 250,         // Save more often
+  saveDelay: 250, // Save more often
   minDistanceThreshold: 20, // Track small scrolls
-})
+});
 ```
 
 ## Testing
@@ -352,9 +331,7 @@ import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 describe('useScrollRestoration', () => {
   it('should handle scroll events', () => {
     const ref = { current: null };
-    const { result } = renderHook(() => 
-      useScrollRestoration(ref, { screenId: 'test' })
-    );
+    const { result } = renderHook(() => useScrollRestoration(ref, { screenId: 'test' }));
 
     // Simulate scroll
     result.current.onScroll({
@@ -371,6 +348,7 @@ describe('useScrollRestoration', () => {
 ### Issue: Position not restoring
 
 **Check:**
+
 1. Screen ID is unique and consistent
 2. `onScroll` handler is attached to ScrollView
 3. `scrollEventThrottle={16}` is set
@@ -380,6 +358,7 @@ describe('useScrollRestoration', () => {
 ### Issue: Performance degradation
 
 **Solutions:**
+
 1. Increase `saveDelay` (default 500ms)
 2. Increase `minDistanceThreshold` (default 50px)
 3. For FlatList, ensure `clearOnDataChange` is not causing unnecessary clears
@@ -388,6 +367,7 @@ describe('useScrollRestoration', () => {
 ### Issue: Position becomes invalid after data updates
 
 **This is expected behavior.** For FlatList:
+
 - `clearOnDataChange: true` (default) automatically clears
 - This prevents restore-to-wrong-index bugs
 - Disable only if list items have stable IDs

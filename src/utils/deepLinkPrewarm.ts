@@ -1,10 +1,11 @@
 import * as Linking from 'expo-linking';
 import * as Notifications from 'expo-notifications';
+
+import { getPathFromDeepLink, ParsedDeepLink, parseDeepLinkUrl } from './linkParser';
 import { sampleCourse } from '../data/sampleCourse';
 import { offlineStorage } from '../services/offlineStorage';
 import { Course } from '../types/course';
 import { NotificationData, NotificationType } from '../types/notifications';
-import { getPathFromDeepLink, ParsedDeepLink, parseDeepLinkUrl } from './linkParser';
 
 export async function getInitialDeepLinkUrl(): Promise<string | null> {
   try {

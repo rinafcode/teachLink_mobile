@@ -215,7 +215,7 @@ class SentryContextService {
     error: unknown,
     customData?: CustomErrorData,
     screen?: string,
-    action?: string,
+    action?: string
   ): string {
     const captureContext = this.buildCaptureContext({
       tags: {
@@ -237,7 +237,7 @@ class SentryContextService {
   captureMessage(
     message: string,
     level: Sentry.SeverityLevel = 'info',
-    customData?: CustomErrorData,
+    customData?: CustomErrorData
   ): string {
     return Sentry.captureMessage(message, {
       level,
@@ -267,7 +267,7 @@ class SentryContextService {
     this.actionCount = 0;
     this.previousScreen = null;
     this.currentScreen = null;
-    Sentry.clearBreadcrumbs();
+    Sentry.getCurrentScope().clearBreadcrumbs();
   }
 }
 

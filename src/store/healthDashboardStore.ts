@@ -7,13 +7,13 @@
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import {
-    AlertThresholds,
-    DEFAULT_THRESHOLDS,
-    HealthSnapshot,
-    MetricAlert,
-} from '../services/healthMetrics';
 
+import {
+  AlertThresholds,
+  DEFAULT_THRESHOLDS,
+  HealthSnapshot,
+  MetricAlert,
+} from '../services/healthMetrics';
 import { shallowDiff } from '../utils/stateDiff';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -65,28 +65,30 @@ const initialState = {
 
 export const useHealthDashboardStore = create<HealthDashboardState>()(
   devtools(
-    (set) => ({
+    set => ({
       ...initialState,
 
-      setSnapshot: (snapshot) =>
+      setSnapshot: snapshot =>
         set(
-          (state) => {
+          state => {
             if (!state.snapshot && !snapshot) return state;
             if (!state.snapshot) return { snapshot, lastUpdated: Date.now() };
             const diff = shallowDiff(state.snapshot, snapshot);
             if (!diff) return state;
-            return { snapshot: { ...state.snapshot, ...diff } as HealthSnapshot, lastUpdated: Date.now() };
+            return {
+              snapshot: { ...state.snapshot, ...diff } as HealthSnapshot,
+              lastUpdated: Date.now(),
+            };
           },
           false,
           'setSnapshot'
         ),
 
-      setAlerts: (alerts) =>
-        set({ alerts }, false, 'setAlerts'),
+      setAlerts: alerts => set({ alerts }, false, 'setAlerts'),
 
-      setThresholds: (partial) =>
+      setThresholds: partial =>
         set(
-          (state) => {
+          state => {
             const diff = shallowDiff(state.thresholds, partial);
             if (!diff) return state; // Return unchanged state to bypass allocation
             return { thresholds: { ...state.thresholds, ...diff } };
@@ -95,22 +97,17 @@ export const useHealthDashboardStore = create<HealthDashboardState>()(
           'setThresholds'
         ),
 
-      setStatus: (status) =>
-        set({ status }, false, 'setStatus'),
+      setStatus: status => set({ status }, false, 'setStatus'),
 
-      setRefreshInterval: (refreshIntervalMs) =>
+      setRefreshInterval: refreshIntervalMs =>
         set({ refreshIntervalMs }, false, 'setRefreshInterval'),
 
       toggleAutoRefresh: () =>
-        set(
-          (state) => ({ isAutoRefresh: !state.isAutoRefresh }),
-          false,
-          'toggleAutoRefresh'
-        ),
+        set(state => ({ isAutoRefresh: !state.isAutoRefresh }), false, 'toggleAutoRefresh'),
 
-      dismissAlert: (id) =>
+      dismissAlert: id =>
         set(
-          (state) => {
+          state => {
             const next = new Set(state.dismissedAlertIds);
             next.add(id);
             return { dismissedAlertIds: next };
@@ -119,11 +116,9 @@ export const useHealthDashboardStore = create<HealthDashboardState>()(
           'dismissAlert'
         ),
 
-      clearDismissed: () =>
-        set({ dismissedAlertIds: new Set() }, false, 'clearDismissed'),
+      clearDismissed: () => set({ dismissedAlertIds: new Set() }, false, 'clearDismissed'),
 
-      reset: () =>
-        set({ ...initialState, dismissedAlertIds: new Set() }, false, 'reset'),
+      reset: () => set({ ...initialState, dismissedAlertIds: new Set() }, false, 'reset'),
     }),
     { name: 'HealthDashboardStore' }
   )
@@ -133,14 +128,12 @@ export const useHealthDashboardStore = create<HealthDashboardState>()(
 
 /** Returns only non-dismissed alerts */
 export const selectVisibleAlerts = (state: HealthDashboardState): MetricAlert[] =>
-  state.alerts.filter((a) => !state.dismissedAlertIds.has(a.id));
+  state.alerts.filter(a => !state.dismissedAlertIds.has(a.id));
 
 /** Returns the highest severity across all visible alerts */
-export const selectOverallStatus = (
-  state: HealthDashboardState
-): 'ok' | 'warning' | 'critical' => {
+export const selectOverallStatus = (state: HealthDashboardState): 'ok' | 'warning' | 'critical' => {
   const visible = selectVisibleAlerts(state);
-  if (visible.some((a) => a.severity === 'critical')) return 'critical';
-  if (visible.some((a) => a.severity === 'warning')) return 'warning';
+  if (visible.some(a => a.severity === 'critical')) return 'critical';
+  if (visible.some(a => a.severity === 'warning')) return 'warning';
   return 'ok';
 };

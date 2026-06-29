@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import logger from '../utils/logger';
+
 import {
   mobilePaymentsService,
   SubscriptionPlan,
@@ -8,6 +8,7 @@ import {
   SUBSCRIPTION_PLANS,
   PRODUCT_IDS,
 } from '../services/mobilePayments';
+import logger from '../utils/logger';
 
 // ─── State shape ──────────────────────────────────────────────────────────────
 
@@ -105,57 +106,50 @@ export const useInAppPurchase = (): UseInAppPurchase => {
 
   // ── Purchase subscription ────────────────────────────────────────────────
 
-  const purchaseSubscription = useCallback(
-    async (productId: string): Promise<boolean> => {
-      setIsPurchasing(true);
-      setError(null);
-      try {
-        const record =
-          await mobilePaymentsService.purchaseSubscription(productId);
-        const plan = SUBSCRIPTION_PLANS.find((p) => p.productId === productId);
-        if (plan) setCurrentTier(plan.tier);
-        setPurchaseHistory((prev) => [record, ...prev]);
-        setPurchaseSuccess(true);
-        setTimeout(() => setPurchaseSuccess(false), 3000);
-        return true;
-      } catch (err: any) {
-        const msg: string = err?.message ?? '';
-        // User-cancelled flows should not show an error banner
-        if (!msg.toLowerCase().includes('cancel')) {
-          setError(msg || 'Purchase failed. Please try again.');
-        }
-        return false;
-      } finally {
-        setIsPurchasing(false);
+  const purchaseSubscription = useCallback(async (productId: string): Promise<boolean> => {
+    setIsPurchasing(true);
+    setError(null);
+    try {
+      const record = await mobilePaymentsService.purchaseSubscription(productId);
+      const plan = SUBSCRIPTION_PLANS.find(p => p.productId === productId);
+      if (plan) setCurrentTier(plan.tier);
+      setPurchaseHistory(prev => [record, ...prev]);
+      setPurchaseSuccess(true);
+      setTimeout(() => setPurchaseSuccess(false), 3000);
+      return true;
+    } catch (err: any) {
+      const msg: string = err?.message ?? '';
+      // User-cancelled flows should not show an error banner
+      if (!msg.toLowerCase().includes('cancel')) {
+        setError(msg || 'Purchase failed. Please try again.');
       }
-    },
-    [],
-  );
+      return false;
+    } finally {
+      setIsPurchasing(false);
+    }
+  }, []);
 
   // ── Purchase one-time product ────────────────────────────────────────────
 
-  const purchaseProduct = useCallback(
-    async (productId: string): Promise<boolean> => {
-      setIsPurchasing(true);
-      setError(null);
-      try {
-        const record = await mobilePaymentsService.purchaseProduct(productId);
-        setPurchaseHistory((prev) => [record, ...prev]);
-        setPurchaseSuccess(true);
-        setTimeout(() => setPurchaseSuccess(false), 3000);
-        return true;
-      } catch (err: any) {
-        const msg: string = err?.message ?? '';
-        if (!msg.toLowerCase().includes('cancel')) {
-          setError(msg || 'Purchase failed. Please try again.');
-        }
-        return false;
-      } finally {
-        setIsPurchasing(false);
+  const purchaseProduct = useCallback(async (productId: string): Promise<boolean> => {
+    setIsPurchasing(true);
+    setError(null);
+    try {
+      const record = await mobilePaymentsService.purchaseProduct(productId);
+      setPurchaseHistory(prev => [record, ...prev]);
+      setPurchaseSuccess(true);
+      setTimeout(() => setPurchaseSuccess(false), 3000);
+      return true;
+    } catch (err: any) {
+      const msg: string = err?.message ?? '';
+      if (!msg.toLowerCase().includes('cancel')) {
+        setError(msg || 'Purchase failed. Please try again.');
       }
-    },
-    [],
-  );
+      return false;
+    } finally {
+      setIsPurchasing(false);
+    }
+  }, []);
 
   // ── Restore purchases ────────────────────────────────────────────────────
 

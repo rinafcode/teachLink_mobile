@@ -5,6 +5,12 @@
  * actually persist values across calls within each test.
  */
 
+// Must import after mock is registered
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// sessionRestorationService is a singleton — reset its internal state between tests
+import { sessionRestorationService } from '../../src/services/sessionRestoration';
+
 const store: Record<string, string> = {};
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
@@ -25,12 +31,6 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
     }),
   },
 }));
-
-// Must import after mock is registered
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// sessionRestorationService is a singleton — reset its internal state between tests
-import { sessionRestorationService } from '../../src/services/sessionRestoration';
 
 const SESSION_ACTIVE_KEY = '@teachlink_session_active';
 const SESSION_SNAPSHOT_KEY = '@teachlink_session_snapshot';

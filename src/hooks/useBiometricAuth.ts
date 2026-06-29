@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+
 import { BiometricType, AuthResult } from '../services/mobileAuth';
 
 export function useBiometricAuth() {

@@ -33,7 +33,11 @@ const LatencyRow: React.FC<{
   const color = barColor(value, warning, critical);
 
   return (
-    <View style={styles.row} accessible accessibilityLabel={`${label} latency: ${value} milliseconds`}>
+    <View
+      style={styles.row}
+      accessible
+      accessibilityLabel={`${label} latency: ${value} milliseconds`}
+    >
       <Text style={styles.rowLabel}>{label}</Text>
       <View style={styles.track}>
         <View style={[styles.fill, { width: `${pct}%`, backgroundColor: color }]} />

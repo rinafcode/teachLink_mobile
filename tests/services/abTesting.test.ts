@@ -3,9 +3,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { abTestingService, ExperimentConfig } from '../../src/services/abTesting';
 import { mobileAnalyticsService } from '../../src/services/mobileAnalytics';
 import {
-    getImagePrefetchExperimentDecision,
-    IMAGE_PREFETCH_EXPERIMENT_ID,
-    trackImagePrefetchMetric,
+  getImagePrefetchExperimentDecision,
+  IMAGE_PREFETCH_EXPERIMENT_ID,
+  trackImagePrefetchMetric,
 } from '../../src/services/performanceExperiments';
 import { AnalyticsEvent } from '../../src/utils/trackingEvents';
 

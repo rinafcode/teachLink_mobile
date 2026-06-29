@@ -82,31 +82,8 @@ export const BookmarkList = () => {
       renderItem={renderItem}
       keyExtractor={item => item.itemId}
       contentContainerStyle={styles.list}
+      removeClippedSubviews={true}
     />
-    <ScrollView contentContainerStyle={styles.list} removeClippedSubviews={true}>
-      {bookmarks.map(item => (
-        <SwipeableRow
-          key={item.itemId}
-          id={item.itemId}
-          onDelete={() => removeBookmark(item.itemId)}
-          onArchive={() => handleArchive(item.itemId)}
-          deleteLabel="Delete"
-          archiveLabel="Archive"
-        >
-          <TouchableOpacity
-            testID={`bookmark-item-${item.itemId}`}
-            style={styles.card}
-            onPress={() => router.push(item.url as any)}
-            activeOpacity={0.75}
-            accessibilityRole="link"
-            accessibilityLabel={item.title}
-          >
-            <Text style={styles.cardTitle}>{item.title}</Text>
-            <Text style={styles.cardType}>{item.itemType}</Text>
-          </TouchableOpacity>
-        </SwipeableRow>
-      ))}
-    </ScrollView>
   );
 };
 

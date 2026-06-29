@@ -10,10 +10,10 @@ and preloads the resources behind it, so navigation feels instantaneous.
 
 ## Building blocks
 
-| Concern              | Where                                 |
-| -------------------- | ------------------------------------- |
-| Prediction + preload | `src/services/preloadService.ts`      |
-| React hook           | `src/hooks/usePredictivePreload.ts`   |
+| Concern              | Where                               |
+| -------------------- | ----------------------------------- |
+| Prediction + preload | `src/services/preloadService.ts`    |
+| React hook           | `src/hooks/usePredictivePreload.ts` |
 
 ## 1. Analyzing interaction patterns
 
@@ -53,7 +53,7 @@ Preload latency is reported via `mobileAnalyticsService.trackPerformance(
 
 Accuracy is measured **online** and model-only (independent of whether a preload
 actually ran). On every real `recordTransition(from, to)`, before the matrix is
-updated, the service computes what it *would* have predicted for `from` and
+updated, the service computes what it _would_ have predicted for `from` and
 checks whether the actual `to` was among those predictions:
 
 - a match counts as a **hit**,
@@ -70,8 +70,7 @@ monitor prediction quality across users and tune `STATIC_DEFAULTS` / the limit.
 import usePredictivePreload from '../hooks/usePredictivePreload';
 
 function Screen({ pathname, previousPathname }) {
-  const { preload, recordTransition, getPredictionAccuracy } =
-    usePredictivePreload();
+  const { preload, recordTransition, getPredictionAccuracy } = usePredictivePreload();
 
   useEffect(() => {
     // Learn the transition + evaluate the prediction that preceded it.
@@ -94,4 +93,7 @@ function Screen({ pathname, previousPathname }) {
 - **`limit`** (default 2): higher preloads more aggressively (more hits, more
   bandwidth); lower is leaner. Combine with the Data Saver / WiFi-only guards to
   bound battery and data cost.
+
+```
+
 ```

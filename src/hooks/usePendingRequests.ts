@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
+
 import requestQueue, { RequestPriority } from '../services/api/requestQueue';
 
 export function usePendingRequests(priority?: RequestPriority) {
   const [pendingCount, setPendingCount] = useState(0);
-  const [byPriority, setByPriority] = useState<
-    Record<RequestPriority, number>
-  >({
+  const [byPriority, setByPriority] = useState<Record<RequestPriority, number>>({
     critical: 0,
     high: 0,
     normal: 0,

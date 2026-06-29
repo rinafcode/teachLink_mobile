@@ -1,8 +1,7 @@
-import { backgroundScheduler } from '../services/backgroundTaskScheduler';
 import { Image } from 'expo-image';
 
 import logger from './logger';
-import { _backgroundScheduler } from '../services/backgroundTaskScheduler';
+import { backgroundScheduler, _backgroundScheduler } from '../services/backgroundTaskScheduler';
 
 export class ImageCache {
   /**
@@ -15,8 +14,8 @@ export class ImageCache {
   static async prefetchImages(urls: string[]): Promise<boolean[]> {
     try {
       if (!urls || urls.length === 0) return [];
-      
-      const promises = urls.map(async (url) => {
+
+      const promises = urls.map(async url => {
         if (!url) return false;
         try {
           return await Image.prefetch(url);

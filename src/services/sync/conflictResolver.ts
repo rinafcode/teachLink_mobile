@@ -1,4 +1,5 @@
 import { checksum, checksumEqual } from './checksum';
+
 import type {
   ConflictResolutionResult,
   ConflictResolutionStrategy,
@@ -11,7 +12,7 @@ export function createVersionedEntity<T extends Record<string, unknown>>(
   entityType: string,
   data: T,
   clientId: string,
-  serverVersion = 0,
+  serverVersion = 0
 ): VersionedEntity<T> {
   return {
     id,
@@ -27,7 +28,7 @@ export function createVersionedEntity<T extends Record<string, unknown>>(
 
 export function applyLocalMutation<T extends Record<string, unknown>>(
   entity: VersionedEntity<T>,
-  patch: Partial<T>,
+  patch: Partial<T>
 ): VersionedEntity<T> {
   const newData = { ...entity.data, ...patch };
   return {
@@ -41,7 +42,7 @@ export function applyLocalMutation<T extends Record<string, unknown>>(
 
 export function detectConflict<T extends Record<string, unknown>>(
   local: VersionedEntity<T>,
-  server: VersionedEntity<T>,
+  server: VersionedEntity<T>
 ): boolean {
   if (checksumEqual(local.data, server.data)) return false;
   if (local.clientSeq === 0 && server.version >= local.version) return false;
@@ -51,7 +52,7 @@ export function detectConflict<T extends Record<string, unknown>>(
 export function buildConflict<T extends Record<string, unknown>>(
   local: VersionedEntity<T>,
   server: VersionedEntity<T>,
-  base?: VersionedEntity<T>,
+  base?: VersionedEntity<T>
 ): SyncConflict<T> {
   return {
     entityId: local.id,
@@ -65,7 +66,7 @@ export function buildConflict<T extends Record<string, unknown>>(
 
 export function resolveConflict<T extends Record<string, unknown>>(
   conflict: SyncConflict<T>,
-  strategy: ConflictResolutionStrategy = 'server-wins',
+  strategy: ConflictResolutionStrategy = 'server-wins'
 ): ConflictResolutionResult<T> {
   const { localVersion: local, serverVersion: server } = conflict;
 
@@ -89,7 +90,7 @@ export function resolveConflict<T extends Record<string, unknown>>(
 
 export function applyServerUpdate<T extends Record<string, unknown>>(
   _local: VersionedEntity<T> | undefined,
-  server: VersionedEntity<T>,
+  server: VersionedEntity<T>
 ): ConflictResolutionResult<T> {
   return makeResult(acceptServer(server), 'server-wins', false);
 }
@@ -98,7 +99,7 @@ export function processServerUpdate<T extends Record<string, unknown>>(
   local: VersionedEntity<T> | undefined,
   server: VersionedEntity<T>,
   strategy: ConflictResolutionStrategy = 'merge',
-  base?: VersionedEntity<T>,
+  base?: VersionedEntity<T>
 ): ConflictResolutionResult<T> {
   if (!local || !detectConflict(local, server)) {
     return applyServerUpdate(local, server);
@@ -108,14 +109,14 @@ export function processServerUpdate<T extends Record<string, unknown>>(
 }
 
 function acceptServer<T extends Record<string, unknown>>(
-  server: VersionedEntity<T>,
+  server: VersionedEntity<T>
 ): VersionedEntity<T> {
   return { ...server, clientSeq: 0, checksum: checksum(server.data) };
 }
 
 function acceptClient<T extends Record<string, unknown>>(
   local: VersionedEntity<T>,
-  server: VersionedEntity<T>,
+  server: VersionedEntity<T>
 ): VersionedEntity<T> {
   return {
     ...local,
@@ -127,7 +128,7 @@ function acceptClient<T extends Record<string, unknown>>(
 }
 
 function mergeConflict<T extends Record<string, unknown>>(
-  conflict: SyncConflict<T>,
+  conflict: SyncConflict<T>
 ): ConflictResolutionResult<T> {
   const { localVersion: local, serverVersion: server, baseVersion: base } = conflict;
 
@@ -151,7 +152,7 @@ function mergeConflict<T extends Record<string, unknown>>(
     server.data,
     serverOverriddenFields,
     clientPreservedFields,
-    '',
+    ''
   ) as T;
 
   return {
@@ -165,7 +166,7 @@ function mergeConflict<T extends Record<string, unknown>>(
 
 function buildMergedEntity<T extends Record<string, unknown>>(
   server: VersionedEntity<T>,
-  data: T,
+  data: T
 ): VersionedEntity<T> {
   return {
     ...server,
@@ -182,7 +183,7 @@ function threeWayMerge(
   server: Record<string, unknown>,
   serverOverridden: string[],
   clientPreserved: string[],
-  prefix: string,
+  prefix: string
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   const keys = new Set([...Object.keys(base), ...Object.keys(local), ...Object.keys(server)]);
@@ -196,7 +197,8 @@ function threeWayMerge(
     const serverValue = server[key];
 
     const localChanged = !checksumEqual(baseValue, localValue) || (!hasOwn(base, key) && localHas);
-    const serverChanged = !checksumEqual(baseValue, serverValue) || (!hasOwn(base, key) && serverHas);
+    const serverChanged =
+      !checksumEqual(baseValue, serverValue) || (!hasOwn(base, key) && serverHas);
 
     if (!localHas && !serverHas) continue;
 
@@ -207,7 +209,7 @@ function threeWayMerge(
         serverValue,
         serverOverridden,
         clientPreserved,
-        path,
+        path
       );
       continue;
     }
@@ -238,7 +240,7 @@ function threeWayMerge(
 
 function mergeWithoutBase(
   local: Record<string, unknown>,
-  server: Record<string, unknown>,
+  server: Record<string, unknown>
 ): Record<string, unknown> {
   const result: Record<string, unknown> = { ...server };
 
@@ -248,7 +250,7 @@ function mergeWithoutBase(
     } else if (isPlainObject(local[key]) && isPlainObject(server[key])) {
       result[key] = mergeWithoutBase(
         local[key] as Record<string, unknown>,
-        server[key] as Record<string, unknown>,
+        server[key] as Record<string, unknown>
       );
     }
   }
@@ -259,7 +261,7 @@ function mergeWithoutBase(
 function findDifferingFields(
   local: Record<string, unknown>,
   server: Record<string, unknown>,
-  prefix = '',
+  prefix = ''
 ): string[] {
   const fields: string[] = [];
   const keys = new Set([...Object.keys(local), ...Object.keys(server)]);
@@ -289,7 +291,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 function makeResult<T extends Record<string, unknown>>(
   resolved: VersionedEntity<T>,
   strategy: ConflictResolutionStrategy,
-  hadConflict: boolean,
+  hadConflict: boolean
 ): ConflictResolutionResult<T> {
   return { resolved, strategy, hadConflict };
 }

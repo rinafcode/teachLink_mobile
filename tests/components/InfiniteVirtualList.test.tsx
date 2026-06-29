@@ -1,9 +1,10 @@
-import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
-import { View, Text } from 'react-native';
 import * as Device from 'expo-device';
+import React from 'react';
+import { View, Text } from 'react-native';
 
 import { InfiniteVirtualList } from '../../src/components/mobile/InfiniteVirtualList';
+import logger from '../../src/utils/logger';
 
 // Mock expo-device
 jest.mock('expo-device', () => ({
@@ -26,8 +27,6 @@ jest.mock('../../src/utils/logger', () => ({
     info: jest.fn(),
   },
 }));
-
-import logger from '../../src/utils/logger';
 
 describe('InfiniteVirtualList', () => {
   beforeEach(() => {

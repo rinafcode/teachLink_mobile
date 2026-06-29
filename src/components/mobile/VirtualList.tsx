@@ -1,5 +1,6 @@
 import React, { useCallback } from 'react';
 import { FlatList, FlatListProps, ViewStyle, StyleProp } from 'react-native';
+
 import { useMemoryMonitor } from '../../hooks';
 
 /**
@@ -11,7 +12,7 @@ import { useMemoryMonitor } from '../../hooks';
  */
 
 export interface VirtualListProps<T> extends Omit<FlatListProps<T>, 'renderItem'> {
-  data: ReadonlyArray<T> | null | undefined;
+  data: readonly T[] | null | undefined;
   renderItem: FlatListProps<T>['renderItem'];
   keyExtractor: (item: T, index: number) => string;
   /** Optional: If items have fixed height, this drastically improves layout performance */

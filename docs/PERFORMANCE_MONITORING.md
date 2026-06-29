@@ -24,46 +24,46 @@ useReactProfiler (hook)
 
 ### Image Delivery Metrics
 
-| Metric | Key | Description |
-|---|---|---|
-| Image load time | `image_load_time` | End-to-end image render time from request start to display |
-| Image fallback rate | `used_fallback` | Indicates when PNG fallback was required instead of WebP |
-| Device density | `dpr` | Captured 1x/2x/3x to validate adaptive image variants |
-| Optimization pipeline | `optimization` | Labels progressive image pipeline (`lqip_webp_progressive`) |
+| Metric                | Key               | Description                                                 |
+| --------------------- | ----------------- | ----------------------------------------------------------- |
+| Image load time       | `image_load_time` | End-to-end image render time from request start to display  |
+| Image fallback rate   | `used_fallback`   | Indicates when PNG fallback was required instead of WebP    |
+| Device density        | `dpr`             | Captured 1x/2x/3x to validate adaptive image variants       |
+| Optimization pipeline | `optimization`    | Labels progressive image pipeline (`lqip_webp_progressive`) |
 
 Image metrics are emitted from the shared `CachedImage` component so all user-facing
 surfaces that use it contribute to the same monitoring stream.
 
 ### React Profiler Metrics
 
-| Metric | Definition | Unit |
-|---|---|---|
-| `render_duration` | `actualDuration` reported by React's `Profiler` — wall-clock time spent rendering the committed subtree | ms |
-| Slow render | Any render where `actualDuration > slowRenderThresholdMs` (default 16 ms / 1 frame at 60 fps) | — |
-| `averageRenderDurationMs` | Rolling mean of the last `maxSamples` (default 100) render durations | ms |
+| Metric                    | Definition                                                                                              | Unit |
+| ------------------------- | ------------------------------------------------------------------------------------------------------- | ---- |
+| `render_duration`         | `actualDuration` reported by React's `Profiler` — wall-clock time spent rendering the committed subtree | ms   |
+| Slow render               | Any render where `actualDuration > slowRenderThresholdMs` (default 16 ms / 1 frame at 60 fps)           | —    |
+| `averageRenderDurationMs` | Rolling mean of the last `maxSamples` (default 100) render durations                                    | ms   |
 
 ### Core Web Vitals (web target)
 
-| Metric | Good | Needs Improvement | Poor | Description |
-|---|---|---|---|---|
-| LCP | ≤ 2500 ms | ≤ 4000 ms | > 4000 ms | Largest Contentful Paint |
-| FID | ≤ 100 ms | ≤ 300 ms | > 300 ms | First Input Delay |
-| CLS | ≤ 0.1 | ≤ 0.25 | > 0.25 | Cumulative Layout Shift |
-| FCP | ≤ 1800 ms | ≤ 3000 ms | > 3000 ms | First Contentful Paint |
-| TTFB | ≤ 800 ms | ≤ 1800 ms | > 1800 ms | Time to First Byte |
+| Metric | Good      | Needs Improvement | Poor      | Description              |
+| ------ | --------- | ----------------- | --------- | ------------------------ |
+| LCP    | ≤ 2500 ms | ≤ 4000 ms         | > 4000 ms | Largest Contentful Paint |
+| FID    | ≤ 100 ms  | ≤ 300 ms          | > 300 ms  | First Input Delay        |
+| CLS    | ≤ 0.1     | ≤ 0.25            | > 0.25    | Cumulative Layout Shift  |
+| FCP    | ≤ 1800 ms | ≤ 3000 ms         | > 3000 ms | First Contentful Paint   |
+| TTFB   | ≤ 800 ms  | ≤ 1800 ms         | > 1800 ms | Time to First Byte       |
 
 Thresholds are sourced from Google's Core Web Vitals recommendations and defined in
 `src/services/webVitals.ts`.
 
 ### Navigation & Infrastructure
 
-| Metric | Key | Description |
-|---|---|---|
-| Navigation latency | `navigation_latency` | Time between user tap and screen mount |
-| App load time | `app_load_time` | Cold-start JS bundle load |
-| Screen transition time | `screen_transition_time` | Animated navigation transition |
-| API response time | `api_response_time` | Round-trip HTTP call |
-| Time to interactive | `time_to_interactive` | App ready for full interaction |
+| Metric                 | Key                      | Description                            |
+| ---------------------- | ------------------------ | -------------------------------------- |
+| Navigation latency     | `navigation_latency`     | Time between user tap and screen mount |
+| App load time          | `app_load_time`          | Cold-start JS bundle load              |
+| Screen transition time | `screen_transition_time` | Animated navigation transition         |
+| API response time      | `api_response_time`      | Round-trip HTTP call                   |
+| Time to interactive    | `time_to_interactive`    | App ready for full interaction         |
 
 ---
 
@@ -97,7 +97,7 @@ import { useReactProfiler } from '@/hooks/useReactProfiler';
 
 function MyComponent() {
   const { onRender, metrics } = useReactProfiler('MyComponent', {
-    slowRenderThresholdMs: 32,  // 2 frames
+    slowRenderThresholdMs: 32, // 2 frames
     maxSamples: 50,
   });
 

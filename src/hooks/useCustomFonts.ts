@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { loadAsync } from 'expo-font';
 import { Asset } from 'expo-asset';
+import { loadAsync } from 'expo-font';
+import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 
 // Font configuration
@@ -90,7 +90,7 @@ async function loadSingleFont(config: FontConfig): Promise<boolean> {
       fontCache.setLoaded(config.name);
       return true;
     })
-    .catch((error) => {
+    .catch(error => {
       console.error(`Failed to load font ${config.name}:`, error);
       return false;
     });
@@ -110,7 +110,7 @@ async function loadFontsWithProgress(
   const failed: string[] = [];
 
   const results = await Promise.allSettled(
-    configs.map(async (config) => {
+    configs.map(async config => {
       const success = await loadSingleFont(config);
       completed++;
       onProgress?.((completed / total) * 100);
@@ -160,7 +160,7 @@ export function useCustomFonts(
       try {
         setStatus({ loaded: false, error: null, progress: 0 });
 
-        const { loaded, failed } = await loadFontsWithProgress(fontConfigs, (progress) => {
+        const { loaded, failed } = await loadFontsWithProgress(fontConfigs, progress => {
           if (mounted) {
             setStatus({ loaded: false, error: null, progress });
             onProgress?.(progress);
@@ -206,7 +206,7 @@ export function useLazyFont(config: FontConfig) {
 
   const load = async () => {
     setStatus({ loaded: false, error: null, progress: 0 });
-    
+
     try {
       const success = await loadSingleFont(config);
       if (success) {
@@ -244,13 +244,13 @@ export async function preloadCriticalFonts() {
 export const fontUtils = {
   // Check if a specific font is loaded
   isLoaded: (fontName: string): boolean => fontCache.isLoaded(fontName),
-  
+
   // Clear font cache (useful for testing or font updates)
   clearCache: (): void => fontCache.clear(),
-  
+
   // Get all loaded fonts
   getLoadedFonts: (): string[] => Array.from(fontCache.cache.keys()),
-  
+
   // Get font loading status
   getLoadingStatus: (fontName: string): { loaded: boolean; loading: boolean } => ({
     loaded: fontCache.isLoaded(fontName),

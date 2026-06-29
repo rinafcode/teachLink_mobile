@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 
-import { useDeviceStore } from '@/store/deviceStore';
 import { mobileAnalyticsService } from '@/services/mobileAnalytics';
+import { useDeviceStore } from '@/store/deviceStore';
 import { AnalyticsEvent } from '@/utils/trackingEvents';
 
 const AppLifecycleManager = () => {

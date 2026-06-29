@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { InteractionManager } from 'react-native';
+
 import { clipboardService, ClipboardOperationMetrics } from '../services/clipboardService';
 
 export interface UseOptimizedClipboardResult {
@@ -21,7 +22,7 @@ export function useOptimizedClipboard(): UseOptimizedClipboardResult {
   const [error, setError] = useState<Error | null>(null);
   const [clipboardContent, setClipboardContent] = useState('');
   const [metrics, setMetrics] = useState<ClipboardOperationMetrics | null>(null);
-  
+
   const isMounted = useRef(true);
   const successTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -48,19 +49,19 @@ export function useOptimizedClipboard(): UseOptimizedClipboardResult {
     setIsCopying(true);
 
     // Defer the heavy native copy operation to allow React to render the loading spinner
-    return new Promise<boolean>((resolve) => {
+    return new Promise<boolean>(resolve => {
       // 1. Run after any ongoing screen animations or interactions
       InteractionManager.runAfterInteractions(() => {
         // 2. Wrap in setTimeout(..., 0) to ensure React state update is flushed and rendered first
         setTimeout(async () => {
           try {
             const success = await clipboardService.copyToClipboardAsync(text);
-            
+
             if (isMounted.current) {
               setIsCopying(false);
               setCopySuccess(success);
               setMetrics(clipboardService.getLastMetrics());
-              
+
               // Automatically reset copy success toast after 2 seconds
               if (successTimeoutRef.current) clearTimeout(successTimeoutRef.current);
               successTimeoutRef.current = setTimeout(() => {
@@ -88,12 +89,12 @@ export function useOptimizedClipboard(): UseOptimizedClipboardResult {
     setError(null);
     setIsPasting(true);
 
-    return new Promise<string>((resolve) => {
+    return new Promise<string>(resolve => {
       InteractionManager.runAfterInteractions(() => {
         setTimeout(async () => {
           try {
             const content = await clipboardService.pasteFromClipboardAsync();
-            
+
             if (isMounted.current) {
               setIsPasting(false);
               setClipboardContent(content);

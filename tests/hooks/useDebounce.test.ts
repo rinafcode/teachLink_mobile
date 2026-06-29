@@ -1,4 +1,5 @@
 import { renderHook, act } from '@testing-library/react-native';
+
 import { useDebounce, useDebounceCallback } from '../../src/hooks/useDebounce';
 
 describe('useDebounce and useDebounceCallback hooks', () => {
@@ -19,10 +20,9 @@ describe('useDebounce and useDebounceCallback hooks', () => {
     });
 
     it('updates the debounced value only after the delay has passed', () => {
-      const { result, rerender } = renderHook(
-        ({ value }) => useDebounce(value, 300),
-        { initialProps: { value: 'initial' } }
-      );
+      const { result, rerender } = renderHook(({ value }) => useDebounce(value, 300), {
+        initialProps: { value: 'initial' },
+      });
 
       // Perform rapid typing simulation
       rerender({ value: 'typing...' });
@@ -40,26 +40,33 @@ describe('useDebounce and useDebounceCallback hooks', () => {
     });
 
     it('resets the timer and debounces rapid successive changes', () => {
-      const { result, rerender } = renderHook(
-        ({ value }) => useDebounce(value, 300),
-        { initialProps: { value: 'init' } }
-      );
+      const { result, rerender } = renderHook(({ value }) => useDebounce(value, 300), {
+        initialProps: { value: 'init' },
+      });
 
       // simulate rapid keystrokes: 'a', 'ab', 'abc' (each separated by 100ms)
       rerender({ value: 'a' });
-      act(() => { jest.advanceTimersByTime(100); });
+      act(() => {
+        jest.advanceTimersByTime(100);
+      });
       expect(result.current).toBe('init');
 
       rerender({ value: 'ab' });
-      act(() => { jest.advanceTimersByTime(100); });
+      act(() => {
+        jest.advanceTimersByTime(100);
+      });
       expect(result.current).toBe('init');
 
       rerender({ value: 'abc' });
-      act(() => { jest.advanceTimersByTime(100); });
+      act(() => {
+        jest.advanceTimersByTime(100);
+      });
       expect(result.current).toBe('init'); // 300ms since start, but only 100ms since last change
 
       // Wait 300ms after the LAST change
-      act(() => { jest.advanceTimersByTime(200); }); // 300ms total for 'abc'
+      act(() => {
+        jest.advanceTimersByTime(200);
+      }); // 300ms total for 'abc'
       expect(result.current).toBe('abc');
     });
   });

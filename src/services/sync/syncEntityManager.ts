@@ -7,6 +7,7 @@ import {
   resolveConflict,
 } from './conflictResolver';
 import versionStore from './versionStore';
+
 import type {
   ConflictResolutionResult,
   ConflictResolutionStrategy,
@@ -24,7 +25,7 @@ class SyncEntityManager {
   private readonly listeners = new Set<Listener>();
 
   trackServerEntity<T extends Record<string, unknown>>(
-    entity: VersionedEntity<T>,
+    entity: VersionedEntity<T>
   ): VersionedEntity<T> {
     const accepted = { ...entity, clientSeq: 0 };
     versionStore.set(accepted);
@@ -37,7 +38,7 @@ class SyncEntityManager {
     entityType: string,
     data: T,
     clientId: string,
-    serverVersion = 0,
+    serverVersion = 0
   ): VersionedEntity<T> {
     const entity = createVersionedEntity(id, entityType, data, clientId, serverVersion);
     return this.trackServerEntity(entity);
@@ -46,7 +47,7 @@ class SyncEntityManager {
   applyLocalPatch<T extends Record<string, unknown>>(
     entityType: string,
     entityId: string,
-    patch: Partial<T>,
+    patch: Partial<T>
   ): VersionedEntity<T> | undefined {
     const current = versionStore.get<T>(entityType, entityId);
     if (!current) return undefined;
@@ -64,7 +65,7 @@ class SyncEntityManager {
   handleServerEntity<T extends Record<string, unknown>>(
     serverEntity: VersionedEntity<T>,
     strategy: ConflictResolutionStrategy = 'merge',
-    explicitBase?: VersionedEntity<T>,
+    explicitBase?: VersionedEntity<T>
   ): ConflictResolutionResult<T> {
     const key = makeKey(serverEntity.entityType, serverEntity.id);
     const local = versionStore.get<T>(serverEntity.entityType, serverEntity.id);
@@ -87,14 +88,14 @@ class SyncEntityManager {
 
   getLocal<T extends Record<string, unknown>>(
     entityType: string,
-    entityId: string,
+    entityId: string
   ): VersionedEntity<T> | undefined {
     return versionStore.get<T>(entityType, entityId);
   }
 
   getBase<T extends Record<string, unknown>>(
     entityType: string,
-    entityId: string,
+    entityId: string
   ): VersionedEntity<T> | undefined {
     return this.baseVersions.get(makeKey(entityType, entityId)) as VersionedEntity<T> | undefined;
   }
@@ -103,7 +104,7 @@ class SyncEntityManager {
     localData: T,
     serverData: T,
     strategy: ConflictResolutionStrategy = 'merge',
-    baseData?: T,
+    baseData?: T
   ): ConflictResolutionResult<T> {
     const clientId = 'local-client';
     const local = createVersionedEntity('raw-conflict', 'raw', localData, clientId, 1);
@@ -121,7 +122,7 @@ class SyncEntityManager {
         serverVersion: server,
         detectedAt: Date.now(),
       },
-      strategy,
+      strategy
     );
   }
 

@@ -10,7 +10,6 @@ import { useQuizStore } from '../../src/store/quizStore';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { ImageCache } from '../../src/utils/imageCache';
 
-
 // Mock offline storage
 const asyncStorageStore: Record<string, string> = {};
 jest.mock('@react-native-async-storage/async-storage', () => ({
@@ -34,11 +33,13 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 
 // Mock expo-network
 jest.mock('expo-network', () => ({
-  getNetworkStateAsync: jest.fn(() => Promise.resolve({
-    isConnected: true,
-    isInternetReachable: true,
-    type: 'WIFI',
-  })),
+  getNetworkStateAsync: jest.fn(() =>
+    Promise.resolve({
+      isConnected: true,
+      isInternetReachable: true,
+      type: 'WIFI',
+    })
+  ),
   NetworkStateType: {
     WIFI: 'WIFI',
     CELLULAR: 'CELLULAR',
@@ -58,7 +59,9 @@ jest.mock('../../src/utils/imageCache', () => ({
 jest.mock('../../src/services/api/courseApi', () => ({
   courseApi: {
     getCourses: jest.fn(() => Promise.resolve([])),
-    getCourse: jest.fn(() => Promise.resolve({ id: 'course_123', thumbnail: 'https://mock.com/thumb.png' })),
+    getCourse: jest.fn(() =>
+      Promise.resolve({ id: 'course_123', thumbnail: 'https://mock.com/thumb.png' })
+    ),
     invalidateCourses: jest.fn(),
     invalidateCourse: jest.fn(),
   },
@@ -93,12 +96,12 @@ describe('PreloadService', () => {
     await AsyncStorage.clear();
     await preloadService.clearMatrix();
     jest.clearAllMocks();
-    
+
     // Reset stores to default mock structures
     useSettingsStore.setState({ downloadOverWifiOnly: true, dataSaverEnabled: false });
     useCourseProgressStore.setState({
       progressMap: {
-        'course_123': {
+        course_123: {
           courseId: 'course_123',
           currentLessonId: 'lesson_1',
           currentSectionId: 'section_1',
@@ -120,7 +123,9 @@ describe('PreloadService', () => {
     it('removes dynamic segments and queries correctly', () => {
       expect(preloadService.normalizePath('/profile/123')).toBe('/profile/[userId]');
       expect(preloadService.normalizePath('/profile/abc-xyz')).toBe('/profile/[userId]');
-      expect(preloadService.normalizePath('/course-viewer?courseId=456&lessonId=789')).toBe('/course-viewer');
+      expect(preloadService.normalizePath('/course-viewer?courseId=456&lessonId=789')).toBe(
+        '/course-viewer'
+      );
       expect(preloadService.normalizePath('/settings')).toBe('/settings');
       expect(preloadService.normalizePath(null)).toBe('');
     });
@@ -133,20 +138,20 @@ describe('PreloadService', () => {
       await preloadService.recordTransition('/(tabs)', '/course-viewer');
       await preloadService.recordTransition('/(tabs)', '/course-viewer');
       await preloadService.recordTransition('/(tabs)', '/course-viewer');
-      
+
       // home -> search: 2 times
       await preloadService.recordTransition('/(tabs)', '/search');
       await preloadService.recordTransition('/(tabs)', '/search');
-      
+
       // home -> settings: 1 time
       await preloadService.recordTransition('/(tabs)', '/settings');
 
       // Fetch predictions
       const predictions = preloadService.getPredictiveDestinations('/(tabs)', 2);
-      
+
       expect(predictions).toHaveLength(2);
       expect(predictions[0]).toBe('/course-viewer'); // Highest frequency
-      expect(predictions[1]).toBe('/search');        // Second highest frequency
+      expect(predictions[1]).toBe('/search'); // Second highest frequency
     });
 
     it('falls back to static defaults when navigation history is empty', () => {
@@ -229,7 +234,7 @@ describe('PreloadService', () => {
     it('executes router bundle prefetching and calls relevant SWR data APIs', async () => {
       // Mock router prefetch
       const mockRouter = { prefetch: jest.fn() };
-      
+
       // We will pretend the next likely destination for home is '/course-viewer' and '/profile/[userId]'
       await preloadService.recordTransition('/(tabs)', '/course-viewer');
       await preloadService.recordTransition('/(tabs)', '/profile/[userId]');
@@ -242,10 +247,10 @@ describe('PreloadService', () => {
 
       // Assert course SWR list fetched
       expect(courseApi.getCourses).toHaveBeenCalled();
-      
+
       // Assert specific active course detail and thumbnail preloaded
       expect(courseApi.getCourse).toHaveBeenCalledWith('course_123');
-      
+
       // Wait for parallel promises in fire-and-forget loops
       await new Promise(process.nextTick);
       expect(ImageCache.prefetchImages).toHaveBeenCalledWith(['https://mock.com/thumb.png']);
@@ -263,7 +268,7 @@ describe('PreloadService', () => {
 
       expect(mockRouter.prefetch).toHaveBeenCalledWith('/quiz');
       expect(loadQuizSpy).toHaveBeenCalledWith('course_123');
-      
+
       loadQuizSpy.mockRestore();
     });
   });

@@ -6,15 +6,15 @@ import { FilterField, FilterSheet, FilterValues } from './FilterSheet';
 import { SearchHistory } from './SearchHistory';
 import { SearchResultCard, SearchResultItem } from './SearchResultCard';
 import { VoiceSearch } from './VoiceSearch';
-import { useSearchIndex } from '../../hooks/useSearchIndex';
 import { useAnalytics, useDebounce, useDynamicFontSize, useMemoryMonitor } from '../../hooks';
 import { usePrefetchImages } from '../../hooks/usePrefetchImages';
+import { useSearchIndex } from '../../hooks/useSearchIndex';
 import { addToSearchHistory } from '../../utils/searchHistory';
 import { AnalyticsEvent } from '../../utils/trackingEvents';
+import { buildTrie } from '../../utils/trie';
 import { validateSearchQuery } from '../../utils/validation';
 import { AppText as Text } from '../common/AppText';
 import { DelegatedKeyboardAvoidingView } from '../common/DelegatedKeyboardAvoidingView';
-import { buildTrie } from '../../utils/trie';
 
 const DEFAULT_FILTERS: FilterField[] = [
   {
@@ -41,9 +41,21 @@ const DEFAULT_FILTERS: FilterField[] = [
 
 // Static fallback keywords used until the index-derived suggestions are ready.
 const FALLBACK_KEYWORDS = [
-  'React Native', 'Mobile Development', 'Expo', 'JavaScript', 'TypeScript',
-  'Web Development', 'Design', 'CSS', 'HTML', 'Node.js', 'Python',
-  'Machine Learning', 'beginner', 'intermediate', 'advanced',
+  'React Native',
+  'Mobile Development',
+  'Expo',
+  'JavaScript',
+  'TypeScript',
+  'Web Development',
+  'Design',
+  'CSS',
+  'HTML',
+  'Node.js',
+  'Python',
+  'Machine Learning',
+  'beginner',
+  'intermediate',
+  'advanced',
 ];
 
 export interface MobileSearchProps {
@@ -85,14 +97,17 @@ export const MobileSearch = ({
     typeof fontSizeScale.scale === 'function' ? fontSizeScale.scale : (value: number) => value;
   const { trackEvent } = useAnalytics();
 
-  const { search: indexSearch, suggestions: indexSuggestions, isReady: indexReady } =
-    useSearchIndex();
+  const {
+    search: indexSearch,
+    suggestions: indexSuggestions,
+    isReady: indexReady,
+  } = useSearchIndex();
 
   useMemoryMonitor({ componentId: 'MobileSearch', itemCount: results.length });
 
   const resultThumbnails = useMemo(
     () => results.map((r: SearchResultItem) => r.thumbnail ?? null),
-    [results],
+    [results]
   );
   usePrefetchImages(resultThumbnails, { auto: true, limit: 10 });
 
@@ -101,9 +116,7 @@ export const MobileSearch = ({
   // Build Trie from index-derived suggestions (real course titles / words)
   // falling back to static keywords until the index is ready.
   const suggestionTrie = useMemo(() => {
-    const words = indexReady && indexSuggestions.length > 0
-      ? indexSuggestions
-      : FALLBACK_KEYWORDS;
+    const words = indexReady && indexSuggestions.length > 0 ? indexSuggestions : FALLBACK_KEYWORDS;
     return buildTrie(words);
   }, [indexReady, indexSuggestions]);
 
@@ -132,12 +145,12 @@ export const MobileSearch = ({
       setHasSearched(true);
       setSuggestionsVisible(false);
     },
-    [filterValues, trackEvent, indexSearch],
+    [filterValues, trackEvent, indexSearch]
   );
 
   const handleResultPress = useCallback(
     (item: SearchResultItem) => onResultPress?.(item),
-    [onResultPress],
+    [onResultPress]
   );
 
   React.useEffect(() => {
@@ -174,7 +187,7 @@ export const MobileSearch = ({
       setQuery(text);
       performSearch(text);
     },
-    [performSearch],
+    [performSearch]
   );
 
   const handleHistorySelect = useCallback(
@@ -182,7 +195,7 @@ export const MobileSearch = ({
       setQuery(text);
       performSearch(text);
     },
-    [performSearch],
+    [performSearch]
   );
 
   const handleVoiceResult = useCallback(
@@ -190,7 +203,7 @@ export const MobileSearch = ({
       setQuery(text);
       performSearch(text);
     },
-    [performSearch],
+    [performSearch]
   );
 
   const handleApplyFilters = useCallback((values: FilterValues) => {

@@ -1,7 +1,8 @@
 import * as React from 'react';
-import type { GestureResponderEvent, ViewProps } from 'react-native';
 import { Animated, Easing } from 'react-native';
+
 import type { GestureCoordinator } from './useGestures';
+import type { GestureResponderEvent, ViewProps } from 'react-native';
 
 export interface LongPressInfo {
   pageX: number;
@@ -26,17 +27,16 @@ export interface UseLongPressOptions {
   id?: string;
 }
 
-export interface LongPressHandlers
-  extends Pick<
-    ViewProps,
-    | 'onStartShouldSetResponder'
-    | 'onMoveShouldSetResponder'
-    | 'onResponderGrant'
-    | 'onResponderMove'
-    | 'onResponderRelease'
-    | 'onResponderTerminate'
-    | 'onResponderTerminationRequest'
-  > {}
+export interface LongPressHandlers extends Pick<
+  ViewProps,
+  | 'onStartShouldSetResponder'
+  | 'onMoveShouldSetResponder'
+  | 'onResponderGrant'
+  | 'onResponderMove'
+  | 'onResponderRelease'
+  | 'onResponderTerminate'
+  | 'onResponderTerminationRequest'
+> {}
 
 function distanceSq(ax: number, ay: number, bx: number, by: number): number {
   const dx = ax - bx;
@@ -107,10 +107,10 @@ export function useLongPress(options: UseLongPressOptions) {
 
   const handlers = React.useMemo<LongPressHandlers>(() => {
     return {
-      onStartShouldSetResponder: (e) => e.nativeEvent.touches.length === 1,
-      onMoveShouldSetResponder: (e) => e.nativeEvent.touches.length === 1,
+      onStartShouldSetResponder: e => e.nativeEvent.touches.length === 1,
+      onMoveShouldSetResponder: e => e.nativeEvent.touches.length === 1,
       onResponderTerminationRequest: () => true,
-      onResponderGrant: (e) => {
+      onResponderGrant: e => {
         if (e.nativeEvent.touches.length !== 1) return;
         const { pageX: x, pageY: y } = e.nativeEvent;
 
@@ -127,11 +127,11 @@ export function useLongPress(options: UseLongPressOptions) {
 
         clearTimer();
         startTimeRef.current = performance.now();
-        
+
         // Use requestAnimationFrame for frame-synced timing
         const checkDuration = (timestamp: number) => {
           if (cancelledRef.current || firedRef.current) return;
-          
+
           const elapsed = timestamp - (startTimeRef.current ?? timestamp);
           if (elapsed >= durationMs) {
             // Duration elapsed, trigger long press
@@ -150,7 +150,7 @@ export function useLongPress(options: UseLongPressOptions) {
             rafRef.current = requestAnimationFrame(checkDuration);
           }
         };
-        
+
         rafRef.current = requestAnimationFrame(checkDuration);
       },
       onResponderMove: (e: GestureResponderEvent) => {
@@ -201,4 +201,3 @@ export function useLongPress(options: UseLongPressOptions) {
 
   return { longPressHandlers: handlers, pressProgress, resetLongPress: reset };
 }
-

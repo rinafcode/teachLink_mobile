@@ -1,8 +1,3 @@
-Here is the complete resolved file for `achievementStore.ts`. I kept the cleaner, syntax-error-free implicit return from the `main` branch. 
-
-Copy and paste this exact code:
-
-```typescript
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -11,11 +6,14 @@ import { useReviewStore } from './reviewStore';
 import { inAppReviewService, ReviewTrigger } from '../services/inAppReview';
 
 const triggerAchievementReview = () => {
-  const { incrementAchievementsUnlocked, getMetrics, recordReviewRequest } = useReviewStore.getState();
+  const { incrementAchievementsUnlocked, getMetrics, recordReviewRequest } =
+    useReviewStore.getState();
   incrementAchievementsUnlocked();
-  inAppReviewService.requestReview(ReviewTrigger.ACHIEVEMENT_UNLOCKED, getMetrics()).then((result) => {
-    recordReviewRequest(ReviewTrigger.ACHIEVEMENT_UNLOCKED, result.shown, result.reason);
-  });
+  inAppReviewService
+    .requestReview(ReviewTrigger.ACHIEVEMENT_UNLOCKED, getMetrics())
+    .then(result => {
+      recordReviewRequest(ReviewTrigger.ACHIEVEMENT_UNLOCKED, result.shown, result.reason);
+    });
 };
 
 /**
@@ -420,4 +418,3 @@ export const useAchievementStore = create<AchievementState>()(
     }
   )
 );
-```

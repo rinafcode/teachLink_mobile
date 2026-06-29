@@ -92,7 +92,7 @@ export function sortRows<T extends GridRow>(
   config: SortConfig,
   columns: ColumnDef<T>[]
 ): T[] {
-  const col = columns.find((c) => c.key === config.columnKey);
+  const col = columns.find(c => c.key === config.columnKey);
   const type = col?.type ?? 'string';
   const { columnKey, direction } = config;
   const multiplier = direction === 'asc' ? 1 : -1;
@@ -135,8 +135,8 @@ export function sortRows<T extends GridRow>(
 export function filterRows<T extends GridRow>(rows: T[], filters: FilterEntry[]): T[] {
   if (filters.length === 0) return rows;
 
-  return rows.filter((row) =>
-    filters.every((filter) => {
+  return rows.filter(row =>
+    filters.every(filter => {
       if (filter.value.trim() === '') return true;
 
       const cellValue = row[filter.columnKey];
@@ -219,8 +219,8 @@ export function serializeToCSV<T extends GridRow>(rows: T[], columns: ColumnDef<
     return str;
   };
 
-  const header = columns.map((c) => escapeCell(c.title)).join(',');
-  const body = rows.map((row) => columns.map((c) => escapeCell(row[c.key])).join(','));
+  const header = columns.map(c => escapeCell(c.title)).join(',');
+  const body = rows.map(row => columns.map(c => escapeCell(row[c.key])).join(','));
 
   return [header, ...body].join('\n');
 }
@@ -230,11 +230,11 @@ export function serializeToCSV<T extends GridRow>(rows: T[], columns: ColumnDef<
  * Only fields defined in `columns` are included in the output.
  */
 export function serializeToJSON<T extends GridRow>(rows: T[], columns: ColumnDef<T>[]): string {
-  const keys = columns.map((c) => c.key);
+  const keys = columns.map(c => c.key);
 
-  const payload = rows.map((row) => {
+  const payload = rows.map(row => {
     const entry: Record<string, unknown> = {};
-    keys.forEach((key) => {
+    keys.forEach(key => {
       entry[key] = row[key] ?? null;
     });
     return entry;

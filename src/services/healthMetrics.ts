@@ -13,8 +13,8 @@
  *  - Network status
  */
 
-import { appLogger } from '../utils/logger';
 import { crashReportingService } from './crashReporting';
+import { appLogger } from '../utils/logger';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -65,14 +65,14 @@ export interface HealthSnapshot {
 }
 
 export interface AlertThresholds {
-  crashRateWarning: number;   // default 2
-  crashRateCritical: number;  // default 5
-  errorRateWarning: number;   // errors/min, default 10
-  errorRateCritical: number;  // errors/min, default 30
-  apiLatencyWarning: number;  // p95 ms, default 1000
+  crashRateWarning: number; // default 2
+  crashRateCritical: number; // default 5
+  errorRateWarning: number; // errors/min, default 10
+  errorRateCritical: number; // errors/min, default 30
+  apiLatencyWarning: number; // p95 ms, default 1000
   apiLatencyCritical: number; // p95 ms, default 3000
-  apiErrorRateWarning: number;   // %, default 5
-  apiErrorRateCritical: number;  // %, default 15
+  apiErrorRateWarning: number; // %, default 5
+  apiErrorRateCritical: number; // %, default 15
 }
 
 export type AlertSeverity = 'ok' | 'warning' | 'critical';
@@ -203,9 +203,7 @@ class HealthMetricsService {
       apiCallCount,
       apiErrorCount,
       apiErrorRate:
-        apiCallCount > 0
-          ? parseFloat(((apiErrorCount / apiCallCount) * 100).toFixed(2))
-          : 0,
+        apiCallCount > 0 ? parseFloat(((apiErrorCount / apiCallCount) * 100).toFixed(2)) : 0,
       activeSessions: this.sessionCount,
       totalSessionsInWindow: totalSessions,
       fps: this.fpsEstimate,
@@ -256,10 +254,38 @@ class HealthMetricsService {
       }
     };
 
-    check('crash_rate', 'Crash Rate', snapshot.crashRate, thresholds.crashRateWarning, thresholds.crashRateCritical, '%');
-    check('error_rate', 'Error Rate', snapshot.errorRatePerMinute, thresholds.errorRateWarning, thresholds.errorRateCritical, '/min');
-    check('api_latency', 'API Latency (p95)', snapshot.apiLatencyP95, thresholds.apiLatencyWarning, thresholds.apiLatencyCritical, 'ms');
-    check('api_error_rate', 'API Error Rate', snapshot.apiErrorRate, thresholds.apiErrorRateWarning, thresholds.apiErrorRateCritical, '%');
+    check(
+      'crash_rate',
+      'Crash Rate',
+      snapshot.crashRate,
+      thresholds.crashRateWarning,
+      thresholds.crashRateCritical,
+      '%'
+    );
+    check(
+      'error_rate',
+      'Error Rate',
+      snapshot.errorRatePerMinute,
+      thresholds.errorRateWarning,
+      thresholds.errorRateCritical,
+      '/min'
+    );
+    check(
+      'api_latency',
+      'API Latency (p95)',
+      snapshot.apiLatencyP95,
+      thresholds.apiLatencyWarning,
+      thresholds.apiLatencyCritical,
+      'ms'
+    );
+    check(
+      'api_error_rate',
+      'API Error Rate',
+      snapshot.apiErrorRate,
+      thresholds.apiErrorRateWarning,
+      thresholds.apiErrorRateCritical,
+      '%'
+    );
 
     if (!snapshot.isOnline) {
       alerts.push({
@@ -290,9 +316,10 @@ class HealthMetricsService {
     // Generate 80 latency samples spread over the last 5 minutes
     for (let i = 0; i < 80; i++) {
       const age = Math.random() * WINDOW_MS;
-      const latency = Math.random() < 0.9
-        ? 100 + Math.random() * 600   // normal: 100–700ms
-        : 1500 + Math.random() * 2000; // outlier: 1.5–3.5s
+      const latency =
+        Math.random() < 0.9
+          ? 100 + Math.random() * 600 // normal: 100–700ms
+          : 1500 + Math.random() * 2000; // outlier: 1.5–3.5s
       const statusCode = Math.random() < 0.92 ? 200 : Math.random() < 0.5 ? 400 : 500;
 
       this.latencySamples.push({

@@ -1,8 +1,9 @@
 import { InteractionManager } from 'react-native';
+
 import { logger } from '../utils/logger';
 
 class BackgroundTaskScheduler {
-  private taskQueue: Array<() => Promise<void>> = [];
+  private taskQueue: (() => Promise<void>)[] = [];
   private isProcessing = false;
 
   public runAfterUI(task: () => void) {
@@ -19,7 +20,7 @@ class BackgroundTaskScheduler {
   private async processQueue() {
     if (this.isProcessing || this.taskQueue.length === 0) return;
     this.isProcessing = true;
-    
+
     const task = this.taskQueue.shift();
     if (task) {
       try {

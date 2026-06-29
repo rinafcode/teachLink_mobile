@@ -6,12 +6,12 @@ The `RequestQueue` service (`src/services/api/requestQueue.ts`) manages offline 
 
 ## Priority Levels
 
-| Priority | Value | Use Case |
-|----------|-------|----------|
-| critical | 0 | Auth tokens, payments, enrollments |
-| high     | 1 | Course progress, quiz submissions |
-| normal   | 2 | Profile updates, content likes |
-| low      | 3 | Analytics events, read-ahead fetches |
+| Priority | Value | Use Case                             |
+| -------- | ----- | ------------------------------------ |
+| critical | 0     | Auth tokens, payments, enrollments   |
+| high     | 1     | Course progress, quiz submissions    |
+| normal   | 2     | Profile updates, content likes       |
+| low      | 3     | Analytics events, read-ahead fetches |
 
 The queue is sorted by priority then FIFO within each priority level.
 
@@ -32,6 +32,7 @@ During sync, requests with the same method + endpoint are grouped:
 ## Analytics
 
 Queue events are tracked via `mobileAnalyticsService.trackEvent()`:
+
 - `request_queued` — when a request enters the queue
 - `request_dequeued` — when a request succeeds
 - `queue_batch_synced` — when a batch merge succeeds

@@ -28,9 +28,7 @@ export interface UseSearchIndexResult {
  */
 export function useSearchIndex(): UseSearchIndexResult {
   const [isReady, setIsReady] = useState(searchIndexService.ready);
-  const [suggestions, setSuggestions] = useState<string[]>(
-    searchIndexService.getSuggestions(),
-  );
+  const [suggestions, setSuggestions] = useState<string[]>(searchIndexService.getSuggestions());
   const [indexedCount, setIndexedCount] = useState(searchIndexService.indexedCount);
   const mounted = useRef(true);
 
@@ -75,9 +73,8 @@ export function useSearchIndex(): UseSearchIndexResult {
   }, [rebuild, sync]);
 
   const search = useCallback(
-    (query: string, filters?: FilterValues) =>
-      searchIndexService.search(query, filters),
-    [],
+    (query: string, filters?: FilterValues) => searchIndexService.search(query, filters),
+    []
   );
 
   return { search, suggestions, isReady, indexedCount, rebuild };

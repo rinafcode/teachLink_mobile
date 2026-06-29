@@ -4,10 +4,7 @@ module.exports = function (api) {
   return {
     presets: [['babel-preset-expo', { jsxImportSource: 'nativewind' }], 'nativewind/babel'],
     plugins: [
-      [
-        require.resolve('./tools/babel-plugins/productionOptimizer'),
-        { production: isProduction },
-      ],
+      [require.resolve('./tools/babel-plugins/productionOptimizer'), { production: isProduction }],
       'react-native-reanimated/plugin',
     ],
   };

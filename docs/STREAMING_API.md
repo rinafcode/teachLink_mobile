@@ -1,9 +1,10 @@
-/**
- * STREAMING API INTEGRATION DOCUMENTATION
- * 
- * This document provides guidance on implementing streaming API responses
- * for progressive rendering with faster TTFB in the TeachLink mobile app.
- */
+/\*\*
+
+- STREAMING API INTEGRATION DOCUMENTATION
+-
+- This document provides guidance on implementing streaming API responses
+- for progressive rendering with faster TTFB in the TeachLink mobile app.
+  \*/
 
 ## Overview
 
@@ -24,23 +25,28 @@ allowing data to be displayed incrementally as chunks arrive from the server.
 ### Core Components
 
 #### 1. **StreamingApiService** (`src/services/api/streaming.ts`)
+
 Low-level streaming implementation using native Fetch API.
 
 **Key Methods:**
+
 - `stream<T>(endpoint, config)` - Stream data with callbacks
 - `streamWithRetry<T>(endpoint, config)` - Stream with automatic retry
 - `measureTTFB(endpoint)` - Measure Time To First Byte
 
 **Features:**
+
 - NDJSON (newline-delimited JSON) support
 - JSON array format support
 - Progress tracking
 - Automatic error recovery
 
 #### 2. **useStreamingData Hook** (`src/hooks/useStreamingData.ts`)
+
 React hook for consuming streaming data in components.
 
 **Key Features:**
+
 - Progressive state updates
 - Automatic deduplication
 - TTFB metrics
@@ -48,6 +54,7 @@ React hook for consuming streaming data in components.
 - Manual retry capability
 
 #### 3. **StreamingProgressBar Component** (`src/components/common/StreamingProgressBar.tsx`)
+
 Visual feedback component showing streaming progress.
 
 ---
@@ -65,6 +72,7 @@ Content-Type: application/x-ndjson
 ```
 
 **NDJSON Format Example:**
+
 ```
 {"id": 1, "title": "Course 1", "progress": 0}
 {"id": 2, "title": "Course 2", "progress": 50}
@@ -76,7 +84,7 @@ Content-Type: application/x-ndjson
 Update `src/services/api/index.ts`:
 
 ```typescript
-export { streamingApi } from "./streaming";
+export { streamingApi } from './streaming';
 ```
 
 ### Step 3: Use in Components
@@ -127,36 +135,33 @@ export const SearchResults = () => {
 #### Advanced Usage with Callbacks
 
 ```typescript
-const { data, ttfb, retry } = useStreamingData(
-  '/api/large-dataset',
-  {
-    maxRetries: 3,
-    deduplicateKey: 'id',
-    transform: (item) => ({
-      ...item,
-      loaded: true,
-      loadedAt: new Date(),
-    }),
-    onChunk: (chunk) => {
-      // Custom chunk handling
-      analytics.trackDataChunk({
-        index: chunk.index,
-        timestamp: chunk.timestamp,
-      });
-    },
-    onProgress: (progress) => {
-      console.log(`${progress}% loaded`);
-    },
-    onFirstByte: (ttfb) => {
-      console.log(`TTFB: ${ttfb}ms`);
-      // Log to analytics
-    },
-    onError: (error) => {
-      logger.error('Streaming failed', error);
-      // Show error UI
-    },
-  }
-);
+const { data, ttfb, retry } = useStreamingData('/api/large-dataset', {
+  maxRetries: 3,
+  deduplicateKey: 'id',
+  transform: item => ({
+    ...item,
+    loaded: true,
+    loadedAt: new Date(),
+  }),
+  onChunk: chunk => {
+    // Custom chunk handling
+    analytics.trackDataChunk({
+      index: chunk.index,
+      timestamp: chunk.timestamp,
+    });
+  },
+  onProgress: progress => {
+    console.log(`${progress}% loaded`);
+  },
+  onFirstByte: ttfb => {
+    console.log(`TTFB: ${ttfb}ms`);
+    // Log to analytics
+  },
+  onError: error => {
+    logger.error('Streaming failed', error);
+    // Show error UI
+  },
+});
 ```
 
 #### TTFB Measurement
@@ -286,11 +291,7 @@ import { useTTFBMeasurement } from '@/hooks';
 import { appLogger } from '@/utils/logger';
 
 const performanceMetrics = async () => {
-  const endpoints = [
-    '/api/courses',
-    '/api/search',
-    '/api/messages',
-  ];
+  const endpoints = ['/api/courses', '/api/search', '/api/messages'];
 
   for (const endpoint of endpoints) {
     const ttfb = await streamingApi.measureTTFB(endpoint);
@@ -306,19 +307,16 @@ const performanceMetrics = async () => {
 ### Network Errors
 
 ```typescript
-const { data, error, retry } = useStreamingData(
-  '/api/data',
-  {
-    maxRetries: 3,
-    onError: (error) => {
-      if (error.message.includes('timeout')) {
-        Alert.alert('Network Timeout', 'Please check your connection');
-      } else {
-        Alert.alert('Error', error.message);
-      }
-    },
-  }
-);
+const { data, error, retry } = useStreamingData('/api/data', {
+  maxRetries: 3,
+  onError: error => {
+    if (error.message.includes('timeout')) {
+      Alert.alert('Network Timeout', 'Please check your connection');
+    } else {
+      Alert.alert('Error', error.message);
+    }
+  },
+});
 ```
 
 ### Partial Response Recovery
@@ -328,7 +326,7 @@ const { data, error, retry } = useStreamingData(
 // even if a stream is interrupted
 const { data, error } = useStreamingData('/api/large-list', {
   format: 'ndjson', // Each line is independent
-  onChunk: (chunk) => {
+  onChunk: chunk => {
     // Save each chunk to persistent storage
     saveToLocalStorage(chunk.data);
   },
@@ -349,9 +347,7 @@ import { useStreamingData } from '@/hooks';
 
 describe('useStreamingData', () => {
   it('should stream data progressively', async () => {
-    const { result } = renderHook(() =>
-      useStreamingData('/api/test', { autoFetch: true })
-    );
+    const { result } = renderHook(() => useStreamingData('/api/test', { autoFetch: true }));
 
     await waitFor(() => {
       expect(result.current.isStreaming).toBe(true);
@@ -367,9 +363,7 @@ describe('useStreamingData', () => {
   });
 
   it('should retry on failure', async () => {
-    const { result } = renderHook(() =>
-      useStreamingData('/api/error', { autoFetch: false })
-    );
+    const { result } = renderHook(() => useStreamingData('/api/error', { autoFetch: false }));
 
     await result.current.fetch();
     expect(result.current.error).toBeDefined();
@@ -409,6 +403,7 @@ describe('Streaming Integration', () => {
 ### Issue: TTFB Not Improving
 
 **Solution:**
+
 1. Verify backend supports chunked transfer encoding
 2. Check network tab in dev tools
 3. Ensure response header includes `Transfer-Encoding: chunked`
@@ -417,6 +412,7 @@ describe('Streaming Integration', () => {
 ### Issue: Chunks Not Appearing
 
 **Solution:**
+
 1. Verify NDJSON format (one object per line)
 2. Check endpoint returns correct content-type
 3. Ensure `format` option matches backend
@@ -425,6 +421,7 @@ describe('Streaming Integration', () => {
 ### Issue: Memory Still High
 
 **Solution:**
+
 1. Implement batch processing for large lists
 2. Use virtualization (FlatList with `windowSize`)
 3. Clear old data periodically
@@ -435,6 +432,7 @@ describe('Streaming Integration', () => {
 ## Best Practices
 
 1. **Always Use Deduplication**
+
    ```typescript
    useStreamingData(endpoint, {
      deduplicateKey: 'id', // Prevent duplicate items
@@ -442,19 +440,22 @@ describe('Streaming Integration', () => {
    ```
 
 2. **Monitor TTFB**
+
    ```typescript
-   onFirstByte: (ttfb) => {
+   onFirstByte: ttfb => {
      analytics.track('streaming_ttfb', { ttfb });
-   }
+   };
    ```
 
 3. **Handle Errors Gracefully**
+
    ```typescript
    const { data, error, retry } = useStreamingData(endpoint);
    if (error) return <ErrorView onRetry={retry} />;
    ```
 
 4. **Use Progress Bar for UX**
+
    ```typescript
    <StreamingProgressBar
      progress={progress}
@@ -466,7 +467,7 @@ describe('Streaming Integration', () => {
 5. **Validate Data Structure**
    ```typescript
    useStreamingData(endpoint, {
-     transform: (item) => {
+     transform: item => {
        // Validate and transform each chunk
        return validateItem(item);
      },

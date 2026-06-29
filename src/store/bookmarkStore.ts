@@ -1,7 +1,6 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import apiService from '../services/api';
 import logger from '../utils/logger';
@@ -27,8 +26,8 @@ export const useBookmarkStore = create<BookmarkState>()(
       bookmarks: [],
       isLoading: false,
 
-      addBookmark: async (item) => {
-        set((s) => ({ bookmarks: [...s.bookmarks, item] }));
+      addBookmark: async item => {
+        set(s => ({ bookmarks: [...s.bookmarks, item] }));
         try {
           await apiService.post('/api/bookmarks', { itemId: item.itemId, itemType: item.itemType });
         } catch (error: any) {
@@ -38,8 +37,8 @@ export const useBookmarkStore = create<BookmarkState>()(
         }
       },
 
-      removeBookmark: async (itemId) => {
-        set((s) => ({ bookmarks: s.bookmarks.filter((b) => b.itemId !== itemId) }));
+      removeBookmark: async itemId => {
+        set(s => ({ bookmarks: s.bookmarks.filter(b => b.itemId !== itemId) }));
         try {
           await apiService.delete(`/api/bookmarks/${itemId}`);
         } catch (error: any) {
@@ -49,12 +48,12 @@ export const useBookmarkStore = create<BookmarkState>()(
         }
       },
 
-      isBookmarked: (itemId) => get().bookmarks.some((b) => b.itemId === itemId),
+      isBookmarked: itemId => get().bookmarks.some(b => b.itemId === itemId),
     }),
     {
       name: 'bookmarks',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({ bookmarks: state.bookmarks }),
-    },
-  ),
+      partialize: state => ({ bookmarks: state.bookmarks }),
+    }
+  )
 );

@@ -1,5 +1,5 @@
-import { InternalAxiosRequestConfig } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { InternalAxiosRequestConfig } from 'axios';
 import * as Network from 'expo-network';
 
 import { requestQueue } from '../../../src/services/api/requestQueue';
@@ -26,7 +26,9 @@ jest.mock('../../../src/services/mobileAnalytics', () => ({
   },
 }));
 
-const mockConfig = (overrides: Partial<InternalAxiosRequestConfig> = {}): InternalAxiosRequestConfig =>
+const mockConfig = (
+  overrides: Partial<InternalAxiosRequestConfig> = {}
+): InternalAxiosRequestConfig =>
   ({
     method: 'GET',
     url: '/api/courses',
@@ -89,7 +91,7 @@ describe('RequestQueue', () => {
       await requestQueue.addToQueue(mockConfig());
       expect(AsyncStorage.setItem).toHaveBeenCalledWith(
         '@teachlink_request_queue',
-        expect.any(String),
+        expect.any(String)
       );
     });
   });
@@ -200,8 +202,14 @@ describe('RequestQueue', () => {
     it('should batch multiple requests to same endpoint', async () => {
       const client = jest.fn().mockResolvedValue({ data: 'ok' });
 
-      await requestQueue.addToQueue(mockConfig({ method: 'PUT', url: '/api/profile', data: { name: 'a' } }), 'normal');
-      await requestQueue.addToQueue(mockConfig({ method: 'PUT', url: '/api/profile', data: { name: 'b' } }), 'normal');
+      await requestQueue.addToQueue(
+        mockConfig({ method: 'PUT', url: '/api/profile', data: { name: 'a' } }),
+        'normal'
+      );
+      await requestQueue.addToQueue(
+        mockConfig({ method: 'PUT', url: '/api/profile', data: { name: 'b' } }),
+        'normal'
+      );
 
       await requestQueue.processQueue(client);
 

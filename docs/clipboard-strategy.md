@@ -45,7 +45,7 @@ sequenceDiagram
    We use the native `setStringAsync` and `getStringAsync` calls from `expo-clipboard`. This delegates the actual clipboard read/write operation to native background worker threads, minimizing main thread blockage.
 
 2. **React Render Pre-emption**:
-   Before initiating the bridge call, we update the React loading state (`isCopying = true`). We then wrap the clipboard call in `InteractionManager.runAfterInteractions` combined with a `setTimeout(..., 0)` macro-task. This guarantees that React finishes its render cycle and paints the loading indicator onto the screen *before* the JS thread gets occupied by string serialization.
+   Before initiating the bridge call, we update the React loading state (`isCopying = true`). We then wrap the clipboard call in `InteractionManager.runAfterInteractions` combined with a `setTimeout(..., 0)` macro-task. This guarantees that React finishes its render cycle and paints the loading indicator onto the screen _before_ the JS thread gets occupied by string serialization.
 
 3. **Telemetry & Profiling**:
    Every clipboard action records start and end timestamps using `performance.now()`. These metrics (duration, size in bytes) are saved into a telemetry object (`ClipboardOperationMetrics`) and logged, enabling performance monitoring and regression detection.
@@ -67,19 +67,11 @@ Always use the custom React hook rather than calling native clipboard APIs direc
 import { useOptimizedClipboard } from '@/hooks/useOptimizedClipboard';
 
 function MyComponent() {
-  const { 
-    isCopying, 
-    copySuccess, 
-    copyToClipboard, 
-    metrics 
-  } = useOptimizedClipboard();
+  const { isCopying, copySuccess, copyToClipboard, metrics } = useOptimizedClipboard();
 
   return (
-    <Button 
-      onPress={() => copyToClipboard("Some large content...")}
-      disabled={isCopying}
-    >
-      {isCopying ? "Copying..." : copySuccess ? "Copied!" : "Copy"}
+    <Button onPress={() => copyToClipboard('Some large content...')} disabled={isCopying}>
+      {isCopying ? 'Copying...' : copySuccess ? 'Copied!' : 'Copy'}
     </Button>
   );
 }

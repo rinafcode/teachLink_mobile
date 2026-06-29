@@ -2,18 +2,13 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 
-import {
-  CourseCardSkeleton,
-  SearchResultItem,
-  SearchScreenSkeleton,
-  Skeleton,
-} from '@/components';
+import { CourseCardSkeleton, SearchResultItem, SearchScreenSkeleton, Skeleton } from '@/components';
 import { sampleCourse } from '@/data/sampleCourse';
 import { createLazyRoute } from '@/utils/lazyRoute';
 
 const LazyMobileSearch = createLazyRoute({
   importFn: () =>
-    import('@/components/mobile/MobileSearch').then((m) => ({ default: m.MobileSearch })),
+    import('@/components/mobile/MobileSearch').then(m => ({ default: m.MobileSearch })),
   LoadingFallback: SearchScreenSkeleton,
   boundaryName: 'SearchRoute',
 });
@@ -46,7 +41,7 @@ const SearchTab = () => {
   useEffect(() => {
     const cleanup = fetchSearchData();
     return cleanup;
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- simulated search fetch runs once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- simulated search fetch runs once on mount
   }, []);
 
   const handleResultPress = (item: SearchResultItem) => {

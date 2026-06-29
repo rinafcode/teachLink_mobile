@@ -21,8 +21,8 @@ import { LinkingOptions } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
 import * as Notifications from 'expo-notifications';
 
-import { NotificationData, NotificationType } from '../types/notifications';
 import { RootStackParamList } from './types';
+import { NotificationData, NotificationType } from '../types/notifications';
 import logger from '../utils/logger';
 
 // ─── Scheme & prefix ─────────────────────────────────────────────────────────
@@ -118,9 +118,7 @@ function buildNotificationDeepLink(data: NotificationData): string | null {
       return data.courseId ? `${base}course/${data.courseId}` : `${base}courses`;
 
     case NotificationType.MESSAGE:
-      return data.conversationId
-        ? `${base}messages/${data.conversationId}`
-        : `${base}messages`;
+      return data.conversationId ? `${base}messages/${data.conversationId}` : `${base}messages`;
 
     case NotificationType.LEARNING_REMINDER:
       return `${base}learn`;
@@ -131,9 +129,7 @@ function buildNotificationDeepLink(data: NotificationData): string | null {
         : `${base}achievements`;
 
     case NotificationType.COMMUNITY_ACTIVITY:
-      return data.postId
-        ? `${base}community/${data.postId}`
-        : `${base}community`;
+      return data.postId ? `${base}community/${data.postId}` : `${base}community`;
 
     default:
       logger.warn('buildNotificationDeepLink: unhandled notification type', {
@@ -173,7 +169,7 @@ export function buildScreenUrl(
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallback: T): Promise<T> {
   return Promise.race([
     promise,
-    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), timeoutMs)),
+    new Promise<T>(resolve => setTimeout(() => resolve(fallback), timeoutMs)),
   ]);
 }
 
@@ -194,12 +190,7 @@ function extractNotificationData(
 // ─── Linking config ───────────────────────────────────────────────────────────
 
 export const linking: LinkingOptions<RootStackParamList> = {
-  prefixes: [
-    prefix,
-    CUSTOM_SCHEME,
-    'https://teachlink.com',
-    'https://www.teachlink.com',
-  ],
+  prefixes: [prefix, CUSTOM_SCHEME, 'https://teachlink.com', 'https://www.teachlink.com'],
 
   config: {
     screens: SCREEN_PATHS as Record<keyof RootStackParamList, string>,
@@ -214,29 +205,23 @@ export const linking: LinkingOptions<RootStackParamList> = {
    *  3. null  → navigate to the default screen
    */
   async getInitialURL(): Promise<string | null> {
-    const responsePromise = Notifications.getLastNotificationResponseAsync().then(
-      (response) => {
-        if (!response) return null;
-        const data = extractNotificationData(response);
-        if (!data) return null;
-        const url = buildNotificationDeepLink(data);
-        if (url) {
-          emitDeepLinkEvent({
-            source: 'notification',
-            notificationType: data.type,
-            resolvedUrl: url,
-            timestamp: Date.now(),
-          });
-        }
-        return url;
+    const responsePromise = Notifications.getLastNotificationResponseAsync().then(response => {
+      if (!response) return null;
+      const data = extractNotificationData(response);
+      if (!data) return null;
+      const url = buildNotificationDeepLink(data);
+      if (url) {
+        emitDeepLinkEvent({
+          source: 'notification',
+          notificationType: data.type,
+          resolvedUrl: url,
+          timestamp: Date.now(),
+        });
       }
-    );
+      return url;
+    });
 
-    const notificationUrl = await withTimeout(
-      responsePromise,
-      INITIAL_URL_TIMEOUT_MS,
-      null
-    );
+    const notificationUrl = await withTimeout(responsePromise, INITIAL_URL_TIMEOUT_MS, null);
 
     if (notificationUrl) return notificationUrl;
 
@@ -268,43 +253,39 @@ export const linking: LinkingOptions<RootStackParamList> = {
     });
 
     // User tapped a notification while the app was backgrounded/killed
-    const responseSubscription = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
-        const data = extractNotificationData(response);
-        if (!data) return;
-        const url = buildNotificationDeepLink(data);
-        if (!url) return;
-        emitDeepLinkEvent({
-          source: 'notification',
-          notificationType: data.type,
-          resolvedUrl: url,
-          timestamp: Date.now(),
-        });
-        listener(url);
-      }
-    );
+    const responseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
+      const data = extractNotificationData(response);
+      if (!data) return;
+      const url = buildNotificationDeepLink(data);
+      if (!url) return;
+      emitDeepLinkEvent({
+        source: 'notification',
+        notificationType: data.type,
+        resolvedUrl: url,
+        timestamp: Date.now(),
+      });
+      listener(url);
+    });
 
     // Notification received while app is in the foreground — navigate directly
     // (React Navigation's subscriber doesn't fire for foreground notifications)
-    const foregroundSubscription = Notifications.addNotificationReceivedListener(
-      (notification) => {
-        const raw = notification.request.content.data;
-        if (!raw || typeof raw !== 'object') return;
-        const data = extractNotificationData({ notification } as Notifications.NotificationResponse);
-        if (!data) return;
-        const url = buildNotificationDeepLink(data);
-        if (!url) return;
-        emitDeepLinkEvent({
-          source: 'foreground',
-          notificationType: data.type,
-          resolvedUrl: url,
-          timestamp: Date.now(),
-        });
-        // Only navigate for foreground notifications when the caller opts in.
-        // Pass the URL through the same listener so React Navigation handles routing.
-        listener(url);
-      }
-    );
+    const foregroundSubscription = Notifications.addNotificationReceivedListener(notification => {
+      const raw = notification.request.content.data;
+      if (!raw || typeof raw !== 'object') return;
+      const data = extractNotificationData({ notification } as Notifications.NotificationResponse);
+      if (!data) return;
+      const url = buildNotificationDeepLink(data);
+      if (!url) return;
+      emitDeepLinkEvent({
+        source: 'foreground',
+        notificationType: data.type,
+        resolvedUrl: url,
+        timestamp: Date.now(),
+      });
+      // Only navigate for foreground notifications when the caller opts in.
+      // Pass the URL through the same listener so React Navigation handles routing.
+      listener(url);
+    });
 
     return () => {
       linkingSubscription.remove();
@@ -338,30 +319,26 @@ export interface NotificationNavigationHandle {
 export function setupNotificationNavigation(
   callbacks: NotificationNavigationCallbacks = {}
 ): NotificationNavigationHandle {
-  const responseSubscription = Notifications.addNotificationResponseReceivedListener(
-    (response) => {
-      logger.info('Notification tapped', {
-        notificationId: response.notification.request.identifier,
-        actionId: response.actionIdentifier,
-      });
-      const data = extractNotificationData(response);
-      if (!data) return;
-      const url = buildNotificationDeepLink(data);
-      if (url) callbacks.onOpen?.(url, data);
-    }
-  );
+  const responseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
+    logger.info('Notification tapped', {
+      notificationId: response.notification.request.identifier,
+      actionId: response.actionIdentifier,
+    });
+    const data = extractNotificationData(response);
+    if (!data) return;
+    const url = buildNotificationDeepLink(data);
+    if (url) callbacks.onOpen?.(url, data);
+  });
 
-  const foregroundSubscription = Notifications.addNotificationReceivedListener(
-    (notification) => {
-      logger.info('Notification received in foreground', {
-        notificationId: notification.request.identifier,
-        title: notification.request.content.title,
-      });
-      const data = extractNotificationData({ notification } as Notifications.NotificationResponse);
-      if (!data) return;
-      callbacks.onForeground?.(notification, data);
-    }
-  );
+  const foregroundSubscription = Notifications.addNotificationReceivedListener(notification => {
+    logger.info('Notification received in foreground', {
+      notificationId: notification.request.identifier,
+      title: notification.request.content.title,
+    });
+    const data = extractNotificationData({ notification } as Notifications.NotificationResponse);
+    if (!data) return;
+    callbacks.onForeground?.(notification, data);
+  });
 
   return {
     cleanup: () => {

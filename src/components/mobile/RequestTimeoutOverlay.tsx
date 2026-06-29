@@ -1,11 +1,6 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Animated,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
+
 import { useRequestTimeout, REQUEST_TIMEOUT_MS } from '../../hooks/useRequestTimeout';
 
 export interface RequestTimeoutOverlayProps {
@@ -23,14 +18,13 @@ export interface RequestTimeoutOverlayProps {
  * Shows a countdown progress bar while a request is in-flight.
  * When the timeout is reached, displays a Retry button.
  */
-export function RequestTimeoutOverlay({
+export const RequestTimeoutOverlay = ({
   loading,
   onRetry,
   timeoutMs = REQUEST_TIMEOUT_MS,
   message = 'Waiting for response…',
-}: RequestTimeoutOverlayProps) {
-  const { progress, remaining, isTimedOut, start, reset } =
-    useRequestTimeout(timeoutMs);
+}: RequestTimeoutOverlayProps) => {
+  const { progress, remaining, isTimedOut, start, reset } = useRequestTimeout(timeoutMs);
 
   // Start countdown when loading begins, reset when it ends
   React.useEffect(() => {
@@ -53,9 +47,7 @@ export function RequestTimeoutOverlay({
   return (
     <View style={styles.container} accessibilityLiveRegion="polite">
       {/* Message + countdown */}
-      <Text style={styles.message}>
-        {isTimedOut ? 'Request timed out' : message}
-      </Text>
+      <Text style={styles.message}>{isTimedOut ? 'Request timed out' : message}</Text>
       {!isTimedOut && (
         <Text style={styles.countdown} accessibilityLabel={`${secondsLeft} seconds remaining`}>
           {secondsLeft}s
@@ -80,7 +72,7 @@ export function RequestTimeoutOverlay({
       )}
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {

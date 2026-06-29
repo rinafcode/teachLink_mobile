@@ -48,9 +48,7 @@ export interface KeyboardDelegateOptions {
  *
  * @param options - Optional show/hide callbacks for side-effects.
  */
-export function useKeyboardDelegate(
-  options: KeyboardDelegateOptions = {}
-): KeyboardState {
+export function useKeyboardDelegate(options: KeyboardDelegateOptions = {}): KeyboardState {
   const { onShow, onHide } = options;
 
   const [state, setState] = useState<KeyboardState>({
@@ -62,8 +60,12 @@ export function useKeyboardDelegate(
   // Keep callback refs stable so the effect doesn't re-run on every render
   const onShowRef = useRef(onShow);
   const onHideRef = useRef(onHide);
-  useEffect(() => { onShowRef.current = onShow; }, [onShow]);
-  useEffect(() => { onHideRef.current = onHide; }, [onHide]);
+  useEffect(() => {
+    onShowRef.current = onShow;
+  }, [onShow]);
+  useEffect(() => {
+    onHideRef.current = onHide;
+  }, [onHide]);
 
   useEffect(() => {
     // Use the correct event names per platform

@@ -125,7 +125,7 @@ class ScrollPositionService {
   async clearOldPositions(): Promise<void> {
     try {
       const keys = await AsyncStorage.getAllKeys();
-      const scrollKeys = keys.filter((key) => key.startsWith(SCROLL_POSITION_PREFIX));
+      const scrollKeys = keys.filter(key => key.startsWith(SCROLL_POSITION_PREFIX));
 
       const now = Date.now();
       const keysToRemove: string[] = [];
@@ -168,7 +168,7 @@ class ScrollPositionService {
   async clearAll(): Promise<void> {
     try {
       const keys = await AsyncStorage.getAllKeys();
-      const scrollKeys = keys.filter((key) => key.startsWith(SCROLL_POSITION_PREFIX));
+      const scrollKeys = keys.filter(key => key.startsWith(SCROLL_POSITION_PREFIX));
       await AsyncStorage.multiRemove(scrollKeys);
       this.positionCache.clear();
       logger.debug('ScrollPositionService: Cleared all positions');

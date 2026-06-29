@@ -1,7 +1,8 @@
-import * as Linking from 'expo-linking';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import logger from '../utils/logger';
+import * as Linking from 'expo-linking';
+
 import { ParsedDeepLink, parseDeepLinkUrl } from '../utils/linkParser';
+import logger from '../utils/logger';
 
 const DEFERRED_DEEP_LINK_KEY = '@teachlink:deferredDeepLink';
 
@@ -68,9 +69,7 @@ export async function trackDeferredDeepLink(url: string): Promise<void> {
   }
 }
 
-export function subscribeToDeepLinks(
-  listener: (deepLink: ParsedDeepLink) => void
-): () => void {
+export function subscribeToDeepLinks(listener: (deepLink: ParsedDeepLink) => void): () => void {
   const subscription = Linking.addEventListener('url', ({ url }) => {
     const parsed = parseDeepLinkUrl(url);
     if (parsed) {

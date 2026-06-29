@@ -34,4 +34,3 @@ This document outlines TeachLink Mobile's approach to graceful degradation when 
 - Test on simulator to verify push notification degradation behavior.
 - Deny permissions to test camera fallback to library and manual location entry.
 - Test devices without GPS to ensure manual flow works.
-

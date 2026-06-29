@@ -1,18 +1,18 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import {
-    clearCache,
-    fetchWithSWR,
-    getCache,
-    getCacheStats,
-    getCacheStatus,
-    invalidateCacheByDataVersion,
-    invalidateCacheByTags,
-    invalidateCacheForBatchRequests,
-    invalidateCacheForMutation,
-    resetCacheStats,
-    setCache,
-    setMaxCacheSize,
+  clearCache,
+  fetchWithSWR,
+  getCache,
+  getCacheStats,
+  getCacheStatus,
+  invalidateCacheByDataVersion,
+  invalidateCacheByTags,
+  invalidateCacheForBatchRequests,
+  invalidateCacheForMutation,
+  resetCacheStats,
+  setCache,
+  setMaxCacheSize,
 } from '../../../services/api/cache';
 
 const mockedAsyncStorage = AsyncStorage as jest.Mocked<typeof AsyncStorage>;
@@ -194,9 +194,11 @@ describe('three-tier cache behavior', () => {
     setCache('users:u1', { id: 'u1', name: 'Ada' }, 60_000, 30_000);
     await new Promise(resolve => setTimeout(resolve, 5));
 
-    const fetcher = jest.fn().mockImplementation(
-      () => new Promise(resolve => setTimeout(() => resolve({ id: 'u1', name: 'Grace' }), 10))
-    );
+    const fetcher = jest
+      .fn()
+      .mockImplementation(
+        () => new Promise(resolve => setTimeout(() => resolve({ id: 'u1', name: 'Grace' }), 10))
+      );
 
     const responsePromise = fetchWithSWR('users:u1', fetcher, 1, 30_000);
 

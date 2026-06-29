@@ -24,7 +24,7 @@ describe('sync conflict resolution', () => {
       'course',
       { title: 'Intro', summary: 'Base' },
       'client-a',
-      1,
+      1
     );
     const local = applyLocalMutation(base, { title: 'Client title' });
     const server = {
@@ -48,7 +48,7 @@ describe('sync conflict resolution', () => {
         metadata: { level: 'beginner', duration: 10 },
       },
       'client-a',
-      1,
+      1
     );
     const local = applyLocalMutation(base, {
       title: 'Client title',
@@ -84,7 +84,7 @@ describe('sync conflict resolution', () => {
       'note',
       { body: 'Original', tags: ['lesson'] },
       'client-a',
-      4,
+      4
     );
     const local = applyLocalMutation(base, { body: 'Client edit' });
     const server = {
@@ -103,7 +103,10 @@ describe('sync conflict resolution', () => {
   it('supports server-wins, client-wins, and last-write-wins strategies', () => {
     const local = createVersionedEntity('msg-1', 'message', { body: 'Local' }, 'client-a', 1);
     const server = createVersionedEntity('msg-1', 'message', { body: 'Server' }, 'server', 2);
-    const conflict = buildConflict({ ...local, clientSeq: 1, timestamp: 200 }, { ...server, timestamp: 100 });
+    const conflict = buildConflict(
+      { ...local, clientSeq: 1, timestamp: 200 },
+      { ...server, timestamp: 100 }
+    );
 
     expect(resolveConflict(conflict, 'server-wins').resolved.data.body).toBe('Server');
     expect(resolveConflict(conflict, 'client-wins').resolved.data.body).toBe('Local');
@@ -116,7 +119,7 @@ describe('sync conflict resolution', () => {
       'course',
       { title: 'Intro', summary: 'Base' },
       'client-a',
-      1,
+      1
     );
     const server = {
       ...base,
@@ -139,7 +142,7 @@ describe('sync conflict resolution', () => {
       'course',
       { title: 'Intro', summary: 'Base' },
       'client-a',
-      1,
+      1
     );
     syncEntityManager.applyLocalPatch('course', 'course-3', { title: 'Client title' });
 
@@ -150,7 +153,7 @@ describe('sync conflict resolution', () => {
         version: 2,
         clientId: 'server',
       },
-      'merge',
+      'merge'
     );
 
     expect(result.hadConflict).toBe(true);

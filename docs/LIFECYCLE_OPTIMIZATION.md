@@ -28,5 +28,6 @@ Acceptance criteria mapping
 Notes
 
 This approach prefers central, low-impact changes:
+
 - Most components already consult `useDeviceUiComplexity()` to decide on heavy effects. For components that don't, consider adding a check for `useDeviceStore(state => state.isInBackground)`.
 - For long-running native timers or background tasks, consider platform-specific background task APIs (not covered here).

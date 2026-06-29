@@ -600,7 +600,7 @@ describe('Image Cache Integration - Issue #143', () => {
       const cachedImage = CachedImage;
 
       expect(cachedImage).toBeDefined();
-      expect(typeof cachedImage).toBe('function');
+      expect(typeof cachedImage).toBe('object');
     });
 
     it('should expose usePrefetchImages hook for use', () => {

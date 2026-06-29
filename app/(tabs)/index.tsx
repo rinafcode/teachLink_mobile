@@ -9,7 +9,7 @@ import { ScreenName } from '@/utils/trackingEvents';
 
 const LazyHomeScreenContent = createLazyRoute({
   importFn: () =>
-    import('@/screens/HomeScreenContent').then((m) => ({ default: m.HomeScreenContent })),
+    import('@/screens/HomeScreenContent').then(m => ({ default: m.HomeScreenContent })),
   LoadingFallback: HomeScreenSkeleton,
   boundaryName: 'HomeRoute',
 });
@@ -51,7 +51,7 @@ const HomeScreen = () => {
   useEffect(() => {
     const cleanup = fetchHomeData();
     return cleanup;
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- simulated home fetch runs once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- simulated home fetch runs once on mount
   }, []);
 
   if (isLoading) {

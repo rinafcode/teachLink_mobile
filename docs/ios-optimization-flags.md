@@ -8,28 +8,28 @@ The production iOS build is configured with aggressive LLVM compilation flags to
 
 ## Configured Flags
 
-| Flag | Value | Description |
-|------|-------|-------------|
-| `SWIFT_OPTIMIZATION_LEVEL` | `-O` | Enables whole-module Swift optimization (equivalent to `-O` / Optimize for Speed) |
-| `GCC_OPTIMIZATION_LEVEL` | `3` | Maps to Clang/LLVM `-O3`: enables aggressive loop unrolling, vectorization, and inlining |
-| `LLVM_LTO` | `YES` | Enables Link Time Optimization — allows the linker to inline and eliminate dead code across translation units |
-| `ENABLE_BITCODE` | `YES` | Embeds LLVM bitcode in the binary, allowing App Store re-optimization and thinner downloads |
-| `DEAD_CODE_STRIPPING` | `YES` | Removes unreachable code and data segments at link time |
-| `STRIP_INSTALLED_PRODUCT` | `YES` | Strips debug symbols from the final binary |
-| `STRIP_STYLE` | `all` | Strips all symbols (local + global) from the shipped binary |
-| `DEPLOYMENT_POSTPROCESSING` | `YES` | Enables post-processing steps (stripping, signing) during build |
-| `SEPARATE_STRIP` | `YES` | Runs the strip tool as a separate build phase for cleaner output |
-| `GCC_GENERATE_DEBUGGING_SYMBOLS` | `NO` | Disables inline debug symbol generation in the release binary |
-| `DEBUG_INFORMATION_FORMAT` | `dwarf-with-dsym` | Generates a separate `.dSYM` bundle for crash symbolication without bloating the IPA |
-| `COMPILER_INDEX_STORE_ENABLE` | `NO` | Disables Xcode index store generation during CI builds to reduce build time |
+| Flag                             | Value             | Description                                                                                                   |
+| -------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------- |
+| `SWIFT_OPTIMIZATION_LEVEL`       | `-O`              | Enables whole-module Swift optimization (equivalent to `-O` / Optimize for Speed)                             |
+| `GCC_OPTIMIZATION_LEVEL`         | `3`               | Maps to Clang/LLVM `-O3`: enables aggressive loop unrolling, vectorization, and inlining                      |
+| `LLVM_LTO`                       | `YES`             | Enables Link Time Optimization — allows the linker to inline and eliminate dead code across translation units |
+| `ENABLE_BITCODE`                 | `YES`             | Embeds LLVM bitcode in the binary, allowing App Store re-optimization and thinner downloads                   |
+| `DEAD_CODE_STRIPPING`            | `YES`             | Removes unreachable code and data segments at link time                                                       |
+| `STRIP_INSTALLED_PRODUCT`        | `YES`             | Strips debug symbols from the final binary                                                                    |
+| `STRIP_STYLE`                    | `all`             | Strips all symbols (local + global) from the shipped binary                                                   |
+| `DEPLOYMENT_POSTPROCESSING`      | `YES`             | Enables post-processing steps (stripping, signing) during build                                               |
+| `SEPARATE_STRIP`                 | `YES`             | Runs the strip tool as a separate build phase for cleaner output                                              |
+| `GCC_GENERATE_DEBUGGING_SYMBOLS` | `NO`              | Disables inline debug symbol generation in the release binary                                                 |
+| `DEBUG_INFORMATION_FORMAT`       | `dwarf-with-dsym` | Generates a separate `.dSYM` bundle for crash symbolication without bloating the IPA                          |
+| `COMPILER_INDEX_STORE_ENABLE`    | `NO`              | Disables Xcode index store generation during CI builds to reduce build time                                   |
 
 ## Performance Impact
 
-| Metric | Before | After (Target) | Improvement |
-|--------|--------|----------------|-------------|
-| IPA Size | 95 MB | ~78 MB | -18% |
-| Cold Start | 3.2s | ~2.8s | -12% |
-| Runtime Performance | Baseline | Optimized | +10–15% |
+| Metric              | Before   | After (Target) | Improvement |
+| ------------------- | -------- | -------------- | ----------- |
+| IPA Size            | 95 MB    | ~78 MB         | -18%        |
+| Cold Start          | 3.2s     | ~2.8s          | -12%        |
+| Runtime Performance | Baseline | Optimized      | +10–15%     |
 
 ## How It Works
 

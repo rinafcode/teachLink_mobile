@@ -11,6 +11,7 @@ import {
   Text,
   View,
 } from 'react-native';
+
 import StorybookUI from './.rnstorybook';
 import './global.css';
 import { ErrorBoundary } from './src/components/common/ErrorBoundary';
@@ -25,7 +26,7 @@ import {
   subscribeToCacheStatus,
 } from './src/services/api';
 import { warmCriticalCaches } from './src/services/cacheWarming';
-import { crashReportingService } from './src/services/cashReporting';
+import { crashReportingService } from './src/services/crashReporting';
 import { featureCapabilities } from './src/services/featureCapabilities';
 import { inAppReviewService } from './src/services/inAppReview';
 import { mobileAuthService } from './src/services/mobileAuth';
@@ -37,12 +38,12 @@ import {
   removeNotificationListener,
 } from './src/services/pushNotifications';
 import { requestQueue } from './src/services/requestQueue';
+import { searchIndexService } from './src/services/searchIndex';
 import { initializeSecureStorage } from './src/services/secureStorage'; // Added missing storage helper mock path
 import socketService from './src/services/socket';
 import { syncService } from './src/services/syncService'; // Fixed naming convention from the merge conflict
 import { useAppStore, useNotificationStore } from './src/store'; // Added missing store imports
 import { useDegradationStore } from './src/store/degradationStore';
-import { searchIndexService } from './src/services/searchIndex';
 import { handleCacheVersionUpdate } from './src/utils/cacheVersioning';
 import { requireEnvVariables } from './src/utils/env';
 import { appLogger } from './src/utils/logger';
@@ -217,6 +218,11 @@ const App = () => {
       }
     });
 
+    // Notification listener subscription
+    const subscription = addNotificationReceivedListener(notification =>
+      handleNotificationReceived(notification)
+    );
+
     // ===== DEFERRED PATH — runs after user interactions complete =====
     // These tasks are non-critical: they enhance the experience but are not
     // needed for the initial render or core feature set. Scheduling them
@@ -278,7 +284,6 @@ const App = () => {
     return () => {
       socketService.disconnect();
       syncService.stopAutoSync();
-      notificationCleanup();
       removeNotificationListener(subscription);
       // @ts-ignore
       global.onunhandledrejection = undefined;

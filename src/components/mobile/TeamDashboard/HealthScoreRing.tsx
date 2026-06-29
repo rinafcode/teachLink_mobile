@@ -6,6 +6,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Circle, Text as SvgText } from 'react-native-svg';
+
 import { AppText as Text } from '../../common/AppText';
 
 interface HealthScoreRingProps {
@@ -47,7 +48,10 @@ export const HealthScoreRing: React.FC<HealthScoreRingProps> = ({
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
   return (
-    <View style={styles.container} accessibilityLabel={`App health: ${score} out of 100, ${STATUS_LABEL[status]}`}>
+    <View
+      style={styles.container}
+      accessibilityLabel={`App health: ${score} out of 100, ${STATUS_LABEL[status]}`}
+    >
       <Svg width={size} height={size} style={styles.svg}>
         {/* Track */}
         <Circle
@@ -84,13 +88,7 @@ export const HealthScoreRing: React.FC<HealthScoreRingProps> = ({
         >
           {score}
         </SvgText>
-        <SvgText
-          x={cx}
-          y={cy + 14}
-          textAnchor="middle"
-          fill={labelColour}
-          fontSize="11"
-        >
+        <SvgText x={cx} y={cy + 14} textAnchor="middle" fill={labelColour} fontSize="11">
           / 100
         </SvgText>
       </Svg>

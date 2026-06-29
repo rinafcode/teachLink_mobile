@@ -1,4 +1,5 @@
 import { renderHook, act } from '@testing-library/react-native';
+
 import { useReactProfiler } from '../../src/hooks/useReactProfiler';
 import { mobileAnalyticsService } from '../../src/services/mobileAnalytics';
 import { appLogger } from '../../src/utils/logger';

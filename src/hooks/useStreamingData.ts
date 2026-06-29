@@ -1,9 +1,9 @@
 /**
  * STREAMING DATA HOOK
- * 
+ *
  * React hook for consuming streaming API responses with progressive rendering support.
  * Manages state for chunks, loading, error, and performance metrics.
- * 
+ *
  * Features:
  * - Progressive state updates as chunks arrive
  * - Automatic error handling and retry logic
@@ -13,6 +13,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+
 import { streamingApi, StreamChunk, StreamingConfig } from '../services/api/streaming';
 import { appLogger } from '../utils/logger';
 
@@ -56,7 +57,7 @@ export interface UseStreamingDataResult<T> {
 
 /**
  * Hook for progressive streaming data fetching
- * 
+ *
  * @example
  * ```tsx
  * const { data, isStreaming, progress, ttfb } = useStreamingData<SearchResult>(
@@ -67,7 +68,7 @@ export interface UseStreamingDataResult<T> {
  *     transform: (item) => ({ ...item, loaded: true }),
  *   }
  * );
- * 
+ *
  * return (
  *   <>
  *     {data.map((item) => <ResultCard key={item.id} {...item} />)}
@@ -97,7 +98,7 @@ export function useStreamingData<T extends object = unknown>(
   const startTimeRef = useRef<number | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const activeFetchRef = useRef(false);
-  
+
   const optionsRef = useRef(options);
   optionsRef.current = options;
 
@@ -135,16 +136,16 @@ export function useStreamingData<T extends object = unknown>(
     try {
       await streamingApi.streamWithRetry<T>(endpoint, {
         ...streamConfig,
-        onChunk: (chunk) => {
+        onChunk: chunk => {
           let item = chunk.data;
           if (transform) {
             item = transform(item);
           }
-          setData((prev) => {
+          setData(prev => {
             if (deduplicateKey && typeof item === 'object' && item !== null) {
               const key = (item as Record<string, any>)[deduplicateKey];
               const isDuplicate = prev.some(
-                (existing) =>
+                existing =>
                   typeof existing === 'object' &&
                   existing !== null &&
                   (existing as Record<string, any>)[deduplicateKey] === key
@@ -155,12 +156,12 @@ export function useStreamingData<T extends object = unknown>(
             dataRef.current = updated;
             return updated;
           });
-          setChunkCount((c) => c + 1);
+          setChunkCount(c => c + 1);
           externalOnChunk?.(chunk);
         },
         onProgress: setProgress,
         onFirstByte: setTtfb,
-        onError: (err) => {
+        onError: err => {
           // Individual attempt error is handled by streamWithRetry
         },
         maxRetries,
@@ -245,7 +246,7 @@ export function useStreamingData<T extends object = unknown>(
 /**
  * Hook for measuring TTFB of a streaming endpoint
  * Useful for performance monitoring dashboards
- * 
+ *
  * @example
  * ```tsx
  * const { ttfb, isLoading } = useTTFBMeasurement('/api/courses');

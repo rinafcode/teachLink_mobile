@@ -1,6 +1,6 @@
-import { warmCriticalCaches } from '../../services/cacheWarming';
 import { courseApi } from '../../services/api/courseApi';
 import { userApi } from '../../services/api/userApi';
+import { warmCriticalCaches } from '../../services/cacheWarming';
 import { useAppStore } from '../../store';
 
 jest.mock('../../services/api/courseApi', () => ({

@@ -3,8 +3,8 @@ import { usePathname } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, ScrollView } from 'react-native';
 
-import { scrollPositionService } from '../services/scrollPositionService';
-import logger from '../utils/logger';
+import { scrollPositionService } from '../src/services/scrollPositionService';
+import logger from '../src/utils/logger';
 
 export interface UseScrollRestorationOptions {
   /**
@@ -82,7 +82,7 @@ export const useScrollRestoration = (
 
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const lastSavedOffsetRef = useRef<number>(0);
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const isNavigatingBackRef = useRef(false);
 
   // Detect when we're navigating back

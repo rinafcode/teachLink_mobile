@@ -3,6 +3,7 @@ import { useNavigation } from '@react-navigation/native';
 import { ArrowLeft, Bell, Menu } from 'lucide-react-native';
 import React from 'react';
 import { TouchableOpacity, View, StyleSheet } from 'react-native';
+
 import { useDynamicFontSize, usePendingRequests, useSafeArea } from '../../hooks';
 import { AppText } from '../common/AppText';
 
@@ -22,13 +23,19 @@ interface MobileHeaderProps {
   stickyTop?: number;
 }
 
-export const MobileHeader = ({ title, showBack = false, rightAction, sticky = false, stickyTop = 0 }: MobileHeaderProps) => {
+export const MobileHeader = ({
+  title,
+  showBack = false,
+  rightAction,
+  sticky = false,
+  stickyTop = 0,
+}: MobileHeaderProps) => {
   const { top } = useSafeArea();
   const navigation = useNavigation<DrawerNavigationProp<any>>();
   const pendingCount = usePendingRequests();
   const { scale } = useDynamicFontSize();
 
-  const headerStyle = sticky 
+  const headerStyle = sticky
     ? [styles.header, styles.stickyHeader, { top: stickyTop }]
     : styles.header;
 

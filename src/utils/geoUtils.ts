@@ -97,7 +97,7 @@ export const PRECISION_RADIUS_METERS: Record<LocationPrecision, number> = {
 export function isWithinPrecision(
   cached: Coordinates,
   current: Coordinates,
-  precision: LocationPrecision,
+  precision: LocationPrecision
 ): boolean {
   return haversineDistance(cached, current) <= PRECISION_RADIUS_METERS[precision];
 }

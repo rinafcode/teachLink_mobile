@@ -31,24 +31,26 @@ export const ConnectionManager: React.FC<ConnectionManagerProps> = ({
 
   const renderConnectionItem = useCallback(
     ({ item }: ListRenderItemInfo<Connection>) => (
-    <View style={styles.connectionItem}>
-      <View style={styles.connectionInfo}>
-        {/* Placeholder for Avatar */}
-        <View style={styles.avatarPlaceholder}>
-          <Text>{item.name.charAt(0)}</Text>
+      <View style={styles.connectionItem}>
+        <View style={styles.connectionInfo}>
+          {/* Placeholder for Avatar */}
+          <View style={styles.avatarPlaceholder}>
+            <Text>{item.name.charAt(0)}</Text>
+          </View>
+          <Text style={styles.connectionName}>{item.name}</Text>
         </View>
-        <Text style={styles.connectionName}>{item.name}</Text>
+        {onRemoveConnection && (
+          <TouchableOpacity
+            style={[styles.button, styles.removeButton]}
+            onPress={() => onRemoveConnection(item.id)}
+          >
+            <Text style={styles.buttonText}>Remove</Text>
+          </TouchableOpacity>
+        )}
       </View>
-      {onRemoveConnection && (
-        <TouchableOpacity
-          style={[styles.button, styles.removeButton]}
-          onPress={() => onRemoveConnection(item.id)}
-        >
-          <Text style={styles.buttonText}>Remove</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  ), [onRemoveConnection]);
+    ),
+    [onRemoveConnection]
+  );
 
   return (
     <View style={styles.container}>

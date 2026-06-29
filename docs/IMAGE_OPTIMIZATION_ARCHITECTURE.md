@@ -45,7 +45,7 @@ Example:
 
 Sizing is calculated from target layout size and current device DPR:
 
-requestedPixels = layoutPixels * dpr
+requestedPixels = layoutPixels \* dpr
 
 DPR is clamped to 1..3.
 

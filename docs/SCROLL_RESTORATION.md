@@ -76,11 +76,7 @@ export const CourseListScreen = () => {
   });
 
   return (
-    <ScrollView
-      ref={scrollRef}
-      onScroll={onScroll}
-      scrollEventThrottle={16}
-    >
+    <ScrollView ref={scrollRef} onScroll={onScroll} scrollEventThrottle={16}>
       {/* Content */}
     </ScrollView>
   );
@@ -96,13 +92,10 @@ import { useFlatListScrollRestoration } from '@/hooks/useFlatListScrollRestorati
 
 export const CoursesScreen = () => {
   const flatListRef = useRef<FlatList>(null);
-  const { onScroll, onScrollToIndexFailed } = useFlatListScrollRestoration(
-    flatListRef,
-    {
-      screenId: 'courses',
-      clearOnDataChange: true, // Clear if data changes
-    }
-  );
+  const { onScroll, onScrollToIndexFailed } = useFlatListScrollRestoration(flatListRef, {
+    screenId: 'courses',
+    clearOnDataChange: true, // Clear if data changes
+  });
 
   return (
     <FlatList
@@ -127,11 +120,11 @@ import { Animated } from 'react-native';
 export const Screen = () => {
   const animatedValue = new Animated.Value(0);
   const scrollRef = useRef<ScrollView>(null);
-  
+
   const { onScroll } = useScrollRestoration(scrollRef, {
     screenId: 'screen-with-animation',
     animatedValue, // Animation synced with scroll position
-    onChange: (offset) => {
+    onChange: offset => {
       // Custom handlers can track position changes
       console.log('Current scroll:', offset);
     },
@@ -144,9 +137,7 @@ export const Screen = () => {
 
   return (
     <>
-      <Animated.View style={{ opacity: headerOpacity }}>
-        {/* Animated header */}
-      </Animated.View>
+      <Animated.View style={{ opacity: headerOpacity }}>{/* Animated header */}</Animated.View>
       <ScrollView ref={scrollRef} onScroll={onScroll} scrollEventThrottle={16}>
         {/* Content */}
       </ScrollView>
@@ -249,30 +240,33 @@ clearAll(): Promise<void>
 ### Best Practices
 
 1. **Use appropriate screen IDs**: Should be unique and consistent
+
    ```tsx
    // Good: Explicit, unique
-   useScrollRestoration(ref, { screenId: 'home-feed' })
-   
+   useScrollRestoration(ref, { screenId: 'home-feed' });
+
    // Okay: Uses pathname automatically
-   useScrollRestoration(ref)
+   useScrollRestoration(ref);
    ```
 
 2. **Set clearOnDataChange for dynamic lists**:
+
    ```tsx
    // For lists that can add/remove items
-   useFlatListScrollRestoration(ref, { clearOnDataChange: true })
-   
+   useFlatListScrollRestoration(ref, { clearOnDataChange: true });
+
    // For static lists
-   useFlatListScrollRestoration(ref, { clearOnDataChange: false })
+   useFlatListScrollRestoration(ref, { clearOnDataChange: false });
    ```
 
 3. **Adjust debounce for your use case**:
+
    ```tsx
    // For heavy content screens: larger delay
-   useScrollRestoration(ref, { saveDelay: 1000 })
-   
+   useScrollRestoration(ref, { saveDelay: 1000 });
+
    // For fast scrolling: smaller delay
-   useScrollRestoration(ref, { saveDelay: 250 })
+   useScrollRestoration(ref, { saveDelay: 250 });
    ```
 
 ## Testing
@@ -326,23 +320,21 @@ describe('HomeScreenContent scroll restoration', () => {
 ### From useScrollToTop
 
 **Before:**
+
 ```tsx
 const scrollRef = useRef<ScrollView>(null);
 useScrollToTop(scrollRef); // Always scrolls to top on focus
 
-<ScrollView ref={scrollRef} />
+<ScrollView ref={scrollRef} />;
 ```
 
 **After:**
+
 ```tsx
 const scrollRef = useRef<ScrollView>(null);
 const { onScroll } = useScrollRestoration(scrollRef);
 
-<ScrollView 
-  ref={scrollRef} 
-  onScroll={onScroll}
-  scrollEventThrottle={16}
-/>
+<ScrollView ref={scrollRef} onScroll={onScroll} scrollEventThrottle={16} />;
 ```
 
 ### Troubleshooting
@@ -364,6 +356,7 @@ const { onScroll } = useScrollRestoration(scrollRef);
 #### Position becomes invalid after list updates
 
 This is expected and correct. For FlatList:
+
 - Enable `clearOnDataChange: true` (default)
 - Positions automatically clear when list structure changes
 - Prevents scroll to wrong items

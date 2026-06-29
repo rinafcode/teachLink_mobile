@@ -2,7 +2,7 @@
  * Efficient diffing utility to reduce object churn during state updates.
  * Compares deeply nested objects and returns only the modified fields.
  * This prevents unnecessary memory allocations and reduces GC pause times.
- * 
+ *
  * @param oldState - The existing state object.
  * @param newState - The incoming partial state object to merge.
  * @returns A partial object containing only the patched keys, or `null` if identical.

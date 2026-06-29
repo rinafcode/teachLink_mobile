@@ -74,7 +74,7 @@ export const VoiceSearch = ({
       <TouchableOpacity
         onPress={handlePress}
         disabled={disabled}
-        className={`p-2.5 justify-center items-center ${disabled ? 'opacity-50' : ''}`}
+        className={`items-center justify-center p-2.5 ${disabled ? 'opacity-50' : ''}`}
         accessibilityLabel={isListening ? 'Stop voice search' : 'Start voice search'}
         activeOpacity={0.8}
       >
@@ -90,14 +90,14 @@ export const VoiceSearch = ({
   return (
     <View className="items-center">
       {error ? (
-        <Text className="text-[11px] text-red-500 mb-1 text-center max-w-[140px]" numberOfLines={2}>
+        <Text className="mb-1 max-w-[140px] text-center text-[11px] text-red-500" numberOfLines={2}>
           {error}
         </Text>
       ) : null}
       <TouchableOpacity
         onPress={handlePress}
         disabled={disabled}
-        className={`flex-row items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl min-w-[88px] ${
+        className={`min-w-[88px] flex-row items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 ${
           isListening ? 'bg-[#19c3e6]' : 'bg-gray-100'
         } ${disabled ? 'opacity-50' : ''}`}
         activeOpacity={0.8}
@@ -111,9 +111,7 @@ export const VoiceSearch = ({
           <>
             <Mic size={22} color={isAvailable ? '#19c3e6' : '#9CA3AF'} />
             <Text
-              className={`text-sm font-semibold ${
-                isAvailable ? 'text-gray-900' : 'text-gray-400'
-              }`}
+              className={`text-sm font-semibold ${isAvailable ? 'text-gray-900' : 'text-gray-400'}`}
             >
               Voice
             </Text>
@@ -121,9 +119,9 @@ export const VoiceSearch = ({
         )}
       </TouchableOpacity>
       {isListening && (
-        <View className="flex-row items-center gap-2 mt-2 px-3 py-1.5 bg-sky-100 rounded-lg max-w-full">
+        <View className="mt-2 max-w-full flex-row items-center gap-2 rounded-lg bg-sky-100 px-3 py-1.5">
           <ActivityIndicator size="small" color="#19c3e6" />
-          <Text className="text-[13px] text-sky-700 flex-1" numberOfLines={1}>
+          <Text className="flex-1 text-[13px] text-sky-700" numberOfLines={1}>
             {transcript || 'Listening...'}
           </Text>
         </View>
@@ -131,4 +129,3 @@ export const VoiceSearch = ({
     </View>
   );
 };
-

@@ -250,7 +250,7 @@ class LocationService {
     appLogger.infoSync('[LocationService] Started watching permission changes via AppState');
   }
 
-  private handleAppStateChange = async (nextAppState: AppStateStatus): void => {
+  private handleAppStateChange = async (nextAppState: AppStateStatus): Promise<void> => {
     if (nextAppState !== 'active') return;
 
     const previousStatus = this.locationPermissionStatus;

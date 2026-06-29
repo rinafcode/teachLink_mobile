@@ -122,12 +122,12 @@ export const useSettingsStore = create<SettingsState>()(
       setStorageLimit: v => set({ storageLimit: v }),
 
       // App Preferences
-      setLanguage: (v) => set({ language: v }),
-      setFontSize: (v) => set({ fontSize: v }),
-      setAutoplay: (v) => set({ autoplay: v }),
-      setHapticFeedback: (v) => set({ hapticFeedback: v }),
-      setAdaptiveThemeEnabled: (v) => set({ adaptiveThemeEnabled: v }),
-      setDataSaverEnabled: (v) => set({ dataSaverEnabled: v }),
+      setLanguage: v => set({ language: v }),
+      setFontSize: v => set({ fontSize: v }),
+      setAutoplay: v => set({ autoplay: v }),
+      setHapticFeedback: v => set({ hapticFeedback: v }),
+      setAdaptiveThemeEnabled: v => set({ adaptiveThemeEnabled: v }),
+      setDataSaverEnabled: v => set({ dataSaverEnabled: v }),
 
       resetSettings: () => set(INITIAL_STATE),
     }),

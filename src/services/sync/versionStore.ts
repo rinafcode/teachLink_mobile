@@ -1,11 +1,11 @@
 import { checksum } from './checksum';
+
 import type { VersionedEntity } from './types';
 
 type EntityKey = string;
 type StoreListener = (key: EntityKey, entity: VersionedEntity) => void;
 
-const makeKey = (entityType: string, entityId: string): EntityKey =>
-  `${entityType}:${entityId}`;
+const makeKey = (entityType: string, entityId: string): EntityKey => `${entityType}:${entityId}`;
 
 class VersionStore {
   private readonly store = new Map<EntityKey, VersionedEntity>();
@@ -23,7 +23,7 @@ class VersionStore {
 
   get<T extends Record<string, unknown>>(
     entityType: string,
-    entityId: string,
+    entityId: string
   ): VersionedEntity<T> | undefined {
     return this.store.get(makeKey(entityType, entityId)) as VersionedEntity<T> | undefined;
   }

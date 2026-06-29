@@ -2,10 +2,10 @@
 
 /**
  * CI Build Time Monitor
- * 
+ *
  * Monitors and reports CI/CD build times to track the effectiveness
  * of caching strategies and identify performance regressions.
- * 
+ *
  * Usage:
  *   node scripts/monitorCIBuildTimes.js
  *   node scripts/monitorCIBuildTimes.js --workflow=ci-optimized --days=7
@@ -39,24 +39,26 @@ function githubRequest(endpoint) {
     const url = `${GITHUB_API}${endpoint}`;
     const headers = {
       'User-Agent': 'CI-Build-Monitor',
-      'Accept': 'application/vnd.github.v3+json',
+      Accept: 'application/vnd.github.v3+json',
     };
 
     if (GITHUB_TOKEN) {
       headers['Authorization'] = `token ${GITHUB_TOKEN}`;
     }
 
-    https.get(url, { headers }, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        if (res.statusCode === 200) {
-          resolve(JSON.parse(data));
-        } else {
-          reject(new Error(`GitHub API error: ${res.statusCode} - ${data}`));
-        }
-      });
-    }).on('error', reject);
+    https
+      .get(url, { headers }, res => {
+        let data = '';
+        res.on('data', chunk => (data += chunk));
+        res.on('end', () => {
+          if (res.statusCode === 200) {
+            resolve(JSON.parse(data));
+          } else {
+            reject(new Error(`GitHub API error: ${res.statusCode} - ${data}`));
+          }
+        });
+      })
+      .on('error', reject);
   });
 }
 
@@ -73,8 +75,8 @@ async function getWorkflowRuns(workflowName, days) {
       `/repos/${REPO_OWNER}/${REPO_NAME}/actions/runs?per_page=100&created=>${sinceISO}`
     );
 
-    return data.workflow_runs.filter(run => 
-      run.name.includes(workflowName) && run.status === 'completed'
+    return data.workflow_runs.filter(
+      run => run.name.includes(workflowName) && run.status === 'completed'
     );
   } catch (error) {
     console.error('Error fetching workflow runs:', error.message);
@@ -121,7 +123,7 @@ function analyzeCacheEffectiveness(runs) {
   // Estimate cache hits based on build duration
   // Builds < 4 minutes likely had cache hits
   // Builds > 8 minutes likely had cache misses
-  
+
   const fastBuilds = runs.filter(run => {
     const duration = (new Date(run.updated_at) - new Date(run.created_at)) / 1000 / 60;
     return duration < 4;
@@ -157,7 +159,7 @@ function generateReport(stats, cacheStats, workflowName, days) {
   console.log(`Min:        ${stats.minDuration} minutes`);
   console.log(`Max:        ${stats.maxDuration} minutes`);
   console.log(`95th %ile:  ${stats.p95Duration} minutes`);
-  
+
   console.log('\n' + '-'.repeat(60));
   console.log('💾 Cache Effectiveness (Estimated)');
   console.log('-'.repeat(60));
@@ -169,7 +171,7 @@ function generateReport(stats, cacheStats, workflowName, days) {
   console.log('\n' + '-'.repeat(60));
   console.log('🎯 Performance Assessment');
   console.log('-'.repeat(60));
-  
+
   const avgDuration = parseFloat(stats.avgDuration);
   const cacheHitRate = parseFloat(cacheStats.cacheHitRate);
 

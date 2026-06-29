@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
+
 import { useStartupProgressStore } from '../../services/startupProgressService';
 
 /**
  * StartupProgressOverlay displays the app initialization progress
  * with visual feedback, step names, and estimated time remaining
  */
-export function StartupProgressOverlay() {
+export const StartupProgressOverlay = () => {
   const { isInitializing, steps } = useStartupProgressStore();
   const getProgress = useStartupProgressStore.getState().getProgress;
   const getRemainingTime = useStartupProgressStore.getState().getRemainingTime;
@@ -84,9 +85,7 @@ export function StartupProgressOverlay() {
 
         {/* Progress Text */}
         <View style={styles.statsContainer}>
-          <Text style={styles.progressText}>
-            {Math.round(progress)}%
-          </Text>
+          <Text style={styles.progressText}>{Math.round(progress)}%</Text>
           <Text style={styles.stepsText}>
             {completedCount} of {totalSteps} steps
           </Text>
@@ -110,7 +109,7 @@ export function StartupProgressOverlay() {
 
         {/* Step List */}
         <View style={styles.stepListContainer}>
-          {Array.from(steps.values()).map((step) => (
+          {Array.from(steps.values()).map(step => (
             <View key={step.id} style={styles.stepItem}>
               <View
                 style={[
@@ -131,8 +130,7 @@ export function StartupProgressOverlay() {
                   style={[
                     styles.stepIndicatorText,
                     {
-                      color:
-                        step.status === 'pending' ? '#9CA3AF' : '#FFFFFF',
+                      color: step.status === 'pending' ? '#9CA3AF' : '#FFFFFF',
                     },
                   ]}
                 >
@@ -150,16 +148,13 @@ export function StartupProgressOverlay() {
                   style={[
                     styles.stepItemName,
                     {
-                      opacity:
-                        step.status === 'pending' ? 0.5 : 1,
+                      opacity: step.status === 'pending' ? 0.5 : 1,
                     },
                   ]}
                 >
                   {step.name}
                 </Text>
-                {step.error && (
-                  <Text style={styles.stepError}>{step.error}</Text>
-                )}
+                {step.error && <Text style={styles.stepError}>{step.error}</Text>}
               </View>
             </View>
           ))}
@@ -167,7 +162,7 @@ export function StartupProgressOverlay() {
       </View>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {

@@ -2,9 +2,10 @@ import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist, subscribeWithSelector } from 'zustand/middleware';
 
-import type { StateStorage } from 'zustand/middleware';
 import { toUnixMs } from './persistence';
 import { sentryContextService } from '../services/sentryContext';
+
+import type { StateStorage } from 'zustand/middleware';
 
 export interface User {
   id: string;
@@ -16,6 +17,7 @@ export interface User {
 
 interface AppState {
   user: User | null;
+  theme: 'light' | 'dark';
   isAuthenticated: boolean;
   isAuthLoading: boolean;
   authError: string | null;
@@ -58,6 +60,7 @@ export const useAppStore = create<AppState>()(
     persist(
       subscribeWithSelector(set => ({
         user: null,
+        theme: 'light',
         isAuthenticated: false,
         isAuthLoading: false,
         authError: null,
@@ -67,7 +70,7 @@ export const useAppStore = create<AppState>()(
         sessionExpiringSoon: false,
         isLoading: false,
         error: null,
-        setUser: (user) => {
+        setUser: user => {
           set({ user, isAuthenticated: !!user }, false, 'setUser');
           // Sync Sentry scope with the signed-in user so every subsequent
           // error report is automatically tagged with user identity.
@@ -82,7 +85,7 @@ export const useAppStore = create<AppState>()(
             sentryContextService.clearUser();
           }
         },
-        setTheme: (theme) => set({ theme }, false, 'setTheme'),
+        setTheme: theme => set({ theme }, false, 'setTheme'),
         setTokens: (accessToken, refreshToken, sessionExpiresAt) =>
           set(
             {
@@ -95,8 +98,8 @@ export const useAppStore = create<AppState>()(
           ),
         setSessionExpiringSoon: sessionExpiringSoon =>
           set({ sessionExpiringSoon }, false, 'setSessionExpiringSoon'),
-        setAuthLoading: (isAuthLoading) => set({ isAuthLoading }, false, 'setAuthLoading'),
-        setAuthError: (authError) => set({ authError }, false, 'setAuthError'),
+        setAuthLoading: isAuthLoading => set({ isAuthLoading }, false, 'setAuthLoading'),
+        setAuthError: authError => set({ authError }, false, 'setAuthError'),
         logout: () => {
           set(
             {
@@ -116,8 +119,8 @@ export const useAppStore = create<AppState>()(
           sentryContextService.clearUser();
           sentryContextService.resetSession();
         },
-        setLoading: (isLoading) => set({ isLoading }, false, 'setLoading'),
-        setError: (error) => set({ error }, false, 'setError'),
+        setLoading: isLoading => set({ isLoading }, false, 'setLoading'),
+        setError: error => set({ error }, false, 'setError'),
       })),
       {
         name: 'app-auth-storage',
@@ -155,4 +158,3 @@ export * from './metricsStore';
 export * from './notificationStore';
 export * from './reviewStore';
 export * from './selectors';
-

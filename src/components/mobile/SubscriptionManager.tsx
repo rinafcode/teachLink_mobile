@@ -1,3 +1,5 @@
+import { LinearGradient } from 'expo-linear-gradient';
+import { Crown, Zap, Check, RefreshCw, ChevronRight, Star, Shield } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -9,8 +11,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Crown, Zap, Check, RefreshCw, ChevronRight, Star, Shield } from 'lucide-react-native';
+
 import { PurchaseButton } from './PurchaseButton';
 import { SubscriptionSkeleton } from './SubscriptionSkeleton';
 import { useInAppPurchase } from '../../hooks';
@@ -326,7 +327,11 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
         )}
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll} removeClippedSubviews={true}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scroll}
+        removeClippedSubviews={true}
+      >
         {/* Current plan */}
         {renderCurrentPlan()}
 

@@ -43,7 +43,11 @@ function decodeCursorPayload(cursor?: string): CursorPayload | null {
  * Build an opaque cursor for a paginated item boundary.
  * The cursor is a URL-safe encoded JSON payload.
  */
-export function buildCursor(lastId: string, orderBy = DEFAULT_ORDER_BY, direction: CursorDirection = DEFAULT_DIRECTION): string {
+export function buildCursor(
+  lastId: string,
+  orderBy = DEFAULT_ORDER_BY,
+  direction: CursorDirection = DEFAULT_DIRECTION
+): string {
   return encodeCursorPayload({ lastId, orderBy, direction });
 }
 
@@ -59,7 +63,12 @@ export function parseCursor(cursor?: string): CursorPayload | null {
  * Create a cache key for paginated list requests.
  */
 export function buildCursorCacheKey(request: CursorPageRequest): string {
-  const { limit = DEFAULT_LIMIT, cursor = '', orderBy = DEFAULT_ORDER_BY, direction = DEFAULT_DIRECTION } = request;
+  const {
+    limit = DEFAULT_LIMIT,
+    cursor = '',
+    orderBy = DEFAULT_ORDER_BY,
+    direction = DEFAULT_DIRECTION,
+  } = request;
   return `cursor-page:${limit}:${cursor || 'start'}:${orderBy}:${direction}`;
 }
 
@@ -69,7 +78,7 @@ export function buildCursorCacheKey(request: CursorPageRequest): string {
  */
 export function paginateWithCursor<T extends { id: string }>(
   items: T[],
-  request: CursorPageRequest = {},
+  request: CursorPageRequest = {}
 ): CursorPageResponse<T> {
   const limit = Math.max(1, request.limit ?? DEFAULT_LIMIT);
   const orderBy = request.orderBy ?? DEFAULT_ORDER_BY;
@@ -92,16 +101,15 @@ export function paginateWithCursor<T extends { id: string }>(
     normalized.reverse();
   }
 
-  const startIndex = cursorPayload && cursorPayload.orderBy === orderBy && cursorPayload.direction === direction
-    ? normalized.findIndex((item) => item.id === cursorPayload.lastId) + 1
-    : 0;
+  const startIndex =
+    cursorPayload && cursorPayload.orderBy === orderBy && cursorPayload.direction === direction
+      ? normalized.findIndex(item => item.id === cursorPayload.lastId) + 1
+      : 0;
 
   const paginated = normalized.slice(Math.max(0, startIndex), Math.max(0, startIndex) + limit);
   const lastItem = paginated[paginated.length - 1];
-  const hasMore = (Math.max(0, startIndex) + paginated.length) < normalized.length;
-  const nextCursor = hasMore && lastItem
-    ? buildCursor(lastItem.id, orderBy, direction)
-    : null;
+  const hasMore = Math.max(0, startIndex) + paginated.length < normalized.length;
+  const nextCursor = hasMore && lastItem ? buildCursor(lastItem.id, orderBy, direction) : null;
 
   return {
     items: paginated,

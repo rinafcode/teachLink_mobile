@@ -123,8 +123,7 @@ function parseImports(filePath) {
 
   // 1. Named / default / namespace / side-effect static imports
   //    import X from '...'  |  import { X } from '...'  |  import '...'
-  const staticImportRe =
-    /^\s*import\s+(?:(?:[\w$*{},\s]+)\s+from\s+)?['"]([^'"]+)['"]/gm;
+  const staticImportRe = /^\s*import\s+(?:(?:[\w$*{},\s]+)\s+from\s+)?['"]([^'"]+)['"]/gm;
   let m;
   while ((m = staticImportRe.exec(content)) !== null) {
     staticImports.add(m[1]);
@@ -241,12 +240,20 @@ for (const routeFile of routeFiles) {
   const sizeKB = (bytes / 1024).toFixed(1);
   const exceeds = bytes > THRESHOLD_BYTES;
 
-  results.push({ route: rel, bytes, fileCount, dynamicBoundaries: dynamicBoundaries.size, exceeds });
+  results.push({
+    route: rel,
+    bytes,
+    fileCount,
+    dynamicBoundaries: dynamicBoundaries.size,
+    exceeds,
+  });
 
   if (exceeds) {
     violations++;
     console.log(`\n❌  ${rel}`);
-    console.log(`     Sync chunk : ${sizeKB} KB  (${fileCount} files, ${dynamicBoundaries.size} lazy boundaries)`);
+    console.log(
+      `     Sync chunk : ${sizeKB} KB  (${fileCount} files, ${dynamicBoundaries.size} lazy boundaries)`
+    );
     console.log(`     Fix        : wrap heavy imports with React.lazy(() => import('...'))`);
   } else {
     const lazy = dynamicBoundaries.size > 0 ? `  ✔ ${dynamicBoundaries.size} lazy` : '';
@@ -257,7 +264,7 @@ for (const routeFile of routeFiles) {
 console.log('\n' + '─'.repeat(64));
 console.log(
   `\nRoutes: ${routeFiles.length}   Violations: ${violations}   ` +
-    `Threshold: ${(THRESHOLD_BYTES / 1024).toFixed(0)} KB\n`,
+    `Threshold: ${(THRESHOLD_BYTES / 1024).toFixed(0)} KB\n`
 );
 
 // Write JSON report regardless of exit status
@@ -272,15 +279,15 @@ fs.writeFileSync(
       routes: results,
     },
     null,
-    2,
-  ),
+    2
+  )
 );
 console.log(`Report → ${path.relative(PROJECT_ROOT, reportPath)}\n`);
 
 if (!REPORT_ONLY && violations > 0) {
   console.error(
     `\u{1F6A8}  ${violations} route(s) exceed 100 KB. ` +
-      `Apply React.lazy() splitting or run with --report to suppress exit code.\n`,
+      `Apply React.lazy() splitting or run with --report to suppress exit code.\n`
   );
   process.exit(1);
 }

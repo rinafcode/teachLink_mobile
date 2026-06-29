@@ -6,15 +6,16 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import locationService, { 
-  LocationData, 
-  LocationSourceType, 
-  GetPositionOptions, 
-  Position 
+
+import locationService, {
+  LocationData,
+  LocationSourceType,
+  GetPositionOptions,
+  Position,
 } from '../services/locationService'; // Standardized service import target
 import { useDegradationStore } from '../store/degradationStore';
-import { appLogger } from '../utils/logger';
 import { Coordinates, LocationPrecision } from '../utils/geoUtils';
+import { appLogger } from '../utils/logger';
 
 interface UseLocationReturn {
   /** Native geographic position details (lat, lng, timestamp) */
@@ -57,7 +58,7 @@ export const useLocation = (defaultOptions: GetPositionOptions = {}): UseLocatio
   const [statusMessage, setStatusMessage] = useState<string>('');
 
   const degradationStore = useDegradationStore();
-  
+
   // Safe persistence for configuration changes across renders without re-triggering hooks
   const optionsRef = useRef(defaultOptions);
   useEffect(() => {
@@ -82,66 +83,75 @@ export const useLocation = (defaultOptions: GetPositionOptions = {}): UseLocatio
   /**
    * Refresh current location with performance options and fallback chain
    */
-  const refresh = useCallback(async (overrides?: GetPositionOptions): Promise<Position | null> => {
-    setLoading(true);
-    setError(null);
-    try {
-      appLogger.infoSync('[useLocation] Refreshing location position mapping');
-      
-      // Fetch underlying position using main-branch configuration merges
-      const nativePosition = await locationService.getCurrentPosition({
-        ...optionsRef.current,
-        ...overrides,
-      });
-      setPosition(nativePosition);
+  const refresh = useCallback(
+    async (overrides?: GetPositionOptions): Promise<Position | null> => {
+      setLoading(true);
+      setError(null);
+      try {
+        appLogger.infoSync('[useLocation] Refreshing location position mapping');
 
-      // Pass down parameters to downstream graceful degradation engines
-      const locationData = await locationService.getLocationWithFallback(manualLocation);
+        // Fetch underlying position using main-branch configuration merges
+        const nativePosition = await locationService.getCurrentPosition({
+          ...optionsRef.current,
+          ...overrides,
+        });
+        setPosition(nativePosition);
 
-      if (locationData) {
-        setLocation(locationData);
-        setStatusMessage(locationService.getStatusMessage(locationData));
+        // Pass down parameters to downstream graceful degradation engines
+        const locationData = await locationService.getLocationWithFallback(manualLocation);
 
-        if (locationData.source === LocationSourceType.MANUAL && locationData.address) {
-          setManualLocationState(locationData.address);
+        if (locationData) {
+          setLocation(locationData);
+          setStatusMessage(locationService.getStatusMessage(locationData));
+
+          if (locationData.source === LocationSourceType.MANUAL && locationData.address) {
+            setManualLocationState(locationData.address);
+          }
+
+          const degradedMode = locationData.source !== LocationSourceType.GPS;
+          setIsDegraded(degradedMode);
+          degradationStore.setFeatureStatus('location', degradedMode ? 'degraded' : 'available');
+        } else {
+          setLocation(null);
+          setIsDegraded(true);
+          setStatusMessage('Please enter your location manually');
         }
 
-        const degradedMode = locationData.source !== LocationSourceType.GPS;
-        setIsDegraded(degradedMode);
-        degradationStore.setFeatureStatus('location', degradedMode ? 'degraded' : 'available');
-      } else {
-        setLocation(null);
+        return nativePosition;
+      } catch (err) {
+        appLogger.errorSync(
+          '[useLocation] Error refreshing location',
+          err instanceof Error ? err : new Error(String(err))
+        );
+        setError(err);
         setIsDegraded(true);
-        setStatusMessage('Please enter your location manually');
+        setStatusMessage('Location refresh failed - please enter manually');
+        degradationStore.setFeatureStatus('location', 'degraded');
+        return null;
+      } finally {
+        setLoading(false);
       }
-
-      return nativePosition;
-    } catch (err) {
-      appLogger.errorSync('[useLocation] Error refreshing location', err instanceof Error ? err : new Error(String(err)));
-      setError(err);
-      setIsDegraded(true);
-      setStatusMessage('Location refresh failed - please enter manually');
-      degradationStore.setFeatureStatus('location', 'degraded');
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, [manualLocation, degradationStore]);
+    },
+    [manualLocation, degradationStore]
+  );
 
   /**
    * Set manual location
    */
-  const handleSetManualLocation = useCallback((address: string): void => {
-    if (address.trim()) {
-      const locationData = locationService.setManualLocation(address);
-      setLocation(locationData);
-      setManualLocationState(address);
-      setStatusMessage(`Location saved: ${address}`);
-      setIsDegraded(true); // Manual fallback triggers a degraded state marker
-      degradationStore.setFeatureStatus('location', 'degraded');
-      appLogger.infoSync('[useLocation] Manual location set', { address });
-    }
-  }, [degradationStore]);
+  const handleSetManualLocation = useCallback(
+    (address: string): void => {
+      if (address.trim()) {
+        const locationData = locationService.setManualLocation(address);
+        setLocation(locationData);
+        setManualLocationState(address);
+        setStatusMessage(`Location saved: ${address}`);
+        setIsDegraded(true); // Manual fallback triggers a degraded state marker
+        degradationStore.setFeatureStatus('location', 'degraded');
+        appLogger.infoSync('[useLocation] Manual location set', { address });
+      }
+    },
+    [degradationStore]
+  );
 
   /**
    * Clear cached location
@@ -160,12 +170,12 @@ export const useLocation = (defaultOptions: GetPositionOptions = {}): UseLocatio
    * nearby queries (same precision cell) issued in the same window.
    */
   const queryNearby = useCallback(
-    <T,>(
+    <T>(
       coords: Coordinates,
       query: (c: Coordinates) => Promise<T>,
-      precision: LocationPrecision = 'coarse',
+      precision: LocationPrecision = 'coarse'
     ) => locationService.batchNearbyQuery(coords, query, precision),
-    [],
+    []
   );
 
   /**

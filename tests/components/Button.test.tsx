@@ -1,4 +1,5 @@
 import React from 'react';
+
 import PrimaryButton from '../../src/components/common/PrimaryButton';
 
 jest.mock('expo-linear-gradient', () => ({

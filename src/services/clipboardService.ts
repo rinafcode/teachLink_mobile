@@ -1,6 +1,7 @@
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
+
 import { logger } from '../utils/logger';
 
 export interface ClipboardOperationMetrics {
@@ -38,7 +39,9 @@ class ClipboardService {
         timestamp: Date.now(),
       };
 
-      logger.info(`[ClipboardService] Copied ${text.length} characters in ${duration.toFixed(2)}ms`);
+      logger.info(
+        `[ClipboardService] Copied ${text.length} characters in ${duration.toFixed(2)}ms`
+      );
 
       if (triggerHaptic && Platform.OS !== 'web') {
         try {
@@ -73,7 +76,9 @@ class ClipboardService {
         timestamp: Date.now(),
       };
 
-      logger.info(`[ClipboardService] Pasted ${text ? text.length : 0} characters in ${duration.toFixed(2)}ms`);
+      logger.info(
+        `[ClipboardService] Pasted ${text ? text.length : 0} characters in ${duration.toFixed(2)}ms`
+      );
 
       return text || '';
     } catch (error) {

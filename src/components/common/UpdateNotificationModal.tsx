@@ -1,15 +1,8 @@
 import React from 'react';
-import {
-  ActivityIndicator,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { UpdateCheckResult, UpdateType } from '../../services/appUpdateService';
 import { AccessibleModal } from './AccessibleModal';
+import { UpdateCheckResult, UpdateType } from '../../services/appUpdateService';
 
 interface UpdateNotificationModalProps {
   visible: boolean;

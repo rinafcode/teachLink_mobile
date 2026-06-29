@@ -14,6 +14,7 @@
  */
 
 import { Platform } from 'react-native';
+
 import { requireEnvVariables } from '../config';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -64,7 +65,11 @@ export function getResourceHints(): ResourceHint[] {
   try {
     const env = requireEnvVariables();
     const apiUrl = new URL(env.EXPO_PUBLIC_API_BASE_URL);
-    hints.push({ url: `${apiUrl.protocol}//${apiUrl.host}`, type: 'preconnect', crossOrigin: true });
+    hints.push({
+      url: `${apiUrl.protocol}//${apiUrl.host}`,
+      type: 'preconnect',
+      crossOrigin: true,
+    });
     const socketUrl = new URL(env.EXPO_PUBLIC_SOCKET_URL);
     const socketOrigin = `${socketUrl.protocol.replace('ws', 'http')}//${socketUrl.host}`;
     hints.push({ url: socketOrigin, type: 'preconnect' });

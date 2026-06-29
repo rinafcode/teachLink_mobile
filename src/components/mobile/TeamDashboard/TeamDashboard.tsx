@@ -9,22 +9,18 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import {
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useDashboardMetrics } from '../../../hooks/useDashboardMetrics';
-import type { DashboardAlert } from '../../../services/metricsService';
-import type { DashboardView } from '../../../store/metricsStore';
-import { AppText as Text } from '../../common/AppText';
+
 import { AlertBanner } from './AlertBanner';
 import { DashboardSkeleton } from './DashboardSkeleton';
 import { HealthScoreRing } from './HealthScoreRing';
 import { MetricCard } from './MetricCard';
+import { useDashboardMetrics } from '../../../hooks/useDashboardMetrics';
+import { AppText as Text } from '../../common/AppText';
+
+import type { DashboardAlert } from '../../../services/metricsService';
+import type { DashboardView } from '../../../store/metricsStore';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -81,7 +77,7 @@ export const TeamDashboard: React.FC<TeamDashboardProps> = ({ isDark = false }) 
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
 
   const handleDismissAlert = useCallback((id: string) => {
-    setDismissedAlerts((prev) => new Set([...prev, id]));
+    setDismissedAlerts(prev => new Set([...prev, id]));
   }, []);
 
   const visibleAlerts = alerts.filter((a: DashboardAlert) => !dismissedAlerts.has(a.id));
@@ -155,14 +151,26 @@ export const TeamDashboard: React.FC<TeamDashboardProps> = ({ isDark = false }) 
           <MetricCard
             label="Uptime"
             value={`${appHealth.uptimePercent}%`}
-            status={appHealth.uptimePercent >= 99 ? 'healthy' : appHealth.uptimePercent >= 95 ? 'warning' : 'critical'}
+            status={
+              appHealth.uptimePercent >= 99
+                ? 'healthy'
+                : appHealth.uptimePercent >= 95
+                  ? 'warning'
+                  : 'critical'
+            }
             icon="🟢"
             isDark={isDark}
           />
           <MetricCard
             label="Session Errors"
             value={appHealth.errorCount}
-            status={appHealth.errorCount === 0 ? 'healthy' : appHealth.errorCount < 5 ? 'warning' : 'critical'}
+            status={
+              appHealth.errorCount === 0
+                ? 'healthy'
+                : appHealth.errorCount < 5
+                  ? 'warning'
+                  : 'critical'
+            }
             icon="🐛"
             isDark={isDark}
           />
@@ -178,10 +186,10 @@ export const TeamDashboard: React.FC<TeamDashboardProps> = ({ isDark = false }) 
             performance.avgApiResponseMs === 0
               ? 'neutral'
               : performance.avgApiResponseMs < 500
-              ? 'healthy'
-              : performance.avgApiResponseMs < 2000
-              ? 'warning'
-              : 'critical'
+                ? 'healthy'
+                : performance.avgApiResponseMs < 2000
+                  ? 'warning'
+                  : 'critical'
           }
           icon="🌐"
           isDark={isDark}
@@ -193,26 +201,30 @@ export const TeamDashboard: React.FC<TeamDashboardProps> = ({ isDark = false }) 
             errorRate.errorsPerMinute === 0
               ? 'healthy'
               : errorRate.errorsPerMinute < 5
-              ? 'warning'
-              : 'critical'
+                ? 'warning'
+                : 'critical'
           }
-          subLabel={errorRate.trend === 'improving' ? '↓ improving' : errorRate.trend === 'degrading' ? '↑ degrading' : '→ stable'}
+          subLabel={
+            errorRate.trend === 'improving'
+              ? '↓ improving'
+              : errorRate.trend === 'degrading'
+                ? '↑ degrading'
+                : '→ stable'
+          }
           icon="📈"
           isDark={isDark}
         />
         <MetricCard
           label="Memory Usage"
-          value={
-            performance.usedHeapBytes > 0 ? formatBytes(performance.usedHeapBytes) : 'N/A'
-          }
+          value={performance.usedHeapBytes > 0 ? formatBytes(performance.usedHeapBytes) : 'N/A'}
           status={
             performance.heapUtilPercent === 0
               ? 'neutral'
               : performance.heapUtilPercent < 60
-              ? 'healthy'
-              : performance.heapUtilPercent < 80
-              ? 'warning'
-              : 'critical'
+                ? 'healthy'
+                : performance.heapUtilPercent < 80
+                  ? 'warning'
+                  : 'critical'
           }
           icon="💾"
           isDark={isDark}
@@ -245,10 +257,10 @@ export const TeamDashboard: React.FC<TeamDashboardProps> = ({ isDark = false }) 
           performance.avgApiResponseMs === 0
             ? 'neutral'
             : performance.avgApiResponseMs < 500
-            ? 'healthy'
-            : performance.avgApiResponseMs < 2000
-            ? 'warning'
-            : 'critical'
+              ? 'healthy'
+              : performance.avgApiResponseMs < 2000
+                ? 'warning'
+                : 'critical'
         }
         icon="🌐"
         isDark={isDark}
@@ -260,10 +272,10 @@ export const TeamDashboard: React.FC<TeamDashboardProps> = ({ isDark = false }) 
           performance.heapUtilPercent === 0
             ? 'neutral'
             : performance.heapUtilPercent < 60
-            ? 'healthy'
-            : performance.heapUtilPercent < 80
-            ? 'warning'
-            : 'critical'
+              ? 'healthy'
+              : performance.heapUtilPercent < 80
+                ? 'warning'
+                : 'critical'
         }
         icon="💾"
         isDark={isDark}
@@ -282,10 +294,10 @@ export const TeamDashboard: React.FC<TeamDashboardProps> = ({ isDark = false }) 
           performance.heapUtilPercent === 0
             ? 'neutral'
             : performance.heapUtilPercent < 60
-            ? 'healthy'
-            : performance.heapUtilPercent < 80
-            ? 'warning'
-            : 'critical'
+              ? 'healthy'
+              : performance.heapUtilPercent < 80
+                ? 'warning'
+                : 'critical'
         }
         icon="📊"
         isDark={isDark}
@@ -299,13 +311,7 @@ export const TeamDashboard: React.FC<TeamDashboardProps> = ({ isDark = false }) 
           isDark={isDark}
         />
       ) : (
-        <MetricCard
-          label="Memory Leak"
-          value="None"
-          status="healthy"
-          icon="✅"
-          isDark={isDark}
-        />
+        <MetricCard label="Memory Leak" value="None" status="healthy" icon="✅" isDark={isDark} />
       )}
     </View>
   );
@@ -320,8 +326,8 @@ export const TeamDashboard: React.FC<TeamDashboardProps> = ({ isDark = false }) 
             errorRate.errorsPerMinute === 0
               ? 'healthy'
               : errorRate.errorsPerMinute < 5
-              ? 'warning'
-              : 'critical'
+                ? 'warning'
+                : 'critical'
           }
           icon="📈"
           isDark={isDark}
@@ -333,8 +339,8 @@ export const TeamDashboard: React.FC<TeamDashboardProps> = ({ isDark = false }) 
             errorRate.totalErrors === 0
               ? 'healthy'
               : errorRate.totalErrors < 10
-              ? 'warning'
-              : 'critical'
+                ? 'warning'
+                : 'critical'
           }
           icon="🐛"
           isDark={isDark}
@@ -352,15 +358,15 @@ export const TeamDashboard: React.FC<TeamDashboardProps> = ({ isDark = false }) 
             errorRate.trend === 'improving'
               ? '↓ Improving'
               : errorRate.trend === 'degrading'
-              ? '↑ Degrading'
-              : '→ Stable'
+                ? '↑ Degrading'
+                : '→ Stable'
           }
           status={
             errorRate.trend === 'improving'
               ? 'healthy'
               : errorRate.trend === 'degrading'
-              ? 'warning'
-              : 'neutral'
+                ? 'warning'
+                : 'neutral'
           }
           icon="📉"
           isDark={isDark}
@@ -370,7 +376,7 @@ export const TeamDashboard: React.FC<TeamDashboardProps> = ({ isDark = false }) 
       {errorRate.byCategory.length > 0 ? (
         <View style={[styles.section, { backgroundColor: cardBg, borderColor }]}>
           <Text style={[styles.sectionTitle, { color: textPrimary }]}>By Category</Text>
-          {errorRate.byCategory.map((item) => (
+          {errorRate.byCategory.map(item => (
             <View
               key={item.category}
               style={[styles.categoryRow, { borderBottomColor: borderColor }]}
@@ -378,10 +384,7 @@ export const TeamDashboard: React.FC<TeamDashboardProps> = ({ isDark = false }) 
               <Text style={[styles.categoryName, { color: textPrimary }]}>{item.category}</Text>
               <View style={styles.categoryRight}>
                 <View
-                  style={[
-                    styles.categoryBar,
-                    { backgroundColor: isDark ? '#334155' : '#e2e8f0' },
-                  ]}
+                  style={[styles.categoryBar, { backgroundColor: isDark ? '#334155' : '#e2e8f0' }]}
                 >
                   <View
                     style={[
@@ -448,13 +451,7 @@ export const TeamDashboard: React.FC<TeamDashboardProps> = ({ isDark = false }) 
         icon="🎭"
         isDark={isDark}
       />
-      <MetricCard
-        label="Analytics"
-        value="Active"
-        status="healthy"
-        icon="📊"
-        isDark={isDark}
-      />
+      <MetricCard label="Analytics" value="Active" status="healthy" icon="📊" isDark={isDark} />
     </View>
   );
 
@@ -489,7 +486,7 @@ export const TeamDashboard: React.FC<TeamDashboardProps> = ({ isDark = false }) 
             style={[
               styles.refreshToggle,
               {
-                backgroundColor: autoRefreshEnabled ? '#19c3e6' : (isDark ? '#334155' : '#e2e8f0'),
+                backgroundColor: autoRefreshEnabled ? '#19c3e6' : isDark ? '#334155' : '#e2e8f0',
               },
             ]}
             onPress={() => setAutoRefresh(!autoRefreshEnabled)}
@@ -532,7 +529,7 @@ export const TeamDashboard: React.FC<TeamDashboardProps> = ({ isDark = false }) 
           style={styles.tabsScroll}
           contentContainerStyle={styles.tabsContainer}
         >
-          {VIEW_TABS.map((tab) => {
+          {VIEW_TABS.map(tab => {
             const isActive = activeView === tab.key;
             return (
               <TouchableOpacity
@@ -540,7 +537,7 @@ export const TeamDashboard: React.FC<TeamDashboardProps> = ({ isDark = false }) 
                 style={[
                   styles.tab,
                   {
-                    backgroundColor: isActive ? tabActiveColor : (isDark ? '#1e293b' : '#f1f5f9'),
+                    backgroundColor: isActive ? tabActiveColor : isDark ? '#1e293b' : '#f1f5f9',
                     borderColor: isActive ? tabActiveColor : borderColor,
                   },
                 ]}
@@ -550,12 +547,7 @@ export const TeamDashboard: React.FC<TeamDashboardProps> = ({ isDark = false }) 
                 accessibilityLabel={`${tab.label} view`}
               >
                 <Text style={styles.tabIcon}>{tab.icon}</Text>
-                <Text
-                  style={[
-                    styles.tabLabel,
-                    { color: isActive ? '#ffffff' : tabInactiveColor },
-                  ]}
-                >
+                <Text style={[styles.tabLabel, { color: isActive ? '#ffffff' : tabInactiveColor }]}>
                   {tab.label}
                 </Text>
               </TouchableOpacity>

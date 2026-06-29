@@ -2,16 +2,17 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { AlertCircle, BookOpen, Lock, Mail, User } from 'lucide-react-native';
 import React, { useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { DelegatedKeyboardAvoidingView } from '../../components/common/DelegatedKeyboardAvoidingView';
 import {
-    ActivityIndicator,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 import { MobileFormInput } from '../../components/mobile/MobileFormInput';
@@ -20,11 +21,11 @@ import { useFormCache } from '../../hooks/useFormCache';
 import { useFormValidation } from '../../hooks/useFormValidation';
 import { cacheFormValues } from '../../services/formCache';
 import {
-    getPasswordStrength,
-    validateConfirmPassword,
-    validateEmail,
-    validateName,
-    validatePassword,
+  getPasswordStrength,
+  validateConfirmPassword,
+  validateEmail,
+  validateName,
+  validatePassword,
 } from '../../utils/validation';
 
 interface MobileRegisterProps {
@@ -195,7 +196,7 @@ export const MobileRegister: React.FC<MobileRegisterProps> = ({
               {password.length > 0 && !errors.password && (
                 <PasswordStrengthBar strength={passwordStrength} scale={scale} />
               )}
-            />
+            </View>
 
             {/* Confirm Password */}
             <View style={styles.fieldWrap}>
@@ -230,7 +231,7 @@ export const MobileRegister: React.FC<MobileRegisterProps> = ({
               {errors.confirmPassword && (
                 <FieldError message={errors.confirmPassword} scale={scale} />
               )}
-            />
+            </View>
 
             <TouchableOpacity
               style={[styles.registerBtn, { opacity: isLoading ? 0.7 : 1 }]}

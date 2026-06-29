@@ -1,41 +1,43 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import {
-    BookOpen,
-    Camera,
-    ChevronDown,
-    ChevronUp,
-    Clock,
-    Edit3,
-    Globe,
-    Mail,
-    MapPin,
-    Save,
-    Trophy,
-    User,
-    UserCheck,
-    UserPlus,
-    Users,
-    X,
+  BookOpen,
+  Camera,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Edit3,
+  Globe,
+  Mail,
+  MapPin,
+  Save,
+  Trophy,
+  User,
+  UserCheck,
+  UserPlus,
+  Users,
+  X,
 } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import {
-    ActivityIndicator,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+
+import { Achievement, AchievementBadges } from './AchievementBadges';
+import { AvatarCamera } from './AvatarCamera';
+import { MobileFormInput } from './MobileFormInput';
+import { StatisticsDisplay } from './StatisticsDisplay';
 import { useFormCache } from '../../hooks/useFormCache';
 import { PROFILE_FORM_CACHE_KEYS } from '../../services/formCache';
 import { configureNext } from '../../utils/layoutAnimation';
 import { AppText as Text } from '../common/AppText';
 import { CachedImage } from '../ui/CachedImage';
 import { Skeleton } from '../ui/Skeleton';
-import { Achievement, AchievementBadges } from './AchievementBadges';
-import { AvatarCamera } from './AvatarCamera';
-import { MobileFormInput } from './MobileFormInput';
-import { StatisticsDisplay } from './StatisticsDisplay';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -277,7 +279,11 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
 
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
-        <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }} removeClippedSubviews={true}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          style={{ flex: 1 }}
+          removeClippedSubviews={true}
+        >
           <View>
             <Skeleton width="100%" height={120} borderRadius={0} />
             <View style={styles.avatarRow}>
@@ -458,7 +464,11 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
-      <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }} removeClippedSubviews={true}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        style={{ flex: 1 }}
+        removeClippedSubviews={true}
+      >
         {/* ── Profile Header ─────────────────────────────────────────────── */}
         <View>
           <LinearGradient

@@ -6,14 +6,14 @@ import { createLazyRoute } from '@/utils/lazyRoute';
 
 const LazyMobileProfile = createLazyRoute({
   importFn: () =>
-    import('@/components/mobile/MobileProfile').then((m) => ({ default: m.MobileProfile })),
+    import('@/components/mobile/MobileProfile').then(m => ({ default: m.MobileProfile })),
   LoadingFallback: ProfileSkeleton,
   boundaryName: 'ProfileTabRoute',
 });
 
 const ProfileTab = () => {
-  const theme = useAppStore((s) => s.theme);
-  const user = useAppStore((s) => s.user);
+  const theme = useAppStore(s => s.theme);
+  const user = useAppStore(s => s.user);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -23,9 +23,7 @@ const ProfileTab = () => {
 
   const userId = user?.id ?? '123';
 
-  return (
-    <LazyMobileProfile userId={userId} isDark={theme === 'dark'} isLoading={isLoading} />
-  );
+  return <LazyMobileProfile userId={userId} isDark={theme === 'dark'} isLoading={isLoading} />;
 };
 
 export default ProfileTab;

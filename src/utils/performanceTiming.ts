@@ -52,7 +52,7 @@ function nextId(): string {
 export function startTiming(
   type: ResourceType,
   resource: string,
-  method?: string,
+  method?: string
 ): (success: boolean, status?: number) => TimingEntry {
   const id = nextId();
   const startTime = Date.now();
@@ -86,9 +86,9 @@ function computeMetrics(subset: TimingEntry[]): AggregatedMetrics {
     return { count: 0, avg: 0, p50: 0, p95: 0, min: 0, max: 0, errorRate: 0 };
   }
 
-  const durations = subset.map((e) => e.duration).sort((a, b) => a - b);
+  const durations = subset.map(e => e.duration).sort((a, b) => a - b);
   const sum = durations.reduce((acc, d) => acc + d, 0);
-  const errors = subset.filter((e) => !e.success).length;
+  const errors = subset.filter(e => !e.success).length;
 
   const percentile = (p: number) => {
     const idx = Math.ceil((p / 100) * durations.length) - 1;
@@ -108,8 +108,8 @@ function computeMetrics(subset: TimingEntry[]): AggregatedMetrics {
 
 /** Get aggregated metrics for all recorded entries. */
 export function getMetrics(): PerformanceSummary {
-  const apiEntries = entries.filter((e) => e.type === 'api');
-  const imageEntries = entries.filter((e) => e.type === 'image');
+  const apiEntries = entries.filter(e => e.type === 'api');
+  const imageEntries = entries.filter(e => e.type === 'image');
 
   return {
     api: computeMetrics(apiEntries),
@@ -120,7 +120,7 @@ export function getMetrics(): PerformanceSummary {
 
 /** Get the raw timing entries (most recent first). */
 export function getEntries(type?: ResourceType): TimingEntry[] {
-  const source = type ? entries.filter((e) => e.type === type) : entries;
+  const source = type ? entries.filter(e => e.type === type) : entries;
   return [...source].reverse();
 }
 
@@ -140,7 +140,7 @@ export function subscribe(listener: Listener): () => void {
 
 /** Internal: notify listeners (called by instrumented code). */
 export function notifyEntry(entry: TimingEntry): void {
-  listeners.forEach((l) => {
+  listeners.forEach(l => {
     try {
       l(entry);
     } catch {
@@ -156,7 +156,7 @@ export async function timeAsync<T>(
   type: ResourceType,
   resource: string,
   fn: () => Promise<T>,
-  method?: string,
+  method?: string
 ): Promise<T> {
   const finish = startTiming(type, resource, method);
   try {

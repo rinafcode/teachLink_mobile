@@ -7,14 +7,14 @@ type RootHtmlProps = {
   children: React.ReactNode;
 };
 
-export default function RootHtml({ children }: RootHtmlProps) {
-  return (
-    <html lang="en">
-      <head>
-        <ScrollViewStyleReset />
-        <style dangerouslySetInnerHTML={{ __html: CRITICAL_SPLASH_CSS }} />
-      </head>
-      <body>{children}</body>
-    </html>
-  );
-}
+const RootHtml = ({ children }: RootHtmlProps) => (
+  <html lang="en">
+    <head>
+      <ScrollViewStyleReset />
+      <style dangerouslySetInnerHTML={{ __html: CRITICAL_SPLASH_CSS }} />
+    </head>
+    <body>{children}</body>
+  </html>
+);
+
+export default RootHtml;

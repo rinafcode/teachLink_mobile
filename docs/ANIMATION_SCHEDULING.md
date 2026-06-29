@@ -20,17 +20,19 @@ The project includes a comprehensive animation scheduler utility at `src/utils/a
 ### Core Classes and Functions
 
 #### `AnimationScheduler`
+
 A class for managing complex animations with frame-synced timing.
 
 ```typescript
 const scheduler = new AnimationScheduler();
-scheduler.schedule((timestamp) => {
+scheduler.schedule(timestamp => {
   // Animation logic
   return true; // Return false to stop
 }, 1000); // Optional duration in ms
 ```
 
 #### `scheduleAnimationFrame`
+
 A drop-in replacement for setTimeout that uses rAF for execution.
 
 ```typescript
@@ -43,19 +45,21 @@ cancel();
 ```
 
 #### `debounceAnimationFrame`
+
 Debounce function that ensures callbacks run on the next animation frame.
 
 ```typescript
-const debouncedFn = debounceAnimationFrame((value) => {
+const debouncedFn = debounceAnimationFrame(value => {
   // Handle value
 }, 100);
 ```
 
 #### `throttleAnimationFrame`
+
 Throttle function that ensures callbacks run at most once per animation frame.
 
 ```typescript
-const throttledFn = throttleAnimationFrame((event) => {
+const throttledFn = throttleAnimationFrame(event => {
   // Handle event
 });
 ```
@@ -63,6 +67,7 @@ const throttledFn = throttleAnimationFrame((event) => {
 ## When to Use requestAnimationFrame
 
 ### Use rAF for:
+
 - Visual animations (transitions, transforms, opacity changes)
 - Gesture timing (long press, double tap detection)
 - UI feedback animations (toasts, loading states)
@@ -70,6 +75,7 @@ const throttledFn = throttleAnimationFrame((event) => {
 - Any animation that needs to run smoothly at 60fps
 
 ### Use setTimeout for:
+
 - Network request timeouts
 - Debouncing API calls
 - Non-animation timing requirements
@@ -167,7 +173,7 @@ Always clean up animation callbacks to prevent memory leaks:
 useEffect(() => {
   const scheduler = new AnimationScheduler();
   scheduler.schedule(callback, duration);
-  
+
   return () => {
     scheduler.dispose(); // Clean up
   };

@@ -1,13 +1,9 @@
+import { cancelPendingAnimation, configureNext, configureNextImmediate } from './layoutAnimation';
 import {
-    cancelPendingAnimation,
-    configureNext,
-    configureNextImmediate,
-} from './layoutAnimation';
-import {
-    LAYOUT_ANIM_FAST,
-    LAYOUT_ANIM_FULL,
-    LAYOUT_ANIM_NONE,
-    LAYOUT_ANIM_STANDARD,
+  LAYOUT_ANIM_FAST,
+  LAYOUT_ANIM_FULL,
+  LAYOUT_ANIM_NONE,
+  LAYOUT_ANIM_STANDARD,
 } from './layoutAnimationConfigs';
 
 /**
@@ -29,8 +25,4 @@ export function safeLayoutAnimationImmediate(config?: LayoutAnimation.AnimationC
   configureNextImmediate(config);
 }
 
-export {
-    LAYOUT_ANIM_FAST, LAYOUT_ANIM_FULL,
-    LAYOUT_ANIM_NONE, LAYOUT_ANIM_STANDARD
-};
-
+export { LAYOUT_ANIM_FAST, LAYOUT_ANIM_FULL, LAYOUT_ANIM_NONE, LAYOUT_ANIM_STANDARD };

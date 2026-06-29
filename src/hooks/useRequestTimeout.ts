@@ -26,7 +26,7 @@ export interface UseRequestTimeoutReturn {
  */
 export function useRequestTimeout(
   timeoutMs: number = REQUEST_TIMEOUT_MS,
-  onTimeout?: () => void,
+  onTimeout?: () => void
 ): UseRequestTimeoutReturn {
   const [elapsed, setElapsed] = useState(0);
   const [active, setActive] = useState(false);
@@ -46,7 +46,7 @@ export function useRequestTimeout(
     setElapsed(0);
     setActive(true);
     intervalRef.current = setInterval(() => {
-      setElapsed((prev) => prev + TICK_MS);
+      setElapsed(prev => prev + TICK_MS);
     }, TICK_MS);
   }, []);
 

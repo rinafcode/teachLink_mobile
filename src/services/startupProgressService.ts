@@ -21,7 +21,7 @@ interface StartupProgressState {
   isInitializing: boolean;
   totalEstimatedTime: number;
   startTime?: number;
-  
+
   // Actions
   registerStep: (id: string, name: string, estimatedDuration: number) => void;
   startStep: (id: string) => void;
@@ -29,7 +29,7 @@ interface StartupProgressState {
   failStep: (id: string, error: string) => void;
   setInitializing: (initializing: boolean) => void;
   reset: () => void;
-  
+
   // Computed values
   getProgress: () => number;
   getRemainingTime: () => number;
@@ -44,7 +44,7 @@ const useStartupProgressStore = create<StartupProgressState>((set, get) => ({
   startTime: undefined,
 
   registerStep: (id: string, name: string, estimatedDuration: number) => {
-    set((state) => {
+    set(state => {
       const newSteps = new Map(state.steps);
       newSteps.set(id, {
         id,
@@ -63,7 +63,7 @@ const useStartupProgressStore = create<StartupProgressState>((set, get) => ({
   },
 
   startStep: (id: string) => {
-    set((state) => {
+    set(state => {
       const newSteps = new Map(state.steps);
       const step = newSteps.get(id);
       if (step) {
@@ -75,7 +75,7 @@ const useStartupProgressStore = create<StartupProgressState>((set, get) => ({
   },
 
   completeStep: (id: string) => {
-    set((state) => {
+    set(state => {
       const newSteps = new Map(state.steps);
       const step = newSteps.get(id);
       if (step) {
@@ -87,7 +87,7 @@ const useStartupProgressStore = create<StartupProgressState>((set, get) => ({
   },
 
   failStep: (id: string, error: string) => {
-    set((state) => {
+    set(state => {
       const newSteps = new Map(state.steps);
       const step = newSteps.get(id);
       if (step) {
@@ -100,7 +100,7 @@ const useStartupProgressStore = create<StartupProgressState>((set, get) => ({
   },
 
   setInitializing: (initializing: boolean) => {
-    set((state) => ({
+    set(state => ({
       isInitializing: initializing,
       startTime: initializing && !state.startTime ? Date.now() : state.startTime,
     }));
@@ -120,14 +120,11 @@ const useStartupProgressStore = create<StartupProgressState>((set, get) => ({
     if (state.totalEstimatedTime === 0) return 0;
 
     let totalTime = 0;
-    Array.from(state.steps.values()).forEach((step) => {
+    Array.from(state.steps.values()).forEach(step => {
       if (step.status === 'completed') {
         totalTime += step.estimatedDuration;
       } else if (step.status === 'in-progress' && step.startTime) {
-        const elapsedTime = Math.min(
-          Date.now() - step.startTime,
-          step.estimatedDuration
-        );
+        const elapsedTime = Math.min(Date.now() - step.startTime, step.estimatedDuration);
         totalTime += elapsedTime;
       }
     });
@@ -146,16 +143,12 @@ const useStartupProgressStore = create<StartupProgressState>((set, get) => ({
 
   getCompletedSteps: () => {
     const state = get();
-    return Array.from(state.steps.values()).filter(
-      (step) => step.status === 'completed'
-    );
+    return Array.from(state.steps.values()).filter(step => step.status === 'completed');
   },
 
   getInProgressStep: () => {
     const state = get();
-    return Array.from(state.steps.values()).find(
-      (step) => step.status === 'in-progress'
-    );
+    return Array.from(state.steps.values()).find(step => step.status === 'in-progress');
   },
 }));
 
@@ -244,4 +237,3 @@ class StartupProgressService {
 
 export const startupProgressService = new StartupProgressService();
 export { useStartupProgressStore };
-

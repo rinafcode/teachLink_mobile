@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+
 import downloadManager, { DownloadTask } from '../services/downloadManager';
 
 /**
@@ -9,7 +10,7 @@ export function useDownloads() {
   const [totalSize, setTotalSize] = useState(0);
 
   useEffect(() => {
-    const unsubscribe = downloadManager.subscribe((updatedTasks) => {
+    const unsubscribe = downloadManager.subscribe(updatedTasks => {
       setTasks(updatedTasks);
       const size = updatedTasks.reduce((acc, t) => acc + t.downloadedSize, 0);
       setTotalSize(size);

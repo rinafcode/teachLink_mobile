@@ -43,7 +43,10 @@ describe('AppUpdateService', () => {
 
   describe('checkForUpdate', () => {
     it('returns no update when none is available', async () => {
-      mockExpoUpdates.checkForUpdateAsync.mockResolvedValueOnce({ isAvailable: false, manifest: null });
+      mockExpoUpdates.checkForUpdateAsync.mockResolvedValueOnce({
+        isAvailable: false,
+        manifest: null,
+      });
       mockExpoUpdates.isEmbeddedLaunch = false;
 
       const result = await appUpdateService.checkForUpdate();

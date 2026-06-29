@@ -3,8 +3,8 @@ import { usePathname } from 'expo-router';
 import React, { useCallback, useEffect, useRef } from 'react';
 import { Animated, FlatList } from 'react-native';
 
-import { scrollPositionService } from '../services/scrollPositionService';
-import logger from '../utils/logger';
+import { scrollPositionService } from '../src/services/scrollPositionService';
+import logger from '../src/utils/logger';
 
 export interface UseFlatListScrollRestorationOptions {
   /**
@@ -82,7 +82,7 @@ export const useFlatListScrollRestoration = (
   const clearOnDataChange = options.clearOnDataChange !== false;
 
   const lastSavedOffsetRef = useRef<number>(0);
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const contentHeightRef = useRef<number>(0);
   const isFirstLoadRef = useRef(true);
 
@@ -97,9 +97,9 @@ export const useFlatListScrollRestoration = (
         // Content changed - clear old position to prevent invalid restores
         if (contentHeightRef.current > 0) {
           logger.debug(`FlatList content changed for ${screenId}, clearing position`);
-          scrollPositionService.clearPosition(screenId).catch((e) =>
-            logger.error('Failed to clear position on data change', e)
-          );
+          scrollPositionService
+            .clearPosition(screenId)
+            .catch(e => logger.error('Failed to clear position on data change', e));
           lastSavedOffsetRef.current = 0;
         }
         contentHeightRef.current = contentHeight;
@@ -198,7 +198,7 @@ export const useFlatListScrollRestoration = (
       // Clear position if index becomes invalid
       scrollPositionService
         .clearPosition(screenId)
-        .catch((e) => logger.error('Failed to clear position on index failure', e));
+        .catch(e => logger.error('Failed to clear position on index failure', e));
     },
     [screenId]
   );

@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
 import { Network } from 'expo-network';
+import { useState, useEffect, useCallback } from 'react';
 
 export type ConnectionType = 'wifi' | 'cellular' | 'none' | 'unknown';
 
@@ -30,7 +30,7 @@ export function useNetworkStatus() {
     setIsChecking(true);
     try {
       const networkState = await Network.getNetworkStateAsync();
-      
+
       // Update network status
       setNetworkStatus({
         isConnected: networkState.isConnected,

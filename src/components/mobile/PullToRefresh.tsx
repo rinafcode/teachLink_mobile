@@ -9,6 +9,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
+
 import { useAdaptiveFrameRate } from '../../hooks/useAdaptiveFrameRate';
 
 type AnyScrollComponent = React.ComponentType<any>;
@@ -57,7 +58,7 @@ function clamp(v: number, min: number, max: number): number {
  * - Avoids re-renders during drag by updating Animated.Value directly.
  * - Provides a screen-reader friendly button fallback (optional).
  */
-export function PullToRefresh(props: PullToRefreshProps) {
+export const PullToRefresh = (props: PullToRefreshProps) => {
   const {
     ScrollComponent = Animated.ScrollView,
     scrollProps,
@@ -97,7 +98,7 @@ export function PullToRefresh(props: PullToRefreshProps) {
     return () => {
       mounted = false;
       // RN types vary by version; guard-remove.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       (sub as any)?.remove?.();
     };
   }, []);
@@ -212,7 +213,7 @@ export function PullToRefresh(props: PullToRefreshProps) {
   return (
     <View className="flex-1 overflow-hidden" style={style} {...responderHandlers}>
       {showA11yFallbackButton && screenReaderEnabled ? (
-        <View className="px-3 pt-2 pb-1">
+        <View className="px-3 pb-1 pt-2">
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={refreshA11yLabel}
@@ -220,7 +221,7 @@ export function PullToRefresh(props: PullToRefreshProps) {
               if (refreshing) return;
               void runRefresh();
             }}
-            className="self-start px-3 py-2 rounded-xl bg-gray-200"
+            className="self-start rounded-xl bg-gray-200 px-3 py-2"
           >
             <Animated.Text className="text-sm font-semibold text-gray-900">Refresh</Animated.Text>
           </Pressable>
@@ -255,4 +256,4 @@ export function PullToRefresh(props: PullToRefreshProps) {
       </Animated.View>
     </View>
   );
-}
+};

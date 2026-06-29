@@ -27,12 +27,7 @@ interface MyButtonProps {
   disabled?: boolean;
 }
 
-export const MyButton: React.FC<MyButtonProps> = ({
-  label,
-  onPress,
-  testID,
-  disabled,
-}) => (
+export const MyButton: React.FC<MyButtonProps> = ({ label, onPress, testID, disabled }) => (
   <TouchableOpacity onPress={onPress} testID={testID} disabled={disabled}>
     <Text>{label}</Text>
   </TouchableOpacity>
@@ -62,12 +57,12 @@ There are two legitimate exceptions to the above rule:
 
 ### 1. Higher-Order Components (HOC)
 
-A HOC wraps an *unknown* component type and must forward **all** of its props. The spread is unavoidable here because the wrapped component's props are not known at compile time.
+A HOC wraps an _unknown_ component type and must forward **all** of its props. The spread is unavoidable here because the wrapped component's props are not known at compile time.
 
 ```tsx
 // AuthGuard.tsx — must forward every prop of the wrapped component
 export function withAuthGuard<P extends object>(
-  Component: React.ComponentType<P>,
+  Component: React.ComponentType<P>
 ): React.ComponentType<P> {
   return function AuthGuardedComponent(props: P) {
     return (
@@ -109,21 +104,21 @@ These computed-object spreads are not the same as forwarding unknown external pr
 
 ## Files That Were Refactored (Issue #371)
 
-| Component | Change |
-|---|---|
-| `AppText.tsx` | Replaced `{...props}` with explicit `TextProps` subset |
-| `AccessibleButton.tsx` | Replaced `{...rest}` with explicit `TouchableOpacityProps` subset |
-| `MobileFormInput.tsx` | Replaced `{...rest}` with explicit `TextInputProps` subset |
-| `InfiniteVirtualList.tsx` | Replaced `{...rest}` with explicit `FlatListProps` extension |
-| `VirtualList.tsx` | Replaced `{...rest}` with explicit `FlatListProps` extension |
+| Component                 | Change                                                            |
+| ------------------------- | ----------------------------------------------------------------- |
+| `AppText.tsx`             | Replaced `{...props}` with explicit `TextProps` subset            |
+| `AccessibleButton.tsx`    | Replaced `{...rest}` with explicit `TouchableOpacityProps` subset |
+| `MobileFormInput.tsx`     | Replaced `{...rest}` with explicit `TextInputProps` subset        |
+| `InfiniteVirtualList.tsx` | Replaced `{...rest}` with explicit `FlatListProps` extension      |
+| `VirtualList.tsx`         | Replaced `{...rest}` with explicit `FlatListProps` extension      |
 
 Files where spreading was **intentionally kept** (see exceptions above):
 
-| File | Reason |
-|---|---|
-| `AuthGuard.tsx` | HOC pattern — must forward all props of wrapped component |
-| `LazyScreen.tsx` | Generic lazy-loader HOC — same as above |
-| `MobileDrawer.tsx` | React Navigation requires full `DrawerContentComponentProps` forwarding |
-| `PullToRefresh.tsx` | Internal computed objects (PanResponder handlers, scroll props) |
-| `MobileVideoPlayer.tsx` | Internal computed PanResponder handlers |
-| `AchievementBadges.tsx` | Computed accessibility object spread — not external prop forwarding |
+| File                    | Reason                                                                  |
+| ----------------------- | ----------------------------------------------------------------------- |
+| `AuthGuard.tsx`         | HOC pattern — must forward all props of wrapped component               |
+| `LazyScreen.tsx`        | Generic lazy-loader HOC — same as above                                 |
+| `MobileDrawer.tsx`      | React Navigation requires full `DrawerContentComponentProps` forwarding |
+| `PullToRefresh.tsx`     | Internal computed objects (PanResponder handlers, scroll props)         |
+| `MobileVideoPlayer.tsx` | Internal computed PanResponder handlers                                 |
+| `AchievementBadges.tsx` | Computed accessibility object spread — not external prop forwarding     |

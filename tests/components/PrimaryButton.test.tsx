@@ -1,4 +1,5 @@
 import React from 'react';
+
 import PrimaryButton from '../../src/components/common/PrimaryButton';
 
 const ButtonComponent = (PrimaryButton as any).type || PrimaryButton;

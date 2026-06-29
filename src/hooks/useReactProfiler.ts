@@ -1,7 +1,8 @@
 import { useCallback, useRef } from 'react';
+
 import { mobileAnalyticsService } from '../services/mobileAnalytics';
-import { AnalyticsEvent, PerformanceMetric } from '../utils/trackingEvents';
 import { appLogger } from '../utils/logger';
+import { AnalyticsEvent, PerformanceMetric } from '../utils/trackingEvents';
 
 export interface ProfilerMetrics {
   componentName: string;
@@ -92,10 +93,7 @@ export function useReactProfiler(
   );
 
   const sampleArr = samples.current;
-  const avg =
-    sampleArr.length > 0
-      ? sampleArr.reduce((a, b) => a + b, 0) / sampleArr.length
-      : 0;
+  const avg = sampleArr.length > 0 ? sampleArr.reduce((a, b) => a + b, 0) / sampleArr.length : 0;
 
   const metrics: ProfilerMetrics = {
     componentName,

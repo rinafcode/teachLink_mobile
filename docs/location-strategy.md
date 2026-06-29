@@ -11,11 +11,11 @@ location to keep location-based features fast while protecting battery life.
 
 ## Building blocks
 
-| Concern    | Where                       |
-| ---------- | --------------------------- |
-| Geo math   | `src/utils/geoUtils.ts`     |
-| Service    | `src/services/location.ts`  |
-| React hook | `src/hooks/useLocation.ts`  |
+| Concern    | Where                      |
+| ---------- | -------------------------- |
+| Geo math   | `src/utils/geoUtils.ts`    |
+| Service    | `src/services/location.ts` |
+| React hook | `src/hooks/useLocation.ts` |
 
 The actual hardware read is delegated to a `PositionReader`, backed by Expo
 Location by default and lazily required so the module loads even where
@@ -40,10 +40,10 @@ required.
 Callers declare the accuracy they actually need rather than always asking for
 the most precise (and most expensive) reading:
 
-| Tier     | Accuracy | Expo accuracy        | Power | Grid decimals |
-| -------- | -------- | -------------------- | ----- | ------------- |
-| `coarse` | ~100m    | `Accuracy.Balanced`  | low   | 3             |
-| `fine`   | ~1m      | `Accuracy.Highest`   | high  | 5             |
+| Tier     | Accuracy | Expo accuracy       | Power | Grid decimals |
+| -------- | -------- | ------------------- | ----- | ------------- |
+| `coarse` | ~100m    | `Accuracy.Balanced` | low   | 3             |
+| `fine`   | ~1m      | `Accuracy.Highest`  | high  | 5             |
 
 `coarse` is the **default**. Returned coordinates are snapped to the tier's grid
 so that physically-close requests produce identical values, which is what makes
@@ -68,9 +68,9 @@ function NearbyCourses() {
   const { refresh, queryNearby } = useLocation({ precision: 'coarse' });
 
   useEffect(() => {
-    refresh().then((pos) => {
+    refresh().then(pos => {
       if (!pos) return;
-      queryNearby(pos.coords, (c) => api.getCoursesNear(c)).then(setCourses);
+      queryNearby(pos.coords, c => api.getCoursesNear(c)).then(setCourses);
     });
   }, []);
 }
@@ -96,4 +96,7 @@ const pos = await locationService.getCurrentPosition({
 - When verifying accuracy, compare snapped coordinates against the tier radius
   in `PRECISION_RADIUS_METERS` (5m for `fine`, 100m for `coarse`); positions
   within that radius are treated as equivalent by design.
+
+```
+
 ```

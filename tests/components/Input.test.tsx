@@ -1,5 +1,6 @@
-import React from 'react';
 import { render, RenderAPI } from '@testing-library/react-native';
+import React from 'react';
+
 import { MobileFormInput } from '../../src/components/mobile/MobileFormInput';
 
 // Mock lucide icons used inside the component

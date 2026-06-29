@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+
 import logger from './logger';
 
 export interface ImageDimensions {
@@ -16,7 +17,7 @@ export interface ImageMetadata {
 /**
  * Detects image dimensions from a remote URI
  * Uses expo-image's built-in dimension detection capabilities
- * 
+ *
  * @param uri - Image URI to detect dimensions for
  * @returns Promise resolving to image dimensions or null if detection fails
  */
@@ -40,7 +41,7 @@ export async function detectImageDimensions(uri: string): Promise<ImageDimension
           logger.debug(`Detected dimensions for ${uri}: ${width}x${height}`);
           resolve(dimensions);
         },
-        (error) => {
+        error => {
           logger.warn(`Failed to detect dimensions for ${uri}`, error);
           resolve(null);
         }
@@ -54,7 +55,7 @@ export async function detectImageDimensions(uri: string): Promise<ImageDimension
 
 /**
  * Batch detect dimensions for multiple images
- * 
+ *
  * @param uris - Array of image URIs
  * @returns Promise resolving to array of dimension results
  */
@@ -64,9 +65,7 @@ export async function detectImageDimensionsBatch(
   if (!uris || uris.length === 0) return [];
 
   try {
-    const results = await Promise.all(
-      uris.map(uri => detectImageDimensions(uri))
-    );
+    const results = await Promise.all(uris.map(uri => detectImageDimensions(uri)));
     return results;
   } catch (error) {
     logger.error('Error in batch dimension detection', error);
@@ -76,7 +75,7 @@ export async function detectImageDimensionsBatch(
 
 /**
  * Calculates aspect ratio style for maintaining image proportions
- * 
+ *
  * @param dimensions - Image dimensions
  * @param containerWidth - Width of the container
  * @returns Style object with calculated height

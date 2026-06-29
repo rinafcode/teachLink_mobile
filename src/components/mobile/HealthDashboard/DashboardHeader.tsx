@@ -6,13 +6,7 @@
  */
 
 import React from 'react';
-import {
-    ActivityIndicator,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type OverallStatus = 'ok' | 'warning' | 'critical';
 

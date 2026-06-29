@@ -1,3 +1,4 @@
+import { Clock, Trash2 } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
@@ -7,21 +8,21 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
-import { Clock, Trash2 } from 'lucide-react-native';
+
+import { useMemoryMonitor } from '../../hooks';
 import {
   getSearchHistory,
   clearSearchHistory,
   removeFromSearchHistory,
   SearchHistoryItem,
 } from '../../utils/searchHistory';
-import { useMemoryMonitor } from '../../hooks';
 
 export interface SearchHistoryProps {
   onSelectQuery: (query: string) => void;
   maxItems?: number;
 }
 
-export function SearchHistory({ onSelectQuery, maxItems = 10 }: SearchHistoryProps) {
+export const SearchHistory = ({ onSelectQuery, maxItems = 10 }: SearchHistoryProps) => {
   const [items, setItems] = useState<SearchHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -114,7 +115,7 @@ export function SearchHistory({ onSelectQuery, maxItems = 10 }: SearchHistoryPro
       />
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {

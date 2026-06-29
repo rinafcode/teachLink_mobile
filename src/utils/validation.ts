@@ -30,7 +30,10 @@ export function validateRequired(value: string, fieldName: string): ValidationRe
 export function validatePassword(password: string): ValidationResult {
   if (!password) return { valid: false, message: 'Password is required.' };
   if (password.length < PASSWORD_MIN_LENGTH) {
-    return { valid: false, message: `Password must be at least ${PASSWORD_MIN_LENGTH} characters.` };
+    return {
+      valid: false,
+      message: `Password must be at least ${PASSWORD_MIN_LENGTH} characters.`,
+    };
   }
   if (!/[A-Z]/.test(password)) {
     return { valid: false, message: 'Password must contain at least one uppercase letter.' };

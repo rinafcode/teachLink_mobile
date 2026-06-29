@@ -1,4 +1,7 @@
-import { SearchResultCard as ImportedSearchResultCard, SearchResultItem } from '../../src/components/mobile/SearchResultCard';
+import {
+  SearchResultCard as ImportedSearchResultCard,
+  SearchResultItem,
+} from '../../src/components/mobile/SearchResultCard';
 
 const SearchResultCard = (ImportedSearchResultCard as any).type || ImportedSearchResultCard;
 

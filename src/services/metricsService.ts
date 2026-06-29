@@ -13,8 +13,9 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import logger from '../utils/logger';
+
 import { crashReportingService } from './crashReporting';
+import logger from '../utils/logger';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -268,7 +269,7 @@ class MetricsService {
   private collectErrorRate(now: number): ErrorRateMetrics {
     // Rolling 1-minute window
     const oneMinuteAgo = now - 60_000;
-    const recentErrors = this.errorTimestamps.filter((t) => t >= oneMinuteAgo);
+    const recentErrors = this.errorTimestamps.filter(t => t >= oneMinuteAgo);
     const errorsPerMinute = recentErrors.length;
 
     const totalErrors = this.errorTimestamps.length;
@@ -277,16 +278,15 @@ class MetricsService {
     const byCategory = Object.entries(this.errorCategories).map(([category, count]) => ({
       category,
       count,
-      percent:
-        totalCategorised > 0 ? Math.round((count / totalCategorised) * 100) : 0,
+      percent: totalCategorised > 0 ? Math.round((count / totalCategorised) * 100) : 0,
     }));
 
     // Trend: compare last 30s vs previous 30s
     const thirtySecondsAgo = now - 30_000;
     const sixtySecondsAgo = now - 60_000;
-    const recent30s = this.errorTimestamps.filter((t) => t >= thirtySecondsAgo).length;
+    const recent30s = this.errorTimestamps.filter(t => t >= thirtySecondsAgo).length;
     const previous30s = this.errorTimestamps.filter(
-      (t) => t >= sixtySecondsAgo && t < thirtySecondsAgo
+      t => t >= sixtySecondsAgo && t < thirtySecondsAgo
     ).length;
 
     let trend: ErrorRateMetrics['trend'] = 'stable';
@@ -347,10 +347,7 @@ class MetricsService {
       });
     }
 
-    if (
-      perf.avgApiResponseMs > 0 &&
-      perf.avgApiResponseMs > thresholds.maxAvgApiResponseMs
-    ) {
+    if (perf.avgApiResponseMs > 0 && perf.avgApiResponseMs > thresholds.maxAvgApiResponseMs) {
       alerts.push({
         id: 'api_slow',
         severity: 'warning',

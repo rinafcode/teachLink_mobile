@@ -3,6 +3,9 @@
  * partial failures, fallback on batch endpoint failure, metrics tracking.
  */
 
+// Import after mocks are established
+import { batchClient } from '../../../src/services/api/batchClient';
+
 const mockPost = jest.fn();
 const mockPut = jest.fn();
 const mockDelete = jest.fn();
@@ -25,9 +28,6 @@ jest.mock('../../../src/utils/logger', () => ({
     debug: jest.fn(),
   },
 }));
-
-// Import after mocks are established
-import { batchClient } from '../../../src/services/api/batchClient';
 
 describe('BatchClient', () => {
   beforeEach(() => {
@@ -133,7 +133,10 @@ describe('BatchClient', () => {
 
     it('request body contains all requests in the order mutate() was called', async () => {
       mockPost.mockResolvedValueOnce({
-        data: [{ status: 200, body: null }, { status: 200, body: null }],
+        data: [
+          { status: 200, body: null },
+          { status: 200, body: null },
+        ],
       });
 
       batchClient.mutate('POST', '/first', { seq: 1 });
@@ -229,8 +232,8 @@ describe('BatchClient', () => {
     it('falls back to individual calls when the batch POST throws', async () => {
       mockPost
         .mockRejectedValueOnce(new Error('network error')) // batch call fails
-        .mockResolvedValueOnce({ data: { id: 1 } })        // individual fallback for /a
-        .mockResolvedValueOnce({ data: { id: 2 } });       // individual fallback for /b
+        .mockResolvedValueOnce({ data: { id: 1 } }) // individual fallback for /a
+        .mockResolvedValueOnce({ data: { id: 2 } }); // individual fallback for /b
 
       const p1 = batchClient.mutate('POST', '/a', { x: 1 });
       const p2 = batchClient.mutate('POST', '/b', { x: 2 });
@@ -340,7 +343,10 @@ describe('BatchClient', () => {
 
     it('increments totalBatched by the number of requests in each flush', async () => {
       mockPost.mockResolvedValueOnce({
-        data: [{ status: 200, body: null }, { status: 200, body: null }],
+        data: [
+          { status: 200, body: null },
+          { status: 200, body: null },
+        ],
       });
 
       batchClient.mutate('POST', '/a', {});
@@ -446,7 +452,10 @@ describe('BatchClient', () => {
       let resolveBatch!: (v: any) => void;
       mockPost
         .mockImplementationOnce(
-          () => new Promise(res => { resolveBatch = res; }),
+          () =>
+            new Promise(res => {
+              resolveBatch = res;
+            })
         )
         .mockResolvedValueOnce({ data: [{ status: 200, body: 'second-batch' }] });
 

@@ -132,13 +132,16 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
       }
     });
 
-  const handleLayout = useCallback((event: LayoutChangeEvent) => {
-    if (layoutHeight === null) {
-      const { height } = event.nativeEvent.layout;
-      setLayoutHeight(height);
-      itemHeight.value = height;
-    }
-  }, [layoutHeight, itemHeight]);
+  const handleLayout = useCallback(
+    (event: LayoutChangeEvent) => {
+      if (layoutHeight === null) {
+        const { height } = event.nativeEvent.layout;
+        setLayoutHeight(height);
+        itemHeight.value = height;
+      }
+    },
+    [layoutHeight, itemHeight]
+  );
 
   const executeDelete = useCallback(() => {
     isDeletedShared.value = true;

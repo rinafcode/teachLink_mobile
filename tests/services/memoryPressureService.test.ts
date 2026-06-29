@@ -75,7 +75,10 @@ describe('MemoryPressureService', () => {
     expect(requestQueue.stopMonitoring).toHaveBeenCalled();
     expect(syncService.stopAutoSync).toHaveBeenCalled();
     expect(syncService.removeAllEventListeners).toHaveBeenCalled();
-    expect(appLogger.warnSync).toHaveBeenCalledWith(expect.stringContaining('High memory pressure detected'), expect.any(Object));
+    expect(appLogger.warnSync).toHaveBeenCalledWith(
+      expect.stringContaining('High memory pressure detected'),
+      expect.any(Object)
+    );
   });
 
   it('resumes paused work after memory pressure subsides', async () => {
@@ -96,6 +99,9 @@ describe('MemoryPressureService', () => {
     expect(preloadService.resumePrefetch).toHaveBeenCalled();
     expect(requestQueue.startMonitoring).toHaveBeenCalled();
     expect(syncService.startAutoSync).toHaveBeenCalled();
-    expect(appLogger.infoSync).toHaveBeenCalledWith(expect.stringContaining('Memory pressure recovered'), expect.any(Object));
+    expect(appLogger.infoSync).toHaveBeenCalledWith(
+      expect.stringContaining('Memory pressure recovered'),
+      expect.any(Object)
+    );
   });
 });

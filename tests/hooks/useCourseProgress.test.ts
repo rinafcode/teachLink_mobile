@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 
 import { useCourseProgress } from '../../src/hooks/useCourseProgress';
+import apiClient from '../../src/services/api/axios.config';
 
 // ── Mocks ──────────────────────────────────────────────────────────────────
 
@@ -20,8 +21,6 @@ jest.mock('../../src/services/api/axios.config', () => ({
 jest.mock('../../src/services/api/requestQueue', () => ({
   requestQueue: { addToQueue: jest.fn() },
 }));
-
-import apiClient from '../../src/services/api/axios.config';
 
 const mockPatch = apiClient.patch as jest.Mock;
 const mockGetItem = AsyncStorage.getItem as jest.Mock;
@@ -109,9 +108,13 @@ describe('useCourseProgress', () => {
       const { result } = renderHook(() => useCourseProgress({ courseId: COURSE_ID }));
       await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-      await act(async () => { result.current.updateProgress(LESSON_ID, 10); });
+      await act(async () => {
+        result.current.updateProgress(LESSON_ID, 10);
+      });
 
-      act(() => { jest.advanceTimersByTime(1000); });
+      act(() => {
+        jest.advanceTimersByTime(1000);
+      });
       expect(mockPatch).not.toHaveBeenCalled();
     });
 
@@ -119,14 +122,18 @@ describe('useCourseProgress', () => {
       const { result } = renderHook(() => useCourseProgress({ courseId: COURSE_ID }));
       await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-      await act(async () => { result.current.updateProgress(LESSON_ID, 10); });
+      await act(async () => {
+        result.current.updateProgress(LESSON_ID, 10);
+      });
 
-      act(() => { jest.advanceTimersByTime(2000); });
+      act(() => {
+        jest.advanceTimersByTime(2000);
+      });
       await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
 
       expect(mockPatch).toHaveBeenCalledWith(
         `/api/progress/${COURSE_ID}`,
-        expect.objectContaining({ courseId: COURSE_ID }),
+        expect.objectContaining({ courseId: COURSE_ID })
       );
     });
 
@@ -140,7 +147,9 @@ describe('useCourseProgress', () => {
         result.current.updateProgress(LESSON_ID, 3);
       });
 
-      act(() => { jest.advanceTimersByTime(2000); });
+      act(() => {
+        jest.advanceTimersByTime(2000);
+      });
       await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
     });
   });

@@ -9,7 +9,7 @@ const AppTextMeta: Meta<typeof AppText> = {
   title: 'Components/Common/AppText',
   component: AppText,
   decorators: [
-    (Story) => (
+    Story => (
       <View style={{ padding: 16, flex: 1, justifyContent: 'center' }}>
         <Story />
       </View>

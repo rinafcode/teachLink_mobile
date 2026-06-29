@@ -1,3 +1,4 @@
+import { Eye, EyeOff, AlertCircle } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
@@ -11,7 +12,7 @@ import {
   TextInputSubmitEditingEventData,
   TextInputProps,
 } from 'react-native';
-import { Eye, EyeOff, AlertCircle } from 'lucide-react-native';
+
 import { useDynamicFontSize } from '../../hooks';
 import {
   formCacheService,
@@ -99,13 +100,16 @@ export const MobileFormInput: React.FC<MobileFormInputProps> = ({
     };
   }, [cacheKey, isFocused, value]);
 
-  const handleBlur = useCallback((e: Parameters<NonNullable<TextInputProps['onBlur']>>[0]) => {
-    setIsFocused(false);
-    if (cacheKey && cacheOnBlur && value.trim()) {
-      void setCachedFieldValue(cacheKey, value);
-    }
-    onBlur?.(e);
-  }, [cacheKey, cacheOnBlur, value, onBlur]);
+  const handleBlur = useCallback(
+    (e: Parameters<NonNullable<TextInputProps['onBlur']>>[0]) => {
+      setIsFocused(false);
+      if (cacheKey && cacheOnBlur && value.trim()) {
+        void setCachedFieldValue(cacheKey, value);
+      }
+      onBlur?.(e);
+    },
+    [cacheKey, cacheOnBlur, value, onBlur]
+  );
 
   const handleApplySuggestion = useCallback(() => {
     if (suggestion) {
@@ -123,7 +127,7 @@ export const MobileFormInput: React.FC<MobileFormInputProps> = ({
 
   return (
     <View className="mb-4 w-full">
-      <View className="flex-row justify-between items-center mb-1.5">
+      <View className="mb-1.5 flex-row items-center justify-between">
         <Text
           className="font-semibold tracking-[0.1px]"
           style={{ color: labelColor, fontSize: scale(14) }}
@@ -137,21 +141,19 @@ export const MobileFormInput: React.FC<MobileFormInputProps> = ({
           )}
         </Text>
         {hint && !error && (
-          <Text style={{ color: isDark ? '#475569' : '#94a3b8', fontSize: scale(12) }}>
-            {hint}
-          </Text>
+          <Text style={{ color: isDark ? '#475569' : '#94a3b8', fontSize: scale(12) }}>{hint}</Text>
         )}
       </View>
 
       <View
-        className="flex-row items-center border-[1.5px] rounded-xl overflow-hidden"
+        className="flex-row items-center overflow-hidden rounded-xl border-[1.5px]"
         style={{
           borderColor,
           backgroundColor: isDark ? '#1e293b' : '#fff',
           minHeight: multiline ? scale(100) : scale(52),
         }}
       >
-        {leftIcon && <View className="px-3.5 justify-center items-center">{leftIcon}</View>}
+        {leftIcon && <View className="items-center justify-center px-3.5">{leftIcon}</View>}
 
         <TextInput
           className="flex-1 py-3.5 pr-4"
@@ -196,7 +198,7 @@ export const MobileFormInput: React.FC<MobileFormInputProps> = ({
 
       {suggestion && !error && (
         <TouchableOpacity
-          className="flex-row items-center gap-1.5 mt-1.5 px-3 py-2 rounded-xl border"
+          className="mt-1.5 flex-row items-center gap-1.5 rounded-xl border px-3 py-2"
           style={{
             backgroundColor: isDark ? '#0f172a' : '#f0f9ff',
             borderColor: isDark ? '#334155' : '#bae6fd',
@@ -222,9 +224,9 @@ export const MobileFormInput: React.FC<MobileFormInputProps> = ({
       )}
 
       {error && (
-        <View className="flex-row items-center gap-1 mt-1">
+        <View className="mt-1 flex-row items-center gap-1">
           <AlertCircle size={scale(14)} color="#ef4444" />
-          <Text className="text-red-500 flex-1" style={{ fontSize: scale(12) }}>
+          <Text className="flex-1 text-red-500" style={{ fontSize: scale(12) }}>
             {error}
           </Text>
         </View>

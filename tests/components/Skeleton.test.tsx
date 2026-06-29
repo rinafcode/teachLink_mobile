@@ -1,5 +1,6 @@
-import React from 'react';
 import { render, RenderAPI } from '@testing-library/react-native';
+import React from 'react';
+
 import { Skeleton, SkeletonGroup } from '../../src/components/ui/Skeleton';
 
 describe('Skeleton', () => {

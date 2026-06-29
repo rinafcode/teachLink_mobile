@@ -20,7 +20,7 @@ const PrimaryButtonMeta: Meta<typeof PrimaryButton> = {
     },
   },
   decorators: [
-    (Story) => (
+    Story => (
       <View style={{ padding: 16, alignItems: 'center', justifyContent: 'center', flex: 1 }}>
         <Story />
       </View>

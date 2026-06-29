@@ -14,9 +14,9 @@ export type AnimationState = 'CLOSED' | 'OPENING' | 'OPEN' | 'CLOSING';
 type Action = 'OPEN' | 'CLOSE' | 'ANIMATION_DONE';
 
 const TRANSITIONS: Record<AnimationState, Partial<Record<Action, AnimationState>>> = {
-  CLOSED:  { OPEN: 'OPENING' },
+  CLOSED: { OPEN: 'OPENING' },
   OPENING: { ANIMATION_DONE: 'OPEN', CLOSE: 'CLOSING' },
-  OPEN:    { CLOSE: 'CLOSING' },
+  OPEN: { CLOSE: 'CLOSING' },
   CLOSING: { ANIMATION_DONE: 'CLOSED', OPEN: 'OPENING' },
 };
 

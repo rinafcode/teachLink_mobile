@@ -47,12 +47,12 @@ User Action / Network Event / Lifecycle
 
 Set automatically by the Zustand store's `setUser` action. Every subsequent Sentry event is tagged with:
 
-| Field | Sentry Attribute | Example |
-|---|---|---|
-| `user.id` | `user.id` | `u-abc123` |
-| `user.email` | `user.email` | `ada@teachlink.com` |
-| `user.name` | `user.username` | `Ada Lovelace` |
-| `user.role` | tag `user.role` | `student`, `teacher` |
+| Field        | Sentry Attribute | Example              |
+| ------------ | ---------------- | -------------------- |
+| `user.id`    | `user.id`        | `u-abc123`           |
+| `user.email` | `user.email`     | `ada@teachlink.com`  |
+| `user.name`  | `user.username`  | `Ada Lovelace`       |
+| `user.role`  | tag `user.role`  | `student`, `teacher` |
 
 Cleared automatically on `logout()`.
 
@@ -60,29 +60,29 @@ Cleared automatically on `logout()`.
 
 Each Sentry event arrives with the **last 100 breadcrumbs** describing the session. Sources:
 
-| Category | Added by | Example message |
-|---|---|---|
-| `navigation` | `trackScreen()` | `Navigated to QuizScreen` |
-| `user.action` | `trackAction()` | `tap_enroll_button` |
-| `network` | `trackNetworkRequest()` | `POST /api/quiz/submit` |
-| `auth` | `setUser()` / `clearUser()` | `User signed in (id=...)` |
-| `app.lifecycle` | `trackAppLifecycle()` | `App foreground` |
-| `log` | `logger.ts` WARN/ERROR sink | `API Error: 401 /api/auth` |
-| `custom` | `addBreadcrumb()` | Any caller-supplied message |
+| Category        | Added by                    | Example message             |
+| --------------- | --------------------------- | --------------------------- |
+| `navigation`    | `trackScreen()`             | `Navigated to QuizScreen`   |
+| `user.action`   | `trackAction()`             | `tap_enroll_button`         |
+| `network`       | `trackNetworkRequest()`     | `POST /api/quiz/submit`     |
+| `auth`          | `setUser()` / `clearUser()` | `User signed in (id=...)`   |
+| `app.lifecycle` | `trackAppLifecycle()`       | `App foreground`            |
+| `log`           | `logger.ts` WARN/ERROR sink | `API Error: 401 /api/auth`  |
+| `custom`        | `addBreadcrumb()`           | Any caller-supplied message |
 
 ### 3. Custom Tags (Dashboard Filters)
 
 Tags are indexed by Sentry and available as filter facets on the Issues dashboard:
 
-| Tag key | Values | Added by |
-|---|---|---|
-| `screen.current` | Screen name | `trackScreen()` + `beforeSend` hook |
-| `screen.previous` | Previous screen | `trackScreen()` |
-| `user.role` | `student` / `teacher` / `admin` | `setUser()` |
-| `crash_type` | `fatal` / `non_fatal` | `crashReporting.captureCrash()` |
-| `error_context` | Caller-supplied string | `crashReporting.reportError()` |
-| `error.screen` | Screen at error time | `captureException(err, {}, screen)` |
-| `error.action` | Action at error time | `captureException(err, {}, _, action)` |
+| Tag key           | Values                          | Added by                               |
+| ----------------- | ------------------------------- | -------------------------------------- |
+| `screen.current`  | Screen name                     | `trackScreen()` + `beforeSend` hook    |
+| `screen.previous` | Previous screen                 | `trackScreen()`                        |
+| `user.role`       | `student` / `teacher` / `admin` | `setUser()`                            |
+| `crash_type`      | `fatal` / `non_fatal`           | `crashReporting.captureCrash()`        |
+| `error_context`   | Caller-supplied string          | `crashReporting.reportError()`         |
+| `error.screen`    | Screen at error time            | `captureException(err, {}, screen)`    |
+| `error.action`    | Action at error time            | `captureException(err, {}, _, action)` |
 
 ### 4. Rich Extra / Contexts
 
@@ -117,24 +117,29 @@ Every exception also carries structured `extra` and `contexts` objects:
 ## Integration Points
 
 ### Store (`src/store/index.ts`)
+
 `setUser()` and `logout()` automatically sync the Sentry scope so no manual calls are needed in feature code.
 
 ### Crash Reporter (`src/services/crashReporting.ts`)
+
 All global JS and promise-rejection errors flow through `crashReportingService` which calls `sentryContextService.captureException()` with full crash metadata.
 
 ### Logger (`src/config/logging.ts` → `sendToRemoteLogging`)
+
 - **WARN** → Sentry breadcrumb only
 - **ERROR** → Sentry breadcrumb + `captureException` / `captureMessage` with full session context
 
 ### App Lifecycle (`App.tsx`)
-| Event | Breadcrumb |
-|---|---|
+
+| Event      | Breadcrumb                             |
+| ---------- | -------------------------------------- |
 | Cold start | `App launch` + `app_cold_start` action |
-| Foreground | `App foreground` |
-| Background | `App background` + log queue flush |
-| Crash | `App crash` (fatal) + session snapshot |
+| Foreground | `App foreground`                       |
+| Background | `App background` + log queue flush     |
+| Crash      | `App crash` (fatal) + session snapshot |
 
 ### Navigation (`src/navigation/AuthGuard.tsx`)
+
 Unauthenticated redirect is captured as an `auth` breadcrumb before the redirect fires.
 
 ---
@@ -161,12 +166,12 @@ is:unresolved tags[error_context]:api_call times_seen:>50
 
 ### Recommended Alerts
 
-| Alert | Condition | Action |
-|---|---|---|
-| **Fatal crash spike** | `level:fatal` count > 5 in 5 min | PagerDuty |
-| **Error rate surge** | Issue event count > 100/hr | Slack `#prod-alerts` |
-| **Auth loop** | `tags[error_context]:auth` > 20/hr | Slack `#on-call` |
-| **Payment failure** | `tags[error.screen]:CheckoutScreen` > 10/hr | Slack `#payments` |
+| Alert                 | Condition                                   | Action               |
+| --------------------- | ------------------------------------------- | -------------------- |
+| **Fatal crash spike** | `level:fatal` count > 5 in 5 min            | PagerDuty            |
+| **Error rate surge**  | Issue event count > 100/hr                  | Slack `#prod-alerts` |
+| **Auth loop**         | `tags[error_context]:auth` > 20/hr          | Slack `#on-call`     |
+| **Payment failure**   | `tags[error.screen]:CheckoutScreen` > 10/hr | Slack `#payments`    |
 
 ### Recommended Performance Monitors
 
@@ -180,6 +185,7 @@ Navigate to **Performance → Monitors** and create:
 ## How to Use in Feature Code
 
 ### Report a caught error with context
+
 ```ts
 import { sentryContextService } from '../services/sentryContext';
 
@@ -195,22 +201,23 @@ try {
 ```
 
 ### Track a meaningful user action
+
 ```ts
 sentryContextService.trackAction('enroll_course', { courseId, price });
 ```
 
 ### Track a network call
+
 ```ts
 sentryContextService.trackNetworkRequest('POST', '/api/enroll', response.status, durationMs);
 ```
 
 ### Capture a non-exception warning
+
 ```ts
-sentryContextService.captureMessage(
-  'Checkout reached rate limit',
-  'warning',
-  { tags: { payment_provider: 'stripe' } },
-);
+sentryContextService.captureMessage('Checkout reached rate limit', 'warning', {
+  tags: { payment_provider: 'stripe' },
+});
 ```
 
 ---

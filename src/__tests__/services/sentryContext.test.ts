@@ -10,6 +10,7 @@
  */
 
 import * as Sentry from '@sentry/react-native';
+
 import { sentryContextService } from '../../services/sentryContext';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
@@ -73,7 +74,7 @@ describe('SentryContextService', () => {
       sentryContextService.setUser({ id: 'u-004' });
 
       const breadcrumb = mockSentry.addBreadcrumb.mock.calls.find(
-        ([b]) => b.category === 'auth' && b.message?.includes('signed in'),
+        ([b]) => b.category === 'auth' && b.message?.includes('signed in')
       )?.[0];
 
       expect(breadcrumb).toBeDefined();
@@ -98,7 +99,7 @@ describe('SentryContextService', () => {
       sentryContextService.clearUser();
 
       const breadcrumb = mockSentry.addBreadcrumb.mock.calls.find(
-        ([b]) => b.category === 'auth' && b.message?.includes('signed out'),
+        ([b]) => b.category === 'auth' && b.message?.includes('signed out')
       )?.[0];
 
       expect(breadcrumb).toBeDefined();
@@ -117,7 +118,7 @@ describe('SentryContextService', () => {
           category: 'navigation',
           message: 'Navigated to HomeScreen',
           level: 'info',
-        }),
+        })
       );
     });
 
@@ -129,7 +130,7 @@ describe('SentryContextService', () => {
       expect(mockSentry.addBreadcrumb).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ from: 'CourseScreen', to: 'QuizScreen' }),
-        }),
+        })
       );
     });
 
@@ -139,7 +140,7 @@ describe('SentryContextService', () => {
       expect(mockSentry.addBreadcrumb).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ from: 'app_start' }),
-        }),
+        })
       );
     });
 
@@ -181,7 +182,7 @@ describe('SentryContextService', () => {
       expect(mockSentry.addBreadcrumb).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ screen: 'CheckoutScreen' }),
-        }),
+        })
       );
     });
 
@@ -191,7 +192,7 @@ describe('SentryContextService', () => {
       expect(mockSentry.addBreadcrumb).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ formId: 'register' }),
-        }),
+        })
       );
     });
   });
@@ -205,7 +206,7 @@ describe('SentryContextService', () => {
           category: 'network',
           level: 'info',
           data: expect.objectContaining({ statusCode: 200, durationMs: 120 }),
-        }),
+        })
       );
     });
 
@@ -213,7 +214,7 @@ describe('SentryContextService', () => {
       sentryContextService.trackNetworkRequest('POST', '/api/login', 401);
 
       expect(mockSentry.addBreadcrumb).toHaveBeenCalledWith(
-        expect.objectContaining({ level: 'warning' }),
+        expect.objectContaining({ level: 'warning' })
       );
     });
   });
@@ -295,7 +296,7 @@ describe('SentryContextService', () => {
 
       expect(mockSentry.captureMessage).toHaveBeenCalledWith(
         'Rate limit exceeded',
-        expect.objectContaining({ level: 'warning' }),
+        expect.objectContaining({ level: 'warning' })
       );
     });
   });
@@ -307,7 +308,7 @@ describe('SentryContextService', () => {
       sentryContextService.trackAppLifecycle('launch');
 
       expect(mockSentry.addBreadcrumb).toHaveBeenCalledWith(
-        expect.objectContaining({ category: 'app.lifecycle', message: 'App launch' }),
+        expect.objectContaining({ category: 'app.lifecycle', message: 'App launch' })
       );
     });
 
@@ -315,7 +316,7 @@ describe('SentryContextService', () => {
       sentryContextService.trackAppLifecycle('foreground');
 
       expect(mockSentry.addBreadcrumb).toHaveBeenCalledWith(
-        expect.objectContaining({ level: 'info' }),
+        expect.objectContaining({ level: 'info' })
       );
     });
 
@@ -323,7 +324,7 @@ describe('SentryContextService', () => {
       sentryContextService.trackAppLifecycle('background');
 
       expect(mockSentry.addBreadcrumb).toHaveBeenCalledWith(
-        expect.objectContaining({ message: 'App background', level: 'info' }),
+        expect.objectContaining({ message: 'App background', level: 'info' })
       );
     });
 
@@ -331,7 +332,7 @@ describe('SentryContextService', () => {
       sentryContextService.trackAppLifecycle('crash');
 
       expect(mockSentry.addBreadcrumb).toHaveBeenCalledWith(
-        expect.objectContaining({ level: 'fatal' }),
+        expect.objectContaining({ level: 'fatal' })
       );
     });
   });

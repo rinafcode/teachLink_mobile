@@ -2,10 +2,10 @@
 
 /**
  * Cache Invalidation Test
- * 
+ *
  * Tests that cache invalidation works correctly when dependencies
  * or configuration files change.
- * 
+ *
  * Usage:
  *   node scripts/testCacheInvalidation.js
  */
@@ -130,7 +130,9 @@ function testCacheInvalidation() {
 
   for (const result of results) {
     const statusIcon = result.status === 'PASS' ? '✅' : result.status === 'FAIL' ? '❌' : '⏭️';
-    console.log(`| ${result.name} | ${statusIcon} ${result.status} | ${result.file} | ${result.invalidates ? 'Yes' : 'No'} |`);
+    console.log(
+      `| ${result.name} | ${statusIcon} ${result.status} | ${result.file} | ${result.invalidates ? 'Yes' : 'No'} |`
+    );
 
     if (result.status === 'PASS') passed++;
     else if (result.status === 'FAIL') failed++;
@@ -186,7 +188,7 @@ function testWorkflowCacheKeys() {
     }
 
     const content = fs.readFileSync(filePath, 'utf8');
-    
+
     // Extract cache key patterns
     const cacheKeyPattern = /key:\s*\$\{\{[^}]+\}\}/g;
     const cacheKeys = content.match(cacheKeyPattern) || [];

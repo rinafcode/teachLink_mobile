@@ -9,22 +9,17 @@
  */
 
 import React from 'react';
-import {
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
-} from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useHealthDashboard } from '../../../hooks/useHealthDashboard';
-import type { AlertSeverity, HealthSnapshot } from '../../../services/healthMetrics';
 import { AlertBanner } from './AlertBanner';
 import { DashboardHeader } from './DashboardHeader';
 import { LatencyBar } from './LatencyBar';
 import { MetricCard } from './MetricCard';
 import { ThresholdEditor } from './ThresholdEditor';
+import { useHealthDashboard } from '../../../hooks/useHealthDashboard';
+
+import type { AlertSeverity, HealthSnapshot } from '../../../services/healthMetrics';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -42,9 +37,7 @@ function latencySeverity(p95: number, warn: number, crit: number): AlertSeverity
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
-const SkeletonCard: React.FC = () => (
-  <View style={skeletonStyles.card} />
-);
+const SkeletonCard: React.FC = () => <View style={skeletonStyles.card} />;
 
 const LoadingSkeleton: React.FC = () => (
   <View style={skeletonStyles.container}>
@@ -102,7 +95,7 @@ export const HealthDashboard: React.FC = () => {
       {alerts.length > 0 && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Active Alerts ({alerts.length})</Text>
-          {alerts.map((alert) => (
+          {alerts.map(alert => (
             <AlertBanner key={alert.id} alert={alert} onDismiss={dismissAlert} />
           ))}
         </View>
@@ -117,7 +110,11 @@ export const HealthDashboard: React.FC = () => {
             value={snap.crashRate}
             unit="%"
             subValue={`${snap.crashCount} crashes`}
-            severity={crashSeverity(snap.crashRate, thresholds.crashRateWarning, thresholds.crashRateCritical)}
+            severity={crashSeverity(
+              snap.crashRate,
+              thresholds.crashRateWarning,
+              thresholds.crashRateCritical
+            )}
             icon="💥"
           />
           <MetricCard
@@ -129,8 +126,8 @@ export const HealthDashboard: React.FC = () => {
               snap.errorRatePerMinute >= thresholds.errorRateCritical
                 ? 'critical'
                 : snap.errorRatePerMinute >= thresholds.errorRateWarning
-                ? 'warning'
-                : 'ok'
+                  ? 'warning'
+                  : 'ok'
             }
             icon="⚠️"
           />
@@ -163,8 +160,8 @@ export const HealthDashboard: React.FC = () => {
               snap.apiErrorRate >= thresholds.apiErrorRateCritical
                 ? 'critical'
                 : snap.apiErrorRate >= thresholds.apiErrorRateWarning
-                ? 'warning'
-                : 'ok'
+                  ? 'warning'
+                  : 'ok'
             }
             icon="🔴"
           />
@@ -208,11 +205,7 @@ export const HealthDashboard: React.FC = () => {
             unit="%"
             subValue="thread load"
             severity={
-              snap.jsBusyRatio > 0.8
-                ? 'critical'
-                : snap.jsBusyRatio > 0.5
-                ? 'warning'
-                : 'ok'
+              snap.jsBusyRatio > 0.8 ? 'critical' : snap.jsBusyRatio > 0.5 ? 'warning' : 'ok'
             }
             icon="⚙️"
           />

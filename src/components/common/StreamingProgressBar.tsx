@@ -1,6 +1,6 @@
 /**
  * STREAMING PROGRESS BAR COMPONENT
- * 
+ *
  * Displays streaming progress with animated bar and metrics display.
  * Shows progress percentage, chunk count, and TTFB/latency information.
  */
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
 
 /**
  * Progress bar component for streaming data
- * 
+ *
  * @example
  * ```tsx
  * <StreamingProgressBar
@@ -121,37 +121,22 @@ export const StreamingProgressBar = React.memo(
 
     return (
       <View style={[styles.container, style]}>
-        <View
-          style={[
-            styles.progressContainer,
-            { height, backgroundColor },
-          ]}
-        >
+        <View style={[styles.progressContainer, { height, backgroundColor }]}>
           <Animated.View
-            style={[
-              styles.progressBar,
-              { width: widthInterpolation, backgroundColor: barColor },
-            ]}
+            style={[styles.progressBar, { width: widthInterpolation, backgroundColor: barColor }]}
           />
         </View>
 
         {showMetrics && (
           <View style={styles.metricsContainer}>
             <Text style={styles.progressText}>
-              {Math.round(progress)}%
-              {chunkCount > 0 && ` • ${chunkCount} items`}
+              {Math.round(progress)}%{chunkCount > 0 && ` • ${chunkCount} items`}
             </Text>
 
-            {ttfb && (
-              <Text style={styles.ttfbText}>
-                ⚡ TTFB: {ttfb}ms
-              </Text>
-            )}
+            {ttfb && <Text style={styles.ttfbText}>⚡ TTFB: {ttfb}ms</Text>}
 
             {totalTime && !isStreaming && (
-              <Text style={styles.metricText}>
-                Total: {(totalTime / 1000).toFixed(1)}s
-              </Text>
+              <Text style={styles.metricText}>Total: {(totalTime / 1000).toFixed(1)}s</Text>
             )}
           </View>
         )}

@@ -1,3 +1,4 @@
+import { NotificationType, NotificationData } from '../../types/notifications';
 import {
   setNavigationRef,
   handleCourseUpdate,
@@ -8,7 +9,6 @@ import {
   buildDeepLink,
   parseDeepLink,
 } from '../../utils/notificationHandlers';
-import { NotificationType, NotificationData } from '../../types/notifications';
 
 describe('notificationHandlers', () => {
   const mockNavigate = jest.fn();

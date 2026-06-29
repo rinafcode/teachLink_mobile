@@ -149,7 +149,7 @@ import { retrieveLogFiles, clearLogFiles } from '@/config/logging';
 
 // Get all stored logs
 const logs = await retrieveLogFiles();
-logs.forEach((log) => console.log(log));
+logs.forEach(log => console.log(log));
 
 // Clear log storage
 await clearLogFiles();
@@ -164,7 +164,6 @@ Copy `.env.example` to `.env` and set the following:
 | `EXPO_PUBLIC_APP_ENV`                   | No       | Runtime environment (`development` / `production`) |
 | `EXPO_PUBLIC_ENABLE_PUSH_NOTIFICATIONS` | No       | Enable push notifications (`true` / `false`)       |
 | `EXPO_PUBLIC_STORYBOOK`                 | No       | Enable Storybook mode (`true` / `false`)           |
-
 
 The app validates `EXPO_PUBLIC_API_BASE_URL` and `EXPO_PUBLIC_SOCKET_URL` at startup and will refuse to launch with invalid or missing values.
 
@@ -229,18 +228,17 @@ Run `eas credentials` to set up or repair iOS/Android signing credentials.
 
 The project defines three EAS build profiles in `eas.json`:
 
-| Profile | Description | Usage |
-|---|---|---|
-| **development** | Fast internal build for debugging, includes development client and runs on the `development` channel. | `eas build --profile development` |
-| **preview** | Internal preview build, generates an APK for Android, runs on the `preview` channel. | `eas build --profile preview` |
-| **production** | Production‑ready build with auto‑incremented version numbers for iOS and Android, publishes to the `production` channel. | `eas build --profile production` |
+| Profile         | Description                                                                                                              | Usage                             |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------ | --------------------------------- |
+| **development** | Fast internal build for debugging, includes development client and runs on the `development` channel.                    | `eas build --profile development` |
+| **preview**     | Internal preview build, generates an APK for Android, runs on the `preview` channel.                                     | `eas build --profile preview`     |
+| **production**  | Production‑ready build with auto‑incremented version numbers for iOS and Android, publishes to the `production` channel. | `eas build --profile production`  |
 
 These profiles can also be used when submitting:
 
 - `eas submit --profile production` will use the production credentials defined in the `submit.production` section of `eas.json`.
 
 Refer to the official EAS docs for more details.
-
 
 ---
 

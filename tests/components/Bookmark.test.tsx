@@ -1,8 +1,9 @@
-import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import React from 'react';
 
 import BookmarkButton from '../../src/components/mobile/BookmarkButton';
 import BookmarkList from '../../src/components/mobile/BookmarkList';
+import apiService from '../../src/services/api';
 import { useBookmarkStore } from '../../src/store/bookmarkStore';
 
 // ── Mocks ──────────────────────────────────────────────────────────────────
@@ -28,12 +29,15 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn() }),
 }));
 
-import apiService from '../../src/services/api';
-
 const mockPost = apiService.post as jest.Mock;
 const mockDelete = apiService.delete as jest.Mock;
 
-const ITEM = { itemId: 'lesson-1', itemType: 'lesson', title: 'Intro to React', url: '/lessons/lesson-1' };
+const ITEM = {
+  itemId: 'lesson-1',
+  itemType: 'lesson',
+  title: 'Intro to React',
+  url: '/lessons/lesson-1',
+};
 
 beforeEach(() => {
   useBookmarkStore.setState({ bookmarks: [], isLoading: false });
@@ -109,7 +113,12 @@ describe('BookmarkList', () => {
   it('renders multiple bookmarks', () => {
     const items = [
       ITEM,
-      { itemId: 'course-2', itemType: 'course', title: 'Advanced TypeScript', url: '/courses/course-2' },
+      {
+        itemId: 'course-2',
+        itemType: 'course',
+        title: 'Advanced TypeScript',
+        url: '/courses/course-2',
+      },
     ];
     useBookmarkStore.setState({ bookmarks: items, isLoading: false });
     const { getByTestId } = render(<BookmarkList />);

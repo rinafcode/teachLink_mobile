@@ -53,4 +53,3 @@ export { useSearchIndex } from './useSearchIndex';
 export type { UseSearchIndexResult } from './useSearchIndex';
 export { useAppUpdate } from './useAppUpdate';
 export type { UseAppUpdateResult, UseAppUpdateState, UseAppUpdateActions } from './useAppUpdate';
-

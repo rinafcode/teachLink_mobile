@@ -5,7 +5,7 @@ export interface ISplitTransactionRecord {
   assetSymbol: string;
   senderAddress: string;
   timestamp: string;
-  category: "escrow" | "direct_split" | "fee_allocation";
+  category: 'escrow' | 'direct_split' | 'fee_allocation';
 }
 
 export interface ISearchFilterState {

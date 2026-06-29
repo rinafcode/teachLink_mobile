@@ -1,8 +1,9 @@
 import { renderHook, act } from '@testing-library/react-native';
-import { useOptimizedClipboard } from '../../hooks/useOptimizedClipboard';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { InteractionManager } from 'react-native';
+
+import { useOptimizedClipboard } from '../../hooks/useOptimizedClipboard';
 
 // Mock expo-clipboard explicitly for these tests since it's not globally mocked
 jest.mock('expo-clipboard', () => ({
@@ -15,7 +16,7 @@ describe('useOptimizedClipboard', () => {
     jest.clearAllMocks();
     jest.useFakeTimers();
     // Ensure InteractionManager resolves immediately in tests
-    (InteractionManager.runAfterInteractions as jest.Mock).mockImplementation((cb) => cb());
+    (InteractionManager.runAfterInteractions as jest.Mock).mockImplementation(cb => cb());
   });
 
   afterEach(() => {
@@ -24,7 +25,7 @@ describe('useOptimizedClipboard', () => {
 
   it('initializes with correct default state', () => {
     const { result } = renderHook(() => useOptimizedClipboard());
-    
+
     expect(result.current.isCopying).toBe(false);
     expect(result.current.isPasting).toBe(false);
     expect(result.current.copySuccess).toBe(false);
@@ -35,13 +36,13 @@ describe('useOptimizedClipboard', () => {
 
   it('performs copy asynchronously and sets success state', async () => {
     const { result } = renderHook(() => useOptimizedClipboard());
-    
+
     let promise: Promise<boolean>;
     act(() => {
       promise = result.current.copyToClipboard('large simulated payload');
     });
 
-    // InteractionManager runAfterInteractions is mocked to run immediately, 
+    // InteractionManager runAfterInteractions is mocked to run immediately,
     // but we have a setTimeout(..., 0) inside it.
     // So isCopying should be true synchronously immediately after calling copy.
     expect(result.current.isCopying).toBe(true);
@@ -54,16 +55,16 @@ describe('useOptimizedClipboard', () => {
 
     expect(Clipboard.setStringAsync).toHaveBeenCalledWith('large simulated payload');
     expect(Haptics.impactAsync).toHaveBeenCalled();
-    
+
     expect(result.current.isCopying).toBe(false);
     expect(result.current.copySuccess).toBe(true);
     expect(result.current.error).toBeNull();
-    
+
     // Test the 2-second success toast reset
     act(() => {
       jest.advanceTimersByTime(2000);
     });
-    
+
     expect(result.current.copySuccess).toBe(false);
   });
 
@@ -72,7 +73,7 @@ describe('useOptimizedClipboard', () => {
     (Clipboard.setStringAsync as jest.Mock).mockRejectedValueOnce(mockError);
 
     const { result } = renderHook(() => useOptimizedClipboard());
-    
+
     let promise: Promise<boolean>;
     act(() => {
       promise = result.current.copyToClipboard('payload');
@@ -90,7 +91,7 @@ describe('useOptimizedClipboard', () => {
 
   it('performs paste asynchronously and updates clipboard content', async () => {
     const { result } = renderHook(() => useOptimizedClipboard());
-    
+
     let promise: Promise<string>;
     act(() => {
       promise = result.current.pasteFromClipboard();
@@ -104,7 +105,7 @@ describe('useOptimizedClipboard', () => {
     });
 
     expect(Clipboard.getStringAsync).toHaveBeenCalled();
-    
+
     expect(result.current.isPasting).toBe(false);
     expect(result.current.clipboardContent).toBe('test pasted text');
     expect(result.current.error).toBeNull();

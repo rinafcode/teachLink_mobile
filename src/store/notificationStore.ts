@@ -1,13 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+
 import {
-    DEFAULT_NOTIFICATION_PREFERENCES,
-    NotificationData,
-    NotificationHistoryEntry,
-    NotificationPreferences,
-    NotificationType,
-    StoredNotification,
+  DEFAULT_NOTIFICATION_PREFERENCES,
+  NotificationData,
+  NotificationHistoryEntry,
+  NotificationPreferences,
+  NotificationType,
+  StoredNotification,
 } from '../types/notifications';
 
 interface NotificationState {
@@ -168,10 +169,10 @@ export const useNotificationStore = create<NotificationState>()(
             notifications = [newNotification, ...state.notifications].slice(0, 100);
           }
 
-          const notificationHistory = [
-            { fingerprint, receivedAt: now },
-            ...recentHistory,
-          ].slice(0, 200);
+          const notificationHistory = [{ fingerprint, receivedAt: now }, ...recentHistory].slice(
+            0,
+            200
+          );
 
           return {
             notifications,

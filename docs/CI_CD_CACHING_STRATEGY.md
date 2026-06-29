@@ -7,12 +7,14 @@ This document describes the incremental build and caching strategy implemented t
 ## Performance Metrics
 
 ### Before Optimization
+
 - **Build Time**: 10-15 minutes
 - **Cache Strategy**: None
 - **Dependency Installation**: Full install every time
 - **Native Builds**: Full rebuild every time
 
 ### After Optimization (Target)
+
 - **Build Time**: 2-3 minutes with cache hits
 - **Cache Hit Rate**: 85-95% for typical changes
 - **Dependency Installation**: < 30 seconds with cache
@@ -23,6 +25,7 @@ This document describes the incremental build and caching strategy implemented t
 ### 1. Dependency Caching
 
 #### Node.js Dependencies
+
 ```yaml
 - name: Cache node_modules
   uses: actions/cache@v4
@@ -36,15 +39,18 @@ This document describes the incremental build and caching strategy implemented t
 ```
 
 **Cache Key Strategy:**
+
 - Primary key: `{OS}-node-modules-{package-lock.json hash}`
 - Restore keys: Fallback to any previous node_modules cache
 - **Invalidation**: Automatic when `package-lock.json` changes
 
 **Benefits:**
+
 - Reduces `npm ci` from 3-5 minutes to < 30 seconds
 - Saves bandwidth and npm registry load
 
 #### Python Dependencies
+
 ```yaml
 - name: Cache Python dependencies
   uses: actions/cache@v4
@@ -54,12 +60,14 @@ This document describes the incremental build and caching strategy implemented t
 ```
 
 **Benefits:**
+
 - Faster font subsetting setup
 - Consistent fonttools version
 
 ### 2. Build Artifact Caching
 
 #### TypeScript Build Info
+
 ```yaml
 - name: Cache TypeScript build info
   uses: actions/cache@v4
@@ -71,11 +79,13 @@ This document describes the incremental build and caching strategy implemented t
 ```
 
 **Benefits:**
+
 - Enables incremental TypeScript compilation
 - Only recompiles changed files
 - Reduces type checking time by 60-70%
 
 #### Jest Cache
+
 ```yaml
 - name: Cache Jest
   uses: actions/cache@v4
@@ -87,11 +97,13 @@ This document describes the incremental build and caching strategy implemented t
 ```
 
 **Benefits:**
+
 - Faster test execution
 - Reuses transformed modules
 - Reduces test time by 40-50%
 
 #### ESLint Cache
+
 ```yaml
 - name: Cache ESLint
   uses: actions/cache@v4
@@ -101,12 +113,14 @@ This document describes the incremental build and caching strategy implemented t
 ```
 
 **Benefits:**
+
 - Only lints changed files
 - Reduces linting time by 70-80%
 
 ### 3. Expo/Metro Caching
 
 #### Expo Cache
+
 ```yaml
 - name: Cache Expo
   uses: actions/cache@v4
@@ -119,6 +133,7 @@ This document describes the incremental build and caching strategy implemented t
 ```
 
 #### Metro Bundler Cache
+
 ```yaml
 - name: Cache Metro bundler
   uses: actions/cache@v4
@@ -130,6 +145,7 @@ This document describes the incremental build and caching strategy implemented t
 ```
 
 **Benefits:**
+
 - Faster JavaScript bundling
 - Reuses transformed modules
 - Reduces bundle time by 50-60%
@@ -137,6 +153,7 @@ This document describes the incremental build and caching strategy implemented t
 ### 4. Native Build Caching
 
 #### Android - Gradle Cache
+
 ```yaml
 - name: Cache Gradle dependencies
   uses: actions/cache@v4
@@ -158,11 +175,13 @@ This document describes the incremental build and caching strategy implemented t
 ```
 
 **Benefits:**
+
 - Reuses compiled native modules
 - Incremental compilation of Java/Kotlin code
 - Reduces Android build time by 70-80%
 
 #### iOS - CocoaPods & Xcode Cache
+
 ```yaml
 - name: Cache CocoaPods
   uses: actions/cache@v4
@@ -185,6 +204,7 @@ This document describes the incremental build and caching strategy implemented t
 ```
 
 **Benefits:**
+
 - Reuses compiled frameworks
 - Incremental Swift/Objective-C compilation
 - Reduces iOS build time by 60-70%
@@ -192,6 +212,7 @@ This document describes the incremental build and caching strategy implemented t
 ### 5. Asset Caching
 
 #### Font Subsetting Cache
+
 ```yaml
 - name: Cache subsetted fonts
   uses: actions/cache@v4
@@ -203,10 +224,12 @@ This document describes the incremental build and caching strategy implemented t
 ```
 
 **Benefits:**
+
 - Skips font subsetting when fonts unchanged
 - Saves 1-2 minutes per build
 
 #### Expo Build Output Cache
+
 ```yaml
 - name: Cache Expo build output
   uses: actions/cache@v4
@@ -250,6 +273,7 @@ This document describes the incremental build and caching strategy implemented t
 ### Cache Versioning
 
 Use versioned cache keys to force cache invalidation when needed:
+
 - `production-cache-v1` → `production-cache-v2`
 
 ## Cache Invalidation Strategy
@@ -257,6 +281,7 @@ Use versioned cache keys to force cache invalidation when needed:
 ### Automatic Invalidation
 
 Caches are automatically invalidated when:
+
 1. **Dependencies change**: `package-lock.json`, `Podfile.lock`, `build.gradle` modified
 2. **Configuration changes**: `tsconfig.json`, `jest.config.js`, `metro.config.js` modified
 3. **Source code changes**: Relevant source files modified (for build output caches)
@@ -266,6 +291,7 @@ Caches are automatically invalidated when:
 To manually invalidate caches:
 
 1. **Update cache key version** in workflow files:
+
    ```yaml
    key: ${{ runner.os }}-node-modules-v2-${{ hashFiles('package-lock.json') }}
    ```
@@ -287,6 +313,7 @@ concurrency:
 ```
 
 **Benefits:**
+
 - Cancels outdated builds when new commits pushed
 - Saves CI minutes
 - Faster feedback
@@ -300,6 +327,7 @@ concurrency:
 ```
 
 **Benefits:**
+
 - Skips installation when cache hit
 - Saves 3-5 minutes per build
 
@@ -315,6 +343,7 @@ on:
 ```
 
 **Benefits:**
+
 - Only runs builds when relevant files change
 - Skips builds for documentation-only changes
 
@@ -329,6 +358,7 @@ jobs:
 ```
 
 **Benefits:**
+
 - Builds Android and iOS in parallel
 - Reduces total pipeline time
 
@@ -364,11 +394,13 @@ The workflows include cache statistics reporting:
 ### 1. Cache Key Design
 
 ✅ **Good**: Include all relevant dependencies
+
 ```yaml
 key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
 ```
 
 ❌ **Bad**: Too generic, causes false cache hits
+
 ```yaml
 key: ${{ runner.os }}-node
 ```
@@ -376,6 +408,7 @@ key: ${{ runner.os }}-node
 ### 2. Restore Keys
 
 Use restore keys for partial cache hits:
+
 ```yaml
 restore-keys: |
   ${{ runner.os }}-node-modules-
@@ -385,6 +418,7 @@ restore-keys: |
 ### 3. Cache Paths
 
 Be specific about what to cache:
+
 ```yaml
 path: |
   node_modules
@@ -394,6 +428,7 @@ path: |
 ### 4. Incremental Compilation Flags
 
 Enable incremental compilation in tools:
+
 - TypeScript: `--incremental`
 - Jest: `--cache`
 - ESLint: `--cache`
@@ -424,6 +459,7 @@ Enable incremental compilation in tools:
 ### From Old CI to Optimized CI
 
 1. **Backup existing workflows**:
+
    ```bash
    cp .github/workflows/ci.yml .github/workflows/ci.yml.backup
    ```
@@ -450,12 +486,12 @@ Enable incremental compilation in tools:
 
 ### Build Time Comparison
 
-| Scenario | Before | After | Improvement |
-|----------|--------|-------|-------------|
-| Full build (cache miss) | 10-15 min | 8-10 min | 20-30% |
-| Typical change (cache hit) | 10-15 min | 2-3 min | 80% |
-| Dependency update | 10-15 min | 5-7 min | 50% |
-| Documentation only | 10-15 min | Skipped | 100% |
+| Scenario                   | Before    | After    | Improvement |
+| -------------------------- | --------- | -------- | ----------- |
+| Full build (cache miss)    | 10-15 min | 8-10 min | 20-30%      |
+| Typical change (cache hit) | 10-15 min | 2-3 min  | 80%         |
+| Dependency update          | 10-15 min | 5-7 min  | 50%         |
+| Documentation only         | 10-15 min | Skipped  | 100%        |
 
 ### Cost Savings
 

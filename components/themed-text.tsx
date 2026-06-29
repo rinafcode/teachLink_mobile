@@ -10,13 +10,13 @@ export type ThemedTextProps = TextProps & {
   type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link';
 };
 
-function ThemedTextComponent({
+const ThemedTextComponent = ({
   style,
   lightColor,
   darkColor,
   type = 'default',
   ...rest
-}: ThemedTextProps) {
+}: ThemedTextProps) => {
   const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
   const { scale } = useDynamicFontSize();
 
@@ -36,14 +36,15 @@ function ThemedTextComponent({
   };
 
   const variantStyle = getVariantStyle();
+  const lineHeight = 'lineHeight' in variantStyle ? variantStyle.lineHeight : undefined;
   const scaledStyle = {
     ...variantStyle,
     fontSize: scale(variantStyle.fontSize || 16),
-    lineHeight: variantStyle.lineHeight ? scale(variantStyle.lineHeight) : undefined,
+    lineHeight: lineHeight ? scale(lineHeight) : undefined,
   };
 
   return <Text style={[{ color }, scaledStyle, style]} allowFontScaling={false} {...rest} />;
-}
+};
 
 const styles = StyleSheet.create({
   default: {

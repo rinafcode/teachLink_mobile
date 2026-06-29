@@ -2,27 +2,27 @@ import { Audio, AVPlaybackStatus, AVPlaybackStatusToSet, ResizeMode, Video } fro
 import * as Network from 'expo-network';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Modal,
-    Pressable,
-    StyleProp,
-    StyleSheet,
-    Text,
-    View,
-    ViewStyle,
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  StyleProp,
+  StyleSheet,
+  Text,
+  View,
+  ViewStyle,
 } from 'react-native';
 
 import VideoControls from './VideoControls';
 import { usePictureInPicture, useVideoGestures } from '../../hooks';
 import {
-    AUTO_QUALITY_ID,
-    deriveNetworkType,
-    getQualityOptions,
-    normalizeSources,
-    selectSourceById,
-    type NetworkType,
-    type NormalizedVideoSource,
-    type VideoSource,
+  AUTO_QUALITY_ID,
+  deriveNetworkType,
+  getQualityOptions,
+  normalizeSources,
+  selectSourceById,
+  type NetworkType,
+  type NormalizedVideoSource,
+  type VideoSource,
 } from '../../services/videoQuality';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 

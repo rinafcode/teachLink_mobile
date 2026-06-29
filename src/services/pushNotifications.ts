@@ -2,10 +2,11 @@ import Constants from 'expo-constants';
 import { isDevice } from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+
+import { featureCapabilities, FeatureStatus, FeatureType } from './featureCapabilities';
 import { useDegradationStore } from '../store/degradationStore';
 import { NotificationData, NotificationType } from '../types/notifications';
 import logger from '../utils/logger';
-import { featureCapabilities, FeatureStatus, FeatureType } from './featureCapabilities';
 
 // Configure how notifications are handled when app is in foreground
 Notifications.setNotificationHandler({
@@ -28,11 +29,15 @@ export async function registerForPushNotifications(): Promise<string | null> {
     logger.warn('Push notifications require a physical device (simulator detected)');
     featureCapabilities.getFeatureInfo(FeatureType.PUSH_NOTIFICATIONS);
     const degradationStore = useDegradationStore.getState(); // Fixed: Accessing Zustand store state cleanly outside a component
-    degradationStore.setFeatureStatus(FeatureType.PUSH_NOTIFICATIONS, FeatureStatus.HARDWARE_UNAVAILABLE);
+    degradationStore.setFeatureStatus(
+      FeatureType.PUSH_NOTIFICATIONS,
+      FeatureStatus.HARDWARE_UNAVAILABLE
+    );
     degradationStore.addNotification({
       feature: FeatureType.PUSH_NOTIFICATIONS,
       status: FeatureStatus.HARDWARE_UNAVAILABLE,
-      message: 'Push notifications are not available in the simulator. In-app notifications will be used instead.',
+      message:
+        'Push notifications are not available in the simulator. In-app notifications will be used instead.',
     });
     return null;
   }
@@ -51,11 +56,15 @@ export async function registerForPushNotifications(): Promise<string | null> {
     if (finalStatus !== 'granted') {
       logger.warn('Push notification permission not granted');
       const degradationStore = useDegradationStore.getState();
-      degradationStore.setFeatureStatus(FeatureType.PUSH_NOTIFICATIONS, FeatureStatus.PERMISSION_DENIED);
+      degradationStore.setFeatureStatus(
+        FeatureType.PUSH_NOTIFICATIONS,
+        FeatureStatus.PERMISSION_DENIED
+      );
       degradationStore.addNotification({
         feature: FeatureType.PUSH_NOTIFICATIONS,
         status: FeatureStatus.PERMISSION_DENIED,
-        message: 'Push notifications are disabled. In-app notifications will be shown instead. You can enable them in Settings.',
+        message:
+          'Push notifications are disabled. In-app notifications will be shown instead. You can enable them in Settings.',
       });
       return null;
     }
@@ -89,7 +98,8 @@ export async function registerForPushNotifications(): Promise<string | null> {
     degradationStore.addNotification({
       feature: FeatureType.PUSH_NOTIFICATIONS,
       status: FeatureStatus.UNAVAILABLE,
-      message: 'Push notifications failed to initialize. In-app notifications will be used instead.',
+      message:
+        'Push notifications failed to initialize. In-app notifications will be used instead.',
     });
     return null;
   }
@@ -314,7 +324,7 @@ export function addNotificationResponseListener(
  * Remove a notification listener
  */
 export function removeNotificationListener(subscription: Notifications.Subscription): void {
-  subscription.remove(); 
+  subscription.remove();
 }
 
 /**

@@ -43,25 +43,25 @@ describe('sortRows', () => {
   it('sorts strings ascending', () => {
     const config: SortConfig = { columnKey: 'name', direction: 'asc' };
     const result = sortRows(users, config, columns);
-    expect(result.map((u) => u.name)).toEqual(['Alice', 'Bob', 'Charlie', 'Diana']);
+    expect(result.map(u => u.name)).toEqual(['Alice', 'Bob', 'Charlie', 'Diana']);
   });
 
   it('sorts strings descending', () => {
     const config: SortConfig = { columnKey: 'name', direction: 'desc' };
     const result = sortRows(users, config, columns);
-    expect(result.map((u) => u.name)).toEqual(['Diana', 'Charlie', 'Bob', 'Alice']);
+    expect(result.map(u => u.name)).toEqual(['Diana', 'Charlie', 'Bob', 'Alice']);
   });
 
   it('sorts numbers ascending', () => {
     const config: SortConfig = { columnKey: 'age', direction: 'asc' };
     const result = sortRows(users, config, columns);
-    expect(result.map((u) => u.age)).toEqual([24, 28, 30, 35]);
+    expect(result.map(u => u.age)).toEqual([24, 28, 30, 35]);
   });
 
   it('sorts numbers descending', () => {
     const config: SortConfig = { columnKey: 'age', direction: 'desc' };
     const result = sortRows(users, config, columns);
-    expect(result.map((u) => u.age)).toEqual([35, 30, 28, 24]);
+    expect(result.map(u => u.age)).toEqual([35, 30, 28, 24]);
   });
 
   it('sorts dates ascending', () => {
@@ -128,14 +128,14 @@ describe('filterRows', () => {
   it('filters by gt (greater than)', () => {
     const filters: FilterEntry[] = [{ columnKey: 'age', value: '29', operator: 'gt' }];
     const result = filterRows(users, filters);
-    expect(result.map((u) => u.age)).toEqual(expect.arrayContaining([30, 35]));
+    expect(result.map(u => u.age)).toEqual(expect.arrayContaining([30, 35]));
     expect(result).toHaveLength(2);
   });
 
   it('filters by lte (less than or equal)', () => {
     const filters: FilterEntry[] = [{ columnKey: 'age', value: '28', operator: 'lte' }];
     const result = filterRows(users, filters);
-    expect(result.map((u) => u.age)).toEqual(expect.arrayContaining([24, 28]));
+    expect(result.map(u => u.age)).toEqual(expect.arrayContaining([24, 28]));
   });
 
   it('applies multiple filters (AND logic)', () => {
@@ -299,7 +299,7 @@ describe('validateCellValue', () => {
     const col: ColumnDef = {
       key: 'name',
       title: 'Name',
-      validate: (v) => (v.length < 2 ? 'Too short' : null),
+      validate: v => (v.length < 2 ? 'Too short' : null),
     };
     expect(validateCellValue('A', col)).toBe('Too short');
     expect(validateCellValue('Alice', col)).toBeNull();

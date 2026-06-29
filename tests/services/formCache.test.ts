@@ -60,7 +60,11 @@ describe('formCache', () => {
 
   describe('getSuggestionForField', () => {
     it('returns null when current matches cache', () => {
-      const s = getSuggestionForField({ email: { value: 'a@b.com', updatedAt: Date.now() } }, 'email', 'a@b.com');
+      const s = getSuggestionForField(
+        { email: { value: 'a@b.com', updatedAt: Date.now() } },
+        'email',
+        'a@b.com'
+      );
       expect(s).toBeNull();
     });
 

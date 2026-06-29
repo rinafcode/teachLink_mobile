@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-import { ReviewTrigger } from '../services/inAppReview';
 import { asyncStorageJSONStorage } from './persistence';
+import { ReviewTrigger } from '../services/inAppReview';
 
 /**
  * Review request history entry
@@ -49,11 +49,7 @@ interface ReviewState {
 
   // Actions
   /** Record a review request attempt */
-  recordReviewRequest: (
-    trigger: ReviewTrigger,
-    shown: boolean,
-    reason: string
-  ) => void;
+  recordReviewRequest: (trigger: ReviewTrigger, shown: boolean, reason: string) => void;
   /** Increment courses completed */
   incrementCoursesCompleted: () => void;
   /** Increment session count */
@@ -81,21 +77,21 @@ interface ReviewState {
 
 /**
  * Review store manages all metrics and preferences related to in-app reviews.
- * 
+ *
  * This store tracks:
  * - User engagement metrics (courses, sessions, achievements)
  * - Review request history and timing
  * - User preferences (opt-out)
- * 
+ *
  * Usage:
  * ```typescript
  * import { useReviewStore } from '@/store/reviewStore';
- * 
+ *
  * const { incrementCoursesCompleted, getMetrics } = useReviewStore();
- * 
+ *
  * // After user completes a course
  * incrementCoursesCompleted();
- * 
+ *
  * // Get metrics for review eligibility
  * const metrics = getMetrics();
  * ```
@@ -125,9 +121,7 @@ export const useReviewStore = create<ReviewState>()(
 
         // Reset yearly counter if it's a new year
         const reviewRequestsThisYear =
-          state.lastRequestYear === currentYear
-            ? state.reviewRequestsThisYear + 1
-            : 1;
+          state.lastRequestYear === currentYear ? state.reviewRequestsThisYear + 1 : 1;
 
         set({
           lastReviewRequestDate: now,
@@ -147,31 +141,31 @@ export const useReviewStore = create<ReviewState>()(
       },
 
       incrementCoursesCompleted: () =>
-        set((state) => ({
+        set(state => ({
           coursesCompleted: state.coursesCompleted + 1,
         })),
 
       incrementSessionCount: () =>
-        set((state) => ({
+        set(state => ({
           sessionCount: state.sessionCount + 1,
         })),
 
       incrementAchievementsUnlocked: () =>
-        set((state) => ({
+        set(state => ({
           achievementsUnlocked: state.achievementsUnlocked + 1,
         })),
 
-      setLearningStreak: (streak) =>
+      setLearningStreak: streak =>
         set({
           learningStreak: streak,
         }),
 
       incrementPerfectQuizScores: () =>
-        set((state) => ({
+        set(state => ({
           perfectQuizScores: state.perfectQuizScores + 1,
         })),
 
-      setDoNotAskAgain: (value) =>
+      setDoNotAskAgain: value =>
         set({
           doNotAskAgain: value,
         }),
@@ -203,7 +197,7 @@ export const useReviewStore = create<ReviewState>()(
       version: 1,
       storage: asyncStorageJSONStorage,
       // Persist everything except the getMetrics function
-      partialize: (state) => ({
+      partialize: state => ({
         installDate: state.installDate,
         lastReviewRequestDate: state.lastReviewRequestDate,
         reviewRequestCount: state.reviewRequestCount,
@@ -226,23 +220,23 @@ export const useReviewStore = create<ReviewState>()(
  */
 
 /** Get review metrics for eligibility check */
-export const useReviewMetrics = () => useReviewStore((state) => state.getMetrics());
+export const useReviewMetrics = () => useReviewStore(state => state.getMetrics());
 
 /** Get courses completed count */
-export const useCoursesCompleted = () => useReviewStore((state) => state.coursesCompleted);
+export const useCoursesCompleted = () => useReviewStore(state => state.coursesCompleted);
 
 /** Get session count */
-export const useSessionCount = () => useReviewStore((state) => state.sessionCount);
+export const useSessionCount = () => useReviewStore(state => state.sessionCount);
 
 /** Get "Don't ask again" preference */
-export const useDoNotAskAgain = () => useReviewStore((state) => state.doNotAskAgain);
+export const useDoNotAskAgain = () => useReviewStore(state => state.doNotAskAgain);
 
 /** Get review request history */
-export const useReviewHistory = () => useReviewStore((state) => state.requestHistory);
+export const useReviewHistory = () => useReviewStore(state => state.requestHistory);
 
 /** Get all review actions */
 export const useReviewActions = () =>
-  useReviewStore((state) => ({
+  useReviewStore(state => ({
     recordReviewRequest: state.recordReviewRequest,
     incrementCoursesCompleted: state.incrementCoursesCompleted,
     incrementSessionCount: state.incrementSessionCount,

@@ -1,31 +1,31 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import {
-    AlertCircle,
-    Apple,
-    BookOpen,
-    Chrome,
-    Eye,
-    EyeOff,
-    Lock,
-    LogIn,
-    Mail,
+  AlertCircle,
+  Apple,
+  BookOpen,
+  Chrome,
+  Eye,
+  EyeOff,
+  Lock,
+  LogIn,
+  Mail,
 } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { DelegatedKeyboardAvoidingView } from '../../components/common/DelegatedKeyboardAvoidingView';
 import {
-    ActivityIndicator,
-    Alert,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-
 
 import { BiometricInlineButton, BiometricPrompt } from '../../components/mobile/BiometricPrompt';
 import { MobileFormInput } from '../../components/mobile/MobileFormInput';

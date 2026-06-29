@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { logger } from '../utils/logger';
 import {
   Coordinates,
   LocationPrecision,
@@ -8,6 +7,7 @@ import {
   isWithinPrecision,
   roundCoordinates,
 } from '../utils/geoUtils';
+import { logger } from '../utils/logger';
 
 /**
  * Location data optimization service.
@@ -56,8 +56,8 @@ const CACHE_KEY = 'last_location_v1';
 interface PendingBatchEntry<T = unknown> {
   coords: Coordinates;
   query: LocationQueryFn<T>;
-  resolvers: Array<(value: T) => void>;
-  rejecters: Array<(reason: unknown) => void>;
+  resolvers: ((value: T) => void)[];
+  rejecters: ((reason: unknown) => void)[];
 }
 
 /**
@@ -65,10 +65,9 @@ interface PendingBatchEntry<T = unknown> {
  * even in environments where `expo-location` is unavailable (it then rejects
  * with a clear error and callers can fall back).
  */
-const expoPositionReader: PositionReader = async (highAccuracy) => {
+const expoPositionReader: PositionReader = async highAccuracy => {
   let ExpoLocation: typeof import('expo-location') | null = null;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     ExpoLocation = require('expo-location');
   } catch {
     throw new Error('expo-location is not available');
@@ -81,9 +80,7 @@ const expoPositionReader: PositionReader = async (highAccuracy) => {
   }
 
   const result = await ExpoLocation.getCurrentPositionAsync({
-    accuracy: highAccuracy
-      ? ExpoLocation.Accuracy.Highest
-      : ExpoLocation.Accuracy.Balanced,
+    accuracy: highAccuracy ? ExpoLocation.Accuracy.Highest : ExpoLocation.Accuracy.Balanced,
   });
 
   return {
@@ -195,7 +192,7 @@ class LocationService {
   batchNearbyQuery<T>(
     coords: Coordinates,
     query: LocationQueryFn<T>,
-    precision: LocationPrecision = 'coarse',
+    precision: LocationPrecision = 'coarse'
   ): Promise<T> {
     const key = gridKey(coords, precision);
 
@@ -226,11 +223,11 @@ class LocationService {
     const buckets = Array.from(this.batchBuckets.values());
     this.batchBuckets.clear();
 
-    buckets.forEach((bucket) => {
+    buckets.forEach(bucket => {
       bucket
         .query(bucket.coords)
-        .then((result) => bucket.resolvers.forEach((r) => r(result)))
-        .catch((err) => bucket.rejecters.forEach((r) => r(err)));
+        .then(result => bucket.resolvers.forEach(r => r(result)))
+        .catch(err => bucket.rejecters.forEach(r => r(err)));
     });
   }
 

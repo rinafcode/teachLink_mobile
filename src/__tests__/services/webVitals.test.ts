@@ -74,10 +74,10 @@ describe('handleMetric — rating', () => {
 
 describe('handleMetric — analytics event mapping', () => {
   const cases: [PerformanceMetric, AnalyticsEvent][] = [
-    [PerformanceMetric.LCP,  AnalyticsEvent.WEB_VITALS_LCP],
-    [PerformanceMetric.FID,  AnalyticsEvent.WEB_VITALS_FID],
-    [PerformanceMetric.CLS,  AnalyticsEvent.WEB_VITALS_CLS],
-    [PerformanceMetric.FCP,  AnalyticsEvent.WEB_VITALS_FCP],
+    [PerformanceMetric.LCP, AnalyticsEvent.WEB_VITALS_LCP],
+    [PerformanceMetric.FID, AnalyticsEvent.WEB_VITALS_FID],
+    [PerformanceMetric.CLS, AnalyticsEvent.WEB_VITALS_CLS],
+    [PerformanceMetric.FCP, AnalyticsEvent.WEB_VITALS_FCP],
     [PerformanceMetric.TTFB, AnalyticsEvent.WEB_VITALS_TTFB],
   ];
 

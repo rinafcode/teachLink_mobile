@@ -23,6 +23,7 @@ import { DependencyAnalyzer, NetworkAnalyzer } from './analyzers/NetworkAnalyzer
 import { AssetAnalyzer, RuntimeAnalyzer } from './analyzers/RuntimeAnalyzer';
 import { RecommendationEngine } from './RecommendationEngine';
 import { ReportGenerator } from './ReportGenerator';
+
 import type {
   AuditOptions,
   AssetAnalysis,
@@ -78,12 +79,12 @@ export interface AuditorEvents {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const DEFAULT_WEIGHTS: ScoreWeights = {
-  bundle: 0.20,
-  memory: 0.20,
+  bundle: 0.2,
+  memory: 0.2,
   render: 0.15,
   network: 0.15,
   dependency: 0.15,
-  runtime: 0.10,
+  runtime: 0.1,
   asset: 0.05,
 };
 
@@ -143,9 +144,7 @@ export class PerformanceAuditor extends EventEmitter {
   }
 
   /** Run audit then persist reports in the requested formats. */
-  async auditAndReport(
-    formats?: ('json' | 'html' | 'markdown')[]
-  ): Promise<string[]> {
+  async auditAndReport(formats?: ('json' | 'html' | 'markdown')[]): Promise<string[]> {
     const report = await this.runAudit();
     const targetFormats = this.resolveFormats(formats);
     const files: string[] = [];
@@ -220,9 +219,12 @@ export class PerformanceAuditor extends EventEmitter {
       bundle: () => this.withRetry('bundle', () => new BundleAnalyzer(this.projectRoot).analyze()),
       memory: () => this.withRetry('memory', () => new MemoryAnalyzer(this.projectRoot).analyze()),
       render: () => this.withRetry('render', () => new RenderAnalyzer(this.projectRoot).analyze()),
-      network: () => this.withRetry('network', () => new NetworkAnalyzer(this.projectRoot).analyze()),
-      dependency: () => this.withRetry('dependency', () => new DependencyAnalyzer(this.projectRoot).analyze()),
-      runtime: () => this.withRetry('runtime', () => new RuntimeAnalyzer(this.projectRoot).analyze()),
+      network: () =>
+        this.withRetry('network', () => new NetworkAnalyzer(this.projectRoot).analyze()),
+      dependency: () =>
+        this.withRetry('dependency', () => new DependencyAnalyzer(this.projectRoot).analyze()),
+      runtime: () =>
+        this.withRetry('runtime', () => new RuntimeAnalyzer(this.projectRoot).analyze()),
       asset: () => this.withRetry('asset', () => new AssetAnalyzer(this.projectRoot).analyze()),
     };
 
@@ -231,9 +233,9 @@ export class PerformanceAuditor extends EventEmitter {
     );
 
     const settled = await Promise.allSettled(
-      STEPS.map((step) => {
+      STEPS.map(step => {
         const t0 = Date.now();
-        return analyzers[step]().then((result) => {
+        return analyzers[step]().then(result => {
           this.emit('analyzerComplete', step, Date.now() - t0);
           return result;
         });
@@ -245,7 +247,8 @@ export class PerformanceAuditor extends EventEmitter {
       (outcome, i) => {
         if (outcome.status === 'fulfilled') return outcome.value;
         const name = STEPS[i];
-        const err = outcome.reason instanceof Error ? outcome.reason : new Error(String(outcome.reason));
+        const err =
+          outcome.reason instanceof Error ? outcome.reason : new Error(String(outcome.reason));
         console.warn(`⚠️  Analyzer "${name}" failed after retries: ${err.message}`);
         this.emit('analyzerFailed', name, err);
         return this.emptyResultFor(name);
@@ -268,7 +271,9 @@ export class PerformanceAuditor extends EventEmitter {
         lastError = err instanceof Error ? err : new Error(String(err));
         if (attempt < RETRY_ATTEMPTS) {
           const delay = RETRY_BASE_DELAY_MS * 2 ** (attempt - 1);
-          this.log(`↩️  Retrying analyzer "${name}" in ${delay}ms (attempt ${attempt}/${RETRY_ATTEMPTS})`);
+          this.log(
+            `↩️  Retrying analyzer "${name}" in ${delay}ms (attempt ${attempt}/${RETRY_ATTEMPTS})`
+          );
           await this.sleep(delay);
         }
       }
@@ -298,10 +303,7 @@ export class PerformanceAuditor extends EventEmitter {
    * then combined via configurable weights. Penalties are proportional rather
    * than stepped so the score degrades smoothly instead of cliff-dropping.
    */
-  private calculateOverallScore(
-    r: AnalyzerResults,
-    recommendations: Recommendation[]
-  ): number {
+  private calculateOverallScore(r: AnalyzerResults, recommendations: Recommendation[]): number {
     const thresholds = this.options.customThresholds;
 
     const bundleScore = this.scoreDimension(100, [
@@ -348,8 +350,8 @@ export class PerformanceAuditor extends EventEmitter {
     ]);
 
     // Aggregate recommendation penalties on top of dimension scores
-    const criticalCount = recommendations.filter((rec) => rec.severity === 'CRITICAL').length;
-    const highCount = recommendations.filter((rec) => rec.severity === 'HIGH').length;
+    const criticalCount = recommendations.filter(rec => rec.severity === 'CRITICAL').length;
+    const highCount = recommendations.filter(rec => rec.severity === 'HIGH').length;
     const recPenalty = criticalCount * 5 + highCount * 2;
 
     const weighted =
@@ -368,10 +370,7 @@ export class PerformanceAuditor extends EventEmitter {
    * Apply a list of [value, threshold, penalty] tuples to a starting score.
    * The penalty is applied only when value strictly exceeds the threshold.
    */
-  private scoreDimension(
-    start: number,
-    penalties: [number, number, number][]
-  ): number {
+  private scoreDimension(start: number, penalties: [number, number, number][]): number {
     return penalties.reduce(
       (score, [value, threshold, penalty]) => (value > threshold ? score - penalty : score),
       start
@@ -391,9 +390,7 @@ export class PerformanceAuditor extends EventEmitter {
     }
 
     try {
-      const baseline: PerformanceAuditReport = JSON.parse(
-        fs.readFileSync(filePath, 'utf-8')
-      );
+      const baseline: PerformanceAuditReport = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
       const delta = currentScore - baseline.overallScore;
       const regressions: string[] = [];
       const improvements: string[] = [];
@@ -442,10 +439,7 @@ export class PerformanceAuditor extends EventEmitter {
 
   // ─── Recommendations ────────────────────────────────────────────────────────
 
-  private generateRecommendations(
-    results: AnalyzerResults,
-    startTime: number
-  ): Recommendation[] {
+  private generateRecommendations(results: AnalyzerResults, startTime: number): Recommendation[] {
     return RecommendationEngine.generateRecommendations({
       timestamp: new Date().toISOString(),
       version: '1.0.0',
@@ -538,14 +532,12 @@ export class PerformanceAuditor extends EventEmitter {
     }
     if (baseline) {
       const sign = baseline.scoreDelta >= 0 ? '+' : '';
-      keyFindings.push(
-        `Score ${sign}${baseline.scoreDelta} vs baseline (${baseline.trend})`
-      );
+      keyFindings.push(`Score ${sign}${baseline.scoreDelta} vs baseline (${baseline.trend})`);
     }
 
     // Priorities — critical first, then high, then domain-specific
-    const critical = recommendations.filter((rec) => rec.severity === 'CRITICAL');
-    const high = recommendations.filter((rec) => rec.severity === 'HIGH');
+    const critical = recommendations.filter(rec => rec.severity === 'CRITICAL');
+    const high = recommendations.filter(rec => rec.severity === 'HIGH');
     if (critical[0]) topPriorities.push(critical[0].title);
     if (high[0]) topPriorities.push(high[0].title);
     if (r.memory.estimatedMemoryLeaks.length > 0) {
@@ -579,8 +571,8 @@ export class PerformanceAuditor extends EventEmitter {
       score >= 80
         ? 'The application is in good health — focus on the high-priority items below to push into the excellent tier.'
         : score >= 60
-        ? 'There are meaningful improvements available; addressing the top priorities will have the biggest impact.'
-        : 'Critical issues are present that need attention before the next release.';
+          ? 'There are meaningful improvements available; addressing the top priorities will have the biggest impact.'
+          : 'Critical issues are present that need attention before the next release.';
 
     return {
       title: 'Performance Audit — Executive Summary',
@@ -627,7 +619,7 @@ export class PerformanceAuditor extends EventEmitter {
   }
 
   private sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
 

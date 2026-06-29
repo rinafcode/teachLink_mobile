@@ -145,7 +145,9 @@ export function buildOptimizedImageSources(
   }
 
   const variantWidth = Number.isFinite(options.width) ? (options.width as number) * dpr : undefined;
-  const variantHeight = Number.isFinite(options.height) ? (options.height as number) * dpr : undefined;
+  const variantHeight = Number.isFinite(options.height)
+    ? (options.height as number) * dpr
+    : undefined;
 
   const primaryUri = buildVariantUri(uri, {
     format: options.preferWebp === false ? 'png' : 'webp',

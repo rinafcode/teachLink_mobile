@@ -1,5 +1,6 @@
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
 import { Course, Quiz } from '../types/course';
 
 /**
@@ -65,10 +66,7 @@ export type CourseViewerNavigationProp = NativeStackNavigationProp<
 >;
 
 /** Narrowed navigation prop for the Quiz screen. */
-export type QuizNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  'Quiz'
->;
+export type QuizNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Quiz'>;
 
 // ── Convenience route-prop aliases ──────────────────────────────────────────
 

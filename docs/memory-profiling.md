@@ -25,7 +25,6 @@ the app proactively:
 This protection is designed to reduce the risk of OOM crashes on low-memory
 devices while allowing normal background work to resume once pressure recovers.
 
-
 It consists of three pieces:
 
 | Piece                  | File                                            | Role                                                                    |

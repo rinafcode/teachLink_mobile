@@ -1,6 +1,7 @@
+import { render } from '@testing-library/react-native';
 import React from 'react';
 import { Text } from 'react-native';
-import { render } from '@testing-library/react-native';
+
 import { ProfiledScreen } from '../../src/components/mobile/ProfiledScreen';
 import { mobileAnalyticsService } from '../../src/services/mobileAnalytics';
 

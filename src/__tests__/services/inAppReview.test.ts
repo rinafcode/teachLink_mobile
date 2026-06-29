@@ -1,4 +1,8 @@
-import { inAppReviewService, ReviewTrigger, DEFAULT_REVIEW_CONFIG } from '../../services/inAppReview';
+import {
+  inAppReviewService,
+  ReviewTrigger,
+  DEFAULT_REVIEW_CONFIG,
+} from '../../services/inAppReview';
 
 describe('InAppReviewService', () => {
   beforeEach(async () => {

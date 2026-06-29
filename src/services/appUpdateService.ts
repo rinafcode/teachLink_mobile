@@ -1,9 +1,9 @@
 import Constants from 'expo-constants';
 import { Linking, Platform } from 'react-native';
 
+import mobileAnalyticsService from './mobileAnalytics';
 import { appLogger } from '../utils/logger';
 import { AnalyticsEvent } from '../utils/trackingEvents';
-import mobileAnalyticsService from './mobileAnalytics';
 
 export type UpdateType = 'ota' | 'store' | 'none';
 
@@ -161,8 +161,7 @@ class AppUpdateService {
   }
 
   public async openStoreForUpdate(): Promise<void> {
-    const url =
-      Platform.OS === 'ios' ? this.config.storeUrls.ios : this.config.storeUrls.android;
+    const url = Platform.OS === 'ios' ? this.config.storeUrls.ios : this.config.storeUrls.android;
 
     mobileAnalyticsService.trackEvent(AnalyticsEvent.UPDATE_STORE_REDIRECT, {
       current_version: this.getCurrentVersion(),

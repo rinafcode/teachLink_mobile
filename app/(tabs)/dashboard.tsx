@@ -14,7 +14,7 @@ import { ScreenName } from '@/utils/trackingEvents';
 
 const LazyTeamDashboard = createLazyRoute({
   importFn: () =>
-    import('@/components/mobile/TeamDashboard/TeamDashboard').then((m) => ({
+    import('@/components/mobile/TeamDashboard/TeamDashboard').then(m => ({
       default: m.TeamDashboard,
     })),
   LoadingFallback: DashboardSkeleton,
@@ -23,7 +23,7 @@ const LazyTeamDashboard = createLazyRoute({
 
 const DashboardTab = () => {
   const { trackScreen } = useAnalytics();
-  const theme = useAppStore((s) => s.theme);
+  const theme = useAppStore(s => s.theme);
 
   useEffect(() => {
     trackScreen(ScreenName.HOME, { tab: 'dashboard' });

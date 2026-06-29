@@ -1,6 +1,6 @@
 /**
  * Font Configuration
- * 
+ *
  * Centralized configuration for all fonts used in the application.
  * This file defines font families, weights, and loading strategies.
  */
@@ -142,26 +142,27 @@ export const TYPOGRAPHY_PRESETS = {
 export const FONT_LOADING_CONFIG = {
   // Critical fonts that must load before app renders
   critical: ['Inter-Regular', 'Inter-Medium', 'Inter-Bold'],
-  
+
   // Important fonts that should load soon after
   important: ['Inter-SemiBold'],
-  
+
   // Optional fonts that can load on demand
   optional: [],
-  
+
   // Loading strategy
   strategy: 'preload-critical' as const,
-  
+
   // Fallback settings
   fallback: 'System',
-  
+
   // Display strategy
   display: 'swap' as const,
 };
 
 // Character sets for subsetting
 export const CHARACTER_SETS = {
-  latin: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ ',
+  latin:
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ ',
   latinExtended: 'ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ',
   cyrillic: 'АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюя',
   greek: 'ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψω',

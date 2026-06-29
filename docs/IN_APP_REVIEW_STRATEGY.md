@@ -1,11 +1,13 @@
 # In-App Review Strategy
 
 ## Overview
+
 Smart in-app review system that requests App Store/Play Store reviews at optimal moments to maximize positive ratings.
 
 ## Implementation
 
 ### Quick Start
+
 ```typescript
 import { useInAppReview, useReviewMetrics } from '@/hooks/useInAppReview';
 import { ReviewTrigger } from '@/services/inAppReview';
@@ -42,6 +44,7 @@ const handleCourseComplete = async () => {
 ## Integration Points
 
 ### 1. Course Completion
+
 ```typescript
 // In course completion handler
 import { useInAppReview, useReviewMetrics } from '@/hooks/useInAppReview';
@@ -52,7 +55,7 @@ const { trackCourseComplete } = useReviewMetrics();
 const onCourseComplete = async () => {
   trackCourseComplete();
   const coursesCompleted = useReviewStore.getState().coursesCompleted;
-  
+
   if (coursesCompleted === 1) {
     await requestReview(ReviewTrigger.FIRST_COURSE_COMPLETED);
   } else if (coursesCompleted % 3 === 0) {
@@ -62,6 +65,7 @@ const onCourseComplete = async () => {
 ```
 
 ### 2. Quiz Perfect Score
+
 ```typescript
 const { trackPerfectQuiz } = useReviewMetrics();
 
@@ -74,6 +78,7 @@ const onQuizComplete = async (score: number, total: number) => {
 ```
 
 ### 3. Achievement Unlocked
+
 ```typescript
 const { trackAchievement } = useReviewMetrics();
 
@@ -84,6 +89,7 @@ const onAchievementUnlock = async () => {
 ```
 
 ### 4. Session Tracking
+
 ```typescript
 // In App.tsx or root component
 useEffect(() => {
@@ -120,6 +126,7 @@ store.incrementSessionCount();
 ## Analytics
 
 All review requests are tracked:
+
 - `review_requested` event
 - Trigger type
 - Shown/not shown

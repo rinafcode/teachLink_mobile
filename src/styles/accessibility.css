@@ -5,16 +5,16 @@
 @layer utilities {
   /* Ensure minimum touch target for mobile devices (44px x 44px) */
   .min-touch-target {
-    @apply min-w-[44px] min-h-[44px];
+    @apply min-h-[44px] min-w-[44px];
   }
 
   /* Focus indicator for accessible navigation */
   .accessible-focus {
-    @apply border-2 border-primary-500 rounded-lg;
+    @apply border-primary-500 rounded-lg border-2;
   }
 
   /* Visually hidden but accessible to screen readers */
   .sr-only {
-    @apply absolute w-1 h-1 p-0 -m-1 overflow-hidden whitespace-nowrap border-0;
+    @apply absolute -m-1 h-1 w-1 overflow-hidden whitespace-nowrap border-0 p-0;
   }
 }

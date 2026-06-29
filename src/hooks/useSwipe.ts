@@ -1,6 +1,7 @@
 import * as React from 'react';
-import type { GestureResponderEvent, ViewProps } from 'react-native';
+
 import type { GestureCoordinator } from './useGestures';
+import type { GestureResponderEvent, ViewProps } from 'react-native';
 
 export type SwipeDirection = 'left' | 'right' | 'up' | 'down';
 
@@ -38,17 +39,16 @@ export interface UseSwipeOptions {
   id?: string;
 }
 
-export interface SwipeHandlers
-  extends Pick<
-    ViewProps,
-    | 'onStartShouldSetResponder'
-    | 'onMoveShouldSetResponder'
-    | 'onResponderGrant'
-    | 'onResponderMove'
-    | 'onResponderRelease'
-    | 'onResponderTerminate'
-    | 'onResponderTerminationRequest'
-  > {}
+export interface SwipeHandlers extends Pick<
+  ViewProps,
+  | 'onStartShouldSetResponder'
+  | 'onMoveShouldSetResponder'
+  | 'onResponderGrant'
+  | 'onResponderMove'
+  | 'onResponderRelease'
+  | 'onResponderTerminate'
+  | 'onResponderTerminationRequest'
+> {}
 
 function pickDirection(dx: number, dy: number): SwipeDirection {
   if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? 'right' : 'left';
@@ -92,33 +92,30 @@ export function useSwipe(options: UseSwipeOptions = {}) {
     coordinator?.release(id);
   }, [coordinator, id]);
 
-  const buildInfo = React.useCallback(
-    (dx: number, dy: number, tNow: number): SwipeInfo => {
-      const start = startRef.current;
-      const t0 = start?.t ?? tNow;
-      const durationMs = Math.max(1, tNow - t0);
-      const direction = pickDirection(dx, dy);
-      const dominant = direction === 'left' || direction === 'right' ? dx : dy;
-      const distance = Math.abs(dominant);
-      const velocity = dominant / durationMs; // px/ms
-      return { direction, distance, dx, dy, velocity, durationMs };
-    },
-    [],
-  );
+  const buildInfo = React.useCallback((dx: number, dy: number, tNow: number): SwipeInfo => {
+    const start = startRef.current;
+    const t0 = start?.t ?? tNow;
+    const durationMs = Math.max(1, tNow - t0);
+    const direction = pickDirection(dx, dy);
+    const dominant = direction === 'left' || direction === 'right' ? dx : dy;
+    const distance = Math.abs(dominant);
+    const velocity = dominant / durationMs; // px/ms
+    return { direction, distance, dx, dy, velocity, durationMs };
+  }, []);
 
   const handlers = React.useMemo<SwipeHandlers>(() => {
     return {
-      onStartShouldSetResponder: (e) => {
+      onStartShouldSetResponder: e => {
         // Single touch only.
         return e.nativeEvent.touches.length === 1;
       },
-      onMoveShouldSetResponder: (e) => {
+      onMoveShouldSetResponder: e => {
         // Don't become responder if another gesture is already active.
         if (coordinator?.hasActiveGesture() && !coordinator.isActive(id)) return false;
         return e.nativeEvent.touches.length === 1;
       },
       onResponderTerminationRequest: () => true,
-      onResponderGrant: (e) => {
+      onResponderGrant: e => {
         const t = nowMs();
         const { pageX: x, pageY: y } = e.nativeEvent;
         startRef.current = { x, y, t };
@@ -190,4 +187,3 @@ export function useSwipe(options: UseSwipeOptions = {}) {
 
   return { swipeHandlers: handlers, resetSwipe: reset };
 }
-

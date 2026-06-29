@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Pressable, Text, View } from 'react-native';
+
 import type { QualityOption } from '../../services/videoQuality';
 
 type VideoControlsProps = {
@@ -99,39 +100,51 @@ const VideoControls = ({
     setSeekBarWidth(event.nativeEvent.layout.width);
   }, []);
 
-  const positionFromEvent = useCallback((event: any) => {
-    if (seekBarWidth <= 0 || durationMillis <= 0) {
-      return 0;
-    }
-    const x = event.nativeEvent.locationX;
-    return clamp((x / seekBarWidth) * durationMillis, 0, durationMillis);
-  }, [seekBarWidth, durationMillis]);
+  const positionFromEvent = useCallback(
+    (event: any) => {
+      if (seekBarWidth <= 0 || durationMillis <= 0) {
+        return 0;
+      }
+      const x = event.nativeEvent.locationX;
+      return clamp((x / seekBarWidth) * durationMillis, 0, durationMillis);
+    },
+    [seekBarWidth, durationMillis]
+  );
 
-  const handleSeekGrant = useCallback((event: any) => {
-    if (!durationMillis) {
-      return;
-    }
-    onSeekStart?.();
-    const position = positionFromEvent(event);
-    onSeekPreview?.(position);
-  }, [durationMillis, onSeekStart, onSeekPreview, positionFromEvent]);
+  const handleSeekGrant = useCallback(
+    (event: any) => {
+      if (!durationMillis) {
+        return;
+      }
+      onSeekStart?.();
+      const position = positionFromEvent(event);
+      onSeekPreview?.(position);
+    },
+    [durationMillis, onSeekStart, onSeekPreview, positionFromEvent]
+  );
 
-  const handleSeekMove = useCallback((event: any) => {
-    if (!durationMillis) {
-      return;
-    }
-    const position = positionFromEvent(event);
-    onSeekPreview?.(position);
-  }, [durationMillis, onSeekPreview, positionFromEvent]);
+  const handleSeekMove = useCallback(
+    (event: any) => {
+      if (!durationMillis) {
+        return;
+      }
+      const position = positionFromEvent(event);
+      onSeekPreview?.(position);
+    },
+    [durationMillis, onSeekPreview, positionFromEvent]
+  );
 
-  const handleSeekRelease = useCallback((event: any) => {
-    if (!durationMillis) {
-      return;
-    }
-    const position = positionFromEvent(event);
-    onSeek(position);
-    onSeekEnd?.();
-  }, [durationMillis, positionFromEvent, onSeek, onSeekEnd]);
+  const handleSeekRelease = useCallback(
+    (event: any) => {
+      if (!durationMillis) {
+        return;
+      }
+      const position = positionFromEvent(event);
+      onSeek(position);
+      onSeekEnd?.();
+    },
+    [durationMillis, positionFromEvent, onSeek, onSeekEnd]
+  );
 
   const handleSeekTerminate = useCallback(() => {
     onSeekEnd?.();
@@ -145,15 +158,21 @@ const VideoControls = ({
     setIsQualityMenuOpen(prev => !prev);
   }, []);
 
-  const handleSelectRate = useCallback((rate: number) => {
-    onChangeRate(rate);
-    setIsSpeedMenuOpen(false);
-  }, [onChangeRate]);
+  const handleSelectRate = useCallback(
+    (rate: number) => {
+      onChangeRate(rate);
+      setIsSpeedMenuOpen(false);
+    },
+    [onChangeRate]
+  );
 
-  const handleSelectQualityOption = useCallback((qualityId: string) => {
-    onSelectQuality(qualityId);
-    setIsQualityMenuOpen(false);
-  }, [onSelectQuality]);
+  const handleSelectQualityOption = useCallback(
+    (qualityId: string) => {
+      onSelectQuality(qualityId);
+      setIsQualityMenuOpen(false);
+    },
+    [onSelectQuality]
+  );
 
   return (
     <Animated.View
@@ -171,7 +190,9 @@ const VideoControls = ({
             onPress={onTogglePiP}
             className="px-2.5 py-1.5"
           >
-            <Text className="text-white text-xs font-semibold">{isPiPActive ? 'PiP On' : 'PiP'}</Text>
+            <Text className="text-xs font-semibold text-white">
+              {isPiPActive ? 'PiP On' : 'PiP'}
+            </Text>
           </Pressable>
         ) : null}
         <Pressable
@@ -179,7 +200,7 @@ const VideoControls = ({
           onPress={onToggleFullscreen}
           className="px-2.5 py-1.5"
         >
-          <Text className="text-white text-xs font-semibold">{isFullscreen ? 'Exit' : 'Full'}</Text>
+          <Text className="text-xs font-semibold text-white">{isFullscreen ? 'Exit' : 'Full'}</Text>
         </Pressable>
       </View>
 
@@ -187,28 +208,28 @@ const VideoControls = ({
         <Pressable
           accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
           onPress={onPlayPause}
-          className="bg-black/55 px-4.5 py-2.5 rounded-full"
+          className="px-4.5 rounded-full bg-black/55 py-2.5"
         >
-          <Text className="text-white text-base font-semibold">{isPlaying ? 'Pause' : 'Play'}</Text>
+          <Text className="text-base font-semibold text-white">{isPlaying ? 'Pause' : 'Play'}</Text>
         </Pressable>
       </View>
 
       <View className="px-3 pb-3">
         {previewPositionMillis != null ? (
-          <View className="self-center bg-black/65 px-2.5 py-1 rounded-xl mb-2">
-            <Text className="text-white text-xs">
+          <View className="mb-2 self-center rounded-xl bg-black/65 px-2.5 py-1">
+            <Text className="text-xs text-white">
               {formatTime(displayPosition)} / {formatTime(durationMillis)}
             </Text>
           </View>
         ) : null}
 
-        <View className="flex-row justify-between mb-1.5">
-          <Text className="text-[#f1f1f1] text-xs">{formatTime(displayPosition)}</Text>
-          <Text className="text-[#f1f1f1] text-xs">{formatTime(durationMillis)}</Text>
+        <View className="mb-1.5 flex-row justify-between">
+          <Text className="text-xs text-[#f1f1f1]">{formatTime(displayPosition)}</Text>
+          <Text className="text-xs text-[#f1f1f1]">{formatTime(durationMillis)}</Text>
         </View>
 
         <View
-          className="h-5.5 rounded-lg bg-white/15 justify-center mb-2.5 overflow-hidden"
+          className="h-5.5 mb-2.5 justify-center overflow-hidden rounded-lg bg-white/15"
           onLayout={handleSeekBarLayout}
           onStartShouldSetResponder={() => true}
           onResponderGrant={handleSeekGrant}
@@ -216,8 +237,14 @@ const VideoControls = ({
           onResponderRelease={handleSeekRelease}
           onResponderTerminate={handleSeekTerminate}
         >
-          <View className="absolute left-0 top-0 bottom-0 bg-white/30" style={{ width: bufferedWidth }} />
-          <View className="absolute left-0 top-0 bottom-0 bg-white" style={{ width: progressWidth }} />
+          <View
+            className="absolute bottom-0 left-0 top-0 bg-white/30"
+            style={{ width: bufferedWidth }}
+          />
+          <View
+            className="absolute bottom-0 left-0 top-0 bg-white"
+            style={{ width: progressWidth }}
+          />
           <View
             className="absolute bg-white"
             style={{
@@ -235,14 +262,14 @@ const VideoControls = ({
             onPress={handleToggleSpeedMenu}
             className="px-2.5 py-1.5"
           >
-            <Text className="text-white text-xs font-semibold">{formatRate(playbackRate)}</Text>
+            <Text className="text-xs font-semibold text-white">{formatRate(playbackRate)}</Text>
           </Pressable>
           <Pressable
             accessibilityLabel="Quality"
             onPress={handleToggleQualityMenu}
             className="px-2.5 py-1.5"
           >
-            <Text className="text-white text-xs font-semibold">{qualityLabel}</Text>
+            <Text className="text-xs font-semibold text-white">{qualityLabel}</Text>
           </Pressable>
           {isPiPSupported ? (
             <Pressable
@@ -252,7 +279,9 @@ const VideoControls = ({
               onPress={onTogglePiP}
               className="px-2.5 py-1.5"
             >
-              <Text className="text-white text-xs font-semibold">{isPiPActive ? 'PiP On' : 'PiP'}</Text>
+              <Text className="text-xs font-semibold text-white">
+                {isPiPActive ? 'PiP On' : 'PiP'}
+              </Text>
             </Pressable>
           ) : null}
           <Pressable
@@ -260,14 +289,16 @@ const VideoControls = ({
             onPress={onToggleFullscreen}
             className="px-2.5 py-1.5"
           >
-            <Text className="text-white text-xs font-semibold">{isFullscreen ? 'Exit' : 'Full'}</Text>
+            <Text className="text-xs font-semibold text-white">
+              {isFullscreen ? 'Exit' : 'Full'}
+            </Text>
           </Pressable>
         </View>
 
         {(isSpeedMenuOpen || isQualityMenuOpen) && (
           <View className="mt-2">
             {isSpeedMenuOpen ? (
-              <View className="bg-black/85 rounded-lg py-1.5">
+              <View className="rounded-lg bg-black/85 py-1.5">
                 {rateOptions.map(rate => (
                   <Pressable
                     key={rate}
@@ -276,8 +307,8 @@ const VideoControls = ({
                     className="px-3 py-2"
                   >
                     <Text
-                      className={`text-[#dcdcdc] text-[13px] ${
-                        rate === playbackRate ? 'text-white font-bold' : ''
+                      className={`text-[13px] text-[#dcdcdc] ${
+                        rate === playbackRate ? 'font-bold text-white' : ''
                       }`}
                     >
                       {formatRate(rate)}
@@ -288,7 +319,7 @@ const VideoControls = ({
             ) : null}
 
             {isQualityMenuOpen ? (
-              <View className="bg-black/85 rounded-lg py-1.5">
+              <View className="rounded-lg bg-black/85 py-1.5">
                 {qualityOptions.map(option => (
                   <Pressable
                     key={option.id}
@@ -297,8 +328,8 @@ const VideoControls = ({
                     className="px-3 py-2"
                   >
                     <Text
-                      className={`text-[#dcdcdc] text-[13px] ${
-                        option.id === selectedQualityId ? 'text-white font-bold' : ''
+                      className={`text-[13px] text-[#dcdcdc] ${
+                        option.id === selectedQualityId ? 'font-bold text-white' : ''
                       }`}
                     >
                       {option.label}
@@ -312,7 +343,7 @@ const VideoControls = ({
 
         {(isLoading || isBuffering || isSwitchingQuality) && (
           <View className="mt-1.5">
-            <Text className="text-white text-[11px]">
+            <Text className="text-[11px] text-white">
               {isSwitchingQuality ? 'Switching quality' : isBuffering ? 'Buffering' : 'Loading'}
             </Text>
           </View>
@@ -349,4 +380,3 @@ function clamp(value: number, min: number, max: number) {
 }
 
 export default VideoControls;
-

@@ -67,6 +67,7 @@ This tells the bundler that all modules in the project have no side effects, all
 Converted wildcard imports to named imports to enable better tree-shaking:
 
 #### Before (Wildcard Imports)
+
 ```typescript
 import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
@@ -74,6 +75,7 @@ import * as Haptics from 'expo-haptics';
 ```
 
 #### After (Named Imports)
+
 ```typescript
 import { loadAsync } from 'expo-font';
 import { preventAutoHideAsync, hideAsync } from 'expo-splash-screen';
@@ -113,10 +115,11 @@ npm run perf:bundle
 ### When Adding New Expo Modules
 
 1. **Use Named Imports**: Always import specific functions instead of entire modules
+
    ```typescript
    // Good
    import { loadAsync } from 'expo-font';
-   
+
    // Avoid
    import * as Font from 'expo-font';
    ```
@@ -130,11 +133,10 @@ npm run perf:bundle
 If a module has side effects that cannot be tree-shaken safely:
 
 1. Add the module to the sideEffects whitelist in package.json:
+
    ```json
    {
-     "sideEffects": [
-       "./src/some-module-with-side-effects.ts"
-     ]
+     "sideEffects": ["./src/some-module-with-side-effects.ts"]
    }
    ```
 

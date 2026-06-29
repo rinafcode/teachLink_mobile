@@ -6,11 +6,11 @@ const MAX_BUFFER = 10 * 1024 * 1024; // 10MB
 
 function runAudit() {
   console.log('Running npm audit...');
-  
+
   exec('npm audit --json', { maxBuffer: MAX_BUFFER }, (error, stdout, stderr) => {
     // npm audit returns non-zero exit code if vulnerabilities are found.
     // We ignore the error object and just parse the stdout.
-    
+
     if (!stdout) {
       console.error('Failed to get stdout from npm audit');
       if (stderr) console.error(stderr);
@@ -38,7 +38,7 @@ function processAuditData(data) {
     moderate: 0,
     high: 0,
     critical: 0,
-    total: 0
+    total: 0,
   };
   const dependencies = metadata.dependencies || {};
 
@@ -46,7 +46,7 @@ function processAuditData(data) {
 
   // Build Markdown Report
   let report = '## 🛡️ Security Dependency Audit Report\n\n';
-  
+
   if (hasHighOrCritical) {
     report += '❌ **FAILED:** High or Critical vulnerabilities found!\n\n';
   } else {
@@ -67,11 +67,11 @@ function processAuditData(data) {
 
   if (vulnerabilities.total > 0) {
     report += '### 🚨 Vulnerability Details & Remediation\n\n';
-    
+
     // Group by severity
     const allVulns = data.vulnerabilities || {};
-    const detailedVulns = Object.values(allVulns).filter(v => 
-      v.severity === 'high' || v.severity === 'critical'
+    const detailedVulns = Object.values(allVulns).filter(
+      v => v.severity === 'high' || v.severity === 'critical'
     );
 
     if (detailedVulns.length > 0) {
@@ -80,9 +80,9 @@ function processAuditData(data) {
         report += `- **Vulnerable Versions:** ${vuln.range}\n`;
         if (vuln.fixAvailable) {
           if (typeof vuln.fixAvailable === 'boolean') {
-             report += `- **Remediation:** Run \`npm audit fix\`\n`;
+            report += `- **Remediation:** Run \`npm audit fix\`\n`;
           } else {
-             report += `- **Remediation:** Update to ${vuln.fixAvailable.name}@${vuln.fixAvailable.version} (Warning: may be a breaking change)\n`;
+            report += `- **Remediation:** Update to ${vuln.fixAvailable.name}@${vuln.fixAvailable.version} (Warning: may be a breaking change)\n`;
           }
         } else {
           report += `- **Remediation:** No direct fix available. Consider updating dependent packages or investigating alternative packages.\n`;
@@ -90,10 +90,12 @@ function processAuditData(data) {
         report += `\n`;
       });
     } else {
-      report += 'No High or Critical vulnerabilities to display details for. Run `npm audit` locally for lower severity details.\n\n';
+      report +=
+        'No High or Critical vulnerabilities to display details for. Run `npm audit` locally for lower severity details.\n\n';
     }
-    
-    report += '---\n💡 **Tip:** Run `npm audit fix` locally to automatically resolve compatible vulnerabilities.\n';
+
+    report +=
+      '---\n💡 **Tip:** Run `npm audit fix` locally to automatically resolve compatible vulnerabilities.\n';
   }
 
   // Output to GitHub Step Summary if running in Actions

@@ -1,6 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useCallback, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
+
 import { appLogger } from '../utils/logger';
 
 export enum CameraFallbackType {
@@ -45,7 +46,9 @@ export const useCamera = (): UseCameraReturn => {
   const [hasPermission, setHasPermission] = useState<boolean>(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [fallbackMode, setFallbackMode] = useState<CameraFallbackType>(CameraFallbackType.FULL_CAMERA);
+  const [fallbackMode, setFallbackMode] = useState<CameraFallbackType>(
+    CameraFallbackType.FULL_CAMERA
+  );
   const [statusMessage, setStatusMessage] = useState<string>('Camera ready');
 
   const degradationStore = useDegradationStore();
@@ -91,13 +94,17 @@ export const useCamera = (): UseCameraReturn => {
         degradationStore.addNotification({
           feature: FeatureType.CAMERA,
           status: FeatureStatus.PERMISSION_DENIED,
-          message: 'Camera and photo library permissions were denied. Grant them in Settings to use this feature.',
+          message:
+            'Camera and photo library permissions were denied. Grant them in Settings to use this feature.',
         });
       }
 
       return granted || mediaLibraryStatus.granted;
     } catch (error) {
-      appLogger.errorSync('[useCamera] Error requesting permissions', error instanceof Error ? error : new Error(String(error)));
+      appLogger.errorSync(
+        '[useCamera] Error requesting permissions',
+        error instanceof Error ? error : new Error(String(error))
+      );
       degradationStore.setFeatureStatus(FeatureType.CAMERA, FeatureStatus.UNAVAILABLE);
       setFallbackMode(CameraFallbackType.UNAVAILABLE);
       setStatusMessage('Camera initialization failed');
@@ -135,14 +142,20 @@ export const useCamera = (): UseCameraReturn => {
       }
       return null;
     } catch (error) {
-      appLogger.errorSync('[useCamera] Error taking picture', error instanceof Error ? error : new Error(String(error)));
+      appLogger.errorSync(
+        '[useCamera] Error taking picture',
+        error instanceof Error ? error : new Error(String(error))
+      );
 
       // If camera operation fails, try falling back to library
       try {
         appLogger.infoSync('[useCamera] Camera operation failed, attempting library fallback');
         return await pickFromLibrary();
       } catch (fallbackError) {
-        appLogger.errorSync('[useCamera] Fallback to library also failed', fallbackError instanceof Error ? fallbackError : new Error(String(fallbackError)));
+        appLogger.errorSync(
+          '[useCamera] Fallback to library also failed',
+          fallbackError instanceof Error ? fallbackError : new Error(String(fallbackError))
+        );
         degradationStore.addNotification({
           feature: FeatureType.CAMERA,
           status: FeatureStatus.UNAVAILABLE,
@@ -190,7 +203,10 @@ export const useCamera = (): UseCameraReturn => {
       }
       return null;
     } catch (error) {
-      appLogger.errorSync('[useCamera] Error picking from library', error instanceof Error ? error : new Error(String(error)));
+      appLogger.errorSync(
+        '[useCamera] Error picking from library',
+        error instanceof Error ? error : new Error(String(error))
+      );
       degradationStore.addNotification({
         feature: FeatureType.CAMERA,
         status: FeatureStatus.UNAVAILABLE,

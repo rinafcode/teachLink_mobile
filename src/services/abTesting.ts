@@ -153,11 +153,14 @@ class ABTestingService {
   public registerExperiment(config: ExperimentConfig): void {
     this.validateExperiment(config);
     this.experiments.set(config.id, config);
-    logger.info('ABTesting: registered experiment', { id: config.id, variants: config.variants.length });
+    logger.info('ABTesting: registered experiment', {
+      id: config.id,
+      variants: config.variants.length,
+    });
   }
 
   public registerExperiments(configs: ExperimentConfig[]): void {
-    configs.forEach((c) => this.registerExperiment(c));
+    configs.forEach(c => this.registerExperiment(c));
   }
 
   public getExperiment(experimentId: string): ExperimentConfig | undefined {
@@ -167,7 +170,7 @@ class ABTestingService {
   /** Return all experiments that are currently active. */
   public listActiveExperiments(): ExperimentConfig[] {
     const now = new Date();
-    return Array.from(this.experiments.values()).filter((exp) => {
+    return Array.from(this.experiments.values()).filter(exp => {
       if (!exp.enabled) return false;
       if (exp.startsAt && new Date(exp.startsAt) > now) return false;
       if (exp.endsAt && new Date(exp.endsAt) < now) return false;
@@ -265,7 +268,7 @@ class ABTestingService {
     const assignment = await this.getAssignment(experimentId, assignmentKey);
     if (!assignment) return null;
     const experiment = this.experiments.get(experimentId);
-    return experiment?.variants.find((v) => v.id === assignment.variantId) ?? null;
+    return experiment?.variants.find(v => v.id === assignment.variantId) ?? null;
   }
 
   /**
@@ -288,13 +291,18 @@ class ABTestingService {
           const assignment = JSON.parse(raw) as ExperimentAssignment;
           const experiment = this.experiments.get(assignment.experimentId);
           if (experiment && this.isVariantStillValid(assignment, experiment)) {
-            this.cache.set(this.cacheKey(assignment.experimentId, assignment.assignmentKey), assignment);
+            this.cache.set(
+              this.cacheKey(assignment.experimentId, assignment.assignmentKey),
+              assignment
+            );
           }
         } catch {
           // Corrupt entry — ignore; will be recreated on next `getAssignment` call
         }
       }
-      logger.info('ABTesting: prefetched assignments', { count: entries.filter(([, v]) => v).length });
+      logger.info('ABTesting: prefetched assignments', {
+        count: entries.filter(([, v]) => v).length,
+      });
     } catch (error) {
       logger.warn('ABTesting: prefetch failed — assignments will be read on demand', { error });
     }
@@ -347,7 +355,7 @@ class ABTestingService {
    */
   public async trackMetrics(
     experimentId: string,
-    metrics: Array<{ name: string; value: number; properties?: EventProperties }>,
+    metrics: { name: string; value: number; properties?: EventProperties }[],
     assignmentKey = 'anonymous'
   ): Promise<VariantMetric[]> {
     const assignment = await this.getAssignment(experimentId, assignmentKey);
@@ -381,7 +389,7 @@ class ABTestingService {
     this.cache.clear();
     try {
       const keys = await AsyncStorage.getAllKeys();
-      const abKeys = keys.filter((k) => k.startsWith(ASSIGNMENT_PREFIX));
+      const abKeys = keys.filter(k => k.startsWith(ASSIGNMENT_PREFIX));
       if (abKeys.length > 0) {
         await AsyncStorage.multiRemove(abKeys);
       }
@@ -444,11 +452,10 @@ class ABTestingService {
     alpha = DEFAULT_ALPHA
   ): ConversionSignificanceResult {
     if (controlTotal <= 0 || variantTotal <= 0) {
-      throw new ABTestingError(
-        'INVALID_TOTALS',
-        'Conversion totals must be greater than zero.',
-        { controlTotal, variantTotal }
-      );
+      throw new ABTestingError('INVALID_TOTALS', 'Conversion totals must be greater than zero.', {
+        controlTotal,
+        variantTotal,
+      });
     }
 
     const controlRate = controlConversions / controlTotal;
@@ -489,7 +496,7 @@ class ABTestingService {
     baseRate: number,
     mde: number,
     alpha = DEFAULT_ALPHA,
-    power = 0.80,
+    power = 0.8,
     numVariants = 2
   ): SampleSizeResult {
     if (baseRate <= 0 || baseRate >= 1) {
@@ -507,7 +514,8 @@ class ABTestingService {
     const perVariant = Math.ceil(
       ((zAlpha * Math.sqrt(2 * pooled * (1 - pooled)) +
         zBeta * Math.sqrt(baseRate * (1 - baseRate) + variantRate * (1 - variantRate))) /
-        mde) ** 2
+        mde) **
+        2
     );
 
     return { perVariant, total: perVariant * numVariants, alpha, power, mde, baseRate };
@@ -523,14 +531,20 @@ class ABTestingService {
     return true;
   }
 
-  private isAssignmentFresh(assignment: ExperimentAssignment, experiment: ExperimentConfig): boolean {
+  private isAssignmentFresh(
+    assignment: ExperimentAssignment,
+    experiment: ExperimentConfig
+  ): boolean {
     if (!this.isVariantStillValid(assignment, experiment)) return false;
     const ttl = experiment.ttlMs ?? DEFAULT_TTL_MS;
     return Date.now() - new Date(assignment.assignedAt).getTime() < ttl;
   }
 
-  private isVariantStillValid(assignment: ExperimentAssignment, experiment: ExperimentConfig): boolean {
-    return experiment.variants.some((v) => v.id === assignment.variantId);
+  private isVariantStillValid(
+    assignment: ExperimentAssignment,
+    experiment: ExperimentConfig
+  ): boolean {
+    return experiment.variants.some(v => v.id === assignment.variantId);
   }
 
   private async readStoredAssignment(
@@ -564,9 +578,16 @@ class ABTestingService {
     const assignment = this.buildAssignment(experimentId, variantId, assignmentKey, assignedAt);
 
     try {
-      await AsyncStorage.setItem(this.storageKey(experimentId, assignmentKey), JSON.stringify(assignment));
+      await AsyncStorage.setItem(
+        this.storageKey(experimentId, assignmentKey),
+        JSON.stringify(assignment)
+      );
     } catch (error) {
-      logger.warn('ABTesting: failed to persist assignment', { experimentId, assignmentKey, error });
+      logger.warn('ABTesting: failed to persist assignment', {
+        experimentId,
+        assignmentKey,
+        error,
+      });
       // Still return the assignment so the session works even if storage failed
     }
 
@@ -653,7 +674,10 @@ class ABTestingService {
 
   private validateExperiment(config: ExperimentConfig): void {
     if (!config.id?.trim() || !config.name?.trim() || !config.description?.trim()) {
-      throw new ABTestingError('INVALID_CONFIG', 'Experiment id, name, and description are required.');
+      throw new ABTestingError(
+        'INVALID_CONFIG',
+        'Experiment id, name, and description are required.'
+      );
     }
     if (config.variants.length < 2) {
       throw new ABTestingError(
@@ -715,8 +739,7 @@ export const Stats = {
     const abs = Math.abs(x);
     const t = 1 / (1 + 0.3275911 * abs);
     const poly =
-      ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t +
-        0.254829592) *
+      ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) *
       t;
     return sign * (1 - poly * Math.exp(-abs * abs));
   },
@@ -726,32 +749,43 @@ export const Stats = {
    * Accurate to ~4 decimal places for p in (0.001, 0.999).
    */
   inverseNormalCDF(p: number): number {
-    const a = [0, -3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02,
-                  1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
-    const b = [0, -5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02,
-                  6.680131188771972e+01, -1.328068155288572e+01];
-    const c = [0, -7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00,
-                  -2.549732539343734e+00, 4.374664141464968e+00, 2.938163982698783e+00];
-    const d = [0, 7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00,
-                  3.754408661907416e+00];
+    const a = [
+      0, -3.969683028665376e1, 2.209460984245205e2, -2.759285104469687e2, 1.38357751867269e2,
+      -3.066479806614716e1, 2.506628277459239,
+    ];
+    const b = [
+      0, -5.447609879822406e1, 1.615858368580409e2, -1.556989798598866e2, 6.680131188771972e1,
+      -1.328068155288572e1,
+    ];
+    const c = [
+      0, -7.784894002430293e-3, -3.223964580411365e-1, -2.400758277161838, -2.549732539343734,
+      4.374664141464968, 2.938163982698783,
+    ];
+    const d = [0, 7.784695709041462e-3, 3.224671290700398e-1, 2.445134137142996, 3.754408661907416];
 
     const pLow = 0.02425;
     const pHigh = 1 - pLow;
 
     if (p < pLow) {
       const q = Math.sqrt(-2 * Math.log(p));
-      return (((((c[1]*q+c[2])*q+c[3])*q+c[4])*q+c[5])*q+c[6]) /
-             ((((d[1]*q+d[2])*q+d[3])*q+d[4])*q+1);
+      return (
+        (((((c[1] * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) * q + c[6]) /
+        ((((d[1] * q + d[2]) * q + d[3]) * q + d[4]) * q + 1)
+      );
     }
     if (p <= pHigh) {
       const q = p - 0.5;
       const r = q * q;
-      return (((((a[1]*r+a[2])*r+a[3])*r+a[4])*r+a[5])*r+a[6])*q /
-             (((((b[1]*r+b[2])*r+b[3])*r+b[4])*r+b[5])*r+1);
+      return (
+        ((((((a[1] * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * r + a[6]) * q) /
+        (((((b[1] * r + b[2]) * r + b[3]) * r + b[4]) * r + b[5]) * r + 1)
+      );
     }
     const q = Math.sqrt(-2 * Math.log(1 - p));
-    return -(((((c[1]*q+c[2])*q+c[3])*q+c[4])*q+c[5])*q+c[6]) /
-              ((((d[1]*q+d[2])*q+d[3])*q+d[4])*q+1);
+    return (
+      -(((((c[1] * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) * q + c[6]) /
+      ((((d[1] * q + d[2]) * q + d[3]) * q + d[4]) * q + 1)
+    );
   },
 
   /** FNV-1a 32-bit hash → unit interval [0, 1). */

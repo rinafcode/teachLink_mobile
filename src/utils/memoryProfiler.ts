@@ -148,7 +148,10 @@ export function detectLeak(snapshots: MemorySnapshot[]): boolean {
  * Returns true when JS heap utilization exceeds the configured memory pressure
  * threshold.
  */
-export function detectMemoryPressure(snapshot: MemorySnapshot, threshold = MEMORY_PRESSURE_THRESHOLD): boolean {
+export function detectMemoryPressure(
+  snapshot: MemorySnapshot,
+  threshold = MEMORY_PRESSURE_THRESHOLD
+): boolean {
   return (
     snapshot.available &&
     snapshot.heapSizeBytes > 0 &&
@@ -166,7 +169,8 @@ export interface MemoryPressureStatus {
 }
 
 export function getMemoryPressureStatus(snapshot: MemorySnapshot): MemoryPressureStatus {
-  const utilization = snapshot.heapSizeBytes > 0 ? snapshot.usedHeapBytes / snapshot.heapSizeBytes : 0;
+  const utilization =
+    snapshot.heapSizeBytes > 0 ? snapshot.usedHeapBytes / snapshot.heapSizeBytes : 0;
 
   return {
     available: snapshot.available,
@@ -174,7 +178,8 @@ export function getMemoryPressureStatus(snapshot: MemorySnapshot): MemoryPressur
     usedHeapBytes: snapshot.usedHeapBytes,
     externalBytes: snapshot.externalBytes,
     utilization,
-    isHighPressure: snapshot.available && snapshot.heapSizeBytes > 0 && utilization > MEMORY_PRESSURE_THRESHOLD,
+    isHighPressure:
+      snapshot.available && snapshot.heapSizeBytes > 0 && utilization > MEMORY_PRESSURE_THRESHOLD,
   };
 }
 

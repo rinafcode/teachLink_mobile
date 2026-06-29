@@ -32,7 +32,7 @@ describe('shallowDiff', () => {
   it('returns patched nested objects for changed nested fields', () => {
     const oldObj = { a: 1, config: { x: 10, y: 20 } };
     const newObj = { config: { x: 10, y: 25 } }; // y changed
-    
+
     // It should keep unchanged `x` while applying new `y` to the returned diff payload
     expect(shallowDiff(oldObj, newObj)).toEqual({
       config: { x: 10, y: 25 },
@@ -42,7 +42,7 @@ describe('shallowDiff', () => {
   it('returns arrays as-is without deep diffing them', () => {
     const oldObj = { items: [1, 2] };
     const newObj = { items: [1, 2] }; // different reference
-    
+
     // Arrays are skipped from deep diffing, so it should just return the new array reference
     expect(shallowDiff(oldObj, newObj)).toEqual({ items: [1, 2] });
   });

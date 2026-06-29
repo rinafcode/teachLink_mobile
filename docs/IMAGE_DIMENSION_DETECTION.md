@@ -7,6 +7,7 @@ This document outlines the strategy for automatic image dimension detection and 
 ## Problem
 
 Images were being displayed without proper dimension information, leading to:
+
 - **Layout Shift**: Content jumping as images load
 - **CLS (Cumulative Layout Shift)**: Poor Core Web Vitals scores
 - **Visual Instability**: Images appearing stretched or squished
@@ -70,7 +71,7 @@ Added dimension fields to image-related types:
   knownDimensions={{
     width: course.thumbnailWidth,
     height: course.thumbnailHeight,
-    aspectRatio: course.thumbnailWidth / course.thumbnailHeight
+    aspectRatio: course.thumbnailWidth / course.thumbnailHeight,
   }}
   containerWidth={300}
 />
@@ -79,11 +80,7 @@ Added dimension fields to image-related types:
 ### Legacy Usage (No Dimension Detection)
 
 ```tsx
-<CachedImage
-  uri={course.thumbnail}
-  alt="Course thumbnail"
-  style={{ width: 300, height: 200 }}
-/>
+<CachedImage uri={course.thumbnail} alt="Course thumbnail" style={{ width: 300, height: 200 }} />
 ```
 
 ## API Response Format
@@ -110,21 +107,25 @@ For optimal performance, API responses should include image dimensions:
 ## Performance Benefits
 
 ### 1. Eliminated CLS
+
 - ✅ Zero layout shift when images load
 - ✅ Stable content position during scrolling
 - ✅ Improved Core Web Vitals scores
 
 ### 2. Faster Perceived Rendering
+
 - ✅ Immediate space allocation for images
 - ✅ Smoother scrolling experience
 - ✅ Reduced reflow and repaint operations
 
 ### 3. Better Visual Stability
+
 - ✅ Images maintain correct aspect ratios
 - ✅ No stretched or squished images
 - ✅ Consistent layout across different screen sizes
 
 ### 4. Optimized Network Usage
+
 - ✅ Dimension caching prevents redundant requests
 - ✅ Batch detection for multiple images
 - ✅ Intelligent cache management
@@ -149,6 +150,7 @@ For optimal performance, API responses should include image dimensions:
 ### Fallback Behavior
 
 If dimension detection fails:
+
 - Falls back to original styling behavior
 - Maintains layout stability using container dimensions
 - Logs warnings for debugging
@@ -156,9 +158,11 @@ If dimension detection fails:
 ## Testing
 
 ### Unit Tests
+
 **File**: `src/__tests__/utils/imageDimensions.test.ts`
 
 Tests cover:
+
 - Dimension detection for various image sizes
 - Batch detection functionality
 - Aspect ratio calculations
@@ -183,30 +187,26 @@ Tests cover:
 ### For Existing Components
 
 **Before**:
+
 ```tsx
-<CachedImage
-  uri={user.avatar}
-  style={{ width: 88, height: 88 }}
-/>
+<CachedImage uri={user.avatar} style={{ width: 88, height: 88 }} />
 ```
 
 **After** (Option 1 - Automatic Detection):
+
 ```tsx
-<CachedImage
-  uri={user.avatar}
-  enableDimensionDetection={true}
-  containerWidth={88}
-/>
+<CachedImage uri={user.avatar} enableDimensionDetection={true} containerWidth={88} />
 ```
 
 **After** (Option 2 - Known Dimensions):
+
 ```tsx
 <CachedImage
   uri={user.avatar}
   knownDimensions={{
     width: user.avatarWidth,
     height: user.avatarHeight,
-    aspectRatio: user.avatarWidth / user.avatarHeight
+    aspectRatio: user.avatarWidth / user.avatarHeight,
   }}
   containerWidth={88}
 />
@@ -215,11 +215,13 @@ Tests cover:
 ## Performance Metrics
 
 ### Before Implementation
+
 - CLS: ~0.15-0.25 (Poor)
 - Layout shift incidents: Frequent
 - Visual stability: Low
 
 ### After Implementation
+
 - CLS: ~0.0-0.05 (Good)
 - Layout shift incidents: None
 - Visual stability: High

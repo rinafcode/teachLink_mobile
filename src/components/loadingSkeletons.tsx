@@ -10,7 +10,7 @@ import React from 'react';
 /**
  * Generic loading skeleton
  */
-export function LoadingSkeleton({
+export const LoadingSkeleton = ({
   height = 100,
   width = '100%',
   count = 1,
@@ -18,7 +18,7 @@ export function LoadingSkeleton({
   height?: number;
   width?: string | number;
   count?: number;
-}) {
+}) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {Array.from({ length: count }).map((_, i) => (
@@ -41,12 +41,12 @@ export function LoadingSkeleton({
       `}</style>
     </div>
   );
-}
+};
 
 /**
  * Video player loading skeleton
  */
-export function VideoPlayerSkeleton() {
+export const VideoPlayerSkeleton = () => {
   return (
     <div style={{ width: '100%', backgroundColor: '#000' }}>
       <div style={{ aspectRatio: '16/9', position: 'relative' }}>
@@ -77,12 +77,12 @@ export function VideoPlayerSkeleton() {
       </div>
     </div>
   );
-}
+};
 
 /**
  * Data grid loading skeleton
  */
-export function DataGridSkeleton() {
+export const DataGridSkeleton = () => {
   return (
     <div style={{ padding: 16 }}>
       <div style={{ marginBottom: 16 }}>
@@ -95,12 +95,12 @@ export function DataGridSkeleton() {
       ))}
     </div>
   );
-}
+};
 
 /**
  * Profile card loading skeleton
  */
-export function ProfileSkeleton() {
+export const ProfileSkeleton = () => {
   return (
     <div style={{ padding: 16 }}>
       {/* Avatar */}
@@ -141,12 +141,12 @@ export function ProfileSkeleton() {
       `}</style>
     </div>
   );
-}
+};
 
 /**
  * Settings page loading skeleton
  */
-export function SettingsSkeleton() {
+export const SettingsSkeleton = () => {
   return (
     <div style={{ padding: 16 }}>
       {Array.from({ length: 6 }).map((_, i) => (
@@ -159,12 +159,12 @@ export function SettingsSkeleton() {
       ))}
     </div>
   );
-}
+};
 
 /**
  * Quiz card loading skeleton
  */
-export function QuizSkeleton() {
+export const QuizSkeleton = () => {
   return (
     <div style={{ padding: 16 }}>
       {/* Question */}
@@ -183,12 +183,12 @@ export function QuizSkeleton() {
       </div>
     </div>
   );
-}
+};
 
 /**
  * Search results loading skeleton
  */
-export function SearchResultsSkeleton() {
+export const SearchResultsSkeleton = () => {
   return (
     <div style={{ padding: 16 }}>
       {/* Search bar */}
@@ -221,12 +221,12 @@ export function SearchResultsSkeleton() {
       `}</style>
     </div>
   );
-}
+};
 
 /**
  * Download queue loading skeleton
  */
-export function DownloadQueueSkeleton() {
+export const DownloadQueueSkeleton = () => {
   return (
     <div style={{ padding: 16 }}>
       {Array.from({ length: 3 }).map((_, i) => (
@@ -242,12 +242,12 @@ export function DownloadQueueSkeleton() {
       ))}
     </div>
   );
-}
+};
 
 /**
  * Generic card loading skeleton
  */
-export function CardSkeleton({ count = 3 }: { count?: number }) {
+export const CardSkeleton = ({ count = 3 }: { count?: number }) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {Array.from({ length: count }).map((_, i) => (
@@ -260,12 +260,12 @@ export function CardSkeleton({ count = 3 }: { count?: number }) {
       ))}
     </div>
   );
-}
+};
 
 /**
  * Course content loading skeleton
  */
-export function CourseContentSkeleton() {
+export const CourseContentSkeleton = () => {
   return (
     <div style={{ padding: 16 }}>
       {/* Syllabus/Tabs */}
@@ -286,4 +286,4 @@ export function CourseContentSkeleton() {
       ))}
     </div>
   );
-}
+};

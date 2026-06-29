@@ -149,7 +149,7 @@ module.exports = function productionOptimizer(api, options = {}) {
         } else {
           path.replaceWith(t.unaryExpression('void', t.numericLiteral(0)));
         }
-      }
-    }
+      },
+    },
   };
 };

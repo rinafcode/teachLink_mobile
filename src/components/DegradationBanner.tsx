@@ -10,10 +10,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Text, TouchableOpacity, View } from 'react-native';
+
+import { useThemeColor } from './themed-view';
 import { FeatureType, featureCapabilities } from '../services/featureCapabilities';
 import { useDegradationStore } from '../store/degradationStore';
 import { appLogger } from '../utils/logger';
-import { useThemeColor } from './themed-view';
 
 interface DegradationBannerProps {
   feature: FeatureType;
@@ -270,7 +271,7 @@ export const DegradationNotificationsPanel: React.FC<DegradationNotificationsPan
 
   return (
     <View style={{ gap: 4 }}>
-      {unreadNotifications.map((notification) => (
+      {unreadNotifications.map(notification => (
         <View
           key={notification.id}
           style={{

@@ -1,4 +1,5 @@
 import React, { Profiler, ReactNode } from 'react';
+
 import { useReactProfiler, ProfilerOptions } from '../../hooks/useReactProfiler';
 
 interface ProfiledScreenProps {

@@ -11,6 +11,7 @@ This document describes the callback memoization patterns used across the TeachL
 React recreates every function defined inside a component on every render. When those functions are passed as props to child components, the child sees a new reference each time and re-renders — even if nothing meaningful changed. `useCallback` memoizes the function reference so it only changes when its declared dependencies change.
 
 **Without useCallback:**
+
 ```tsx
 // New function reference on every render → BookmarkButton re-renders every time parent renders
 const handleToggle = async () => {
@@ -19,6 +20,7 @@ const handleToggle = async () => {
 ```
 
 **With useCallback:**
+
 ```tsx
 // Stable reference → BookmarkButton only re-renders when bookmarked/item/store methods change
 const handleToggle = useCallback(async () => {
@@ -30,16 +32,16 @@ const handleToggle = useCallback(async () => {
 
 ## Dependency Array Rules
 
-| Dependency type | Include in array? | Notes |
-|---|---|---|
-| Props | ✅ Yes | Props can change between renders |
-| Local state (`useState`) | ✅ Yes | State values change on `setState` calls |
-| Other `useCallback` / `useMemo` values | ✅ Yes | They are stable references themselves |
-| Zustand store **methods** (`addBookmark`, `setTheme`) | ✅ Yes | Zustand methods are stable but must be listed for exhaustive-deps |
-| Zustand store **state slices** (`bookmarked`, `theme`) | ✅ Yes | These are values that change |
-| `useRef` values (`.current`) | ❌ No | Refs are mutable and don't trigger re-renders |
-| Module-level constants / `StyleSheet.create` | ❌ No | Never change |
-| Setter functions from `useState` (`setFoo`) | ❌ No | React guarantees these are stable |
+| Dependency type                                        | Include in array? | Notes                                                             |
+| ------------------------------------------------------ | ----------------- | ----------------------------------------------------------------- |
+| Props                                                  | ✅ Yes            | Props can change between renders                                  |
+| Local state (`useState`)                               | ✅ Yes            | State values change on `setState` calls                           |
+| Other `useCallback` / `useMemo` values                 | ✅ Yes            | They are stable references themselves                             |
+| Zustand store **methods** (`addBookmark`, `setTheme`)  | ✅ Yes            | Zustand methods are stable but must be listed for exhaustive-deps |
+| Zustand store **state slices** (`bookmarked`, `theme`) | ✅ Yes            | These are values that change                                      |
+| `useRef` values (`.current`)                           | ❌ No             | Refs are mutable and don't trigger re-renders                     |
+| Module-level constants / `StyleSheet.create`           | ❌ No             | Never change                                                      |
+| Setter functions from `useState` (`setFoo`)            | ❌ No             | React guarantees these are stable                                 |
 
 ---
 
@@ -103,14 +105,17 @@ const handleConfirm = useCallback(() => {
 ### 4. Settings handlers (MobileSettings)
 
 ```tsx
-const handleBiometricToggle = useCallback(async (value: boolean) => {
-  if (value) {
-    const ok = await enableBiometric();
-    if (!ok) Alert.alert('Biometric Login', 'Enable failed. Check device settings.');
-  } else {
-    await disableBiometric();
-  }
-}, [enableBiometric, disableBiometric]);
+const handleBiometricToggle = useCallback(
+  async (value: boolean) => {
+    if (value) {
+      const ok = await enableBiometric();
+      if (!ok) Alert.alert('Biometric Login', 'Enable failed. Check device settings.');
+    } else {
+      await disableBiometric();
+    }
+  },
+  [enableBiometric, disableBiometric]
+);
 
 const handleToggleAdvanced = useCallback(() => {
   LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -125,18 +130,24 @@ const handleToggleAdvanced = useCallback(() => {
 ### 5. Seek bar handlers (VideoControls)
 
 ```tsx
-const positionFromEvent = useCallback((event: any) => {
-  if (seekBarWidth <= 0 || durationMillis <= 0) return 0;
-  const x = event.nativeEvent.locationX;
-  return clamp((x / seekBarWidth) * durationMillis, 0, durationMillis);
-}, [seekBarWidth, durationMillis]);
+const positionFromEvent = useCallback(
+  (event: any) => {
+    if (seekBarWidth <= 0 || durationMillis <= 0) return 0;
+    const x = event.nativeEvent.locationX;
+    return clamp((x / seekBarWidth) * durationMillis, 0, durationMillis);
+  },
+  [seekBarWidth, durationMillis]
+);
 
-const handleSeekGrant = useCallback((event: any) => {
-  if (!durationMillis) return;
-  onSeekStart?.();
-  const position = positionFromEvent(event);
-  onSeekPreview?.(position);
-}, [durationMillis, onSeekStart, onSeekPreview, positionFromEvent]);
+const handleSeekGrant = useCallback(
+  (event: any) => {
+    if (!durationMillis) return;
+    onSeekStart?.();
+    const position = positionFromEvent(event);
+    onSeekPreview?.(position);
+  },
+  [durationMillis, onSeekStart, onSeekPreview, positionFromEvent]
+);
 ```
 
 **Why:** `positionFromEvent` is a derived helper used by three other callbacks. Memoizing it first, then listing it as a dependency of the seek handlers, creates a clean dependency chain and avoids stale closure bugs.
@@ -186,11 +197,11 @@ const handleToggleFollow = useCallback((connectionId: string) => {
 
 ```tsx
 // Bad — new function on every render
-<TouchableOpacity onPress={() => setActiveTab(tab.key)} />
+<TouchableOpacity onPress={() => setActiveTab(tab.key)} />;
 
 // Good — stable reference
 const handleSelectTab = useCallback((tab: ProfileTab) => setActiveTab(tab), []);
-<TouchableOpacity onPress={() => handleSelectTab(tab.key)} />
+<TouchableOpacity onPress={() => handleSelectTab(tab.key)} />;
 ```
 
 ### ❌ Missing dependencies (stale closures)
@@ -215,6 +226,7 @@ const handlePress = useCallback(() => navigate('Home'), [navigate]);
 ```
 
 Only apply `useCallback` when:
+
 - The function is passed as a prop to a child component
 - The function is used in a `useEffect` / `useMemo` dependency array
 - The function is called via `runOnJS` in a Reanimated worklet
@@ -238,13 +250,13 @@ The following rules are active in `eslint.config.js`:
 
 ## Files Updated
 
-| File | Callbacks memoized |
-|---|---|
-| `BookmarkButton.tsx` | `handleToggle` |
-| `DownloadButton.tsx` | `handlePress`, `renderIcon`, `getLabel` |
-| `AvatarCamera.tsx` | `handleTakePhoto`, `handlePickFromLibrary`, `handleConfirm`, `handleRetake`, `handleClose` |
-| `MobileFormInput.tsx` | `handleBlur`, `handleApplySuggestion`, `handleFocus`, `handleTogglePassword` |
-| `MobileSettings.tsx` | `handleClearFormCache`, `handleBiometricToggle`, `handleSignOut`, `handleManualSync`, `handleClearDownloads`, `handleToggleAdvanced` |
-| `VideoControls.tsx` | `handleSeekBarLayout`, `positionFromEvent`, `handleSeekGrant`, `handleSeekMove`, `handleSeekRelease`, `handleSeekTerminate`, `handleToggleSpeedMenu`, `handleToggleQualityMenu`, `handleSelectRate`, `handleSelectQualityOption` |
-| `SwipeableRow.tsx` | `triggerHaptic`, `handleLayout`, `executeDelete`, `executeArchive` |
-| `MobileProfile.tsx` | `getInitials`, `handleStartEdit`, `handleToggleAdvancedFields`, `validateForm`, `handleSave`, `handleCancelEdit`, `handleAvatarConfirm`, `handleToggleFollow`, `handleOpenCamera`, `handleCloseCamera`, `handleSelectTab` |
+| File                  | Callbacks memoized                                                                                                                                                                                                               |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BookmarkButton.tsx`  | `handleToggle`                                                                                                                                                                                                                   |
+| `DownloadButton.tsx`  | `handlePress`, `renderIcon`, `getLabel`                                                                                                                                                                                          |
+| `AvatarCamera.tsx`    | `handleTakePhoto`, `handlePickFromLibrary`, `handleConfirm`, `handleRetake`, `handleClose`                                                                                                                                       |
+| `MobileFormInput.tsx` | `handleBlur`, `handleApplySuggestion`, `handleFocus`, `handleTogglePassword`                                                                                                                                                     |
+| `MobileSettings.tsx`  | `handleClearFormCache`, `handleBiometricToggle`, `handleSignOut`, `handleManualSync`, `handleClearDownloads`, `handleToggleAdvanced`                                                                                             |
+| `VideoControls.tsx`   | `handleSeekBarLayout`, `positionFromEvent`, `handleSeekGrant`, `handleSeekMove`, `handleSeekRelease`, `handleSeekTerminate`, `handleToggleSpeedMenu`, `handleToggleQualityMenu`, `handleSelectRate`, `handleSelectQualityOption` |
+| `SwipeableRow.tsx`    | `triggerHaptic`, `handleLayout`, `executeDelete`, `executeArchive`                                                                                                                                                               |
+| `MobileProfile.tsx`   | `getInitials`, `handleStartEdit`, `handleToggleAdvancedFields`, `validateForm`, `handleSave`, `handleCancelEdit`, `handleAvatarConfirm`, `handleToggleFollow`, `handleOpenCamera`, `handleCloseCamera`, `handleSelectTab`        |

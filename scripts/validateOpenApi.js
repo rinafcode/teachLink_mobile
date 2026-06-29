@@ -67,7 +67,7 @@ function parseSpec(filePath) {
       return JSON.parse(raw);
     } catch {
       throw new Error(
-        'Cannot parse YAML spec: install js-yaml (`npm i -D js-yaml`) or provide a JSON spec.',
+        'Cannot parse YAML spec: install js-yaml (`npm i -D js-yaml`) or provide a JSON spec.'
       );
     }
   }
@@ -264,8 +264,8 @@ function run() {
     console.error(
       '❌ OpenAPI spec not found.\n' +
         '   Searched:\n' +
-        CANDIDATE_PATHS.map((p) => `     ${p}`).join('\n') +
-        '\n   Provide a path with: node scripts/validateOpenApi.js --spec <path>',
+        CANDIDATE_PATHS.map(p => `     ${p}`).join('\n') +
+        '\n   Provide a path with: node scripts/validateOpenApi.js --spec <path>'
     );
     process.exit(1);
   }
@@ -290,13 +290,13 @@ function run() {
 
   if (warnings.length > 0) {
     console.warn('Warnings:');
-    warnings.forEach((w) => console.warn(w));
+    warnings.forEach(w => console.warn(w));
     console.warn('');
   }
 
   if (errors.length > 0) {
     console.error(`Errors (${errors.length}):`);
-    errors.forEach((e) => console.error(e));
+    errors.forEach(e => console.error(e));
     console.error('\n❌ OpenAPI validation failed.\n');
     process.exit(1);
   }

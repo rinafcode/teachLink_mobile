@@ -48,9 +48,7 @@ class BatchClient {
   }
 
   get(url: string, params?: any): Promise<any> {
-    const urlWithParams = params
-      ? `${url}?${new URLSearchParams(params).toString()}`
-      : url;
+    const urlWithParams = params ? `${url}?${new URLSearchParams(params).toString()}` : url;
     return this.mutate('GET', urlWithParams);
   }
 
@@ -110,7 +108,7 @@ class BatchClient {
     try {
       const response = await apiClient.post(
         '/api/batch',
-        entries.map(e => e.request),
+        entries.map(e => e.request)
       );
 
       const responses: BatchResponse[] = response.data;
@@ -150,7 +148,7 @@ class BatchClient {
         if (method === 'POST') return apiClient.post(url, body);
         if (method === 'PUT') return apiClient.put(url, body);
         return apiClient.delete(url);
-      }),
+      })
     );
 
     results.forEach((result, i) => {

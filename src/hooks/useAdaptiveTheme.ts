@@ -2,8 +2,8 @@ import { LightSensor } from 'expo-sensors';
 import { useEffect, useRef } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 
-import { useSettingsStore } from '../store/settingsStore';
 import { useTheme } from '../store';
+import { useSettingsStore } from '../store/settingsStore';
 
 export const DARK_LUX_THRESHOLD = 25;
 export const LIGHT_LUX_THRESHOLD = 75;

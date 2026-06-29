@@ -9,14 +9,18 @@ import type { Metric } from 'web-vitals';
  * "good" = passes, "needsImprovement" = warning, above = poor.
  */
 export const WEB_VITALS_THRESHOLDS: Record<
-  PerformanceMetric.LCP | PerformanceMetric.FID | PerformanceMetric.CLS | PerformanceMetric.FCP | PerformanceMetric.TTFB,
+  | PerformanceMetric.LCP
+  | PerformanceMetric.FID
+  | PerformanceMetric.CLS
+  | PerformanceMetric.FCP
+  | PerformanceMetric.TTFB,
   { good: number; needsImprovement: number }
 > = {
-  [PerformanceMetric.LCP]:  { good: 2500,  needsImprovement: 4000  },
-  [PerformanceMetric.FID]:  { good: 100,   needsImprovement: 300   },
-  [PerformanceMetric.CLS]:  { good: 0.1,   needsImprovement: 0.25  },
-  [PerformanceMetric.FCP]:  { good: 1800,  needsImprovement: 3000  },
-  [PerformanceMetric.TTFB]: { good: 800,   needsImprovement: 1800  },
+  [PerformanceMetric.LCP]: { good: 2500, needsImprovement: 4000 },
+  [PerformanceMetric.FID]: { good: 100, needsImprovement: 300 },
+  [PerformanceMetric.CLS]: { good: 0.1, needsImprovement: 0.25 },
+  [PerformanceMetric.FCP]: { good: 1800, needsImprovement: 3000 },
+  [PerformanceMetric.TTFB]: { good: 800, needsImprovement: 1800 },
 };
 
 export type VitalRating = 'good' | 'needs-improvement' | 'poor';
@@ -33,7 +37,12 @@ export interface VitalReport {
 const baselines = new Map<string, number>();
 
 function getRating(
-  metric: PerformanceMetric.LCP | PerformanceMetric.FID | PerformanceMetric.CLS | PerformanceMetric.FCP | PerformanceMetric.TTFB,
+  metric:
+    | PerformanceMetric.LCP
+    | PerformanceMetric.FID
+    | PerformanceMetric.CLS
+    | PerformanceMetric.FCP
+    | PerformanceMetric.TTFB,
   value: number
 ): VitalRating {
   const { good, needsImprovement } = WEB_VITALS_THRESHOLDS[metric];
@@ -44,10 +53,10 @@ function getRating(
 
 function toAnalyticsEvent(metric: PerformanceMetric): AnalyticsEvent {
   const map: Record<string, AnalyticsEvent> = {
-    [PerformanceMetric.LCP]:  AnalyticsEvent.WEB_VITALS_LCP,
-    [PerformanceMetric.FID]:  AnalyticsEvent.WEB_VITALS_FID,
-    [PerformanceMetric.CLS]:  AnalyticsEvent.WEB_VITALS_CLS,
-    [PerformanceMetric.FCP]:  AnalyticsEvent.WEB_VITALS_FCP,
+    [PerformanceMetric.LCP]: AnalyticsEvent.WEB_VITALS_LCP,
+    [PerformanceMetric.FID]: AnalyticsEvent.WEB_VITALS_FID,
+    [PerformanceMetric.CLS]: AnalyticsEvent.WEB_VITALS_CLS,
+    [PerformanceMetric.FCP]: AnalyticsEvent.WEB_VITALS_FCP,
     [PerformanceMetric.TTFB]: AnalyticsEvent.WEB_VITALS_TTFB,
   };
   return map[metric] ?? AnalyticsEvent.PERFORMANCE_METRIC;
@@ -55,7 +64,12 @@ function toAnalyticsEvent(metric: PerformanceMetric): AnalyticsEvent {
 
 function handleMetric(perfMetric: PerformanceMetric, raw: Metric): void {
   const rating = getRating(
-    perfMetric as PerformanceMetric.LCP | PerformanceMetric.FID | PerformanceMetric.CLS | PerformanceMetric.FCP | PerformanceMetric.TTFB,
+    perfMetric as
+      | PerformanceMetric.LCP
+      | PerformanceMetric.FID
+      | PerformanceMetric.CLS
+      | PerformanceMetric.FCP
+      | PerformanceMetric.TTFB,
     raw.value
   );
 
@@ -111,14 +125,14 @@ export function init(): void {
   // avoids hard failures in environments where the APIs don't exist.
   import('web-vitals')
     .then(({ onLCP, onFID, onCLS, onFCP, onTTFB }) => {
-      onLCP((m)  => handleMetric(PerformanceMetric.LCP,  m));
-      onFID((m)  => handleMetric(PerformanceMetric.FID,  m));
-      onCLS((m)  => handleMetric(PerformanceMetric.CLS,  m));
-      onFCP((m)  => handleMetric(PerformanceMetric.FCP,  m));
-      onTTFB((m) => handleMetric(PerformanceMetric.TTFB, m));
+      onLCP(m => handleMetric(PerformanceMetric.LCP, m));
+      onFID(m => handleMetric(PerformanceMetric.FID, m));
+      onCLS(m => handleMetric(PerformanceMetric.CLS, m));
+      onFCP(m => handleMetric(PerformanceMetric.FCP, m));
+      onTTFB(m => handleMetric(PerformanceMetric.TTFB, m));
       appLogger.infoSync('[WebVitals] Monitoring initialised');
     })
-    .catch((err) => {
+    .catch(err => {
       appLogger.infoSync(`[WebVitals] Failed to load web-vitals: ${err}`);
     });
 }

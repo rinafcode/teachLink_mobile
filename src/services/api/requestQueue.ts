@@ -1,9 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { InternalAxiosRequestConfig } from 'axios';
 import * as Network from 'expo-network';
+
+import logger from '../../utils/logger';
 import { healthMetricsService } from '../healthMetrics';
 import { mobileAnalyticsService } from '../mobileAnalytics';
-import logger from '../../utils/logger';
 
 export type RequestPriority = 'critical' | 'high' | 'normal' | 'low';
 
@@ -61,7 +62,7 @@ class RequestQueue {
 
   async addToQueue(
     config: InternalAxiosRequestConfig,
-    priority: RequestPriority = 'normal',
+    priority: RequestPriority = 'normal'
   ): Promise<string> {
     try {
       const queue = await this.getQueue();
@@ -88,9 +89,7 @@ class RequestQueue {
       this.metrics.byMethod[method] = (this.metrics.byMethod[method] ?? 0) + 1;
       await this.persistMetrics();
 
-      logger.info(
-        `Added request to queue: [${priority}] ${method} ${endpoint}`,
-      );
+      logger.info(`Added request to queue: [${priority}] ${method} ${endpoint}`);
       this.notifyListeners(queue.length);
 
       mobileAnalyticsService.trackEvent('request_queued' as any, {
@@ -120,18 +119,18 @@ class RequestQueue {
   async removeFromQueue(id: string): Promise<void> {
     try {
       const queue = await this.getQueue();
-      const removed = queue.find((req) => req.id === id);
-      const filtered = queue.filter((req) => req.id !== id);
+      const removed = queue.find(req => req.id === id);
+      const filtered = queue.filter(req => req.id !== id);
 
       if (removed) {
         this.metrics.totalQueued = Math.max(0, this.metrics.totalQueued - 1);
         this.metrics.byPriority[removed.priority] = Math.max(
           0,
-          this.metrics.byPriority[removed.priority] - 1,
+          this.metrics.byPriority[removed.priority] - 1
         );
         this.metrics.byMethod[removed.method] = Math.max(
           0,
-          (this.metrics.byMethod[removed.method] ?? 1) - 1,
+          (this.metrics.byMethod[removed.method] ?? 1) - 1
         );
       }
 
@@ -145,7 +144,7 @@ class RequestQueue {
   async incrementRetry(id: string): Promise<void> {
     try {
       const queue = await this.getQueue();
-      const request = queue.find((req) => req.id === id);
+      const request = queue.find(req => req.id === id);
       if (request) {
         request.retries += 1;
         this.metrics.totalRetries++;
@@ -172,17 +171,13 @@ class RequestQueue {
       const queue = await this.getQueue();
       if (queue.length === 0) return;
 
-      const validRequests = queue.filter(
-        (req) => req.retries < req.maxRetries,
-      );
-      const expiredRequests = queue.filter(
-        (req) => req.retries >= req.maxRetries,
-      );
+      const validRequests = queue.filter(req => req.retries < req.maxRetries);
+      const expiredRequests = queue.filter(req => req.retries >= req.maxRetries);
 
       for (const expired of expiredRequests) {
         await this.removeFromQueue(expired.id);
         logger.warn(
-          `Request ${expired.id} [${expired.priority}] ${expired.method} ${expired.endpoint} dropped after ${expired.maxRetries} retries`,
+          `Request ${expired.id} [${expired.priority}] ${expired.method} ${expired.endpoint} dropped after ${expired.maxRetries} retries`
         );
       }
 
@@ -207,12 +202,10 @@ class RequestQueue {
     this.restoreMetrics();
     const pending = this.getQueue();
     pending
-      .then((q) => {
+      .then(q => {
         this.notifyListeners(q.length);
         if (q.length > 0) {
-          logger.info(
-            `RequestQueue: ${q.length} pending requests restored from storage`,
-          );
+          logger.info(`RequestQueue: ${q.length} pending requests restored from storage`);
           mobileAnalyticsService.trackEvent('queue_resumed' as any, {
             pendingCount: q.length,
           });
@@ -305,7 +298,7 @@ class RequestQueue {
   onPendingCountChange(listener: (count: number) => void): () => void {
     this.listeners.push(listener);
     return () => {
-      this.listeners = this.listeners.filter((l) => l !== listener);
+      this.listeners = this.listeners.filter(l => l !== listener);
     };
   }
 
@@ -351,13 +344,11 @@ class RequestQueue {
       return;
     }
 
-    logger.info(
-      `RequestQueue: Batching ${requests.length} ${method} requests to ${endpoint}`,
-    );
+    logger.info(`RequestQueue: Batching ${requests.length} ${method} requests to ${endpoint}`);
 
     if (method === 'GET') {
       const results = await Promise.allSettled(
-        requests.map((req) => client(req.config).catch(() => {})),
+        requests.map(req => client(req.config).catch(() => {}))
       );
       for (let i = 0; i < requests.length; i++) {
         if (results[i].status === 'fulfilled') {
@@ -370,7 +361,7 @@ class RequestQueue {
     }
 
     if (method === 'PUT' || method === 'PATCH') {
-      const payloads = requests.map((req) => req.config.data);
+      const payloads = requests.map(req => req.config.data);
       try {
         const mergedPayload = this.mergePayloads(payloads);
         const batchConfig = {
@@ -429,7 +420,7 @@ class RequestQueue {
   }
 
   private notifyListeners(count: number): void {
-    this.listeners.forEach((listener) => listener(count));
+    this.listeners.forEach(listener => listener(count));
   }
 
   private async checkConnectivity(): Promise<boolean> {
@@ -443,9 +434,8 @@ class RequestQueue {
 
   private async listenForNetworkChanges(): Promise<void> {
     try {
-      const listener = Network.addNetworkStateListener((state) => {
-        const online =
-          (state.isConnected && state.isInternetReachable) ?? false;
+      const listener = Network.addNetworkStateListener(state => {
+        const online = (state.isConnected && state.isInternetReachable) ?? false;
         if (online) {
           logger.info('RequestQueue: Network became available, processing queue');
           void this.processQueue(this.apiClient!);
@@ -453,19 +443,13 @@ class RequestQueue {
       });
       this.networkListener = () => listener.remove();
     } catch (error) {
-      logger.error(
-        'RequestQueue: Failed to listen for network changes:',
-        error,
-      );
+      logger.error('RequestQueue: Failed to listen for network changes:', error);
     }
   }
 
   private async persistMetrics(): Promise<void> {
     try {
-      await AsyncStorage.setItem(
-        QUEUE_METRICS_KEY,
-        JSON.stringify(this.metrics),
-      );
+      await AsyncStorage.setItem(QUEUE_METRICS_KEY, JSON.stringify(this.metrics));
     } catch (error) {
       logger.error('Error persisting queue metrics:', error);
     }

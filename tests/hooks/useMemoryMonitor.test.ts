@@ -1,9 +1,10 @@
 import { act, renderHook } from '@testing-library/react-native';
-import { Alert } from 'react-native';
 import * as Device from 'expo-device';
+import { Alert } from 'react-native';
 
 import { useMemoryMonitor } from '../../src/hooks/useMemoryMonitor';
 import { mobileAnalyticsService } from '../../src/services/mobileAnalytics';
+import logger from '../../src/utils/logger';
 import { captureMemorySnapshot, detectLeak } from '../../src/utils/memoryProfiler';
 
 // Mock logger
@@ -28,8 +29,6 @@ jest.mock('../../src/utils/logger', () => {
     },
   };
 });
-
-import logger from '../../src/utils/logger';
 
 // Retrieve mocks
 const mockLogger = logger as unknown as {

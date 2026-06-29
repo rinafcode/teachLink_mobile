@@ -6,21 +6,21 @@ import { appLogger } from '../utils/logger';
 
 /**
  * Hook for managing in-app review requests.
- * 
+ *
  * This hook provides:
  * - Easy access to review request functionality
  * - Automatic metric tracking
  * - Review eligibility checking
- * 
+ *
  * Usage:
  * ```typescript
  * const { requestReview, isSupported, canRequestReview } = useInAppReview();
- * 
+ *
  * // After a positive user experience
  * const handleCourseComplete = async () => {
  *   await requestReview(ReviewTrigger.COURSE_MILESTONE);
  * };
- * 
+ *
  * // Check if review is supported
  * if (isSupported) {
  *   // Show "Rate Us" button
@@ -30,9 +30,9 @@ import { appLogger } from '../utils/logger';
 export function useInAppReview() {
   const [isSupported, setIsSupported] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
-  const getMetrics = useReviewStore((state) => state.getMetrics);
-  const recordReviewRequest = useReviewStore((state) => state.recordReviewRequest);
+
+  const getMetrics = useReviewStore(state => state.getMetrics);
+  const recordReviewRequest = useReviewStore(state => state.recordReviewRequest);
 
   // Check if in-app review is supported on this device
   useEffect(() => {
@@ -61,7 +61,7 @@ export function useInAppReview() {
 
   /**
    * Request an app store review at an optimal moment.
-   * 
+   *
    * @param trigger The positive experience that triggered this request
    * @returns Result indicating whether the prompt was shown
    */
@@ -79,7 +79,7 @@ export function useInAppReview() {
         return result;
       } catch (error) {
         appLogger.error('useInAppReview: Failed to request review', error);
-        
+
         const errorResult: ReviewRequestResult = {
           shown: false,
           reason: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -88,7 +88,7 @@ export function useInAppReview() {
         };
 
         recordReviewRequest(trigger, false, errorResult.reason);
-        
+
         return errorResult;
       } finally {
         setIsLoading(false);
@@ -139,27 +139,29 @@ export function useInAppReview() {
 
 /**
  * Hook for tracking user engagement metrics that influence review eligibility.
- * 
+ *
  * This hook provides convenient methods to update metrics when positive
  * experiences occur in the app.
- * 
+ *
  * Usage:
  * ```typescript
  * const { trackCourseComplete, trackPerfectQuiz, trackAchievement } = useReviewMetrics();
- * 
+ *
  * // After user completes a course
  * trackCourseComplete();
- * 
+ *
  * // After user gets a perfect quiz score
  * trackPerfectQuiz();
  * ```
  */
 export function useReviewMetrics() {
-  const incrementCoursesCompleted = useReviewStore((state) => state.incrementCoursesCompleted);
-  const incrementSessionCount = useReviewStore((state) => state.incrementSessionCount);
-  const incrementAchievementsUnlocked = useReviewStore((state) => state.incrementAchievementsUnlocked);
-  const setLearningStreak = useReviewStore((state) => state.setLearningStreak);
-  const incrementPerfectQuizScores = useReviewStore((state) => state.incrementPerfectQuizScores);
+  const incrementCoursesCompleted = useReviewStore(state => state.incrementCoursesCompleted);
+  const incrementSessionCount = useReviewStore(state => state.incrementSessionCount);
+  const incrementAchievementsUnlocked = useReviewStore(
+    state => state.incrementAchievementsUnlocked
+  );
+  const setLearningStreak = useReviewStore(state => state.setLearningStreak);
+  const incrementPerfectQuizScores = useReviewStore(state => state.incrementPerfectQuizScores);
 
   const trackCourseComplete = useCallback(() => {
     incrementCoursesCompleted();

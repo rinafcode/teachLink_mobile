@@ -17,9 +17,7 @@ export async function warmCriticalCaches(): Promise<void> {
 
   const userId = useAppStore.getState().user?.id;
 
-  const tasks: Promise<unknown>[] = [
-    courseApi.getCourses().catch(() => null),
-  ];
+  const tasks: Promise<unknown>[] = [courseApi.getCourses().catch(() => null)];
 
   if (userId) {
     tasks.push(userApi.getUser(userId).catch(() => null));

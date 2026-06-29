@@ -57,6 +57,7 @@ export {
   invalidateCacheForBatchRequests,
   invalidateCacheForMutation,
   resetCacheStats,
+  subscribeToCacheStatus,
 } from './cache';
 export { courseApi } from './courseApi';
 export {

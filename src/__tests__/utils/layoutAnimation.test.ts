@@ -11,8 +11,10 @@ function mockDevice() {
 function loadLayoutAnimationModule() {
   const reactNative = require('react-native');
   reactNative.LayoutAnimation = reactNative.LayoutAnimation || {};
-  reactNative.LayoutAnimation.create = reactNative.LayoutAnimation.create || jest.fn((config: unknown) => config);
-  reactNative.LayoutAnimation.configureNext = reactNative.LayoutAnimation.configureNext || jest.fn();
+  reactNative.LayoutAnimation.create =
+    reactNative.LayoutAnimation.create || jest.fn((config: unknown) => config);
+  reactNative.LayoutAnimation.configureNext =
+    reactNative.LayoutAnimation.configureNext || jest.fn();
   return require('../../utils/layoutAnimation') as typeof import('../../utils/layoutAnimation');
 }
 

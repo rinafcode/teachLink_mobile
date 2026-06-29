@@ -44,11 +44,13 @@ const handleToggleAdvanced = () => {
 ```
 
 **When to use:**
+
 - Showing/hiding form sections
 - Expanding/collapsing accordions
 - Progressive disclosure UI patterns
 
 **When NOT to use:**
+
 - Animating large lists
 - Complex gesture-based interactions
 - High-frequency updates (e.g., video controls, scroll-based animations)
@@ -77,6 +79,7 @@ Prefer `react-native-reanimated` or `Animated` API for:
 6. **Video player controls** (seeking, playback rate changes)
 
 The project already uses `react-native-reanimated` (~4.1.1) for gesture handling in:
+
 - `SwipeableRow.tsx`
 - `FilterSheet.tsx`
 - `PullToRefresh.tsx`
@@ -95,6 +98,7 @@ The utility automatically detects low-end devices and:
 ### Layout Thrashing Prevention
 
 The debouncing mechanism prevents:
+
 - Multiple rapid `configureNext` calls
 - Consecutive state updates triggering animations
 - Layout recalculation during large list updates
@@ -102,11 +106,13 @@ The debouncing mechanism prevents:
 ### Native Platform Behavior
 
 **Android:**
+
 - Experimental LayoutAnimation is enabled once at app startup
 - No repeated initialization in components
 - Uses `UIManager.setLayoutAnimationEnabledExperimental(true)` safely with try-catch
 
 **iOS:**
+
 - LayoutAnimation is enabled by default
 - No special initialization required
 
@@ -142,12 +148,15 @@ const handleToggle = () => {
 ## Files Modified
 
 ### Centralized Utility
+
 - `src/utils/layoutAnimation.ts` - New file with device detection and optimized presets
 
 ### App Initialization
+
 - `app/_layout.tsx` - Single LayoutAnimation initialization
 
 ### Component Refactoring
+
 - `src/components/mobile/MobileProfile.tsx` - Uses centralized utility
 - `src/components/mobile/MobileSettings.tsx` - Uses centralized utility
 - `src/components/mobile/NotificationSettings.tsx` - Uses centralized utility
@@ -183,6 +192,7 @@ console.log('LayoutAnimation enabled:', shouldEnableLayoutAnimation());
 ### Monitoring
 
 Consider integrating with existing performance utilities:
+
 - `src/utils/performanceUtils.ts` - Performance measurement
 - `src/utils/memoryProfiler.ts` - Memory monitoring
 - Analytics provider for tracking animation performance

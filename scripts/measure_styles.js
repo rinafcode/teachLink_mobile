@@ -21,7 +21,7 @@ function walkDir(dir, filter) {
 
 const files = [
   ...walkDir(srcDir, f => /\.(tsx|ts|jsx|js)$/.test(f)),
-  ...walkDir(appDir, f => /\.(tsx|ts|jsx|js)$/.test(f))
+  ...walkDir(appDir, f => /\.(tsx|ts|jsx|js)$/.test(f)),
 ];
 
 let totalStyleSheetCalls = 0;
@@ -52,7 +52,8 @@ files.forEach(file => {
   }
 
   // Match className="..." or className={`...`}
-  const classNameMatches = content.match(/className\s*=\s*(?:['"]([^'"]+)['"]|\{[\s\S]*?\})/g) || [];
+  const classNameMatches =
+    content.match(/className\s*=\s*(?:['"]([^'"]+)['"]|\{[\s\S]*?\})/g) || [];
   totalClassNames += classNameMatches.length;
 });
 

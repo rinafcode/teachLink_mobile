@@ -1,4 +1,5 @@
 import * as Network from 'expo-network';
+
 import { mobileAnalyticsService } from './mobileAnalytics';
 import { offlineStorage } from './offlineStorage';
 import { useCourseProgressStore } from '../store/courseProgressStore';
@@ -46,9 +47,10 @@ export class PreloadService {
     if (this.isInitialized) return;
 
     try {
-      const savedMatrix = await offlineStorage.retrieve<Record<string, Record<string, number>>>(
-        '@teachlink_nav_matrix'
-      );
+      const savedMatrix =
+        await offlineStorage.retrieve<Record<string, Record<string, number>>>(
+          '@teachlink_nav_matrix'
+        );
       if (savedMatrix) {
         this.transitionMatrix = savedMatrix;
       }
@@ -69,19 +71,22 @@ export class PreloadService {
     if (!path) return '';
     // Strip query parameters
     let clean = path.split('?')[0];
-    
+
     // Normalize profile ID routes
     if (clean.startsWith('/profile/')) {
       clean = '/profile/[userId]';
     }
-    
+
     return clean;
   }
 
   /**
    * Record a route transition to update probability scores over time.
    */
-  public async recordTransition(from: string | null | undefined, to: string | null | undefined): Promise<void> {
+  public async recordTransition(
+    from: string | null | undefined,
+    to: string | null | undefined
+  ): Promise<void> {
     if (!this.isInitialized) {
       await this.init();
     }
@@ -109,8 +114,9 @@ export class PreloadService {
         this.transitionMatrix[cleanFrom] = {};
       }
 
-      this.transitionMatrix[cleanFrom][cleanTo] = (this.transitionMatrix[cleanFrom][cleanTo] || 0) + 1;
-      
+      this.transitionMatrix[cleanFrom][cleanTo] =
+        (this.transitionMatrix[cleanFrom][cleanTo] || 0) + 1;
+
       await offlineStorage.store('@teachlink_nav_matrix', this.transitionMatrix);
       logger.debug(`PreloadService: Recorded transition [${cleanFrom} -> ${cleanTo}]`);
     } catch (error) {
@@ -133,7 +139,7 @@ export class PreloadService {
 
     const defaults = STATIC_DEFAULTS[cleanCurrent] || [];
     const merged = Array.from(new Set([...sortedHistory, ...defaults]));
-    
+
     return merged.slice(0, limit);
   }
 
@@ -155,7 +161,7 @@ export class PreloadService {
 
     // 1. Guard checks: Network state and User Settings
     const settings = useSettingsStore.getState();
-    
+
     if (settings.dataSaverEnabled) {
       logger.debug('PreloadService: Skipped preloading — Data Saver mode enabled');
       return;
@@ -163,7 +169,7 @@ export class PreloadService {
 
     let isWifi = true;
     let isOnline = true;
-    
+
     try {
       const netState = await Network.getNetworkStateAsync();
       isOnline = netState.isConnected ?? true;
@@ -178,7 +184,9 @@ export class PreloadService {
     }
 
     if (settings.downloadOverWifiOnly && !isWifi) {
-      logger.debug('PreloadService: Skipped preloading — WiFi only setting enabled and connection is cellular');
+      logger.debug(
+        'PreloadService: Skipped preloading — WiFi only setting enabled and connection is cellular'
+      );
       return;
     }
 
@@ -186,12 +194,15 @@ export class PreloadService {
     const predictedDestinations = this.getPredictiveDestinations(cleanCurrent);
     if (predictedDestinations.length === 0) return;
 
-    logger.info(`PreloadService: Current screen is [${cleanCurrent}]. Preloading predicted destinations:`, predictedDestinations);
+    logger.info(
+      `PreloadService: Current screen is [${cleanCurrent}]. Preloading predicted destinations:`,
+      predictedDestinations
+    );
 
     const startTime = Date.now();
 
     // 3. Perform asynchronous multi-tier preloading in parallel (fire-and-forget)
-    predictedDestinations.forEach(async (destination) => {
+    predictedDestinations.forEach(async destination => {
       // Tier A: Route JS prefetching
       if (router && typeof router.prefetch === 'function') {
         try {
@@ -215,10 +226,11 @@ export class PreloadService {
               (a, b) => new Date(b.lastAccessed).getTime() - new Date(a.lastAccessed).getTime()
             );
             const recentCourseId = sortedProgress[0]?.courseId;
-            
+
             if (recentCourseId) {
-              courseApi.getCourse(recentCourseId)
-                .then((course) => {
+              courseApi
+                .getCourse(recentCourseId)
+                .then(course => {
                   if (course?.thumbnail) {
                     void ImageCache.prefetchImages([course.thumbnail]);
                   }
@@ -243,7 +255,10 @@ export class PreloadService {
             );
             const recentCourseId = sortedProgress[0]?.courseId;
             if (recentCourseId) {
-              void useQuizStore.getState().loadQuizProgress(recentCourseId).catch(() => {});
+              void useQuizStore
+                .getState()
+                .loadQuizProgress(recentCourseId)
+                .catch(() => {});
             }
             break;
           }
@@ -258,7 +273,10 @@ export class PreloadService {
             break;
         }
       } catch (err) {
-        logger.error(`PreloadService: Error preloading data/resources for destination [${destination}]`, err);
+        logger.error(
+          `PreloadService: Error preloading data/resources for destination [${destination}]`,
+          err
+        );
       }
     });
 
