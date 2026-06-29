@@ -11,10 +11,13 @@ import {
 } from 'react-native';
 
 import { useModalPortalSafe } from './ModalPortal';
+import { useModalStack } from './ModalStackManager';
 import { useFocusRestore } from '../../hooks/useFocusRestore';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface AccessibleModalProps extends Omit<ModalProps, 'visible'> {
+  /** Optional unique identifier for stack tracking and z-index auto-assignment */
+  id?: string;
   /** Whether the modal is visible */
   visible: boolean;
   /** Callback when the modal overlay or request close is triggered */
@@ -48,6 +51,7 @@ interface AccessibleModalProps extends Omit<ModalProps, 'visible'> {
  * Pass usePortal={false} to render inline (e.g. in tests or outside a provider).
  */
 export const AccessibleModal: React.FC<AccessibleModalProps> = ({
+  id,
   visible,
   onClose,
   accessibilityLabel,
@@ -61,25 +65,41 @@ export const AccessibleModal: React.FC<AccessibleModalProps> = ({
 }) => {
   const containerRef = useRef<View>(null);
 
+  // Stable portal id derived from id or accessibilityLabel
+  const portalId = id || `accessible-modal:${accessibilityLabel}`;
+  const portal = useModalPortalSafe();
+
+  // Stacking z-index and active top status
+  const { zIndex, isTop } = useModalStack(portalId, visible);
+
   useFocusRestore(visible, triggerRef);
-  const { containerProps } = useFocusTrap(containerRef, visible, {
+  
+  // Only trap focus if the modal is visible and is the top-most modal
+  const { containerProps } = useFocusTrap(containerRef, visible && isTop, {
     initialFocusRef,
     autoFocus: true,
   });
-
-  // Stable portal id derived from accessibilityLabel
-  const portalId = `accessible-modal:${accessibilityLabel}`;
-  const portal = useModalPortalSafe();
 
   const modalContent = (
     <Modal
       transparent
       animationType="fade"
       visible={visible}
-      onRequestClose={onClose}
+      onRequestClose={() => {
+        if (isTop) {
+          onClose();
+        }
+      }}
       {...modalProps}
     >
-      <Pressable style={[styles.overlay, overlayStyle]} onPress={onClose}>
+      <Pressable
+        style={[styles.overlay, overlayStyle, { zIndex }]}
+        onPress={() => {
+          if (isTop) {
+            onClose();
+          }
+        }}
+      >
         <Pressable
           ref={containerRef}
           style={[styles.content, containerStyle]}
@@ -106,8 +126,7 @@ export const AccessibleModal: React.FC<AccessibleModalProps> = ({
     return () => {
       portal.hideModal(portalId);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, usePortal, portal, portalId]);
+  }, [visible, usePortal, portal, portalId, modalContent]);
 
   // When portal is active, the host renders the modal — nothing to render here
   if (usePortal && portal) return null;
