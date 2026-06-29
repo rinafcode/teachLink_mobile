@@ -514,22 +514,20 @@ export class ReportGenerator {
   private static generateRecommendationsSection(recommendations: Recommendation[]): string {
     let md = `## Recommendations\n\n`;
 
-    const critical = recommendations.filter(r => r.severity === 'CRITICAL');
-    const high = recommendations.filter(r => r.severity === 'HIGH');
-    const medium = recommendations.filter(r => r.severity === 'MEDIUM');
-    const low = recommendations.filter(r => r.severity === 'LOW');
+    const categories: [string, Recommendation[]][] = [
+      ['CRITICAL', recommendations.filter(r => r.severity === 'CRITICAL')],
+      ['HIGH', recommendations.filter(r => r.severity === 'HIGH')],
+      ['MEDIUM', recommendations.filter(r => r.severity === 'MEDIUM')],
+      ['LOW', recommendations.filter(r => r.severity === 'LOW')],
+    ];
 
-    for (const [severity, recs] of [
-      ['CRITICAL', critical],
-      ['HIGH', high],
-      ['MEDIUM', medium],
-      ['LOW', low],
-    ]) {
-      if ((recs as any[]).length === 0) continue;
+    for (const [severity, recs] of categories) {
+      // Corrected: Type-safe array check
+      if (recs.length === 0) continue;
 
-      md += `### ${severity} Priority (${(recs as any[]).length})\n\n`;
+      md += `### ${severity} Priority (${recs.length})\n\n`;
 
-      for (const rec of (recs as any[]).slice(0, 10)) {
+      for (const rec of recs.slice(0, 10)) {
         md += `#### ${rec.title}\n`;
         md += `${rec.description}\n\n`;
         md += `- **Impact:** ${rec.impact}\n`;
