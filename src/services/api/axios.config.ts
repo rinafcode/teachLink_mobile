@@ -13,6 +13,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 import { invalidateCacheForBatchRequests, invalidateCacheForMutation } from './cache';
+import { buildSanitizedApiError } from './errorSanitization';
 import { requestQueue } from './requestQueue';
 import { getEnv } from '../../config';
 import { appLogger } from '../../utils/logger';
@@ -358,7 +359,23 @@ apiClient.interceptors.response.use(
 
     // ─── Default fallback ──────────────────────────────────────────────────
 
-    return Promise.reject(error);
+    // Unhandled response (e.g. 400, 404, 408, 410, 422). Never surface the raw
+    // AxiosError: its message/config can embed the full request URL. Capture
+    // the full url + method in Sentry request context (not the message), then
+    // reject with a generic, URL-free error for the UI. (Issue #579)
+    sentryContextService.captureException(error, {
+      tags: { 'api.error': 'unhandled_response' },
+      contexts: {
+        request: {
+          url: originalRequest?.url,
+          method: originalRequest?.method?.toUpperCase(),
+          status: status ?? null,
+        },
+      },
+      fingerprint: ['api-unhandled-error', String(status ?? 'unknown')],
+    });
+
+    return Promise.reject(buildSanitizedApiError(status, error.code));
   }
 );
 
