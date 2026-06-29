@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
-import { useRequireReauth } from '../../hooks';
+import { useRequireReauth } from './';
 import { cacheFormValues } from '../../services/formCache';
 import { configureNext } from '../../utils/layoutAnimation';
 // Assuming types are defined here or imported from a central types file
