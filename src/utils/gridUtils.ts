@@ -84,13 +84,27 @@ export interface EditingCell {
 // ─── Sorting ─────────────────────────────────────────────────────────────────
 
 /**
+ * Normalize a string for comparison: strip diacritics (NFD + remove combining marks)
+ * and convert to lower case for case-insensitive ordering.
+ */
+function normalizeForCompare(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
+/**
  * Return a new sorted copy of `rows` using the provided `config`.
- * Null / undefined values are always placed at the end regardless of direction.
+ * Null / undefined values are placed according to `nullsFirst`:
+ *   - true  → nulls first (regardless of direction)
+ *   - false → nulls last  (regardless of direction, default)
  */
 export function sortRows<T extends GridRow>(
   rows: T[],
   config: SortConfig,
-  columns: ColumnDef<T>[]
+  columns: ColumnDef<T>[],
+  nullsFirst = false
 ): T[] {
   const col = columns.find((c) => c.key === config.columnKey);
   const type = col?.type ?? 'string';
@@ -102,8 +116,8 @@ export function sortRows<T extends GridRow>(
     const bVal = b[columnKey];
 
     if (aVal == null && bVal == null) return 0;
-    if (aVal == null) return 1;
-    if (bVal == null) return -1;
+    if (aVal == null) return nullsFirst ? -1 : 1;
+    if (bVal == null) return nullsFirst ? 1 : -1;
 
     if (type === 'number') {
       return (Number(aVal) - Number(bVal)) * multiplier;
@@ -112,6 +126,9 @@ export function sortRows<T extends GridRow>(
     if (type === 'date') {
       const aTime = new Date(aVal as string).getTime();
       const bTime = new Date(bVal as string).getTime();
+      if (Number.isNaN(aTime) && Number.isNaN(bTime)) return 0;
+      if (Number.isNaN(aTime)) return nullsFirst ? -1 : 1;
+      if (Number.isNaN(bTime)) return nullsFirst ? 1 : -1;
       return (aTime - bTime) * multiplier;
     }
 
@@ -122,7 +139,7 @@ export function sortRows<T extends GridRow>(
       return (aNum - bNum) * multiplier;
     }
 
-    return String(aVal).localeCompare(String(bVal)) * multiplier;
+    return normalizeForCompare(String(aVal)).localeCompare(normalizeForCompare(String(bVal))) * multiplier;
   });
 }
 

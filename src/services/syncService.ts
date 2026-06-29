@@ -98,18 +98,18 @@ export class SyncService {
           this.stopAutoSync();
           this.startAutoSync();
         }
+      }
+    });
 
-        // If the app goes to background, stop auto-sync to conserve CPU/battery.
-        if (state.isInBackground !== prevState.isInBackground) {
-          logger.info(`SyncService: App background state changed to ${state.isInBackground}`);
-          if (state.isInBackground) {
-            this.stopAutoSync();
-            // also clear listeners to reduce memory usage while backgrounded
-            this.removeAllEventListeners();
-          } else {
-            // resumed to foreground
-            this.startAutoSync();
-          }
+    // Subscribe to app foreground/background state changes
+    useDeviceStore.subscribe((state: any, prevState: any) => {
+      if (state.isInBackground !== prevState.isInBackground) {
+        logger.info(`SyncService: App background state changed to ${state.isInBackground}`);
+        if (state.isInBackground) {
+          this.stopAutoSync();
+          this.removeAllEventListeners();
+        } else {
+          this.startAutoSync();
         }
       }
     });
@@ -547,10 +547,12 @@ export class SyncService {
   }
 
   /**
-   * Add event listener
+   * Add event listener. Duplicate listeners are ignored.
    */
   addEventListener(listener: (event: SyncEvent) => void): void {
-    this.eventListeners.push(listener);
+    if (!this.eventListeners.includes(listener)) {
+      this.eventListeners.push(listener);
+    }
   }
 
   /**
@@ -561,6 +563,13 @@ export class SyncService {
     if (index > -1) {
       this.eventListeners.splice(index, 1);
     }
+  }
+
+  /**
+   * Check if a listener is already registered
+   */
+  hasEventListener(listener: (event: SyncEvent) => void): boolean {
+    return this.eventListeners.includes(listener);
   }
 
   removeAllEventListeners(): void {
