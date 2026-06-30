@@ -4,6 +4,7 @@ import { FilterValues } from '../components/mobile/FilterSheet';
 import { SearchResultItem } from '../components/mobile/SearchResultCard';
 import { Course } from '../types/course';
 import { appLogger } from '../utils/logger';
+import { normalizeText } from '../utils/stringUtils';
 import { buildTrie, Trie } from '../utils/trie';
 
 const INDEX_STORAGE_KEY = '@teachlink_search_index';
@@ -168,24 +169,24 @@ export function buildSearchIndex(courses: Course[]): PersistedSearchIndex {
     // Suggestions: full title and category phrases as well as individual words.
     suggestionSet.add(course.title);
     suggestionSet.add(course.category);
-    for (const t of tokenize(course.title)) suggestionSet.add(t);
+    for (const t of tokenize(normalizeText(course.title))) suggestionSet.add(t);
 
     // Title
-    const titleTokens = tokenize(course.title);
+    const titleTokens = tokenize(normalizeText(course.title));
     addWeightedTokens(entries, titleTokens, course.id, FIELD_WEIGHTS.title);
 
     // Category
-    for (const token of tokenize(course.category)) {
+    for (const token of tokenize(normalizeText(course.category))) {
       addEntry(entries, token, course.id, FIELD_WEIGHTS.category);
     }
 
     // Instructor name
-    for (const token of tokenize(course.instructor.name)) {
+    for (const token of tokenize(normalizeText(course.instructor.name))) {
       addEntry(entries, token, course.id, FIELD_WEIGHTS.instructor);
     }
 
     // Description (length-capped)
-    const descTokens = tokenize(course.description, MAX_DESC_TOKENS);
+    const descTokens = tokenize(normalizeText(course.description), MAX_DESC_TOKENS);
     addWeightedTokens(entries, descTokens, course.id, FIELD_WEIGHTS.description);
   }
 
@@ -274,7 +275,7 @@ export class SearchIndexService {
   search(query: string, filters: FilterValues = {}, maxResults = 50): SearchResultItem[] {
     if (!this.index || !this.tokenTrie) return [];
 
-    const tokens = tokenize(query);
+    const tokens = tokenize(normalizeText(query));
     if (tokens.length === 0) return [];
 
     const scoreMap = new Map<string, number>();
