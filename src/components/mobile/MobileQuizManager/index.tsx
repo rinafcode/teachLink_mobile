@@ -1,19 +1,19 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import QuizCarousel from './QuizCarousel';
-import QuizProgress from './QuizProgress';
-import QuizResults from './QuizResults';
 import { useAnalytics } from '../../../hooks/useAnalytics';
 import { useInAppReview, useReviewMetrics } from '../../../hooks/useInAppReview';
 import { ReviewTrigger } from '../../../services/inAppReview';
 import { useQuizStore } from '../../../store/quizStore';
-import { Quiz, Course } from '../../../types/course';
+import { Course, Quiz } from '../../../types/course';
 import logger from '../../../utils/logger';
 import { AnalyticsEvent, ScreenName } from '../../../utils/trackingEvents';
 import PrimaryButton from '../../common/PrimaryButton';
+import QuizCarousel from './QuizCarousel';
+import QuizProgress from './QuizProgress';
+import QuizResults from './QuizResults';
 
 interface MobileQuizManagerProps {
   /** The quiz data to display and manage */
@@ -50,6 +50,7 @@ export default function MobileQuizManager({
 
   const [currentView, setCurrentView] = useState<QuizView>('intro');
   const [quizResults, setQuizResults] = useState<{ score: number; passed: boolean } | null>(null);
+  const [showResumePrompt, setShowResumePrompt] = useState(false);
   const { trackEvent, trackScreen } = useAnalytics();
   const { requestReview } = useInAppReview();
   const { trackPerfectQuiz } = useReviewMetrics();
@@ -57,12 +58,21 @@ export default function MobileQuizManager({
   useEffect(() => {
     const init = async () => {
       await loadQuizProgress(courseId);
-      initializeQuiz(quiz.id);
+      
+      // Check for in-progress session with same quizId
+      const hasInProgressSession = session.quizId === quiz.id && 
+        Object.keys(session.selectedAnswers).length > 0;
+      
+      if (hasInProgressSession) {
+        setShowResumePrompt(true);
+      } else {
+        initializeQuiz(quiz.id);
+      }
     };
     void init();
     trackScreen(ScreenName.QUIZ, { quizId: quiz.id, courseId });
     setCurrentView('intro');
-  }, [courseId, quiz.id, loadQuizProgress, initializeQuiz, trackScreen]);
+  }, [courseId, quiz.id, loadQuizProgress, initializeQuiz, trackScreen, session.quizId, session.selectedAnswers]);
 
   const handleStartQuiz = async () => {
     try {
@@ -72,6 +82,18 @@ export default function MobileQuizManager({
     } catch (error) {
       logger.error('Error starting quiz:', error);
     }
+  };
+
+  const handleResumeQuiz = () => {
+    setShowResumePrompt(false);
+    setCurrentView('questions');
+    trackEvent(AnalyticsEvent.QUIZ_STARTED, { quizId: quiz.id, courseId, resumed: true });
+  };
+
+  const handleStartFresh = async () => {
+    await resetSession();
+    setShowResumePrompt(false);
+    await handleStartQuiz();
   };
 
   const handleQuestionChange = useCallback(
@@ -245,6 +267,51 @@ export default function MobileQuizManager({
           </View>
         </ScrollView>
       </SafeAreaView>
+    );
+
+  // Render resume prompt modal
+  if (showResumePrompt) {
+    const answeredCount = Object.keys(session.selectedAnswers).length;
+    return (
+      <Modal
+        visible={showResumePrompt}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowResumePrompt(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalIconContainer}>
+              <Text style={styles.modalIcon}>📝</Text>
+            </View>
+            <Text style={styles.modalTitle}>Resume Quiz?</Text>
+            <Text style={styles.modalText}>
+              You have an incomplete quiz in progress. You've answered {answeredCount} of {quiz.questions.length} questions.
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonSecondary]}
+                onPress={handleStartFresh}
+              >
+                <Text style={styles.modalButtonSecondaryText}>Start Fresh</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonPrimary]}
+                onPress={handleResumeQuiz}
+              >
+                <LinearGradient
+                  colors={['#20afe7', '#2c8aec', '#586ce9']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.modalButtonGradient}
+                >
+                  <Text style={styles.modalButtonPrimaryText}>Resume Quiz</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     );
   }
 
@@ -587,5 +654,77 @@ const styles = StyleSheet.create({
   resultsHeader: {
     paddingHorizontal: 16,
     paddingVertical: 12,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  modalContent: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  modalIconContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalIcon: {
+    fontSize: 48,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#111827',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  modalText: {
+    fontSize: 16,
+    color: '#4b5563',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 24,
+  },
+  modalButtons: {
+    gap: 12,
+  },
+  modalButton: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalButtonSecondary: {
+    backgroundColor: '#e5e7eb',
+  },
+  modalButtonPrimary: {
+    backgroundColor: 'transparent',
+  },
+  modalButtonGradient: {
+    width: '100%',
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalButtonSecondaryText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  modalButtonPrimaryText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#ffffff',
   },
 });
