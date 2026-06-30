@@ -328,6 +328,108 @@ export async function isBiometricEnabled(): Promise<boolean> {
   return value === '1';
 }
 
+// ─── Token Cache ──────────────────────────────────────────────────────────────
+
+const TOKEN_CACHE_KEY = '@teachlink_token_cache';
+const DEFAULT_TTL_MS = 5 * 60 * 1_000; // 5 minutes
+
+interface CacheEntry {
+  value: string;
+  expiresAt: number;
+  createdAt: number;
+}
+
+class TokenCache {
+  private memory: Map<string, CacheEntry> = new Map();
+  private initialized = false;
+
+  private isExpired(entry: CacheEntry): boolean {
+    return Date.now() > entry.expiresAt;
+  }
+
+  private async persist(): Promise<void> {
+    try {
+      const obj: Record<string, CacheEntry> = {};
+      this.memory.forEach((entry, key) => {
+        if (!this.isExpired(entry)) {
+          obj[key] = entry;
+        }
+      });
+      await AsyncStorage.setItem(TOKEN_CACHE_KEY, JSON.stringify(obj));
+    } catch {
+      // Non-critical; cache will warm from SecureStore on next read
+    }
+  }
+
+  async init(): Promise<void> {
+    if (this.initialized) return;
+    try {
+      const raw = await AsyncStorage.getItem(TOKEN_CACHE_KEY);
+      if (raw) {
+        const parsed: Record<string, CacheEntry> = JSON.parse(raw);
+        for (const [key, entry] of Object.entries(parsed)) {
+          if (!this.isExpired(entry)) {
+            this.memory.set(key, entry);
+          }
+        }
+      }
+    } catch {
+      // Ignore
+    }
+    this.initialized = true;
+  }
+
+  get(key: string): string | null {
+    const entry = this.memory.get(key);
+    if (!entry) return null;
+    if (this.isExpired(entry)) {
+      this.memory.delete(key);
+      this.persist();
+      return null;
+    }
+    return entry.value;
+  }
+
+  async set(key: string, value: string, ttlMs: number = DEFAULT_TTL_MS): Promise<void> {
+    const entry: CacheEntry = {
+      value,
+      expiresAt: Date.now() + ttlMs,
+      createdAt: Date.now(),
+    };
+    this.memory.set(key, entry);
+    await this.persist();
+  }
+
+  invalidate(key: string): void {
+    this.memory.delete(key);
+    this.persist();
+  }
+
+  async clear(): Promise<void> {
+    this.memory.clear();
+    try {
+      await AsyncStorage.removeItem(TOKEN_CACHE_KEY);
+    } catch {
+      // Ignore
+    }
+  }
+
+  get size(): number {
+    this.evictExpired();
+    return this.memory.size;
+  }
+
+  private evictExpired(): void {
+    for (const [key, entry] of this.memory) {
+      if (this.isExpired(entry)) {
+        this.memory.delete(key);
+      }
+    }
+  }
+}
+
+export const tokenCache = new TokenCache();
+
 // ─── Install UUID & biometric reinstall guard ─────────────────────────────────
 
 const INSTALL_UUID_KEY = '@teachlink/install_uuid';
