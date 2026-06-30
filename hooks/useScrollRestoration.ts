@@ -3,8 +3,18 @@ import { usePathname } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, ScrollView } from 'react-native';
 
-import { scrollPositionService } from '../services/scrollPositionService';
-import logger from '../utils/logger';
+import { logger } from '../src/utils/logger';
+
+const scrollPositionStore = new Map<string, { offset: number }>();
+
+const scrollPositionService = {
+  async getPosition(screenId: string) {
+    return scrollPositionStore.get(screenId) ?? null;
+  },
+  async savePosition(screenId: string, offset: number) {
+    scrollPositionStore.set(screenId, { offset });
+  },
+};
 
 export interface UseScrollRestorationOptions {
   /**
@@ -79,11 +89,11 @@ export const useScrollRestoration = (
   const saveDelay = options.saveDelay ?? 500;
   const minDistanceThreshold = options.minDistanceThreshold ?? 50;
   const scrollToTopOnFirstLoad = options.scrollToTopOnFirstLoad !== false;
-
+  const { onChange, onRestored, animatedValue } = options;
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const lastSavedOffsetRef = useRef<number>(0);
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
-  const isNavigatingBackRef = useRef(false);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // const isNavigatingBackRef = useRef(false);
 
   // Detect when we're navigating back
   useEffect(() => {
@@ -118,11 +128,11 @@ export const useScrollRestoration = (
                 });
 
                 // Update animated value if provided
-                if (options.animatedValue) {
-                  options.animatedValue.setValue(saved.offset);
+                if (animatedValue) {
+                  animatedValue.setValue(saved.offset);
                 }
 
-                options.onRestored?.(saved.offset);
+                onRestored?.(saved.offset);
               }
             }, 0);
           } else if (isFirstLoad && scrollToTopOnFirstLoad) {
@@ -149,21 +159,21 @@ export const useScrollRestoration = (
           });
         }
       };
-    }, [screenId, isFirstLoad, scrollToTopOnFirstLoad, scrollRef])
+    }, [screenId, isFirstLoad, scrollToTopOnFirstLoad, scrollRef, animatedValue, onRestored])
   );
 
-  // Handle scroll events
+  // Handle scroll events to save position
   const handleScroll = useCallback(
     (event: { nativeEvent: { contentOffset: { y: number } } }) => {
       const offset = event.nativeEvent.contentOffset.y;
 
       // Update animated value if provided
-      if (options.animatedValue) {
-        options.animatedValue.setValue(offset);
+      if (animatedValue) {
+        animatedValue.setValue(offset);
       }
 
       // Call onChange callback
-      options.onChange?.(offset);
+      onChange?.(offset);
 
       // Check if scroll distance is significant
       const distance = Math.abs(offset - lastSavedOffsetRef.current);
@@ -187,7 +197,7 @@ export const useScrollRestoration = (
         }
       }, saveDelay);
     },
-    [screenId, saveDelay, minDistanceThreshold, options]
+    [screenId, saveDelay, minDistanceThreshold, animatedValue, onChange]
   );
 
   // Cleanup timeouts on unmount

@@ -6,6 +6,7 @@ export interface EnvConfig {
   EXPO_PUBLIC_APP_ENV?: 'development' | 'production';
   EXPO_PUBLIC_ENABLE_PUSH_NOTIFICATIONS?: 'true' | 'false';
   EXPO_PUBLIC_STORYBOOK?: 'true' | 'false';
+  EXPO_PUBLIC_SENTRY_ENABLED?: 'true' | 'false';
 }
 
 const REQUIRED_VARIABLES: (keyof EnvConfig)[] = [
@@ -91,6 +92,16 @@ export function validateEnvVariables(): ValidationResult {
     }
   }
 
+  if (process.env.EXPO_PUBLIC_SENTRY_ENABLED) {
+    const sentryValue = process.env.EXPO_PUBLIC_SENTRY_ENABLED;
+    if (sentryValue !== 'true' && sentryValue !== 'false') {
+      errors.push(
+        `Invalid value for EXPO_PUBLIC_SENTRY_ENABLED: ${sentryValue}. ` +
+          `Allowed values are 'true' or 'false'.`
+      );
+    }
+  }
+
   return {
     valid: missing.length === 0 && errors.length === 0,
     message: errors.length > 0 ? errors.join(' ') : undefined,
@@ -113,6 +124,7 @@ export function requireEnvVariables(): EnvConfig {
       process.env.EXPO_PUBLIC_APP_ENV === 'production' ? 'production' : 'development',
     EXPO_PUBLIC_ENABLE_PUSH_NOTIFICATIONS: process.env.EXPO_PUBLIC_ENABLE_PUSH_NOTIFICATIONS,
     EXPO_PUBLIC_STORYBOOK: process.env.EXPO_PUBLIC_STORYBOOK,
+    EXPO_PUBLIC_SENTRY_ENABLED: process.env.EXPO_PUBLIC_SENTRY_ENABLED as 'true' | 'false' | undefined,
   };
 }
 

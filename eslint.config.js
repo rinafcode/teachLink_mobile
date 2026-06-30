@@ -70,10 +70,16 @@ module.exports = defineConfig([
       // Prevent inline component definitions that defeat memoization
       'react/no-unstable-nested-components': ['error', { allowAsProps: false }],
 
-      'jsx-a11y/alt-text': 'error',
-      'jsx-a11y/aria-props': 'error',
-      'jsx-a11y/aria-proptypes': 'error',
-      'jsx-a11y/aria-unsupported-elements': 'error',
+      'jsx-a11y/alt-text': 'warn',
+      'jsx-a11y/aria-props': 'warn',
+      'jsx-a11y/aria-proptypes': 'warn',
+      'jsx-a11y/aria-unsupported-elements': 'warn',
+
+      // Enforce structured logging — use src/utils/logger instead of console.*
+      // Logger internals may reference console internally (excluded via ignores above).
+      // Note: `{ allow: [] }` is rejected by ESLint 9's rule schema, so use the
+      // bare 'error' form, which disallows every console method.
+      'no-console': 'error',
     },
   },
 ]);

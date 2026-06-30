@@ -25,6 +25,7 @@ import {
     type VideoSource,
 } from '../../services/videoQuality';
 import { ErrorBoundary } from '../common/ErrorBoundary';
+import { positionStore } from '../../services/positionStore';
 
 const AUTO_HIDE_MS = 3000;
 const DEFAULT_ASPECT_RATIO = 16 / 9;
@@ -82,6 +83,8 @@ const MobileVideoPlayer = ({
   const lastToggleRef = useRef(0);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | (() => void) | null>(null);
   const resumeStatusRef = useRef<AVPlaybackStatusToSet | null>(null);
+  const positionSaveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sourceIdRef = useRef<string | null>(null);
 
   const [networkType, setNetworkType] = useState<NetworkType>('unknown');
   const [selectedQualityId, setSelectedQualityId] = useState(initialQualityId ?? AUTO_QUALITY_ID);
@@ -270,6 +273,55 @@ const MobileVideoPlayer = ({
     }
     setIsFullscreen(prev => !prev);
   }, [playbackRate]);
+
+  // Persist position when activeSource or isPlaying changes
+  useEffect(() => {
+    if (activeSource) {
+      sourceIdRef.current = activeSource.id;
+      if (isPlaying) {
+        const interval = setInterval(async () => {
+          try {
+            const status = await videoRef.current?.getStatusAsync();
+            if (status?.isLoaded) {
+              await positionStore.saveVideoPosition(
+                activeSource.id,
+                status.positionMillis,
+                status.durationMillis ?? 0,
+              );
+            }
+          } catch {
+            // ignore
+          }
+        }, 5000);
+        positionSaveIntervalRef.current = interval;
+        return () => clearInterval(interval);
+      }
+    }
+    return () => {};
+  }, [activeSource, isPlaying]);
+
+  // On unmount, save final position
+  useEffect(() => {
+    return () => {
+      const sid = sourceIdRef.current;
+      if (sid) {
+        videoRef.current?.getStatusAsync().then(status => {
+          if (status?.isLoaded) {
+            positionStore.saveVideoPosition(sid, status.positionMillis, status.durationMillis ?? 0);
+          }
+        }).catch(() => {});
+      }
+    };
+  }, []);
+
+  // Restore saved position when activeSource resolves
+  useEffect(() => {
+    if (!activeSource || isPlaying) return;
+    positionStore.getVideoPosition(activeSource.id).then(saved => {
+      if (!saved || saved.positionMillis < 1000) return;
+      videoRef.current?.setPositionAsync(saved.positionMillis).catch(() => {});
+    });
+  }, [activeSource, isPlaying]);
 
   const handlePlaybackStatusUpdate = useCallback(
     (status: AVPlaybackStatus) => {

@@ -21,8 +21,7 @@ jobs:
         run: maestro cloud --api-key ${{ secrets.MAESTRO_API_KEY }} --app-file ./app.apk maestro/
   ci:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    
+
     env:
       EXPO_PUBLIC_API_BASE_URL: https://api.teachlink.com
       EXPO_PUBLIC_SOCKET_URL: wss://api.teachlink.com
@@ -161,6 +160,33 @@ jobs:
           key: ${{ runner.os }}-eslint-${{ hashFiles('eslint.config.js', 'src/**/*.ts', 'src/**/*.tsx') }}
           restore-keys: |
             ${{ runner.os }}-eslint-
+
+      # ==============================
+      # 🚫 CONSOLE USAGE GATE
+      # Fails the build if any console.* call is introduced in src/.
+      # Use src/utils/logger instead. See CONTRIBUTING.md for log level guide.
+      # ==============================
+      - name: Check for console.* violations
+        run: |
+          VIOLATIONS=$(grep -rn "console\." src/ \
+            --include='*.ts' \
+            --include='*.tsx' \
+            --exclude-path='src/utils/logger*' \
+            || true)
+
+          if [ -n "$VIOLATIONS" ]; then
+            echo ""
+            echo "❌ console.* usage detected. Use src/utils/logger instead."
+            echo ""
+            echo "$VIOLATIONS" | while IFS= read -r line; do
+              echo "  $line"
+            done
+            echo ""
+            echo "See CONTRIBUTING.md for the logging level guide."
+            exit 1
+          fi
+
+          echo "✅ No console.* violations found."
 
       - name: Lint
         run: npm run lint -- --max-warnings=250

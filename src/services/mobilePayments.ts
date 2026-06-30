@@ -15,10 +15,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import * as IAP from 'react-native-iap';
 
-import { apiService } from './api';
 import { useAppStore } from '../store';
 import { useDeviceStore } from '../store/deviceStore';
 import { appLogger } from '../utils/logger';
+import { apiService } from './api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -183,55 +183,41 @@ class MobilePaymentsService {
 
         const store = useAppStore.getState();
         if (store.receiptValidationPending) {
-          appLogger.warnSync('[Payments] Receipt validation already in progress — skipping duplicate');
+          appLogger.warnSync('[Payments] Receipt validation already in progress');
           return;
         }
 
         store.setReceiptValidationPending(true);
         try {
-          const result = await this.validateReceipt(
-            receipt,
-            Platform.OS as 'ios' | 'android',
-            purchase.productId
-          );
+          // SAFE: Explicit check for platform type instead of assertion
+          const platform = Platform.OS === 'ios' || Platform.OS === 'android' ? Platform.OS : 'ios';
+
+          const result = await this.validateReceipt(receipt, platform, purchase.productId);
 
           if (result.valid) {
             await IAP.finishTransaction({ purchase, isConsumable: false });
-            if (result.tier) {
-              await this._setTier(result.tier);
-            }
+            if (result.tier) await this._setTier(result.tier);
           } else {
             appLogger.errorSync(
               '[Payments] Receipt rejected by server',
-              new Error(result.error ?? 'Receipt validation failed'),
-              { productId: purchase.productId }
+              new Error(result.error ?? 'Validation failed')
             );
           }
-        } catch (error) {
-          appLogger.errorSync(
-            '[Payments] Receipt validation failed after retries — purchase not completed',
-            error instanceof Error ? error : new Error(String(error)),
-            { productId: purchase.productId }
-          );
+        } catch (error: unknown) {
+          // SAFE: Runtime error type guard
+          const err = error instanceof Error ? error : new Error(String(error));
+          appLogger.errorSync('[Payments] Receipt validation failed', err, {
+            productId: purchase.productId,
+          });
         } finally {
-          useAppStore.getState().setReceiptValidationPending(false);
+          store.setReceiptValidationPending(false);
         }
       });
-
-      IAP.purchaseErrorListener(error => {
-        appLogger.errorSync(
-          '[Payments] Purchase error',
-          error instanceof Error ? error : new Error(String(error))
-        );
-      });
-
-      this.isInitialized = true;
-    } catch (error) {
+    } catch (e) {
       appLogger.errorSync(
-        '[Payments] Initialize error',
-        error instanceof Error ? error : new Error(String(error))
+        '[Payments] Failed to init IAP',
+        e instanceof Error ? e : new Error(String(e))
       );
-      throw error;
     }
   }
 

@@ -10,6 +10,9 @@
       "cache": {
         "key": "development-cache",
         "paths": ["node_modules", ".expo", "android/app/build", "ios/build"]
+      },
+      "env": {
+        "EXPO_PUBLIC_SENTRY_ENABLED": "false"
       }
     },
     "preview": {
@@ -32,7 +35,8 @@
         "paths": ["node_modules", ".expo"]
       },
       "env": {
-        "NODE_ENV": "production"
+        "NODE_ENV": "production",
+        "EXPO_PUBLIC_SENTRY_ENABLED": "true"
       }
     },
     "production": {
@@ -74,7 +78,8 @@
         "cacheDefaultPaths": true
       },
       "env": {
-        "NODE_ENV": "production"
+        "NODE_ENV": "production",
+        "EXPO_PUBLIC_SENTRY_ENABLED": "true"
       }
     }
   },

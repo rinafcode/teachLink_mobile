@@ -23,11 +23,52 @@ We have a dedicated **Syntax Gate** workflow (`.github/workflows/syntax.yml`) th
 - Required for branch protection — PRs cannot be merged if it fails
 - Run checks locally before pushing to avoid CI failures
 
-## Testing Conventions
+## Structured Logging
 
-All test files must be colocated with the source code they are testing and must follow the naming convention `*.test.{ts,tsx}`. This ensures that Jest can automatically discover and run the tests.
+**Never use `console.*` in `src/`.** The ESLint `no-console` rule is set to `error`, and CI will fail if any `console.*` call is introduced. Use `src/utils/logger` instead.
 
-For example, a test file for `src/services/auth.ts` should be located at `src/services/__tests__/auth.test.ts`.
+### Why structured logging?
+
+`console.log` output is unstructured, always-on, and leaks information in production builds. `logger` gives you:
+- Log level filtering (only `error` and `warn` in production)
+- Consistent metadata (timestamp, component context)
+- A single place to redirect logs to remote monitoring (e.g. Sentry, Datadog)
+
+### Log level guide
+
+| Level | Method | When to use |
+|---|---|---|
+| **error** | `logger.error(msg, err?)` | Unexpected failures that need immediate attention. Always include the `Error` object as the second argument. |
+| **warn** | `logger.warn(msg, ctx?)` | Recoverable issues or deprecated code paths that should be investigated. |
+| **info** | `logger.info(msg, ctx?)` | Key lifecycle events: component mount/unmount, navigation, background sync. Keep them meaningful, not noisy. |
+| **debug** | `logger.debug(msg, ctx?)` | Verbose detail useful during development only. Stripped from production builds. |
+| **component** | `logger.component(name, event, ctx?)` | Convenience wrapper for component lifecycle events — equivalent to `info` with a standardised format. |
+
+### Examples
+
+```ts
+// ✅ Correct
+import { logger } from '../../utils/logger';
+
+logger.component('MyScreen', 'Mounted', { userId });
+logger.info('Resuming lesson from position:', position);
+logger.warn('Quiz data missing for section:', sectionId);
+logger.error('Failed to sync progress:', error);
+
+// ❌ Incorrect — will fail CI
+console.log('user mounted', userId);
+console.error('sync failed', error);
+```
+
+### Audit
+
+CI runs a console violation scan on every push. To run it locally:
+
+```bash
+grep -rn "console\." src/ --include='*.ts' --include='*.tsx'
+```
+
+Zero matches is the expected output.
 
 ## Local Quality Checks
 
@@ -42,3 +83,4 @@ npm run format:check
 
 # Run TypeScript type check
 npx tsc --noEmit
+```
