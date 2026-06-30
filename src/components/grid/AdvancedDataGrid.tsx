@@ -3,27 +3,25 @@ import * as FileSystem from 'expo-file-system';
 import { ArrowDown, ArrowUp, ArrowUpDown, Filter, FilterX, Upload } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    ListRenderItemInfo,
-    ScrollView,
-    Share,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  ListRenderItemInfo,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 import { GridExporter } from './GridExporter';
 import { GridFiltering } from './GridFiltering';
-import { InlineEditing } from './InlineEditing';
 import { useDataGrid, UseDataGridOptions } from '../../hooks/useDataGrid';
 import { batchImportCSV, BatchProgress } from '../../services/batchDataProcessor';
-import { ColumnDef, ExportFormat, GridRow, SortConfig, SortDirection } from '../../utils/gridUtils';
+import { ColumnDef, GridRow, SortConfig, SortDirection } from '../../utils/gridUtils';
+import { DataGridRow } from '../common/DataGridRow';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 import { Skeleton } from '../ui/Skeleton';
-
-// Import for document picking (web and native)
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
@@ -77,11 +75,10 @@ export const AdvancedDataGrid = <T extends GridRow = GridRow>({
   emptyMessage = 'No data to display',
   testID,
   onImport,
+  onRowUpdate,
   ...gridOptions
 }: AdvancedDataGridProps<T>) => {
-  const grid = useDataGrid(rows, columns, gridOptions);
-  const [importProgress, setImportProgress] = useState<BatchProgress | null>(null);
-  const [activeImport, setActiveImport] = useState<boolean>(false);
+  const grid = useDataGrid(rows, columns, { ...gridOptions, onRowUpdate });
 
   const {
     paginatedRows,
@@ -94,12 +91,6 @@ export const AdvancedDataGrid = <T extends GridRow = GridRow>({
     page,
     pageSize,
     goToPage,
-    editingCell,
-    editError,
-    startEditing,
-    updateDraft,
-    commitEdit,
-    cancelEditing,
     exportDataAsync,
   } = grid;
 
@@ -111,30 +102,15 @@ export const AdvancedDataGrid = <T extends GridRow = GridRow>({
   // ── Row renderer (memoized to avoid re-renders on unrelated state changes) ─
   const renderRow = useCallback(
     ({ item, index }: ListRenderItemInfo<T>) => (
-      <DataRow
-        key={String(item.id)}
+      <DataGridRow
         row={item}
         rowIndex={index}
-        columns={columns}
+        columns={columns as ColumnDef<GridRow>[]}
         columnWidths={columnWidths}
-        editingCell={editingCell}
-        editError={editError}
-        onStartEdit={startEditing}
-        onChangeDraft={updateDraft}
-        onCommit={commitEdit}
-        onCancel={cancelEditing}
+        onRowUpdate={onRowUpdate}
       />
     ),
-    [
-      columns,
-      columnWidths,
-      editingCell,
-      editError,
-      startEditing,
-      updateDraft,
-      commitEdit,
-      cancelEditing,
-    ]
+    [columns, columnWidths, onRowUpdate]
   );
 
   const keyExtractor = useCallback((item: T) => String(item.id), []);
@@ -159,11 +135,18 @@ export const AdvancedDataGrid = <T extends GridRow = GridRow>({
           hasFilters={hasFilters}
           onClearFilters={clearAllFilters}
           showExporter={showExporter}
+          showImporter={!!onImport}
+          onImportComplete={onImport}
           onExport={exportDataAsync}
         />
 
         {/* ── Scrollable grid area ─────────────────────────────────────────── */}
-        <ScrollView horizontal showsHorizontalScrollIndicator style={styles.horizontalScroll} removeClippedSubviews={true}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator
+          style={styles.horizontalScroll}
+          removeClippedSubviews={true}
+        >
           <View style={{ width: totalWidth }}>
             {/* Column headers */}
             <HeaderRow
@@ -201,11 +184,7 @@ export const AdvancedDataGrid = <T extends GridRow = GridRow>({
                     }}
                   >
                     {columnWidths.map((_cw, j) => (
-                      <Skeleton
-                        key={j}
-                        width={j === 0 ? 80 : j % 3 === 0 ? 100 : 70}
-                        height={14}
-                      />
+                      <Skeleton key={j} width={j === 0 ? 80 : j % 3 === 0 ? 100 : 70} height={14} />
                     ))}
                   </View>
                 ))}
@@ -252,9 +231,8 @@ interface GridToolbarProps {
   onClearFilters: () => void;
   showExporter: boolean;
   onExport: ReturnType<typeof useDataGrid>['exportDataAsync'];
-  showImporter: boolean;
-  onImport: (onProgress?: (progress: BatchProgress) => void) => Promise<GridRow[]>;
-  onImportComplete: (newRows: GridRow[]) => void;
+  showImporter?: boolean;
+  onImportComplete?: (newRows: GridRow[]) => void;
 }
 
 const GridToolbar = ({
@@ -264,38 +242,10 @@ const GridToolbar = ({
   showExporter,
   onExport,
   showImporter,
-  onImport,
   onImportComplete,
 }: GridToolbarProps) => {
   const [activeType, setActiveType] = useState<'export' | 'import' | null>(null);
   const [progress, setProgress] = useState<BatchProgress | null>(null);
-
-  const handleExport = useCallback(
-    async (format: ExportFormat) => {
-      if (activeType !== null) return;
-
-      setActiveType('export');
-      setProgress({ processed: 0, total: 0, percent: 0, phase: 'queued' });
-      try {
-        const data = await onExport(format, setProgress);
-
-        await Share.share({
-          message: data,
-          title: `Export data as ${LABEL[format]}`,
-        });
-      } catch (err) {
-        // Sharing cancelled by the user produces a rejection — treat it silently.
-        const message = err instanceof Error ? err.message : String(err);
-        if (!message.toLowerCase().includes('cancel')) {
-          logger.error('[GridToolbar] Share failed:', err);
-        }
-      } finally {
-        setActiveType(null);
-        setProgress(null);
-      }
-    },
-    [activeType, onExport]
-  );
 
   const handleImport = useCallback(async () => {
     if (activeType !== null) return;
@@ -308,13 +258,11 @@ const GridToolbar = ({
         // Also allow .csv extension
       });
 
-      if (!result.cancelled && result.assets && result.assets[0]) {
+      if (!result.canceled && result.assets && result.assets[0]) {
         const file = result.assets[0];
         let csvString = '';
         if (file.uri) {
-          // For web, we can use fetch
-          // For native, we can use FileSystem.readAsStringAsync
-          if (__WEB__) {
+          if (Platform.OS === 'web') {
             const response = await fetch(file.uri);
             csvString = await response.text();
           } else {
@@ -329,7 +277,9 @@ const GridToolbar = ({
           useWorker: true,
         });
 
-        onImportComplete(newRows);
+        if (onImportComplete) {
+          onImportComplete(newRows);
+        }
       }
     } catch (err) {
       console.error('[GridToolbar] Import failed:', err);
@@ -363,9 +313,7 @@ const GridToolbar = ({
           </View>
         )}
       </View>
-      {showExporter && (
-        <GridExporter onExport={onExport} disabled={activeType !== null} />
-      )}
+      {showExporter && <GridExporter onExport={onExport} disabled={activeType !== null} />}
       {showImporter && (
         <TouchableOpacity
           style={[styles.btn, activeType === 'import' && styles.btnDisabled]}
@@ -465,59 +413,7 @@ const SortIcon = ({ direction }: { direction: SortDirection | null }) => {
   return <ArrowUpDown size={size} color={color} />;
 };
 
-// ─── DataRow ──────────────────────────────────────────────────────────────────
-
-interface DataRowProps<T extends GridRow> {
-  row: T;
-  rowIndex: number;
-  columns: ColumnDef<T>[];
-  columnWidths: number[];
-  editingCell: ReturnType<typeof useDataGrid>['editingCell'];
-  editError: string | null;
-  onStartEdit: (rowId: string | number, columnKey: string, currentValue: unknown) => void;
-  onChangeDraft: (value: string) => void;
-  onCommit: () => void;
-  onCancel: () => void;
-}
-
-const DataRow = <T extends GridRow>({
-  row,
-  rowIndex,
-  columns,
-  columnWidths,
-  editingCell,
-  editError,
-  onStartEdit,
-  onChangeDraft,
-  onCommit,
-  onCancel,
-}: DataRowProps<T>) => {
-  const isEvenRow = rowIndex % 2 === 0;
-
-  return (
-    <View style={[styles.dataRow, isEvenRow && styles.dataRowEven]}>
-      {columns.map((col, idx) => {
-        const cellIsEditing = editingCell?.rowId === row.id && editingCell?.columnKey === col.key;
-
-        return (
-          <View key={col.key} style={[styles.dataCell, { width: columnWidths[idx] }]}>
-            <InlineEditing
-              value={row[col.key]}
-              isEditing={cellIsEditing}
-              draft={cellIsEditing ? editingCell!.draft : ''}
-              error={cellIsEditing ? editError : null}
-              column={col as ColumnDef}
-              onStartEdit={() => onStartEdit(row.id, col.key, row[col.key])}
-              onChangeDraft={onChangeDraft}
-              onCommit={onCommit}
-              onCancel={onCancel}
-            />
-          </View>
-        );
-      })}
-    </View>
-  );
-};
+// DataRow has been moved to its own memoized component in common/DataGridRow.
 
 // ─── PaginationBar ────────────────────────────────────────────────────────────
 
@@ -745,6 +641,41 @@ const styles = StyleSheet.create({
   },
   pageBtnDisabled: {
     backgroundColor: 'transparent',
+  },
+  btn: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#19c3e6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  btnDisabled: {
+    borderColor: '#D1D5DB',
+  },
+  progressWrap: {
+    minWidth: 90,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginLeft: 2,
+  },
+  progressTrack: {
+    width: 56,
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+    backgroundColor: '#E5E7EB',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#19c3e6',
+  },
+  progressText: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontWeight: '500',
   },
   pageBtnText: {
     fontSize: 14,

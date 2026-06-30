@@ -36,7 +36,7 @@ function emitCourseCompleted(courseId: string) {
 async function updateProgressOnServer(
   courseId: string,
   payload: { completedLessons: LessonProgress[]; isCompleted: boolean; completedAt?: string },
-  retries = 3,
+  retries = 3
 ): Promise<void> {
   let lastError: unknown;
 

@@ -1,10 +1,11 @@
 import Constants from 'expo-constants';
 import { isDevice } from 'expo-device';
 import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
+import { AppState, AppStateStatus, Platform } from 'react-native';
 
 import { featureCapabilities, FeatureStatus, FeatureType } from './featureCapabilities';
 import { useDegradationStore } from '../store/degradationStore';
+import { useNotificationStore } from '../store/notificationStore';
 import { NotificationData, NotificationType } from '../types/notifications';
 import logger from '../utils/logger';
 
@@ -330,6 +331,57 @@ export function addNotificationResponseListener(
  */
 export function removeNotificationListener(subscription: Notifications.Subscription): void {
   subscription.remove(); 
+}
+
+/**
+ * Get the last notification response (for handling app launch from notification)
+ */
+export async function getLastNotificationResponse(): Promise<Notifications.NotificationResponse | null> {
+  return await Notifications.getLastNotificationResponseAsync();
+}
+
+/**
+ * Fetch unread notification count from the server and sync badge.
+ * Falls back silently on network error.
+ */
+export async function syncBadgeFromServer(): Promise<void> {
+  try {
+    // TODO: Replace with actual API call when backend is ready
+    // const response = await apiClient.get('/api/notifications/unread-count');
+    // const unreadCount = response.data.count;
+    const unreadCount = useNotificationStore.getState().unreadCount;
+    useNotificationStore.getState().syncBadgeFromServer(unreadCount);
+    await Notifications.setBadgeCountAsync(unreadCount);
+  } catch (error) {
+    logger.warn('Failed to sync badge from server:', error);
+  }
+}
+
+let appStateSubscription: { remove: () => void } | null = null;
+
+/**
+ * Subscribe to AppState changes and sync badges on foreground.
+ * Should be called once during app initialization.
+ */
+export function setupForegroundBadgeSync(): () => void {
+  if (appStateSubscription) {
+    appStateSubscription.remove();
+  }
+
+  const handleAppStateChange = (nextState: AppStateStatus) => {
+    if (nextState === 'active') {
+      syncBadgeFromServer();
+    }
+  };
+
+  appStateSubscription = AppState.addEventListener('change', handleAppStateChange);
+
+  return () => {
+    if (appStateSubscription) {
+      appStateSubscription.remove();
+      appStateSubscription = null;
+    }
+  };
 }
 
 /**

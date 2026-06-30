@@ -82,6 +82,49 @@ function MyComponent() {
 `hideModal(id)` — removes the modal.  
 `isVisible(id)` — returns whether a modal with that id is registered.
 
+## Modal Stacking & Z-Index Management
+
+When opening multiple modals simultaneously (e.g., a confirmation dialog on top of a settings selector), the application automatically manages their stacking order and `zIndex` to prevent visual overlapping, touch-through, and focus conflicts:
+
+1. **Auto-assigned Z-Index**:
+   - The `ModalStackManager` class maintains a global stacking order.
+   - The stack manager auto-assigns ascending `zIndex` values starting from `10000` (step size of `10`) based on the modal's stack position.
+   - Portalled modals (rendered via `ModalPortal`) are wrapped in a container that dynamically applies these `zIndex` styles on stack updates.
+
+2. **Top-Most Modal Exclusivity**:
+   - The focus trap of lower modals is automatically paused and is active *only* for the top-most modal, avoiding accessibility and focus fighting.
+   - Dismissal events (backdrop click, Android hardware back button, or Escape key on Web) are handled exclusively by the top-most modal.
+
+### useModalStack Hook
+
+Custom modals that do not use `AccessibleModal` can still coordinate their stacking order:
+
+```tsx
+import { useModalStack } from './ModalStackManager';
+
+function CustomModal({ id, visible, onClose, children }) {
+  const { zIndex, isTop } = useModalStack(id, visible);
+
+  return (
+    <Modal
+      visible={visible}
+      onRequestClose={() => {
+        if (isTop) onClose();
+      }}
+    >
+      <Pressable
+        style={{ position: 'absolute', inset: 0, zIndex }}
+        onPress={() => {
+          if (isTop) onClose();
+        }}
+      >
+        {children}
+      </Pressable>
+    </Modal>
+  );
+}
+```
+
 ## Graceful fallback
 
 `AccessibleModal` uses `useModalPortalSafe` internally, which returns `null` instead of throwing when no provider is present. In that case it falls back to inline rendering. This means existing components work correctly in tests and Storybook without a provider.
