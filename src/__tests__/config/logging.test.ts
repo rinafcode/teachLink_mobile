@@ -29,16 +29,18 @@ jest.mock('../../utils/storage', () => ({
   safeStorageWrite: jest.fn(),
 }));
 
-// Capture the beforeBreadcrumb callback passed to Sentry.init
+// ─── beforeBreadcrumb PII scrubbing ───────────────────────────────────────
+
 let capturedBeforeBreadcrumb: ((b: Sentry.Breadcrumb) => Sentry.Breadcrumb | null) | null = null;
 
-(Sentry.init as jest.Mock).mockImplementation((options: { beforeBreadcrumb?: (b: Sentry.Breadcrumb) => Sentry.Breadcrumb | null }) => {
-  capturedBeforeBreadcrumb = options.beforeBreadcrumb ?? null;
-});
+(Sentry.init as jest.Mock).mockImplementation(
+  (options: { beforeBreadcrumb?: (b: Sentry.Breadcrumb) => Sentry.Breadcrumb | null }) => {
+    capturedBeforeBreadcrumb = options.beforeBreadcrumb ?? null;
+  }
+);
 
-describe('beforeBreadcrumb — PII scrubbing', () => {
+describe('beforeBreadcrumb - PII scrubbing', () => {
   beforeAll(async () => {
-    // Force production mode so Sentry.init is called
     jest.resetModules();
     jest.doMock('@sentry/react-native', () => ({
       init: (opts: { beforeBreadcrumb?: (b: Sentry.Breadcrumb) => Sentry.Breadcrumb | null }) => {
@@ -49,7 +51,6 @@ describe('beforeBreadcrumb — PII scrubbing', () => {
       captureMessage: jest.fn(),
     }));
 
-    // Patch __DEV__ to false so initializeLogging runs Sentry.init
     const original = (global as Record<string, unknown>).__DEV__;
     (global as Record<string, unknown>).__DEV__ = false;
 
@@ -134,5 +135,109 @@ describe('beforeBreadcrumb — PII scrubbing', () => {
       data: { body: { courseId: '42', page: 3 } },
     });
     expect(result?.data?.body).toEqual({ courseId: '42', page: 3 });
+  });
+});
+
+// ─── initializeLogging Sentry init gating ─────────────────────────────────
+
+function resetLoggingModule() {
+  jest.resetModules();
+  jest.mock('@sentry/react-native', () => ({
+    init: jest.fn(),
+    captureException: jest.fn(),
+    captureMessage: jest.fn(),
+    addBreadcrumb: jest.fn(),
+    setTag: jest.fn(),
+    setUser: jest.fn(),
+    configureScope: jest.fn(),
+    withScope: jest.fn(),
+  }));
+  jest.mock('@react-native-async-storage/async-storage', () => ({
+    getItem: jest.fn(() => Promise.resolve(null)),
+    setItem: jest.fn(() => Promise.resolve()),
+    removeItem: jest.fn(() => Promise.resolve()),
+    getAllKeys: jest.fn(() => Promise.resolve([])),
+    multiRemove: jest.fn(() => Promise.resolve()),
+  }));
+  jest.mock('../../services/sentryContext', () => ({
+    sentryContextService: {
+      buildCaptureContext: jest.fn(() => ({})),
+      getCurrentScreen: jest.fn(() => null),
+    },
+  }));
+  jest.mock('../../utils/storage', () => ({
+    safeStorageWrite: jest.fn(),
+  }));
+}
+
+async function importAndInit() {
+  const mod = await import('../../config/logging');
+  await mod.initializeLogging();
+  return mod;
+}
+
+describe('initializeLogging - Sentry init gating', () => {
+  const originalDev = (global as any).__DEV__;
+
+  afterEach(() => {
+    (global as any).__DEV__ = originalDev;
+    delete process.env.EXPO_PUBLIC_SENTRY_ENABLED;
+  });
+
+  it('does NOT call Sentry.init in a dev build without the env var', async () => {
+    (global as any).__DEV__ = true;
+    delete process.env.EXPO_PUBLIC_SENTRY_ENABLED;
+
+    resetLoggingModule();
+    await importAndInit();
+
+    const { init } = require('@sentry/react-native');
+    expect(init).not.toHaveBeenCalled();
+  });
+
+  it('DOES call Sentry.init in a dev build when EXPO_PUBLIC_SENTRY_ENABLED=true', async () => {
+    (global as any).__DEV__ = true;
+    process.env.EXPO_PUBLIC_SENTRY_ENABLED = 'true';
+
+    resetLoggingModule();
+    await importAndInit();
+
+    const { init } = require('@sentry/react-native');
+    expect(init).toHaveBeenCalledTimes(1);
+    expect(init).toHaveBeenCalledWith(expect.objectContaining({ environment: 'staging' }));
+  });
+
+  it('DOES call Sentry.init in a production build regardless of env var', async () => {
+    (global as any).__DEV__ = false;
+    delete process.env.EXPO_PUBLIC_SENTRY_ENABLED;
+
+    resetLoggingModule();
+    await importAndInit();
+
+    const { init } = require('@sentry/react-native');
+    expect(init).toHaveBeenCalledTimes(1);
+    expect(init).toHaveBeenCalledWith(expect.objectContaining({ environment: 'production' }));
+  });
+
+  it('DOES call Sentry.init in production even when env var is explicitly false', async () => {
+    (global as any).__DEV__ = false;
+    process.env.EXPO_PUBLIC_SENTRY_ENABLED = 'false';
+
+    resetLoggingModule();
+    await importAndInit();
+
+    const { init } = require('@sentry/react-native');
+    expect(init).toHaveBeenCalledTimes(1);
+  });
+
+  it('does NOT call Sentry.init in dev when env var is explicitly false', async () => {
+    (global as any).__DEV__ = true;
+    process.env.EXPO_PUBLIC_SENTRY_ENABLED = 'false';
+
+    resetLoggingModule();
+    await importAndInit();
+
+    const { init } = require('@sentry/react-native');
+    expect(init).not.toHaveBeenCalled();
   });
 });
