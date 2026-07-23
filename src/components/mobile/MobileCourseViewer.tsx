@@ -16,6 +16,7 @@ import BookmarkButton from './BookmarkButton';
 import { CourseViewerSkeleton } from './CourseViewerSkeleton';
 import LessonCarousel from './LessonCarousel';
 import MobileSyllabus from './MobileSyllabus';
+import { LazyMobileVideoPlayer } from '../../utils/lazyComponents';
 import { useCourseProgress, useDynamicFontSize } from '../../hooks';
 import { useAnalytics } from '../../hooks/useAnalytics';
 import { useInAppReview, useReviewMetrics } from '../../hooks/useInAppReview';
@@ -331,6 +332,12 @@ const MobileCourseViewer = ({
     setViewMode('syllabus');
   }, []);
 
+  const handleVideoEnd = useCallback(async () => {
+    if (!currentLessonId) return;
+    await markLessonComplete(currentLessonId);
+    Alert.alert('Lesson Completed', 'This lesson has been marked as complete.');
+  }, [currentLessonId, markLessonComplete]);
+
   const renderLessonContent = useCallback(
     (lesson: Lesson) => {
       const lessonNotes = progress?.notes[lesson.id] || [];
@@ -342,6 +349,17 @@ const MobileCourseViewer = ({
             showsVerticalScrollIndicator={false}
             removeClippedSubviews={true}
           >
+            {/* Video Player */}
+            {lesson.videoUrl ? (
+              <View style={{ marginBottom: 16 }}>
+                <LazyMobileVideoPlayer
+                  sources={[{ uri: lesson.videoUrl, quality: 'auto', id: lesson.id }]}
+                  autoPlay={false}
+                  onEnd={handleVideoEnd}
+                />
+              </View>
+            ) : null}
+
             {/* Lesson Content */}
             <View style={styles.lessonSection}>
               <Text style={styles.lessonText}>{lesson.content}</Text>
@@ -399,7 +417,7 @@ const MobileCourseViewer = ({
       );
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [progress, handleAddNote, handleEditNote, handleDeleteNote]
+    [progress, handleAddNote, handleEditNote, handleDeleteNote, handleVideoEnd]
   );
 
   if (isLoading) {
