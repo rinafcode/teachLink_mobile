@@ -328,7 +328,19 @@ export async function isBiometricEnabled(): Promise<boolean> {
   return value === '1';
 }
 
+// ─── AsyncStorage Security Guard ───────────────────────────────────────────────
+// SECURITY: AsyncStorage is UNENCRYPTED plaintext storage.
+// NEVER use AsyncStorage for: tokens, passwords, session data, PII, or any
+// sensitive user data. It is only acceptable for non-sensitive caches,
+// feature flags, and UI state that has no security implications.
+//
+// If you need to store sensitive data, use SecureStore (Keychain/Keystore).
+// ──────────────────────────────────────────────────────────────────────────────
+
 // ─── Token Cache ──────────────────────────────────────────────────────────────
+// NOTE: TokenCache stores only NON-SENSITIVE cache metadata (timestamps,
+// search query text). The actual tokens live in SecureStore. This cache
+// exists to avoid repeated SecureStore reads on the UI thread.
 
 const TOKEN_CACHE_KEY = '@teachlink_token_cache';
 const DEFAULT_TTL_MS = 5 * 60 * 1_000; // 5 minutes

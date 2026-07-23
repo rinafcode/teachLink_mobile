@@ -295,11 +295,21 @@ export const MobileSearch = ({
         </View>
       )}
 
+      {!indexReady && hasSearched && (
+        <View style={styles.indexingBanner}>
+          <Text style={styles.indexingText}>
+            Indexing content… search results may be incomplete.
+          </Text>
+        </View>
+      )}
+
       {showResults && (
         <View style={styles.resultsSection}>
           <Text style={styles.resultsLabel}>
             {results.length === 0
-              ? 'No results'
+              ? indexReady
+                ? 'No results'
+                : 'No results yet'
               : `${results.length} result${results.length === 1 ? '' : 's'}`}
           </Text>
           <FlatList<SearchResultItem>
@@ -436,5 +446,17 @@ const styles = StyleSheet.create({
     color: '#dc2626',
     flex: 1,
     fontWeight: '500',
+  },
+  indexingBanner: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#fef3c7',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#fcd34d',
+  },
+  indexingText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#92400e',
   },
 });
