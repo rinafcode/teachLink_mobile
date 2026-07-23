@@ -3,6 +3,8 @@ import { create } from 'zustand';
 
 import { checkDeviceCompromised } from '../utils/jailbreakDetection';
 
+export type MemoryPressureLevel = 'normal' | 'warning' | 'critical';
+
 interface DeviceState {
   batteryLevel: number;
   batteryState: Battery.BatteryState;
@@ -14,6 +16,8 @@ interface DeviceState {
   isDeviceCompromised: boolean;
   lastBiometricAuth: number | null;
   biometricEnabled: boolean;
+  /** Current memory pressure level: normal (<70%), warning (70-85%), critical (>85%) */
+  memoryPressureLevel: MemoryPressureLevel;
 
   // Actions
   updateBatteryInfo: (level: number, state: Battery.BatteryState, lowPowerMode: boolean) => void;
@@ -21,6 +25,7 @@ interface DeviceState {
   setDeviceCompromised: (compromised: boolean) => void;
   setLastBiometricAuth: (timestamp: number | null) => void;
   setBiometricEnabled: (enabled: boolean) => void;
+  setMemoryPressureLevel: (level: MemoryPressureLevel) => void;
   /** Runs jailbreak/root detection and updates state */
   runDeviceCompromisedCheck: () => Promise<boolean>;
 }
@@ -34,6 +39,7 @@ export const useDeviceStore = create<DeviceState>(set => ({
   isDeviceCompromised: false,
   lastBiometricAuth: null,
   biometricEnabled: false,
+  memoryPressureLevel: 'normal',
 
   updateBatteryInfo: (level, state, lowPowerMode) => {
     const isLowBattery = level > 0 && level < 0.2;
@@ -50,11 +56,14 @@ export const useDeviceStore = create<DeviceState>(set => ({
   setDeviceCompromised: (compromised: boolean) => {
     set({ isDeviceCompromised: compromised });
   },
-  setLastBiometricAuth: (timestamp) => {
+  setLastBiometricAuth: timestamp => {
     set({ lastBiometricAuth: timestamp });
   },
-  setBiometricEnabled: (enabled) => {
+  setBiometricEnabled: enabled => {
     set({ biometricEnabled: enabled });
+  },
+  setMemoryPressureLevel: level => {
+    set({ memoryPressureLevel: level });
   },
   runDeviceCompromisedCheck: async () => {
     const compromised = await checkDeviceCompromised();
