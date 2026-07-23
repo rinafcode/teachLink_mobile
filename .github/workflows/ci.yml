@@ -189,8 +189,7 @@ jobs:
           echo "✅ No console.* violations found."
 
       - name: Lint
-        run: npm run lint -- --max-warnings=250
-        run: npm run lint -- --cache --cache-location .eslintcache
+        run: npm run lint -- --cache --max-warnings=250 --cache-location .eslintcache
 
       - name: Format check
         run: npm run format:check

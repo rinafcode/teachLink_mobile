@@ -64,6 +64,10 @@ interface NotificationState {
   // Badge sync
   syncBadgeFromServer: (unreadCount: number) => void;
   getLastBadgeSyncAt: () => number | null;
+
+  // Deep link
+  pendingDeepLink: string | null;
+  setPendingDeepLink: (route: string | null) => void;
 }
 
 const createInitialNotificationState = () => ({
@@ -80,6 +84,7 @@ const createInitialNotificationState = () => ({
   lastEngagedAt: null,
   lastNotificationSentAtByType: {},
   lastBadgeSyncAt: null as number | null,
+  pendingDeepLink: null,
 });
 
 let resetNotificationStoreAfterHydrationError = () => {};
@@ -303,6 +308,9 @@ export const useNotificationStore = create<NotificationState>()(
         appLogger.infoSync('Badge count synced from server', { unreadCount });
       },
       getLastBadgeSyncAt: () => get().lastBadgeSyncAt,
+
+      // Deep link
+      setPendingDeepLink: route => set({ pendingDeepLink: route }),
       };
     },
     {
@@ -358,6 +366,7 @@ export const useNotificationStore = create<NotificationState>()(
         notificationHistory: state.notificationHistory,
         lastEngagedAt: state.lastEngagedAt,
         lastNotificationSentAtByType: state.lastNotificationSentAtByType,
+        pendingDeepLink: state.pendingDeepLink,
       }),
     }
   )
