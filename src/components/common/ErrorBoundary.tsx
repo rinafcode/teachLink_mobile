@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react-native';
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -69,6 +70,13 @@ export class ErrorBoundary extends Component<Props, State> {
     const boundaryName = this.props.boundaryName ?? 'ErrorBoundary';
 
     try {
+      Sentry.withScope(scope => {
+        scope.setExtra('componentStack', errorInfo.componentStack);
+        scope.setExtra('boundaryName', boundaryName);
+        scope.setTag('errorBoundary', boundaryName);
+        Sentry.captureException(error);
+      });
+
       crashReportingService.reportError(error, boundaryName, {
         componentStack: errorInfo.componentStack,
       });
