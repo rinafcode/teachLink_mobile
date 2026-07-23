@@ -57,6 +57,8 @@ export type MobileVideoPlayerProps = {
   onPlaybackStatusUpdate?: (status: AVPlaybackStatus) => void;
   /** Callback when video quality changes */
   onQualityChange?: (qualityId: string) => void;
+  /** Callback when video playback reaches the end */
+  onEnd?: () => void;
   /** Whether the player is currently active (on-screen) */
   isActive?: boolean;
   /** Whether to simulate a slow connection */
@@ -75,6 +77,7 @@ const MobileVideoPlayer = ({
   onError,
   onPlaybackStatusUpdate,
   onQualityChange,
+  onEnd,
   isActive = true,
   isSlowConnection = false,
 }: MobileVideoPlayerProps) => {
@@ -105,9 +108,14 @@ const MobileVideoPlayer = ({
   const [containerWidth, setContainerWidth] = useState(0);
   const [seekBarPreviewMillis, setSeekBarPreviewMillis] = useState<number | null>(null);
   const [isSeekBarScrubbing, setIsSeekBarScrubbing] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [isRetrying, setIsRetrying] = useState(false);
   const isPlayingRef = useRef(isPlaying);
   const isScrubbingRef = useRef(false);
   const errorRef = useRef<string | null>(error);
+  const retryCountRef = useRef(0);
+  const lastPositionRef = useRef(0);
+  const MAX_RETRIES = 3;
 
   const normalizedSources = useMemo(() => normalizeSources(sources), [sources]);
   const qualityOptions = useMemo(() => getQualityOptions(normalizedSources), [normalizedSources]);
@@ -323,15 +331,52 @@ const MobileVideoPlayer = ({
     });
   }, [activeSource, isPlaying]);
 
+  const attemptRecovery = useCallback(async () => {
+    if (retryCountRef.current >= MAX_RETRIES) {
+      setIsRetrying(false);
+      return;
+    }
+    setIsRetrying(true);
+    retryCountRef.current += 1;
+    setRetryCount(retryCountRef.current);
+    const backoffMs = Math.min(1000 * Math.pow(2, retryCountRef.current - 1), 8000);
+    await new Promise(resolve => setTimeout(resolve, backoffMs));
+    try {
+      if (lastPositionRef.current > 0) {
+        await videoRef.current?.setPositionAsync(lastPositionRef.current);
+      }
+      await videoRef.current?.playAsync();
+    } catch {
+      // Recovery failed; will be caught on next status update
+    }
+    setIsRetrying(false);
+  }, []);
+
   const handlePlaybackStatusUpdate = useCallback(
     (status: AVPlaybackStatus) => {
       onPlaybackStatusUpdate?.(status);
       if (!status.isLoaded) {
         if (status.error) {
-          setError(status.error);
-          onError?.(status.error);
+          const isNetworkError =
+            status.error.toLowerCase().includes('network') ||
+            status.error.toLowerCase().includes('connection');
+          if (isNetworkError && retryCountRef.current < MAX_RETRIES) {
+            void attemptRecovery();
+          } else {
+            setError(status.error);
+            onError?.(status.error);
+          }
         }
         return;
+      }
+      // Track position for crash recovery
+      if (status.positionMillis > 0) {
+        lastPositionRef.current = status.positionMillis;
+      }
+      // Reset retry count on successful playback
+      if (status.isPlaying) {
+        retryCountRef.current = 0;
+        setRetryCount(0);
       }
       if (autoPlay && !autoPlayHandledRef.current && !status.isPlaying && !status.isBuffering) {
         autoPlayHandledRef.current = true;
@@ -348,6 +393,7 @@ const MobileVideoPlayer = ({
       }
       if (status.didJustFinish) {
         setControlsVisible(true);
+        onEnd?.();
       }
       if (resumeStatusRef.current && status.positionMillis != null) {
         const target = resumeStatusRef.current.positionMillis ?? 0;
@@ -364,7 +410,7 @@ const MobileVideoPlayer = ({
         setIsLoading(false);
       }
     },
-    [autoPlay, isSwitchingQuality, onError, onPlaybackStatusUpdate]
+    [autoPlay, isSwitchingQuality, onEnd, onError, onPlaybackStatusUpdate, attemptRecovery]
   );
 
   useEffect(() => {
@@ -593,7 +639,13 @@ const MobileVideoPlayer = ({
 
         {error ? (
           <View style={styles.errorOverlay} pointerEvents="none">
-            <Text style={styles.errorText}>Playback error. Please try again.</Text>
+            {isRetrying ? (
+              <Text style={styles.errorText}>
+                Reconnecting… ({retryCount}/{MAX_RETRIES})
+              </Text>
+            ) : (
+              <Text style={styles.errorText}>Playback error. Please try again.</Text>
+            )}
           </View>
         ) : null}
       </View>

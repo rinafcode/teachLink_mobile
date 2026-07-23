@@ -130,7 +130,10 @@ const apiClient = axios.create({
 
 export const UPLOAD_TIMEOUT_MS = 30_000;
 
-// ─── Refresh queue ─────────────────────────────────────────────────────────
+// ─── Refresh queue (Issue #673 — race condition deduplication) ─────────────────
+// When multiple concurrent 401 responses arrive simultaneously, only the first
+// triggers a token refresh. Subsequent callers await the same in-flight promise
+// via this queue, preventing double-refresh that would invalidate the session.
 
 let isRefreshing = false;
 
