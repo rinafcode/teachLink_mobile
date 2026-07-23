@@ -322,6 +322,38 @@ export class SearchIndexService {
     return results.slice(0, maxResults).map(r => r.item);
   }
 
+  /**
+   * Compact the in-memory index by removing orphaned entries (tokens whose
+   * posting lists reference docs that no longer exist in the `docs` map).
+   * Rebuilds the token trie afterwards so prefix search remains correct.
+   *
+   * Called on memory pressure to reclaim memory without losing the search
+   * functionality.
+   */
+  compact(): void {
+    if (!this.index) return;
+
+    const start = Date.now();
+    const validDocIds = new Set(Object.keys(this.index.docs));
+    let removedTokens = 0;
+
+    for (const token of Object.keys(this.index.entries)) {
+      const filtered = this.index.entries[token].filter(e => validDocIds.has(e.docId));
+      if (filtered.length === 0) {
+        delete this.index.entries[token];
+        removedTokens++;
+      } else if (filtered.length !== this.index.entries[token].length) {
+        this.index.entries[token] = filtered;
+      }
+    }
+
+    this.tokenTrie = buildTrie(Object.keys(this.index.entries));
+
+    appLogger.infoSync(
+      `[SearchIndex] compacted: removed ${removedTokens} orphan tokens in ${Date.now() - start}ms`
+    );
+  }
+
   /** Drop the in-memory index and remove the persisted copy. */
   async invalidate(): Promise<void> {
     this.index = null;

@@ -16,8 +16,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { crashReportingService } from './crashReporting';
-import logger from '../utils/logger';
 import { memoryPressureService } from './memoryPressureService';
+import { logger } from '../utils/logger';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -172,6 +172,15 @@ class MetricsService {
     this.eventsTrackedCount++;
   }
 
+  /**
+   * Immediately flush metric buffers to persistent storage and reset them.
+   * Called by memoryPressureService on memory warning to preserve buffered
+   * metrics before they are lost to an OOM kill.
+   */
+  public async flush(): Promise<void> {
+    await this.flushMetrics();
+  }
+
   private addToBuffer<T>(buffer: T[], value: T): void {
     buffer.push(value);
     if (buffer.length > MAX_METRICS_BUFFER) {
@@ -284,8 +293,7 @@ class MetricsService {
     const avgApiResponseMs =
       this.apiResponseTimes.length > 0
         ? Math.round(
-            this.apiResponseTimes.reduce((a, b) => a + b, 0) /
-              this.apiResponseTimes.length,
+            this.apiResponseTimes.reduce((a, b) => a + b, 0) / this.apiResponseTimes.length
           )
         : 0;
 
@@ -301,7 +309,7 @@ class MetricsService {
 
   private collectErrorRate(now: number): ErrorRateMetrics {
     const oneMinuteAgo = now - 60_000;
-    const recentErrors = this.errorTimestamps.filter((t) => t >= oneMinuteAgo);
+    const recentErrors = this.errorTimestamps.filter(t => t >= oneMinuteAgo);
     const errorsPerMinute = recentErrors.length;
 
     const totalErrors = this.errorTimestamps.length;
@@ -315,9 +323,9 @@ class MetricsService {
 
     const thirtySecondsAgo = now - 30_000;
     const sixtySecondsAgo = now - 60_000;
-    const recent30s = this.errorTimestamps.filter((t) => t >= thirtySecondsAgo).length;
+    const recent30s = this.errorTimestamps.filter(t => t >= thirtySecondsAgo).length;
     const previous30s = this.errorTimestamps.filter(
-      (t) => t >= sixtySecondsAgo && t < thirtySecondsAgo,
+      t => t >= sixtySecondsAgo && t < thirtySecondsAgo
     ).length;
 
     let trend: ErrorRateMetrics['trend'] = 'stable';
@@ -343,7 +351,7 @@ class MetricsService {
     health: AppHealthMetrics,
     perf: PerformanceMetrics,
     errors: ErrorRateMetrics,
-    thresholds: AlertThresholds = DEFAULT_THRESHOLDS,
+    thresholds: AlertThresholds = DEFAULT_THRESHOLDS
   ): DashboardAlert[] {
     const alerts: DashboardAlert[] = [];
     const wallNow = Date.now();
