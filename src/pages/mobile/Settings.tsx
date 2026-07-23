@@ -5,6 +5,7 @@ import { TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText, MobileSettings } from '../../components';
+import { VersionFooter } from '../../components/settings/VersionFooter';
 import { useDynamicFontSize } from '../../hooks';
 
 interface SettingsPageProps {
@@ -68,6 +69,7 @@ const SettingsPage = ({
         onChangePassword={onChangePassword}
         onLinkedAccounts={onLinkedAccounts}
       />
+      <VersionFooter />
     </SafeAreaView>
   );
 };
