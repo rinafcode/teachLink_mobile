@@ -8,7 +8,7 @@
 
 ## Overview
 
-Every unhandled error and caught exception in teachLink Mobile is forwarded to [Sentry](https://sentry.io) with **rich, automatic context** so any engineer can reconstruct the exact user journey that led to a crash — without needing to contact the user or reproduce the issue manually.
+Every unhandled error and caught exception in teachLink Mobile is forwarded to [Sentry](https://www.sentry.io) with **rich, automatic context** so any engineer can reconstruct the exact user journey that led to a crash — without needing to contact the user or reproduce the issue manually.
 
 ---
 
