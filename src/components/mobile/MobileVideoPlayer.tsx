@@ -57,6 +57,8 @@ export type MobileVideoPlayerProps = {
   onPlaybackStatusUpdate?: (status: AVPlaybackStatus) => void;
   /** Callback when video quality changes */
   onQualityChange?: (qualityId: string) => void;
+  /** Callback when video playback reaches the end */
+  onEnd?: () => void;
   /** Whether the player is currently active (on-screen) */
   isActive?: boolean;
   /** Whether to simulate a slow connection */
@@ -75,6 +77,7 @@ const MobileVideoPlayer = ({
   onError,
   onPlaybackStatusUpdate,
   onQualityChange,
+  onEnd,
   isActive = true,
   isSlowConnection = false,
 }: MobileVideoPlayerProps) => {
@@ -348,6 +351,7 @@ const MobileVideoPlayer = ({
       }
       if (status.didJustFinish) {
         setControlsVisible(true);
+        onEnd?.();
       }
       if (resumeStatusRef.current && status.positionMillis != null) {
         const target = resumeStatusRef.current.positionMillis ?? 0;
@@ -364,7 +368,7 @@ const MobileVideoPlayer = ({
         setIsLoading(false);
       }
     },
-    [autoPlay, isSwitchingQuality, onError, onPlaybackStatusUpdate]
+    [autoPlay, isSwitchingQuality, onEnd, onError, onPlaybackStatusUpdate]
   );
 
   useEffect(() => {

@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   AppState,
@@ -13,9 +13,12 @@ import {
   View,
 } from 'react-native';
 
+import * as Updates from 'expo-updates';
+
 import StorybookUI from './.rnstorybook';
 import './global.css';
 import { ErrorBoundary } from './src/components/common/ErrorBoundary';
+import UpdatePromptModal from './src/components/common/UpdatePromptModal';
 import { NotificationPermissionExplanationSheet } from './src/components/mobile/NotificationPermissionExplanationSheet';
 import { initializeLogging } from './src/config/logging';
 import { AuthProvider, useAdaptiveTheme, useReviewMetrics } from './src/hooks';
@@ -172,6 +175,9 @@ const App = () => {
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const [appIsReady, setAppIsReady] = React.useState(false);
   const [showPreferencesResetToast, setShowPreferencesResetToast] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [isCriticalUpdate, setIsCriticalUpdate] = useState(false);
+  const [updateVersion, setUpdateVersion] = useState<string | undefined>();
 
   useEffect(() => {
     let hideTimer: ReturnType<typeof setTimeout> | undefined;
@@ -232,6 +238,54 @@ const App = () => {
       console.log(`[App] Secondary fonts loaded in ${Date.now() - start}ms`);
     });
   }, [appIsReady]);
+
+  // OTA Update check on foreground
+  const checkForOtaUpdate = useCallback(async () => {
+    try {
+      if (__DEV__) return;
+      const update = await Updates.checkForUpdateAsync();
+      if (update.isAvailable) {
+        const manifest = (update as any).manifest ?? (update as any).metadata;
+        const isCritical = manifest?.extra?.ota?.critical === true;
+        const version = manifest?.version ?? manifest?.id;
+        setIsCriticalUpdate(isCritical);
+        setUpdateVersion(version);
+        setShowUpdateModal(true);
+      }
+    } catch (err) {
+      appLogger.warnSync('[App] OTA update check failed', { error: String(err) });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!appIsReady) return;
+
+    const appStateSubscription = AppState.addEventListener('change', nextAppState => {
+      const wasInBackground = appStateRef.current.match(/inactive|background/);
+      const isForegrounded = nextAppState === 'active';
+      if (wasInBackground && isForegrounded) {
+        void checkForOtaUpdate();
+      }
+    });
+
+    // Check once on first foreground after app ready
+    void checkForOtaUpdate();
+
+    return () => {
+      appStateSubscription.remove();
+    };
+  }, [appIsReady, checkForOtaUpdate]);
+
+  const handleOtaUpdate = useCallback(async () => {
+    try {
+      await Updates.fetchUpdateAsync();
+      await Updates.reloadAsync();
+    } catch (err) {
+      setShowUpdateModal(false);
+      Alert.alert('Update Failed', 'Could not apply the update. Please try again later.');
+      appLogger.warnSync('[App] OTA update fetch failed', { error: String(err) });
+    }
+  }, []);
 
   useEffect(() => {
     // ===== CRITICAL PATH — runs immediately =====
@@ -480,6 +534,13 @@ const App = () => {
         </ScreenErrorBoundary>
         <NotificationPermissionExplanationSheet />
         {showPreferencesResetToast ? <PreferencesResetToast /> : null}
+        <UpdatePromptModal
+          visible={showUpdateModal}
+          isCritical={isCriticalUpdate}
+          version={updateVersion}
+          onUpdate={handleOtaUpdate}
+          onDismiss={isCriticalUpdate ? undefined : () => setShowUpdateModal(false)}
+        />
       </AuthProvider>
     </ErrorBoundary>
   );
