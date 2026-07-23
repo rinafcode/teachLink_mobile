@@ -1,0 +1,63 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base"
+  ],
+  "schedule": [
+    "every weekday"
+  ],
+  "labels": [
+    "dependencies"
+  ],
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["patch"],
+      "matchDepTypes": ["devDependencies"],
+      "automerge": true,
+      "automergeType": "pr",
+      "groupName": "devDependencies (non-major)",
+      "requiredStatusChecks": ["ci"]
+    },
+    {
+      "matchPackagePatterns": ["expo"],
+      "groupName": "Expo",
+      "matchUpdateTypes": ["minor", "patch"],
+      "schedule": [
+        "every weekday"
+      ]
+    },
+    {
+      "matchPackagePatterns": ["react-native"],
+      "groupName": "React Native",
+      "matchUpdateTypes": ["minor", "patch"],
+      "schedule": [
+        "every weekday"
+      ]
+    },
+    {
+      "matchPackagePatterns": ["@testing-library"],
+      "groupName": "Testing",
+      "matchUpdateTypes": ["minor", "patch"],
+      "schedule": [
+        "every weekday"
+      ]
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "labels": [
+        "dependencies",
+        "major"
+      ],
+      "commitMessageTopic": "{{depName}}"
+    }
+  ],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": [
+      "every sunday"
+    ],
+    "commitMessageTopic": "lock file maintenance",
+    "commitMessageAction": "Update"
+  }
+}
