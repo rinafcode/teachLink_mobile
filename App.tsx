@@ -50,6 +50,7 @@ import { checkSessionValidity, initializeSecureStorage } from './src/services/se
 import socketService from './src/services/socket';
 import { syncService } from './src/services/syncService'; // Fixed naming convention from the merge conflict
 import { useAppStore, useDeviceStore, useNotificationStore } from './src/store'; // Added missing store imports
+import { waitForHydration } from './src/store/createStore';
 import { useDegradationStore } from './src/store/degradationStore';
 import {
   consumeHydrationResetToast,
@@ -456,6 +457,12 @@ const App = () => {
 
   useEffect(() => {
     const checkSessionOnForeground = async () => {
+      // Don't read the store before it has rehydrated — destructured actions
+      // would be undefined and calling them would throw / silently no-op.
+      if (!useAppStore.persist?.hasHydrated?.()) {
+        return;
+      }
+
       const {
         isAuthenticated,
         refreshToken,
@@ -500,7 +507,11 @@ const App = () => {
       await useDeviceStore.getState().runDeviceCompromisedCheck();
     };
 
-    checkSessionOnForeground();
+    // Wait for the persisted store to rehydrate before the first session check
+    // so we never read store actions before they exist.
+    void waitForHydration(useAppStore).then(() => {
+      void checkSessionOnForeground();
+    });
     checkCompromisedOnForeground();
 
     const appStateSubscription = AppState.addEventListener('change', nextAppState => {
