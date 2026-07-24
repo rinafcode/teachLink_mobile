@@ -40,3 +40,35 @@ export const createStore = <T extends object>(
 
   return store;
 };
+
+type HydratableStore = {
+  persist?: {
+    hasHydrated?: () => boolean;
+    onFinishHydration?: (cb: () => void) => () => void;
+  };
+};
+
+/**
+ * Resolves once a persisted store has finished rehydrating.
+ *
+ * Guards against reading `getState()` before persisted values exist, which
+ * would otherwise yield `undefined` for store methods and cause silent no-ops
+ * or TypeErrors on pre-hydration access.
+ */
+export const waitForHydration = (store: HydratableStore): Promise<void> => {
+  if (store.persist?.hasHydrated?.()) {
+    return Promise.resolve();
+  }
+
+  return new Promise(resolve => {
+    const unsubscribe = store.persist?.onFinishHydration?.(() => {
+      unsubscribe?.();
+      resolve();
+    });
+
+    // If the store isn't persisted (no hydration lifecycle), resolve immediately.
+    if (!unsubscribe) {
+      resolve();
+    }
+  });
+};

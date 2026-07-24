@@ -385,6 +385,10 @@ export async function initializeLogging(): Promise<void> {
     if (isSentryEnabled) {
       await Sentry.init({
         dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+        // Route events through a backend tunnel when configured so the raw DSN
+        // isn't the only ingestion path exposed in the app bundle. Falls back
+        // to direct DSN delivery when the tunnel URL is unset.
+        tunnel: process.env.EXPO_PUBLIC_SENTRY_TUNNEL_URL || undefined,
         tracesSampleRate: 0.1,
         environment: isDev ? 'staging' : 'production',
         // Capture 100% of sessions so replay / breadcrumb trails are always available
