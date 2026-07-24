@@ -463,3 +463,15 @@ jest.mock('expo-linear-gradient', () => {
   };
 });
 
+// Mock expo-clipboard for jest tests
+jest.mock('expo-clipboard', () => ({
+  getStringAsync: jest.fn(() => Promise.resolve('')),
+  setStringAsync: jest.fn(() => Promise.resolve(true)),
+  hasStringAsync: jest.fn(() => Promise.resolve(false)),
+  getImageAsync: jest.fn(() => Promise.resolve({ data: '', size: 0 })),
+  setImageAsync: jest.fn(() => Promise.resolve()),
+  hasImageAsync: jest.fn(() => Promise.resolve(false)),
+  addClipboardListener: jest.fn(() => ({ remove: jest.fn() })),
+  removeClipboardListener: jest.fn(),
+}), { virtual: true });
+

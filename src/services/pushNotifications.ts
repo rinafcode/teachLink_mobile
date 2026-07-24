@@ -383,10 +383,3 @@ export function setupForegroundBadgeSync(): () => void {
     }
   };
 }
-
-/**
- * Get the last notification response (for handling app launch from notification)
- */
-export async function getLastNotificationResponse(): Promise<Notifications.NotificationResponse | null> {
-  return await Notifications.getLastNotificationResponseAsync();
-}
