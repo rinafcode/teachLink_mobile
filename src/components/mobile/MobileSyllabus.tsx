@@ -19,6 +19,8 @@ interface MobileSyllabusProps {
   onLessonSelect: (lessonId: string, sectionId: string) => void;
   /** Optional callback when a section is toggled */
   onSectionToggle?: (sectionId: string, isExpanded: boolean) => void;
+  /** Scroll handler for lazy loading lessons */
+  onSyllabusScroll?: (event: { nativeEvent: { contentOffset: { y: number }; contentSize: { height: number }; layoutMeasurement: { height: number } } }) => void;
 }
 
 /** Extra fields attached to each SectionList section. */
@@ -48,12 +50,13 @@ type SyllabusSection = SectionListData<Lesson, SyllabusSectionExtra>;
  * (wrapping titles + optional Resume/Bookmarked badges), so a fixed height would
  * break scroll positioning. Only use getItemLayout when row height is constant.
  */
-const MobileSyllabus = ({
+  const MobileSyllabus = ({
   sections,
   progress,
   currentLessonId,
   onLessonSelect,
   onSectionToggle,
+  onSyllabusScroll,
 }: MobileSyllabusProps) => {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     () => new Set(sections.map(s => s.id)) // All expanded by default
@@ -259,6 +262,8 @@ const MobileSyllabus = ({
       updateCellsBatchingPeriod={50}
       windowSize={7}
       testID="syllabus-list"
+      onScroll={onSyllabusScroll}
+      scrollEventThrottle={16}
     />
   );
 };

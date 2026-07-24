@@ -48,11 +48,21 @@ export const courseApi = {
     return validateResponse(CourseSchema.extend({ data: CourseSchema.array() }), response, { api: 'getCoursesPage' });
   },
 
-  async getCourse(id: string): Promise<Course> {
-    const response = await fetchWithSWR(courseKey(id), () => batchClient.get(`/courses/${id}`), TTL, STALE_TTL, {
-      dataType: 'course-detail',
-      tags: [COURSE_TAG, courseTag(id)],
-    });
+  /** Fetch a single course by ID (batched, cached with SWR).
+   *  Pass `include` to embed related resources (e.g. `'lessons'`) in the response. */
+  async getCourse(id: string, include?: string): Promise<Course> {
+    const params = include ? { include } : undefined;
+    const cacheKey = params ? `${courseKey(id)}:${JSON.stringify(params)}` : courseKey(id);
+    const response = await fetchWithSWR(
+      cacheKey,
+      () => batchClient.get(`/courses/${id}`, params),
+      TTL,
+      STALE_TTL,
+      {
+        dataType: 'course-detail',
+        tags: [COURSE_TAG, courseTag(id)],
+      }
+    );
     return validateResponse(CourseSchema, response, { api: 'getCourse', id });
   },
 
