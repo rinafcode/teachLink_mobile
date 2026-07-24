@@ -5,6 +5,11 @@ import { Button, Text, View } from 'react-native';
 interface Props {
   children: ReactNode;
   screenName: string;
+  /**
+   * When any value in this array changes, the boundary automatically resets.
+   * Pass the route key so navigating to/from a screen clears a stale error.
+   */
+  resetKeys?: ReadonlyArray<unknown>;
 }
 
 interface State {
@@ -25,6 +30,23 @@ class ScreenErrorBoundary extends Component<Props, State> {
       scope.setTag('screen', this.props.screenName);
       Sentry.captureException(error, { extra: errorInfo });
     });
+  }
+
+  componentDidUpdate(prevProps: Props) {
+    // Reset the boundary when the resetKeys change (e.g. the route key), so a
+    // recovered screen re-mounts cleanly instead of staying on the fallback.
+    if (this.state.hasError && this.didResetKeysChange(prevProps.resetKeys, this.props.resetKeys)) {
+      this.setState({ hasError: false });
+    }
+  }
+
+  didResetKeysChange(
+    prev: ReadonlyArray<unknown> | undefined,
+    next: ReadonlyArray<unknown> | undefined
+  ): boolean {
+    if (prev === next) return false;
+    if (!prev || !next || prev.length !== next.length) return true;
+    return prev.some((value, index) => !Object.is(value, next[index]));
   }
 
   handleRetry = () => {
@@ -53,3 +75,23 @@ class ScreenErrorBoundary extends Component<Props, State> {
 }
 
 export default ScreenErrorBoundary;
+
+/**
+ * Wraps a screen component in a ScreenErrorBoundary so a render error in one
+ * screen shows an in-screen fallback instead of unmounting the whole app.
+ *
+ * Usage: `export default withScreenErrorBoundary(ProfileScreen, 'Profile');`
+ */
+export function withScreenErrorBoundary<P extends object>(
+  ScreenComponent: React.ComponentType<P>,
+  screenName: string
+): React.FC<P> {
+  const Wrapped: React.FC<P> = (props) => (
+    <ScreenErrorBoundary screenName={screenName}>
+      <ScreenComponent {...props} />
+    </ScreenErrorBoundary>
+  );
+
+  Wrapped.displayName = `withScreenErrorBoundary(${screenName})`;
+  return Wrapped;
+}
