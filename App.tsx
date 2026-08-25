@@ -57,7 +57,7 @@ import {
     subscribeToHydrationResetToast,
 } from './src/store/persistence';
 import { handleCacheVersionUpdate } from './src/utils/cacheVersioning';
-import { requireEnvVariables } from './src/utils/env';
+import { requireEnvVariables } from './src/config/env';
 import { appLogger } from './src/utils/logger';
 
 // Keep the splash screen visible while we fetch resources

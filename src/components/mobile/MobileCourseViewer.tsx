@@ -440,7 +440,7 @@ const MobileCourseViewer = ({
               <View style={styles.resourcesSection}>
                 <Text style={styles.sectionTitle}>Resources</Text>
                 {lesson.resources.map(resource => (
-                  <TouchableOpacity key={resource.id} style={styles.resourceItem}>
+                  <TouchableOpacity key={resource.id} style={styles.resourceItem} accessibilityRole="link" accessibilityLabel={`Resource: ${resource.title}`}>
                     <Text style={styles.resourceTitle}>{resource.title}</Text>
                     <Text style={styles.resourceType}>{resource.type.toUpperCase()}</Text>
                   </TouchableOpacity>
@@ -468,10 +468,10 @@ const MobileCourseViewer = ({
                           {new Date(note.createdAt).toLocaleTimeString()}
                         </Text>
                         <View style={styles.noteActions}>
-                          <TouchableOpacity onPress={() => handleEditNote(note)}>
+                          <TouchableOpacity onPress={() => handleEditNote(note)} accessibilityRole="button" accessibilityLabel="Edit note">
                             <Text style={styles.editNoteButton}>Edit</Text>
                           </TouchableOpacity>
-                          <TouchableOpacity onPress={() => handleDeleteNote(note)}>
+                          <TouchableOpacity onPress={() => handleDeleteNote(note)} accessibilityRole="button" accessibilityLabel="Delete note">
                             <Text style={styles.deleteNoteButton}>Delete</Text>
                           </TouchableOpacity>
                         </View>
@@ -503,7 +503,7 @@ const MobileCourseViewer = ({
         <View style={styles.header}>
         <View style={styles.headerContent}>
           {onBack && (
-            <TouchableOpacity onPress={onBack} style={styles.backButton}>
+            <TouchableOpacity onPress={onBack} style={styles.backButton} accessibilityRole="button" accessibilityLabel="Go back to course list">
               <Text style={styles.backButtonText}>←</Text>
             </TouchableOpacity>
           )}
@@ -531,6 +531,9 @@ const MobileCourseViewer = ({
       <View style={styles.tabContainer}>
         <TouchableOpacity
           onPress={() => setViewMode('lesson')}
+          accessibilityRole="tab"
+          accessibilityLabel="Lesson tab"
+          accessibilityState={{ selected: viewMode === 'lesson' }}
           style={[
             styles.tab,
             { borderBottomColor: viewMode === 'lesson' ? '#20afe7' : 'transparent' },
@@ -550,6 +553,9 @@ const MobileCourseViewer = ({
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => setViewMode('syllabus')}
+          accessibilityRole="tab"
+          accessibilityLabel="Syllabus tab"
+          accessibilityState={{ selected: viewMode === 'syllabus' }}
           style={[
             styles.tab,
             { borderBottomColor: viewMode === 'syllabus' ? '#20afe7' : 'transparent' },
@@ -627,7 +633,7 @@ const MobileCourseViewer = ({
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Section Complete!</Text>
-                <TouchableOpacity onPress={handleSkipQuiz}>
+                <TouchableOpacity onPress={handleSkipQuiz} accessibilityRole="button" accessibilityLabel="Close quiz prompt">
                   <Text style={styles.closeButton}>×</Text>
                 </TouchableOpacity>
               </View>
@@ -647,7 +653,7 @@ const MobileCourseViewer = ({
               )}
 
               <View style={styles.modalButtonContainer}>
-                <TouchableOpacity onPress={handleSkipQuiz} style={styles.cancelButton}>
+                <TouchableOpacity onPress={handleSkipQuiz} style={styles.cancelButton} accessibilityRole="button" accessibilityLabel="Skip quiz for now">
                   <Text style={styles.cancelButtonText}>Skip for Now</Text>
                 </TouchableOpacity>
                 <View style={{ flex: 1, marginLeft: 12 }}>
@@ -682,6 +688,8 @@ const MobileCourseViewer = ({
                     setNoteContent('');
                     setEditingNote(null);
                   }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close note modal"
                 >
                   <Text style={styles.closeButton}>×</Text>
                 </TouchableOpacity>
@@ -705,6 +713,8 @@ const MobileCourseViewer = ({
                     setEditingNote(null);
                   }}
                   style={styles.cancelButton}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cancel note"
                 >
                   <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
