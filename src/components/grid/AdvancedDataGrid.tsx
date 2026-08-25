@@ -22,6 +22,7 @@ import { ColumnDef, GridRow, SortConfig, SortDirection } from '../../utils/gridU
 import { DataGridRow } from '../common/DataGridRow';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 import { Skeleton } from '../ui/Skeleton';
+import { appLogger } from '../../utils/logger';
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
@@ -282,7 +283,7 @@ const GridToolbar = ({
         }
       }
     } catch (err) {
-      console.error('[GridToolbar] Import failed:', err);
+      appLogger.errorSync('[GridToolbar] Import failed:', err);
     } finally {
       setActiveType(null);
       setProgress(null);

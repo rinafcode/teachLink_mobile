@@ -1,3 +1,4 @@
+import { appLogger } from '../utils/logger';
 /**
  * Performance Audit Orchestrator
  * Coordinates all analyzers and generates a comprehensive, typed report.
@@ -137,7 +138,7 @@ export class PerformanceAuditor extends EventEmitter {
       return report;
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
-      console.error('❌ Audit failed:', err.message);
+      appLogger.errorSync('❌ Audit failed:', err.message);
       this.emit('error', err);
       throw err;
     }
@@ -247,7 +248,7 @@ export class PerformanceAuditor extends EventEmitter {
         if (outcome.status === 'fulfilled') return outcome.value;
         const name = STEPS[i];
         const err = outcome.reason instanceof Error ? outcome.reason : new Error(String(outcome.reason));
-        console.warn(`⚠️  Analyzer "${name}" failed after retries: ${err.message}`);
+        appLogger.warnSync(`⚠️  Analyzer "${name}" failed after retries: ${err.message}`);
         this.emit('analyzerFailed', name, err);
         return this.emptyResultFor(name);
       }
@@ -621,7 +622,7 @@ export class PerformanceAuditor extends EventEmitter {
   }
 
   private log(message: string, step?: string, index?: number, total?: number): void {
-    if (this.options.verbose) console.log(message);
+    if (this.options.verbose) appLogger.infoSync(message);
     if (step !== undefined && index !== undefined && total !== undefined) {
       this.emit('progress', step, index, total);
     }
@@ -636,3 +637,4 @@ export class PerformanceAuditor extends EventEmitter {
 
 export { RecommendationEngine, ReportGenerator };
 export type { AuditOptions, PerformanceAuditReport };
+

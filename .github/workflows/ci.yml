@@ -164,13 +164,12 @@ jobs:
             --include='*.tsx' \
             --exclude='logger.ts' \
             --exclude='logger.*.ts' \
+            --exclude='cli.ts' \
             --exclude='*.test.ts' \
             --exclude='*.test.tsx' \
             --exclude='*.spec.ts' \
             --exclude='*.spec.tsx' \
             --exclude-dir='__tests__' \
-            --exclude-dir='audit' \
-            --exclude-dir='config' \
             || true)
 
           if [ -n "$VIOLATIONS" ]; then

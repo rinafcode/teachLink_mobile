@@ -1,3 +1,4 @@
+import { appLogger } from '../../utils/logger';
 /**
  * Bundle Size Analyzer
  * Analyzes bundle size, chunks, and identifies optimization opportunities
@@ -36,7 +37,7 @@ export class BundleAnalyzer implements IPerformanceAnalyzer {
         largeDevDependencies: await this.findLargeDevDependencies(),
       };
     } catch (error) {
-      console.error('Bundle analysis failed:', error);
+      appLogger.errorSync('Bundle analysis failed:', error);
       throw error;
     }
   }
@@ -141,7 +142,7 @@ export class BundleAnalyzer implements IPerformanceAnalyzer {
         chunks.push(this.createChunk('src', srcPath));
       }
     } catch (error) {
-      console.error('Error analyzing chunks:', error);
+      appLogger.errorSync('Error analyzing chunks:', error);
     }
 
     return chunks;
@@ -239,7 +240,7 @@ export class BundleAnalyzer implements IPerformanceAnalyzer {
         .filter(d => d.count > 1)
         .sort((a, b) => b.totalSize - a.totalSize);
     } catch (error) {
-      console.error('Error finding duplicate modules:', error);
+      appLogger.errorSync('Error finding duplicate modules:', error);
       return [];
     }
   }
@@ -371,3 +372,4 @@ export class BundleAnalyzer implements IPerformanceAnalyzer {
     }
   }
 }
+

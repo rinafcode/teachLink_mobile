@@ -1,3 +1,4 @@
+import { appLogger } from '../../utils/logger';
 /**
  * Memory & Render Performance Analyzer
  * Analyzes memory usage, render performance, and component efficiency
@@ -139,7 +140,7 @@ export class MemoryAnalyzer implements IPerformanceAnalyzer {
         leaks.push(...leakPatterns);
       }
     } catch (error) {
-      console.error('Error analyzing hooks for leaks:', error);
+      appLogger.errorSync('Error analyzing hooks for leaks:', error);
     }
 
     return leaks;
@@ -246,7 +247,7 @@ export class MemoryAnalyzer implements IPerformanceAnalyzer {
         }
       }
     } catch (error) {
-      console.error('Error finding large objects:', error);
+      appLogger.errorSync('Error finding large objects:', error);
     }
 
     return largeObjects.sort((a, b) => b.size - a.size);
@@ -498,3 +499,4 @@ export class RenderAnalyzer implements IPerformanceAnalyzer {
     return slowComponents;
   }
 }
+
