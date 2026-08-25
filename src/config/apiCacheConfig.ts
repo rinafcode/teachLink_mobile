@@ -95,8 +95,14 @@ export function resolveEndpointPersistence(urlOrKey: string): boolean {
 /**
  * Defines which cache keys to invalidate after a successful mutation.
  * Keys are matched against the request URL using the provided RegExp patterns.
+ * Rules are indexed by HTTP method for O(1) method filtering.
  */
-export const MUTATION_INVALIDATION_MAP: {
+export interface InvalidationRule {
+  urlPattern: RegExp;
+  invalidatePatterns: RegExp[];
+}
+
+const _RAW_RULES: {
   urlPattern: RegExp;
   methods: string[];
   invalidatePatterns: RegExp[];
@@ -145,3 +151,37 @@ export const MUTATION_INVALIDATION_MAP: {
     invalidatePatterns: [/\/api\/lessons/],
   },
 ];
+
+/**
+ * Rules indexed by HTTP method. On mutation, only the subset for the
+ * given method is tested — avoiding unnecessary regex evaluations.
+ */
+export const MUTATION_INVALIDATION_MAP: Map<string, InvalidationRule[]> = new Map();
+
+for (const rule of _RAW_RULES) {
+  for (const method of rule.methods) {
+    const list = MUTATION_INVALIDATION_MAP.get(method) ?? [];
+    list.push({ urlPattern: rule.urlPattern, invalidatePatterns: rule.invalidatePatterns });
+    MUTATION_INVALIDATION_MAP.set(method, list);
+  }
+}
+
+// Startup assertion: reject any pattern that uses the `g` flag (stateful lastIndex).
+if (__DEV__) {
+  for (const [, rules] of MUTATION_INVALIDATION_MAP) {
+    for (const rule of rules) {
+      if (rule.urlPattern.flags.includes('g')) {
+        console.warn(
+          `[apiCacheConfig] urlPattern ${rule.urlPattern} uses the g flag — this is not safe for shared regex objects`,
+        );
+      }
+      for (const p of rule.invalidatePatterns) {
+        if (p.flags.includes('g')) {
+          console.warn(
+            `[apiCacheConfig] invalidatePattern ${p} uses the g flag — this is not safe for shared regex objects`,
+          );
+        }
+      }
+    }
+  }
+}

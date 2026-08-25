@@ -31,7 +31,7 @@ jest.mock('../src/config', () => ({
 }));
 
 jest.mock('../src/config/apiCacheConfig', () => ({
-  MUTATION_INVALIDATION_MAP: [],
+  MUTATION_INVALIDATION_MAP: new Map(),
 }));
 
 jest.mock('../src/config/security', () => ({
@@ -190,7 +190,7 @@ describe('Issue #838 — axios.config error handling branches', () => {
         return '';
       }),
     }));
-    jest.doMock('../src/config/apiCacheConfig', () => ({ MUTATION_INVALIDATION_MAP: [] }));
+    jest.doMock('../src/config/apiCacheConfig', () => ({ MUTATION_INVALIDATION_MAP: new Map() }));
     jest.doMock('../src/config/security', () => ({
       SSL_PINNING: { bypassEnabled: true },
     }));

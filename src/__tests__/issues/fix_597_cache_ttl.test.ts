@@ -81,9 +81,8 @@ describe('Issue #597 — pattern-based invalidation', () => {
   it('a POST to /subscriptions invalidates the /subscriptions GET cache', () => {
     setCache('api:/subscriptions', { plan: 'free' }, THIRTY_SECONDS, THIRTY_SECONDS);
 
-    const rule = MUTATION_INVALIDATION_MAP.find(
-      r => r.methods.includes('POST') && r.urlPattern.test('/api/subscriptions')
-    );
+    const rules = MUTATION_INVALIDATION_MAP.get('POST');
+    const rule = rules?.find(r => r.urlPattern.test('/api/subscriptions'));
     expect(rule).toBeDefined();
 
     // Mirror the axios response interceptor: run every invalidate pattern.
