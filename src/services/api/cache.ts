@@ -42,7 +42,6 @@ interface PersistedCacheEnvelope<T> {
 
 const CACHE_STORAGE_PREFIX = '@teachlink/api-cache:';
 const CACHE_ANALYTICS_INTERVAL_MS = 30_000;
-const CACHE_ANALYTICS_OPERATION_INTERVAL = 10;
 
 const store = new Map<string, CacheEntry<unknown>>();
 let currentCacheSize = 0;
@@ -56,7 +55,6 @@ let networkFetches = 0;
 let backgroundRevalidations = 0;
 let invalidations = 0;
 let evictions = 0;
-let operationsSinceAnalytics = 0;
 let lastAnalyticsAt = 0;
 
 const revalidatingKeys = new Set<string>();
@@ -147,7 +145,6 @@ export function resetCacheStats(): void {
   backgroundRevalidations = 0;
   invalidations = 0;
   evictions = 0;
-  operationsSinceAnalytics = 0;
   lastAnalyticsAt = 0;
 }
 
@@ -361,17 +358,11 @@ function recordNetworkFetch(): void {
 }
 
 function maybeReportCacheStats(reason: string): void {
-  operationsSinceAnalytics++;
-
   const now = Date.now();
-  if (
-    operationsSinceAnalytics < CACHE_ANALYTICS_OPERATION_INTERVAL &&
-    now - lastAnalyticsAt < CACHE_ANALYTICS_INTERVAL_MS
-  ) {
+  if (now - lastAnalyticsAt < CACHE_ANALYTICS_INTERVAL_MS) {
     return;
   }
 
-  operationsSinceAnalytics = 0;
   lastAnalyticsAt = now;
 
   const stats = getCacheStats();
