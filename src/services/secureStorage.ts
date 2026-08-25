@@ -520,7 +520,7 @@ export const tokenCache = new TokenCache();
 const INSTALL_UUID_KEY = '@teachlink/install_uuid';
 
 function generateInstallUUID(): string {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${Platform.OS}`;
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}-${Platform.OS}`;
 }
 
 async function checkHardwareBiometricEnrollment(): Promise<boolean> {

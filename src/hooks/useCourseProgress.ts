@@ -250,7 +250,7 @@ export function useCourseProgress({
     async (lessonId: string, content: string, timestamp: number): Promise<Note> => {
       if (!fullProgress) throw new Error('Progress not loaded');
       const note: Note = {
-        id: `note_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: `note_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
         lessonId,
         content,
         timestamp,

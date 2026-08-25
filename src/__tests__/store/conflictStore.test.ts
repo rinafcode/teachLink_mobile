@@ -17,7 +17,7 @@ jest.mock('../../utils/logger', () => ({
 }));
 
 const createMockConflict = (overrides?: Partial<ConflictData>): ConflictData => ({
-  id: `conflict_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+  id: `conflict_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
   entityId: 'note-123',
   entityType: 'note',
   localData: { title: 'Local Title', content: 'Local content' },

@@ -447,7 +447,7 @@ class MobileAuthService {
    */
   private _generateEnrollmentId(): string {
     const { Platform } = require('react-native');
-    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${Platform.OS}`;
+    return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}-${Platform.OS}`;
   }
 
   // ── Logout ────────────────────────────────────────────────────────────────
