@@ -71,6 +71,11 @@ build/
 
 # Testing
 coverage/
+report/
+reports/
+
+# Scratch/build artifacts
+files.txt
 
 app-example
 
