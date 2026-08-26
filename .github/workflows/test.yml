@@ -55,7 +55,7 @@ jobs:
           path: |
             .jest-cache
             coverage
-          key: ${{ runner.os }}-jest-${{ hashFiles('jest.config.js', 'src/**/*.test.ts', 'src/**/*.test.tsx', 'src/**/*.ts', 'src/**/*.tsx') }}
+          key: ${{ runner.os }}-jest-${{ hashFiles('jest.config.js', 'package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-jest-
 
@@ -63,12 +63,9 @@ jobs:
       # 🧪 RUN TESTS
       # ==============================
       - name: Run unit tests
-        run: npm test -- --runInBand --cache --cacheDirectory=.jest-cache
+        run: npm test -- --runInBand --testPathIgnorePatterns=perf --cache --cacheDirectory=.jest-cache
 
       - name: Run performance regression tests
-        run: npm test -- --testPathPattern=perf --runInBand --cache --cacheDirectory=.jest-cache
-
-      - name: Check performance budgets
         run: npm test -- --testPathPattern=perf --runInBand --verbose --cache --cacheDirectory=.jest-cache
 
       # ==============================
