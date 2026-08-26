@@ -1,4 +1,4 @@
-﻿export type ServiceName = 'streaming' | 'payment';
+export type ServiceName = 'streaming' | 'payment';
 export type FeatureFlagKey = 'streaming_courses' | 'payment_form';
 
 export interface FeatureFlagEntry {
