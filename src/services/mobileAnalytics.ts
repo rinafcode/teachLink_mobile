@@ -75,7 +75,7 @@ class MobileAnalyticsService {
 
   public startSession(): void {
     const timestamp = Date.now();
-    this.currentSessionId = `sess_${timestamp}_${Math.random().toString(36).substr(2, 9)}`;
+    this.currentSessionId = `sess_${timestamp}_${Math.random().toString(36).slice(2, 11)}`;
 
     this.trackEvent(AnalyticsEvent.SESSION_START, {
       sessionId: this.currentSessionId,

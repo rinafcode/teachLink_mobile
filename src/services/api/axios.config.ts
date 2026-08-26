@@ -599,7 +599,7 @@ apiClient.interceptors.response.use(
       const entityIdHeader = originalRequest.headers?.['X-Entity-Id'];
 
       const conflictData: ConflictData = {
-        id: `conflict_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: `conflict_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
         entityId: responseData?.entityId ?? String(entityIdHeader ?? ''),
         entityType: responseData?.entityType ?? String(entityTypeHeader ?? 'unknown'),
         localData: originalRequest.data,

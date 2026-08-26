@@ -304,7 +304,7 @@ class OfflineStorage {
   // === Utility Methods ===
 
   private generateOperationId(): string {
-    return `op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `op_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
   }
 
   /**
