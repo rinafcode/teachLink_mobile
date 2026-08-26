@@ -78,7 +78,7 @@ jest.mock('../../config', () => ({
 }));
 
 jest.mock('../../config/apiCacheConfig', () => ({
-  MUTATION_INVALIDATION_MAP: [],
+  MUTATION_INVALIDATION_MAP: new Map(),
 }));
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

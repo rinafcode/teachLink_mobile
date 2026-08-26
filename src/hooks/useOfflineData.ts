@@ -1,104 +1,28 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 
 import { useNetworkStatus } from './useNetworkStatus';
-import { offlineStorage } from '../services/offlineStorage';
 import { syncService } from '../services/syncService';
 import { logger } from '../utils/logger';
 
-import type { SyncConflictResolutionStrategy, SyncOperationType } from '../services/offlineStorage';
+import {
+  getOfflineFirst,
+  defaultSyncStats,
+  normalizeConflictStrategy,
+  mergeItemData,
+  normalizeStoredData,
+} from '../services/offlineFirst';
+
 import type { SyncStats } from '../services/syncService';
+import type {
+  DataSyncStatus,
+  OfflineConflictResolutionStrategy,
+  OfflineDataItem,
+  OfflineFirstOptions,
+} from '../services/offlineFirst';
 
-export type DataSyncStatus = 'synced' | 'pending' | 'conflict' | 'error';
-export type OfflineConflictResolutionStrategy =
-  | SyncConflictResolutionStrategy
-  | 'serverWins'
-  | 'clientWins'
-  | 'merge';
+export type { DataSyncStatus, OfflineConflictResolutionStrategy, OfflineDataItem };
 
-type MutationOperationType = Exclude<SyncOperationType, 'READ'>;
-
-export interface OfflineDataItem<T> {
-  id: string;
-  data: T;
-  status: DataSyncStatus;
-  lastModified: number;
-  syncAttempts: number;
-  errorMessage?: string;
-  version?: number;
-  baseData?: T;
-  serverData?: T;
-  operation?: MutationOperationType;
-  deleted?: boolean;
-  conflictResolutionStrategy?: SyncConflictResolutionStrategy;
-}
-
-export interface UseOfflineDataOptions<T = unknown> {
-  autoSync?: boolean;
-  maxSyncAttempts?: number;
-  conflictResolutionStrategy?: OfflineConflictResolutionStrategy;
-  endpointForItem?: (dataType: string, id: string, item?: OfflineDataItem<T>) => string;
-}
-
-const defaultSyncStats: SyncStats = {
-  pendingCount: 0,
-  failedCount: 0,
-  isSyncing: false,
-  successCount: 0,
-  failureCount: 0,
-  conflictCount: 0,
-  successRate: 1,
-};
-
-function normalizeConflictStrategy(
-  strategy: OfflineConflictResolutionStrategy
-): SyncConflictResolutionStrategy {
-  if (strategy === 'serverWins') return 'server-wins';
-  if (strategy === 'clientWins') return 'client-wins';
-  if (strategy === 'merge') return 'manual';
-  return strategy;
-}
-
-function mergeItemData<T>(currentData: T, patchData: Partial<T>): T {
-  if (
-    currentData !== null &&
-    typeof currentData === 'object' &&
-    patchData !== null &&
-    typeof patchData === 'object'
-  ) {
-    return {
-      ...(currentData as Record<string, unknown>),
-      ...(patchData as Record<string, unknown>),
-    } as T;
-  }
-
-  return patchData as T;
-}
-
-function normalizeStoredData<T>(
-  storedData: Record<string, OfflineDataItem<T>> | null
-): Record<string, OfflineDataItem<T>> {
-  if (!storedData) return {};
-
-  return Object.entries(storedData).reduce<Record<string, OfflineDataItem<T>>>(
-    (normalized, [id, item]) => {
-      normalized[id] = {
-        ...item,
-        id: item.id ?? id,
-        status: item.status ?? 'synced',
-        lastModified: item.lastModified ?? Date.now(),
-        syncAttempts: item.syncAttempts ?? 0,
-        version: item.version ?? 1,
-        deleted: item.deleted ?? false,
-      };
-      return normalized;
-    },
-    {}
-  );
-}
-
-function defaultEndpointForItem(dataType: string, id: string): string {
-  return `/${dataType}/${id}`;
-}
+export interface UseOfflineDataOptions<T = unknown> extends OfflineFirstOptions<T> {}
 
 /**
  * Hook for persisted offline-first data with queued mutations and conflict resolution.
@@ -108,7 +32,7 @@ export function useOfflineData<T>(dataType: string, options: UseOfflineDataOptio
     autoSync = true,
     maxSyncAttempts = 3,
     conflictResolutionStrategy = 'server-wins',
-    endpointForItem = defaultEndpointForItem,
+    endpointForItem,
   } = options;
 
   const defaultConflictStrategy = useMemo(
@@ -123,182 +47,79 @@ export function useOfflineData<T>(dataType: string, options: UseOfflineDataOptio
   const syncStartedForConnection = useRef(false);
   const { isOnline, refresh: refreshNetworkStatus } = useNetworkStatus();
 
+  const layer = useMemo(
+    () =>
+      getOfflineFirst<T>(dataType, {
+        autoSync,
+        maxSyncAttempts,
+        conflictResolutionStrategy,
+        endpointForItem,
+      }),
+    [dataType, autoSync, maxSyncAttempts, conflictResolutionStrategy, endpointForItem]
+  );
+
   const refreshSyncStats = useCallback(async () => {
     try {
-      const stats = await syncService.getSyncStats();
+      const stats = await layer.getRefreshSyncStats();
       setSyncStats(stats);
     } catch (error) {
       logger.error('Error loading sync stats:', error);
     }
-  }, []);
+  }, [layer]);
 
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const storedData =
-        await offlineStorage.retrieve<Record<string, OfflineDataItem<T>>>(dataType);
-
-      setData(normalizeStoredData(storedData));
+      const loaded = await layer.loadData();
+      setData(loaded);
     } catch (error) {
       logger.error(`Error loading ${dataType} data:`, error);
       setData({});
     } finally {
       setIsLoading(false);
     }
-  }, [dataType]);
-
-  const saveData = useCallback(
-    async (newData: Record<string, OfflineDataItem<T>>) => {
-      try {
-        await offlineStorage.store(dataType, newData);
-        setData(newData);
-      } catch (error) {
-        logger.error(`Error saving ${dataType} data:`, error);
-        throw error;
-      }
-    },
-    [dataType]
-  );
-
-  const getEndpoint = useCallback(
-    (id: string, item?: OfflineDataItem<T>) => endpointForItem(dataType, id, item),
-    [dataType, endpointForItem]
-  );
-
-  const queueMutation = useCallback(
-    async (item: OfflineDataItem<T>, operation: MutationOperationType) => {
-      await offlineStorage.addToSyncQueue({
-        type: operation,
-        endpoint: getEndpoint(item.id, item),
-        data: operation === 'DELETE' ? undefined : item.data,
-        priority: operation === 'CREATE' ? 'high' : 'medium',
-        localVersion: item.version,
-        lastModified: item.lastModified,
-        baseData: item.baseData,
-        conflictStrategy: item.conflictResolutionStrategy ?? defaultConflictStrategy,
-      });
-    },
-    [defaultConflictStrategy, getEndpoint]
-  );
-
-  const flushIfOnline = useCallback(async () => {
-    if (!autoSync || !isOnline) return;
-
-    try {
-      await syncService.manualSync();
-      await refreshSyncStats();
-    } catch (error) {
-      logger.error('Error flushing offline queue:', error);
-    }
-  }, [autoSync, isOnline, refreshSyncStats]);
+  }, [dataType, layer]);
 
   const addItem = useCallback(
     async (id: string, itemData: T): Promise<void> => {
       try {
-        const now = Date.now();
-        const newItem: OfflineDataItem<T> = {
-          id,
-          data: itemData,
-          status: 'pending',
-          lastModified: now,
-          syncAttempts: 0,
-          version: 1,
-          operation: 'CREATE',
-          deleted: false,
-          conflictResolutionStrategy: defaultConflictStrategy,
-        };
-
-        const updatedData = {
-          ...data,
-          [id]: newItem,
-        };
-
-        await saveData(updatedData);
-        await queueMutation(newItem, 'CREATE');
-        await flushIfOnline();
+        const updated = await layer.addItem(data, id, itemData);
+        setData(updated);
+        await layer.flushIfOnline(isOnline);
       } catch (error) {
         logger.error(`Error adding ${dataType} item:`, error);
         throw error;
       }
     },
-    [data, dataType, defaultConflictStrategy, flushIfOnline, queueMutation, saveData]
+    [data, dataType, isOnline, layer]
   );
 
   const updateItem = useCallback(
     async (id: string, itemData: Partial<T>): Promise<void> => {
       try {
-        const existingItem = data[id];
-        if (!existingItem || existingItem.deleted) {
-          throw new Error(`Item with id ${id} not found`);
-        }
-
-        const nextOperation: MutationOperationType =
-          existingItem.operation === 'CREATE' ? 'CREATE' : 'UPDATE';
-        const updatedItem: OfflineDataItem<T> = {
-          ...existingItem,
-          data: mergeItemData(existingItem.data, itemData),
-          status: 'pending',
-          lastModified: Date.now(),
-          syncAttempts: 0,
-          errorMessage: undefined,
-          version: (existingItem.version ?? 1) + 1,
-          baseData: existingItem.baseData ?? existingItem.data,
-          operation: nextOperation,
-          deleted: false,
-          conflictResolutionStrategy:
-            existingItem.conflictResolutionStrategy ?? defaultConflictStrategy,
-        };
-
-        const updatedData = {
-          ...data,
-          [id]: updatedItem,
-        };
-
-        await saveData(updatedData);
-        await queueMutation(updatedItem, nextOperation);
-        await flushIfOnline();
+        const updated = await layer.updateItem(data, id, itemData);
+        setData(updated);
+        await layer.flushIfOnline(isOnline);
       } catch (error) {
         logger.error(`Error updating ${dataType} item:`, error);
         throw error;
       }
     },
-    [data, dataType, defaultConflictStrategy, flushIfOnline, queueMutation, saveData]
+    [data, dataType, isOnline, layer]
   );
 
   const deleteItem = useCallback(
     async (id: string): Promise<void> => {
       try {
-        const existingItem = data[id];
-        if (!existingItem) return;
-
-        const deletedItem: OfflineDataItem<T> = {
-          ...existingItem,
-          status: 'pending',
-          lastModified: Date.now(),
-          syncAttempts: 0,
-          errorMessage: undefined,
-          version: (existingItem.version ?? 1) + 1,
-          baseData: existingItem.baseData ?? existingItem.data,
-          operation: 'DELETE',
-          deleted: true,
-          conflictResolutionStrategy:
-            existingItem.conflictResolutionStrategy ?? defaultConflictStrategy,
-        };
-
-        const updatedData = {
-          ...data,
-          [id]: deletedItem,
-        };
-
-        await saveData(updatedData);
-        await queueMutation(deletedItem, 'DELETE');
-        await flushIfOnline();
+        const updated = await layer.deleteItem(data, id);
+        setData(updated);
+        await layer.flushIfOnline(isOnline);
       } catch (error) {
         logger.error(`Error deleting ${dataType} item:`, error);
         throw error;
       }
     },
-    [data, dataType, defaultConflictStrategy, flushIfOnline, queueMutation, saveData]
+    [data, dataType, isOnline, layer]
   );
 
   const getItem = useCallback(
@@ -325,127 +146,49 @@ export function useOfflineData<T>(dataType: string, options: UseOfflineDataOptio
 
   const syncItem = useCallback(
     async (id: string): Promise<void> => {
-      const item = data[id];
-      if (!item) return;
-
       try {
         setIsSyncing(true);
-
-        const operation = item.operation ?? (item.deleted ? 'DELETE' : 'UPDATE');
-        await queueMutation(item, operation);
-
-        const updatedItem: OfflineDataItem<T> = {
-          ...item,
-          status: 'pending',
-          syncAttempts: item.syncAttempts + 1,
-          errorMessage: undefined,
-        };
-
-        const updatedData = {
-          ...data,
-          [id]: updatedItem,
-        };
-
-        await saveData(updatedData);
-        await flushIfOnline();
+        const updated = await layer.syncItem(data, id);
+        setData(updated);
+        await layer.flushIfOnline(isOnline);
       } catch (error) {
         logger.error(`Error syncing ${dataType} item ${id}:`, error);
-
-        const errorItem: OfflineDataItem<T> = {
-          ...item,
-          status: 'error',
-          errorMessage: error instanceof Error ? error.message : 'Unknown error',
-          syncAttempts: item.syncAttempts + 1,
-        };
-
-        await saveData({
-          ...data,
-          [id]: errorItem,
-        });
         throw error;
       } finally {
         setIsSyncing(false);
       }
     },
-    [data, dataType, flushIfOnline, queueMutation, saveData]
+    [data, dataType, isOnline, layer]
   );
 
   const syncAll = useCallback(async (): Promise<void> => {
     try {
       setIsSyncing(true);
-
-      const updatedData = { ...data };
-      const syncableItems = Object.values(data).filter(
-        item =>
-          (item.status === 'pending' || item.status === 'error') &&
-          item.syncAttempts < maxSyncAttempts
-      );
-
-      for (const item of syncableItems) {
-        const operation = item.operation ?? (item.deleted ? 'DELETE' : 'UPDATE');
-        await queueMutation(item, operation);
-        updatedData[item.id] = {
-          ...item,
-          status: 'pending',
-          syncAttempts: item.syncAttempts + 1,
-          errorMessage: undefined,
-        };
-      }
-
-      await saveData(updatedData);
-      await flushIfOnline();
+      const updated = await layer.syncAll(data);
+      setData(updated);
+      await layer.flushIfOnline(isOnline);
     } catch (error) {
       logger.error(`Error syncing all ${dataType} items:`, error);
       throw error;
     } finally {
       setIsSyncing(false);
     }
-  }, [data, dataType, flushIfOnline, maxSyncAttempts, queueMutation, saveData]);
+  }, [data, dataType, isOnline, layer]);
 
   const markAsSynced = useCallback(
     async (id: string): Promise<void> => {
-      const item = data[id];
-      if (!item) return;
-
-      const updatedData = { ...data };
-      if (item.deleted) {
-        delete updatedData[id];
-      } else {
-        updatedData[id] = {
-          ...item,
-          status: 'synced',
-          syncAttempts: 0,
-          errorMessage: undefined,
-          baseData: item.data,
-          serverData: undefined,
-          operation: undefined,
-          deleted: false,
-        };
-      }
-
-      await saveData(updatedData);
+      const updated = await layer.markAsSynced(data, id);
+      setData(updated);
     },
-    [data, saveData]
+    [data, layer]
   );
 
   const markConflict = useCallback(
     async (id: string, serverData: T, baseData?: T): Promise<void> => {
-      const item = data[id];
-      if (!item) return;
-
-      await saveData({
-        ...data,
-        [id]: {
-          ...item,
-          status: 'conflict',
-          serverData,
-          baseData: baseData ?? item.baseData ?? item.data,
-          errorMessage: 'Conflict detected during sync',
-          conflictResolutionStrategy: item.conflictResolutionStrategy ?? defaultConflictStrategy,
-        },
-      });
+      const updated = await layer.markConflict(data, id, serverData, baseData);
+      setData(updated);
     },
-    [data, defaultConflictStrategy, saveData]
+    [data, layer]
   );
 
   const resolveConflict = useCallback(
@@ -455,64 +198,26 @@ export function useOfflineData<T>(dataType: string, options: UseOfflineDataOptio
       strategy: OfflineConflictResolutionStrategy = conflictResolutionStrategy
     ): Promise<void> => {
       try {
-        const item = data[id];
-        if (!item) return;
-
-        const normalizedStrategy = normalizeConflictStrategy(strategy);
-        let nextData: T;
-
-        if (normalizedStrategy === 'server-wins') {
-          if (typeof item.serverData === 'undefined' && typeof resolvedData === 'undefined') {
-            throw new Error(`Server data is required to resolve conflict for ${id}`);
-          }
-          nextData = typeof item.serverData === 'undefined' ? (resolvedData as T) : item.serverData;
-        } else if (normalizedStrategy === 'client-wins') {
-          nextData = item.data;
-        } else {
-          if (typeof resolvedData === 'undefined') {
-            throw new Error(`Manual conflict resolution requires resolved data for ${id}`);
-          }
-          nextData = resolvedData;
-        }
-
-        const resolvedItem: OfflineDataItem<T> = {
-          ...item,
-          data: nextData,
-          status: 'pending',
-          lastModified: Date.now(),
-          syncAttempts: 0,
-          errorMessage: undefined,
-          version: (item.version ?? 1) + 1,
-          baseData: item.baseData ?? item.data,
-          serverData: undefined,
-          operation: 'UPDATE',
-          deleted: false,
-          conflictResolutionStrategy: normalizedStrategy,
-        };
-
-        await saveData({
-          ...data,
-          [id]: resolvedItem,
-        });
-        await queueMutation(resolvedItem, 'UPDATE');
-        await flushIfOnline();
+        const updated = await layer.resolveConflict(data, id, resolvedData, strategy);
+        setData(updated);
+        await layer.flushIfOnline(isOnline);
       } catch (error) {
         logger.error(`Error resolving conflict for ${dataType} item ${id}:`, error);
         throw error;
       }
     },
-    [conflictResolutionStrategy, data, dataType, flushIfOnline, queueMutation, saveData]
+    [conflictResolutionStrategy, data, dataType, isOnline, layer]
   );
 
   const clearAll = useCallback(async (): Promise<void> => {
     try {
-      await offlineStorage.remove(dataType);
+      await layer.clearAll();
       setData({});
     } catch (error) {
       logger.error(`Error clearing ${dataType} data:`, error);
       throw error;
     }
-  }, [dataType]);
+  }, [dataType, layer]);
 
   const refresh = useCallback(async (): Promise<void> => {
     await loadData();

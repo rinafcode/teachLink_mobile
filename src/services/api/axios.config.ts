@@ -134,13 +134,16 @@ function invalidateSuccessfulMutationCache(config: InternalAxiosRequestConfig): 
     return;
   }
 
-  // Pattern-based invalidation from config map
-  for (const rule of MUTATION_INVALIDATION_MAP) {
-    if (rule.methods.includes(method) && rule.urlPattern.test(url)) {
-      for (const pattern of rule.invalidatePatterns) {
-        invalidateByPattern(pattern);
+  // Pattern-based invalidation from config map — O(1) method lookup
+  const rules = MUTATION_INVALIDATION_MAP.get(method);
+  if (rules) {
+    for (const rule of rules) {
+      if (rule.urlPattern.test(url)) {
+        for (const pattern of rule.invalidatePatterns) {
+          invalidateByPattern(pattern);
+        }
+        return;
       }
-      return;
     }
   }
 
@@ -237,6 +240,20 @@ function processRefreshQueue(token: string | null, error: unknown) {
   refreshQueue = [];
 }
 
+// ─── Session accessor (injected by store bootstrap) ────────────────────────
+// The API layer should not depend on the store.  A module-level accessor is
+// set once during app init; the request interceptor delegates to it.
+
+interface SessionAccessor {
+  isAuthenticated: boolean;
+  sessionExpiresAt: number | null;
+  logout: () => void;
+}
+
+let _getSession: (() => SessionAccessor) | null = null;
+
+export function setSessionAccessor(accessor: () => SessionAccessor): void {
+  _getSession = accessor;
 // ─── Request ID generation ──────────────────────────────────────────────────
 // One native crypto call per session; derive per-request IDs from a counter.
 
@@ -277,14 +294,16 @@ apiClient.interceptors.request.use(
     // Hard-block any authenticated request when the session has already expired.
     // The foreground check in App.tsx handles proactive refresh; this is the
     // safety net for requests that slip through while the app is in use.
-    const { isAuthenticated, sessionExpiresAt } = useAppStore.getState();
-    if (isAuthenticated && sessionExpiresAt !== null && Date.now() >= sessionExpiresAt) {
-      useAppStore.getState().logout();
-      return Promise.reject({
-        message: 'Session expired. Please log in again.',
-        code: 'SESSION_EXPIRED',
-        status: 401,
-      });
+    if (_getSession) {
+      const { isAuthenticated, sessionExpiresAt, logout } = _getSession();
+      if (isAuthenticated && sessionExpiresAt !== null && Date.now() >= sessionExpiresAt) {
+        logout();
+        return Promise.reject({
+          message: 'Session expired. Please log in again.',
+          code: 'SESSION_EXPIRED',
+          status: 401,
+        });
+      }
     }
 
     const token = await getAccessToken();

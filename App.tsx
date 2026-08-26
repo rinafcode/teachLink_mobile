@@ -78,6 +78,14 @@ initializeLogging().catch(err => {
   }
 });
 
+// Wire session accessor so the API layer can check expiry without importing the store
+import { setSessionAccessor } from './src/services/api/axios.config';
+
+setSessionAccessor(() => {
+  const { isAuthenticated, sessionExpiresAt, logout } = useAppStore.getState();
+  return { isAuthenticated, sessionExpiresAt, logout };
+});
+
 if (__DEV__) {
   appLogger.infoSync('Development mode: centralized logger active');
   LogBox.ignoreLogs(['Non-serializable values were found in the navigation state']);
