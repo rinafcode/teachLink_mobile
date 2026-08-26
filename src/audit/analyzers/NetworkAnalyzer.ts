@@ -1,3 +1,4 @@
+import { appLogger } from '../../utils/logger';
 /**
  * Network & Dependency Performance Analyzer
  * Analyzes network requests, dependencies, and related optimizations
@@ -125,7 +126,7 @@ export class NetworkAnalyzer implements IPerformanceAnalyzer {
         }
       }
     } catch (error) {
-      console.error('Error analyzing endpoints:', error);
+      appLogger.errorSync('Error analyzing endpoints:', error);
     }
 
     return endpoints.sort((a, b) => b.avgLatency - a.avgLatency).slice(0, 10);
@@ -173,7 +174,7 @@ export class NetworkAnalyzer implements IPerformanceAnalyzer {
         }
       }
     } catch (error) {
-      console.error('Error finding redundant requests:', error);
+      appLogger.errorSync('Error finding redundant requests:', error);
     }
 
     return requests;
@@ -216,7 +217,7 @@ export class NetworkAnalyzer implements IPerformanceAnalyzer {
 
       walkDir(assetsPath);
     } catch (error) {
-      console.error('Error finding unoptimized assets:', error);
+      appLogger.errorSync('Error finding unoptimized assets:', error);
     }
 
     return assets.sort((a, b) => b.savings - a.savings).slice(0, 10);
@@ -436,7 +437,7 @@ export class DependencyAnalyzer implements IPerformanceAnalyzer {
         }
       }
     } catch (error) {
-      console.error('Error finding transitive deps:', error);
+      appLogger.errorSync('Error finding transitive deps:', error);
     }
 
     return deps.sort((a, b) => b.totalSize - a.totalSize).slice(0, 10);
@@ -485,7 +486,7 @@ export class DependencyAnalyzer implements IPerformanceAnalyzer {
         }
       }
     } catch (error) {
-      console.error('Error checking licenses:', error);
+      appLogger.errorSync('Error checking licenses:', error);
     }
 
     return issues;
@@ -528,3 +529,4 @@ export class DependencyAnalyzer implements IPerformanceAnalyzer {
     return size;
   }
 }
+

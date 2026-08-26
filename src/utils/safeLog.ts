@@ -9,16 +9,14 @@
 
 /**
  * Runs `log`, swallowing any failure it raises so the caller's control flow
- * is unaffected. Falls back to console.error so the logger's own failure
+ * is unaffected. Falls back to console error so the logger's own failure
  * stays visible rather than disappearing silently.
  */
 export function safeLog(log: () => void): void {
   try {
     log();
   } catch (loggerError) {
-    try {
-      console.error('[safeLog] logger threw and was suppressed:', loggerError);
-    } catch {
+      void loggerError; // Suppressed
       // Console is unavailable too — drop it rather than break the caller.
     }
   }
@@ -29,6 +27,6 @@ export async function safeLogAsync(log: () => Promise<void>): Promise<void> {
   try {
     await log();
   } catch (loggerError) {
-    safeLog(() => console.error('[safeLogAsync] logger threw and was suppressed:', loggerError));
+    safeLog(() => { void loggerError; });
   }
 }

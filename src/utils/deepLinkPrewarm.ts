@@ -6,6 +6,7 @@ import { sampleCourse } from '../data/sampleCourse';
 import { offlineStorage } from '../services/offlineStorage';
 import { Course } from '../types/course';
 import { NotificationData, NotificationType } from '../types/notifications';
+import { appLogger } from './logger';
 
 export async function getInitialDeepLinkUrl(): Promise<string | null> {
   try {
@@ -19,13 +20,13 @@ export async function getInitialDeepLinkUrl(): Promise<string | null> {
       return buildDeepLinkUrlFromNotification(data);
     }
   } catch (error) {
-    console.warn('Unable to read initial notification deep link:', error);
+    appLogger.warnSync('Unable to read initial notification deep link:', error);
   }
 
   try {
     return await Linking.getInitialURL();
   } catch (error) {
-    console.warn('Unable to read initial deep link URL:', error);
+    appLogger.warnSync('Unable to read initial deep link URL:', error);
     return null;
   }
 }
@@ -90,10 +91,10 @@ export async function prewarmCourse(courseId: string) {
         return courseData as Course;
       }
     } catch (error) {
-      console.warn('Failed to fetch course prewarm data from network:', error);
+      appLogger.warnSync('Failed to fetch course prewarm data from network:', error);
     }
   } catch (error) {
-    console.warn('Failed to prewarm course data:', error);
+    appLogger.warnSync('Failed to prewarm course data:', error);
   }
 
   return null;

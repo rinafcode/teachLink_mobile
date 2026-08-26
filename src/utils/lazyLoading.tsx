@@ -6,6 +6,7 @@
  */
 
 import React, { ComponentType, LazyExoticComponent, ReactNode, Suspense } from 'react';
+import { appLogger } from './logger';
 
 /**
  * Performance metrics for lazy-loaded components
@@ -42,7 +43,7 @@ class LazyLoadingTracker {
       metric.loadEndTime = Date.now();
       metric.loadDurationMs = metric.loadEndTime - metric.loadStartTime;
       metric.status = 'loaded';
-      console.log(`[LazyLoad] ${componentName} loaded in ${metric.loadDurationMs}ms`);
+      appLogger.infoSync(`[LazyLoad] ${componentName} loaded in ${metric.loadDurationMs}ms`);
     }
   }
 
@@ -51,7 +52,7 @@ class LazyLoadingTracker {
     if (metric) {
       metric.error = error;
       metric.status = 'error';
-      console.error(`[LazyLoad] ${componentName} failed to load:`, error);
+      appLogger.errorSync(`[LazyLoad] ${componentName} failed to load:`, error);
     }
   }
 
@@ -125,7 +126,7 @@ class LazyLoadErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error) {
-    console.error(`[LazyLoad] Error in ${this.props.componentName || 'component'}:`, error);
+    appLogger.errorSync(`[LazyLoad] Error in ${this.props.componentName || 'component'}:`, error);
     this.props.onError?.(error);
   }
 

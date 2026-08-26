@@ -1,3 +1,4 @@
+import { appLogger } from './logger';
 // ─── Toast helpers ────────────────────────────────────────────────────────────
 // Wraps whatever toast library the project uses (e.g. react-native-toast-message,
 // burnt, react-hot-toast) behind a stable interface so imports don't scatter
@@ -25,7 +26,7 @@ function show(type: ToastType, message: string, options: ToastOptions = {}): voi
   // For now, fall back to console so nothing crashes in tests or stubs.
   const prefix = `[${type.toUpperCase()}]`;
   // eslint-disable-next-line no-console
-  console.log(`${prefix} ${message}`);
+  appLogger.infoSync(`${prefix} ${message}`);
 }
 
 export function showSuccessToast(message: string, options?: ToastOptions): void {

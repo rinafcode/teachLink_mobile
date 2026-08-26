@@ -1,4 +1,5 @@
 import React from 'react';
+import { appLogger } from './logger';
 
 /**
  * Gesture Performance Monitoring Utility
@@ -151,7 +152,7 @@ export function useGesturePerformanceMonitor(gestureType: string, enabled: boole
       }
 
       const metrics = monitor.end();
-      console.log(`[GesturePerformance] ${gestureType}:`, metrics);
+      appLogger.infoSync(`[GesturePerformance] ${gestureType}:`, metrics);
     };
   }, [enabled, gestureType]);
 
