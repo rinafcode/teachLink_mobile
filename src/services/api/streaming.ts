@@ -80,7 +80,7 @@ class StreamingApiService {
    *     results.push(chunk.data);
    *     updateUI(results);
    *   },
-   *   onFirstByte: (ttfb) => console.log(`TTFB: ${ttfb}ms`),
+   *   onFirstByte: (ttfb) => appLogger.infoSync(`TTFB: ${ttfb}ms`),
    * });
    * ```
    */

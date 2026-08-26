@@ -15,6 +15,7 @@ import { useSettingsStore } from '../../store/settingsStore';
 import { ImageCache } from '../../utils/imageCache';
 import { buildOptimizedImageSources } from '../../utils/imageOptimization';
 import { logger } from '../../utils/logger';
+import { appLogger } from '../../utils/logger';
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
@@ -109,7 +110,7 @@ function resolveStyleDimension(
  *   style={{ width: 100, height: 100 }}
  *   autoPrefetch={true}
  *   enableDimensionDetection={true}
- *   onLoadComplete={() => console.log('Image loaded')}
+ *   onLoadComplete={() => appLogger.infoSync('Image loaded')}
  * />
  * ```
  */

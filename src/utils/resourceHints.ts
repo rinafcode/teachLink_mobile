@@ -16,6 +16,7 @@
 import { Platform } from 'react-native';
 
 import { requireEnvVariables } from '../config';
+import { appLogger } from './logger';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -196,7 +197,7 @@ export async function applyResourceHints(
 export function prefetchExternalResources(): void {
   applyResourceHints(getResourceHints()).then(result => {
     if (__DEV__) {
-      console.log(
+      appLogger.infoSync(
         `[ResourceHints] preconnect/dns-prefetch: ` +
           `${result.succeeded.length} succeeded, ${result.failed.length} failed`
       );

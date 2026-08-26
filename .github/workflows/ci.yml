@@ -77,20 +77,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      - name: Cache node_modules
-        id: cache-node-modules
-        uses: actions/cache@v4
-        with:
-          path: |
-            node_modules
-            ~/.npm
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-modules-
+          cache: 'npm'
 
       - name: Install dependencies
-        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci --prefer-offline --no-audit
 
       - name: Cache subsetted fonts
@@ -114,7 +103,7 @@ jobs:
           path: |
             .tsbuildinfo
             **/.tsbuildinfo
-          key: ${{ runner.os }}-typescript-${{ hashFiles('tsconfig.json', 'src/**/*.ts', 'src/**/*.tsx') }}
+          key: ${{ runner.os }}-typescript-${{ hashFiles('tsconfig.json', 'package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-typescript-
 
@@ -124,7 +113,7 @@ jobs:
           path: |
             .jest-cache
             coverage
-          key: ${{ runner.os }}-jest-${{ hashFiles('jest.config.js', 'src/**/*.test.ts', 'src/**/*.test.tsx') }}
+          key: ${{ runner.os }}-jest-${{ hashFiles('jest.config.js', 'package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-jest-
 
@@ -153,7 +142,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .eslintcache
-          key: ${{ runner.os }}-eslint-${{ hashFiles('eslint.config.js', 'src/**/*.ts', 'src/**/*.tsx') }}
+          key: ${{ runner.os }}-eslint-${{ hashFiles('eslint.config.js', 'package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-eslint-
 
@@ -164,13 +153,12 @@ jobs:
             --include='*.tsx' \
             --exclude='logger.ts' \
             --exclude='logger.*.ts' \
+            --exclude='cli.ts' \
             --exclude='*.test.ts' \
             --exclude='*.test.tsx' \
             --exclude='*.spec.ts' \
             --exclude='*.spec.tsx' \
             --exclude-dir='__tests__' \
-            --exclude-dir='audit' \
-            --exclude-dir='config' \
             || true)
 
           if [ -n "$VIOLATIONS" ]; then

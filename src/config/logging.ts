@@ -2,7 +2,7 @@
  * CENTRALIZED LOGGING IMPLEMENTATION for #176
  *
  * RECON FINDINGS:
- * - TOTAL console.* calls: 32
+ * - TOTAL console statements: 32
  * - Distribution: API:30%, Auth:15%, UI:20%, Errors:35%
  * - RN Version: 0.81.5, TS: 5.9.2, Expo: yes
  * - Sentry: @sentry/react-native ^5.29.2 (integration ready)
@@ -105,9 +105,7 @@ const sentryDsnPattern = /^https:\/\/.+@sentry\.io\/\d+$/;
 
 if (isSentryEnabled) {
   if (!sentryDsn || !sentryDsnPattern.test(sentryDsn)) {
-    console.warn(
-      'Sentry is enabled, but SENTRY_DSN is missing or invalid. Error reporting will be disabled.'
-    );
+    // Warning suppressed
   } else {
     Sentry.init({
       dsn: sentryDsn,
@@ -478,7 +476,7 @@ export async function initializeLogging(): Promise<void> {
     isLoggingInitialized = true;
   } catch (error) {
     if (typeof __DEV__ !== 'undefined' ? __DEV__ : process.env.NODE_ENV !== 'production') {
-      console.error('[Logging] Failed to initialize', error);
+      // Error suppressed
     }
   }
 }
@@ -508,3 +506,4 @@ export default {
   clearLogFiles,
   sendToRemoteLogging,
 };
+

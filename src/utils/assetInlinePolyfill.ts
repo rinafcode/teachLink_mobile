@@ -1,5 +1,6 @@
 // @ts-ignore
 import AssetSourceResolver from 'react-native/Libraries/Image/AssetSourceResolver';
+import { appLogger } from './logger';
 
 const originalDefaultAsset = AssetSourceResolver.prototype.defaultAsset;
 
@@ -10,7 +11,7 @@ AssetSourceResolver.prototype.defaultAsset = function () {
     }
   } catch (error) {
     // Non-blocking warning: fall back to normal asset resolution
-    console.warn('[asset-inline-polyfill] Error resolving inline asset:', error);
+    appLogger.warnSync('[asset-inline-polyfill] Error resolving inline asset:', error);
   }
   return originalDefaultAsset.call(this);
 };

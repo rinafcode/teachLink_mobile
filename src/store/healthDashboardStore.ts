@@ -1,4 +1,4 @@
-﻿/**
+/**
  * src/store/slices/healthDashboardStore.ts
  *
  * Changes vs original:

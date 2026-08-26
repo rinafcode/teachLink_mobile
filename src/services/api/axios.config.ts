@@ -254,13 +254,27 @@ let _getSession: (() => SessionAccessor) | null = null;
 
 export function setSessionAccessor(accessor: () => SessionAccessor): void {
   _getSession = accessor;
+// ─── Request ID generation ──────────────────────────────────────────────────
+// One native crypto call per session; derive per-request IDs from a counter.
+
+let _sessionRequestId = '';
+let _requestCounter = 0;
+
+function initSessionRequestId(): void {
+  _sessionRequestId = Crypto.randomUUID();
+  _requestCounter = 0;
+}
+
+function nextRequestId(): string {
+  if (!_sessionRequestId) initSessionRequestId();
+  return `${_sessionRequestId}-${++_requestCounter}`;
 }
 
 // ─── Request interceptor ───────────────────────────────────────────────────
 
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig & { _requestStartMs?: number }) => {
-    const requestId = Crypto.randomUUID();
+    const requestId = nextRequestId();
     config.headers['X-Request-ID'] = requestId;
     pushLogContext({ requestId });
 
@@ -311,21 +325,23 @@ apiClient.interceptors.request.use(
 );
 
 // ─── Image format request interceptor ──────────────────────────────────────
-// Negotiate WebP format via Accept header for image-serving API endpoints.
+// Short-circuit: cheap substring check before any regex evaluation.
+// Only matches image-serving endpoints; folded into the main interceptor.
 
-const IMAGE_PATH_PATTERNS = [
-  /\/images?\//,
-  /\/uploads?\//,
-  /\/avatars?\//,
-  /\/media\//,
-  /\.(png|jpg|jpeg|gif|webp|avif)/i,
-];
+const IMAGE_ACCEPT_HEADER = 'image/avif,image/webp,image/png,image/jpeg,*/*;q=0.8';
+
+const IMAGE_PATH_PREFIXES = ['/images', '/image', '/uploads', '/upload', '/avatars', '/avatar', '/media'];
+
+function looksLikeImageUrl(url: string): boolean {
+  if (!IMAGE_PATH_PREFIXES.some(p => url.includes(p))) return false;
+  return /\.(png|jpg|jpeg|gif|webp|avif)(\?|$)/i.test(url);
+}
 
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const url = config.url ?? '';
-    if (IMAGE_PATH_PATTERNS.some(pattern => pattern.test(url))) {
-      config.headers.Accept = 'image/avif,image/webp,image/png,image/jpeg,*/*;q=0.8';
+    if (looksLikeImageUrl(url)) {
+      config.headers.Accept = IMAGE_ACCEPT_HEADER;
     }
     return config;
   },
@@ -620,7 +636,7 @@ apiClient.interceptors.response.use(
       const entityIdHeader = originalRequest.headers?.['X-Entity-Id'];
 
       const conflictData: ConflictData = {
-        id: `conflict_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: `conflict_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
         entityId: responseData?.entityId ?? String(entityIdHeader ?? ''),
         entityType: responseData?.entityType ?? String(entityTypeHeader ?? 'unknown'),
         localData: originalRequest.data,

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { appLogger } from '../../utils/logger';
 
 export interface UseModalStackResult {
   zIndex: number;
@@ -93,7 +94,7 @@ export class ModalStackManager {
       try {
         listener();
       } catch (e) {
-        console.error('Error in ModalStackManager listener:', e);
+        appLogger.errorSync('Error in ModalStackManager listener:', e);
       }
     });
   }

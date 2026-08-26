@@ -257,6 +257,8 @@ export async function saveTokens(
     setItem(KEYS.SESSION_EXPIRES_AT, String(expiresAt), false, 'saveTokens'),
   ]);
 
+  tokenCache.set(KEYS.ACCESS_TOKEN, accessToken);
+
   logger.info('✅ Tokens saved securely to Keychain/Keystore', {
     platform: Platform.OS,
     backend: Platform.OS === 'ios' ? 'Keychain' : 'Keystore',
@@ -264,11 +266,16 @@ export async function saveTokens(
 }
 
 /**
- * Get access token from encrypted storage
+ * Get access token from encrypted storage, using in-memory cache to avoid
+ * repeated SecureStore reads on the UI thread.
  * Throws error if retrieval fails (sensitive data)
  */
 export async function getAccessToken(): Promise<string | null> {
-  return getItem(KEYS.ACCESS_TOKEN, true, 'getAccessToken');
+  const cached = tokenCache.get(KEYS.ACCESS_TOKEN);
+  if (cached) return cached;
+  const token = await getItem(KEYS.ACCESS_TOKEN, true, 'getAccessToken');
+  if (token) tokenCache.set(KEYS.ACCESS_TOKEN, token);
+  return token;
 }
 
 /**
@@ -291,6 +298,7 @@ export async function getSessionExpiresAt(): Promise<number | null> {
  * Clear all authentication tokens from encrypted storage
  */
 export async function clearTokens(): Promise<void> {
+  tokenCache.clear();
   await Promise.all([
     removeItem(KEYS.ACCESS_TOKEN, 'clearTokens'),
     removeItem(KEYS.REFRESH_TOKEN, 'clearTokens'),
@@ -411,11 +419,10 @@ export async function clearBiometricEnrollmentId(): Promise<void> {
 // ──────────────────────────────────────────────────────────────────────────────
 
 // ─── Token Cache ──────────────────────────────────────────────────────────────
-// NOTE: TokenCache stores only NON-SENSITIVE cache metadata (timestamps,
-// search query text). The actual tokens live in SecureStore. This cache
-// exists to avoid repeated SecureStore reads on the UI thread.
+// SECURITY: TokenCache is MEMORY-ONLY. No values are written to AsyncStorage
+// to prevent token leakage through unencrypted storage. The cache exists solely
+// to avoid repeated SecureStore reads on the UI thread.
 
-const TOKEN_CACHE_KEY = '@teachlink_token_cache';
 const DEFAULT_TTL_MS = 5 * 60 * 1_000; // 5 minutes
 
 interface CacheEntry {
@@ -426,42 +433,9 @@ interface CacheEntry {
 
 class TokenCache {
   private memory: Map<string, CacheEntry> = new Map();
-  private initialized = false;
 
   private isExpired(entry: CacheEntry): boolean {
     return Date.now() > entry.expiresAt;
-  }
-
-  private async persist(): Promise<void> {
-    try {
-      const obj: Record<string, CacheEntry> = {};
-      this.memory.forEach((entry, key) => {
-        if (!this.isExpired(entry)) {
-          obj[key] = entry;
-        }
-      });
-      await AsyncStorage.setItem(TOKEN_CACHE_KEY, JSON.stringify(obj));
-    } catch {
-      // Non-critical; cache will warm from SecureStore on next read
-    }
-  }
-
-  async init(): Promise<void> {
-    if (this.initialized) return;
-    try {
-      const raw = await AsyncStorage.getItem(TOKEN_CACHE_KEY);
-      if (raw) {
-        const parsed: Record<string, CacheEntry> = JSON.parse(raw);
-        for (const [key, entry] of Object.entries(parsed)) {
-          if (!this.isExpired(entry)) {
-            this.memory.set(key, entry);
-          }
-        }
-      }
-    } catch {
-      // Ignore
-    }
-    this.initialized = true;
   }
 
   get(key: string): string | null {
@@ -469,34 +443,26 @@ class TokenCache {
     if (!entry) return null;
     if (this.isExpired(entry)) {
       this.memory.delete(key);
-      this.persist();
       return null;
     }
     return entry.value;
   }
 
-  async set(key: string, value: string, ttlMs: number = DEFAULT_TTL_MS): Promise<void> {
+  set(key: string, value: string, ttlMs: number = DEFAULT_TTL_MS): void {
     const entry: CacheEntry = {
       value,
       expiresAt: Date.now() + ttlMs,
       createdAt: Date.now(),
     };
     this.memory.set(key, entry);
-    await this.persist();
   }
 
   invalidate(key: string): void {
     this.memory.delete(key);
-    this.persist();
   }
 
-  async clear(): Promise<void> {
+  clear(): void {
     this.memory.clear();
-    try {
-      await AsyncStorage.removeItem(TOKEN_CACHE_KEY);
-    } catch {
-      // Ignore
-    }
   }
 
   get size(): number {
@@ -520,7 +486,7 @@ export const tokenCache = new TokenCache();
 const INSTALL_UUID_KEY = '@teachlink/install_uuid';
 
 function generateInstallUUID(): string {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${Platform.OS}`;
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}-${Platform.OS}`;
 }
 
 async function checkHardwareBiometricEnrollment(): Promise<boolean> {

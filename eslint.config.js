@@ -89,7 +89,7 @@ module.exports = defineConfig([
       'jsx-a11y/aria-proptypes': 'warn',
       'jsx-a11y/aria-unsupported-elements': 'warn',
 
-      'no-console': ['error', { allow: ['warn', 'error'] }],
+      'no-console': 'error',
     },
   },
 ]);

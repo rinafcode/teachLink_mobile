@@ -12,6 +12,7 @@ import { useNotificationPermission } from '../../hooks';
 import { useNotificationStore } from '../../store/notificationStore';
 import { NotificationPreferences } from '../../types/notifications';
 import { configureNext } from '../../utils/layoutAnimation';
+import { appLogger } from '../../utils/logger';
 
 interface SettingRowProps {
   icon: string;
@@ -73,7 +74,7 @@ export const NotificationSettings = () => {
         // try {
         //   await api.updateNotificationPreferences({ [key]: value });
         // } catch (error) {
-        //   console.error('Failed to sync notification preferences:', error);
+        //   appLogger.errorSync('Failed to sync notification preferences:', error);
         //   // Preferences are still saved locally even if sync fails
         // }
       } finally {

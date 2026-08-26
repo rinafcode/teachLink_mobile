@@ -17,7 +17,6 @@ import { Asset } from 'expo-asset';
 import * as Updates from 'expo-updates';
 import { CRITICAL_ASSETS } from './src/constants/assets';
 
-import StorybookUI from './.rnstorybook';
 import './global.css';
 import { ErrorBoundary } from './src/components/common/ErrorBoundary';
 import UpdatePromptModal from './src/components/common/UpdatePromptModal';
@@ -57,7 +56,7 @@ import {
     subscribeToHydrationResetToast,
 } from './src/store/persistence';
 import { handleCacheVersionUpdate } from './src/utils/cacheVersioning';
-import { requireEnvVariables } from './src/utils/env';
+import { requireEnvVariables } from './src/config/env';
 import { appLogger } from './src/utils/logger';
 
 // Keep the splash screen visible while we fetch resources
@@ -90,9 +89,6 @@ setSessionAccessor(() => {
 if (__DEV__) {
   appLogger.infoSync('Development mode: centralized logger active');
   LogBox.ignoreLogs(['Non-serializable values were found in the navigation state']);
-} else {
-  // Strip all logs except errors in production for performance
-  console.log = () => {};
 }
 
 const CacheRevalidationBanner = () => {
@@ -567,4 +563,8 @@ const App = () => {
   );
 };
 
-export default SHOW_STORYBOOK ? StorybookUI : App;
+const StorybookScreen = SHOW_STORYBOOK
+  ? require('./.rnstorybook').default
+  : null;
+
+export default SHOW_STORYBOOK ? StorybookScreen : App;
