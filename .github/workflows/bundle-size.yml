@@ -1,0 +1,177 @@
+name: Bundle Size Tracking
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  bundle-size:
+    runs-on: ubuntu-latest
+    
+    env:
+      EXPO_PUBLIC_API_BASE_URL: https://api.teachlink.com
+      EXPO_PUBLIC_SOCKET_URL: wss://api.teachlink.com
+      EXPO_PUBLIC_APP_ENV: production
+      EXPO_PUBLIC_ENABLE_PUSH_NOTIFICATIONS: true
+      
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build web bundle with stats
+        run: npx expo export --platform web --output-dir ./dist --stats-output ./dist/stats.json
+
+      - name: Lighthouse CI
+        run: npx lhci autorun --config=./lighthouserc.json
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: Upload bundle stats artifact
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-stats-${{ github.sha }}
+          path: ./dist/stats.json
+          retention-days: 7
+
+      - name: Store bundle size history
+        if: github.ref == 'refs/heads/main'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const { Octokit } = require("@octokit/rest");
+            const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const historyFile = 'bundle-size-history.json';
+
+            let history = [];
+            try {
+              const { data: artifact } = await octokit.actions.listArtifactsForRepo({
+                owner,
+                repo,
+                name: 'bundle-size-history',
+              }).then(res => res.data.artifacts[0]);
+
+              if (artifact) {
+                const download = await octokit.actions.downloadArtifact({
+                  owner,
+                  repo,
+                  artifact_id: artifact.id,
+                  archive_format: 'zip',
+                });
+                const AdmZip = require('adm-zip');
+                const zip = new AdmZip(Buffer.from(download.data));
+                history = JSON.parse(zip.readAsText(historyFile));
+              }
+            } catch (error) {
+              console.log('No existing history artifact found, creating a new one.');
+            }
+
+            const stats = JSON.parse(fs.readFileSync('./dist/stats.json', 'utf8'));
+            const totalSize = stats.assets.reduce((sum, a) => sum + a.size, 0);
+
+            history.push({
+              sha: context.sha,
+              date: new Date().toISOString(),
+              totalSize,
+              assets: stats.assets.map(a => ({ name: a.name, size: a.size })),
+            });
+
+            fs.writeFileSync(historyFile, JSON.stringify(history, null, 2));
+
+      - name: Upload bundle size history
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-size-history
+          path: bundle-size-history.json
+          retention-days: 90
+
+      - name: Download base branch bundle size
+        if: github.event_name == 'pull_request'
+        uses: actions/download-artifact@v4
+        with:
+          name: bundle-stats-${{ github.event.pull_request.base.sha }}
+          path: ./base-bundle
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.pull_request.base.repo.id }}-${{ github.event.pull_request.base.sha }}
+
+
+      - name: Compare bundle sizes and comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            function parseStats(filePath) {
+              if (!fs.existsSync(filePath)) return null;
+              const stats = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+              const mainBundle = stats.assets.find(a => a.name === 'main.js');
+              return {
+                totalSize: stats.assets.reduce((sum, a) => sum + a.size, 0),
+                mainBundleSize: mainBundle ? mainBundle.size : 0,
+                assets: stats.assets,
+              };
+            }
+
+            const baseStats = parseStats('./base-bundle/stats.json');
+            const headStats = parseStats('./dist/stats.json');
+
+            if (!headStats) {
+              console.log('Could not find head bundle stats. Skipping comparison.');
+              return;
+            }
+
+            let body = `## 📦 Bundle Size Report\n\n`;
+            body += `| Asset | Size (KB) |\n`;
+            body += `|---|---|\n`;
+            headStats.assets.forEach(asset => {
+              body += `| ${asset.name} | ${(asset.size / 1024).toFixed(2)} |\n`;
+            });
+            body += `| **Total** | **${(headStats.totalSize / 1024).toFixed(2)}** |\n`;
+
+            if (baseStats) {
+              const totalDiff = headStats.totalSize - baseStats.totalSize;
+              const mainDiff = headStats.mainBundleSize - baseStats.mainBundleSize;
+              const totalDiffPercent = (totalDiff / baseStats.totalSize * 100).toFixed(2);
+              const mainDiffPercent = (mainDiff / baseStats.mainBundleSize * 100).toFixed(2);
+
+              const emoji = totalDiff > 0 ? '📈' : '📉';
+
+              body += `\n### ${emoji} Comparison with base branch\n\n`;
+              body += `| Asset | Base (KB) | Head (KB) | Diff (KB) | Diff (%) |\n`;
+              body += `|---|---|---|---|---|\n`;
+              body += `| main.js | ${(baseStats.mainBundleSize / 1024).toFixed(2)} | ${(headStats.mainBundleSize / 1024).toFixed(2)} | ${(mainDiff / 1024).toFixed(2)} | ${mainDiffPercent}% |\n`;
+              body += `| **Total** | **${(baseStats.totalSize / 1024).toFixed(2)}** | **${(headStats.totalSize / 1024).toFixed(2)}** | **${(totalDiff / 1024).toFixed(2)}** | **${totalDiffPercent}%** |\n`;
+
+              if (Math.abs(mainDiff) > 50 * 1024) {
+                core.setFailed(`Main bundle size changed by more than 50KB.`);
+                body += `\n\n**Error:** Main bundle size changed by more than 50KB.`;
+              }
+              if (Math.abs(totalDiff) > 100 * 1024) {
+                core.setFailed(`Total bundle size changed by more than 100KB.`);
+                body += `\n\n**Error:** Total bundle size changed by more than 100KB.`;
+              }
+            }
+
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
