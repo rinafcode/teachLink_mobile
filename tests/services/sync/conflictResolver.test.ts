@@ -6,6 +6,12 @@ import {
   processServerUpdate,
   resolveConflict,
 } from '../../../src/services/sync/conflictResolver';
+import {
+  isConflictError,
+  isConflictResponseShape,
+  buildConflictDataFromHttpError,
+  extractConflictPayload,
+} from '../../../src/services/sync/httpConflictDetection';
 import syncEntityManager from '../../../src/services/sync/syncEntityManager';
 
 describe('sync conflict resolution', () => {
@@ -159,5 +165,120 @@ describe('sync conflict resolution', () => {
       summary: 'Server summary',
     });
     expect(syncEntityManager.getLocal('course', 'course-3')?.clientSeq).toBe(0);
+  });
+
+  it('syncEntityManager.resolveRawConflict delegates to conflictResolver', () => {
+    const result = syncEntityManager.resolveRawConflict(
+      { body: 'Local' },
+      { body: 'Server' },
+      'server-wins',
+    );
+
+    expect(result.hadConflict).toBe(true);
+    expect(result.resolved.data.body).toBe('Server');
+  });
+});
+
+// ─── Unified HTTP conflict detection (httpConflictDetection.ts) ───────────────
+
+describe('httpConflictDetection — unified conflict detection', () => {
+  describe('isConflictError', () => {
+    it('detects 409 via status property', () => {
+      expect(isConflictError({ status: 409 })).toBe(true);
+    });
+
+    it('detects 409 via response.status', () => {
+      expect(isConflictError({ response: { status: 409 } })).toBe(true);
+    });
+
+    it('detects 409 via code property', () => {
+      expect(isConflictError({ code: 'CONFLICT' })).toBe(true);
+    });
+
+    it('returns false for non-409 errors', () => {
+      expect(isConflictError({ status: 500 })).toBe(false);
+      expect(isConflictError({ status: 404 })).toBe(false);
+      expect(isConflictError(null)).toBe(false);
+    });
+  });
+
+  describe('isConflictResponseShape', () => {
+    it('accepts valid conflict response objects', () => {
+      expect(isConflictResponseShape({ serverVersion: {} })).toBe(true);
+      expect(isConflictResponseShape({ entityId: '1', entityType: 'note' })).toBe(true);
+    });
+
+    it('rejects null, undefined, and non-objects', () => {
+      expect(isConflictResponseShape(null)).toBe(false);
+      expect(isConflictResponseShape(undefined)).toBe(false);
+      expect(isConflictResponseShape('string')).toBe(false);
+      expect(isConflictResponseShape(42)).toBe(false);
+    });
+  });
+
+  describe('buildConflictDataFromHttpError', () => {
+    it('constructs a ConflictData record from a 409 response', () => {
+      const conflictData = buildConflictDataFromHttpError({
+        responseData: {
+          entityId: 'note-1',
+          entityType: 'note',
+          serverVersion: { body: 'Server text' },
+          serverVersionNumber: 5,
+        },
+        requestConfig: {
+          data: { body: 'Local text' },
+          url: '/api/notes/note-1',
+          method: 'PUT',
+          headers: {
+            'X-Last-Known-Version': '4',
+            'X-Entity-Type': 'note',
+            'X-Entity-Id': 'note-1',
+          },
+        },
+      });
+
+      expect(conflictData.entityId).toBe('note-1');
+      expect(conflictData.entityType).toBe('note');
+      expect(conflictData.localData).toEqual({ body: 'Local text' });
+      expect(conflictData.serverData).toEqual({ body: 'Server text' });
+      expect(conflictData.localVersion).toBe(4);
+      expect(conflictData.serverVersion).toBe(5);
+      expect(conflictData.endpoint).toBe('/api/notes/note-1');
+      expect(conflictData.method).toBe('PUT');
+      expect(conflictData.id).toMatch(/^conflict_/);
+    });
+
+    it('falls back to defaults for missing response data', () => {
+      const conflictData = buildConflictDataFromHttpError({
+        responseData: undefined,
+        requestConfig: {
+          data: { body: 'Local' },
+          url: '/api/items',
+          method: 'POST',
+          headers: {},
+        },
+      });
+
+      expect(conflictData.entityType).toBe('unknown');
+      expect(conflictData.entityId).toBe('');
+      expect(conflictData.localVersion).toBeUndefined();
+      expect(conflictData.serverVersion).toBeUndefined();
+    });
+  });
+
+  describe('extractConflictPayload', () => {
+    it('extracts payload from response.data', () => {
+      expect(extractConflictPayload({ response: { data: 'payload' } })).toBe('payload');
+    });
+
+    it('falls back to error.data and error.body', () => {
+      expect(extractConflictPayload({ data: 'fallback' })).toBe('fallback');
+      expect(extractConflictPayload({ body: 'body-fallback' })).toBe('body-fallback');
+    });
+
+    it('returns null for errors without payload', () => {
+      expect(extractConflictPayload({})).toBeNull();
+      expect(extractConflictPayload(null)).toBeNull();
+    });
   });
 });

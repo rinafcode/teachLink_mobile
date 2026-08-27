@@ -1,3 +1,15 @@
+import React, { useCallback, useState } from 'react';
+import { ScrollView, TouchableOpacity, View } from 'react-native';
+import { ChevronDown, ChevronUp } from 'lucide-react-native';
+
+import { AccountActionsSection } from './AccountActionsSection';
+import { AccountSection } from './AccountSection';
+import { AppSection } from './AppSection';
+import { DownloadsSection } from './DownloadsSection';
+import { ICON_SETTINGS2 } from './settingsIcons';
+import { PerformanceSection } from './PerformanceSection';
+import { PrivacySection } from './PrivacySection';
+import { SyncSection } from './SyncSection';
 import {
   AlertTriangle,
   BarChart2,
@@ -154,7 +166,7 @@ const AdvancedToggle = ({ expanded, onToggle }: AdvancedToggleProps) => {
       className="mx-4 my-3 flex-row items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800"
     >
       <View className="flex-row items-center gap-2">
-        <Settings2 size={16} color="#19c3e6" />
+        {ICON_SETTINGS2}
         <AppText className="text-sm font-semibold text-cyan-500">
           {expanded ? 'Hide Advanced Settings' : 'Advanced Settings'}
         </AppText>
@@ -169,332 +181,27 @@ const AdvancedToggle = ({ expanded, onToggle }: AdvancedToggleProps) => {
 };
 
 // ─────────────────────────────────────────────────────────────
-// Component
+// Component — each <SettingsSection> is now a separate memoised
+// component that owns its own hooks, so toggling one section
+// re-renders only that section.
 // ─────────────────────────────────────────────────────────────
 
 export const MobileSettings = ({ onSignOut, onChangePassword, onLinkedAccounts }: any) => {
-  const theme = useTheme();
-  const setTheme = useAppStore(state => state.setTheme);
-  const router = useRouter();
-  const { performReauthCheck } = useRequireReauth();
   // Progressive disclosure: advanced settings collapsed by default
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
-
-  const {
-    profileVisibility,
-    setProfileVisibility,
-    twoFactorEnabled,
-    setTwoFactorEnabled,
-    analyticsEnabled,
-    setAnalyticsEnabled,
-    downloadOverWifiOnly,
-    setDownloadOverWifiOnly,
-    downloadQuality,
-    setDownloadQuality,
-    dataSaverEnabled,
-    setDataSaverEnabled,
-  } = useSettingsStore();
-
-  const {
-    isAvailable: biometricAvailable,
-    isEnabled: biometricEnabled,
-    enable: enableBiometric,
-    disable: disableBiometric,
-    isLoading: biometricLoading,
-  } = useBiometricAuth();
-
-  const { clearCache: clearStoredFormFields } = useFormCache([]);
-
-  const handleClearFormCache = useCallback(() => {
-    Alert.alert(
-      'Clear Cached Form Data',
-      'Remove saved names, emails, and addresses from this device?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Clear',
-          style: 'destructive',
-          onPress: async () => {
-            await clearStoredFormFields();
-            Alert.alert('Cleared', 'Cached form data has been removed.');
-          },
-        },
-      ]
-    );
-  }, [clearStoredFormFields]);
-
-  const handleBiometricToggle = useCallback(
-    async (value: boolean) => {
-      if (value) {
-        const ok = await enableBiometric();
-        if (!ok) {
-          Alert.alert('Biometric Login', 'Enable failed. Check device settings.');
-        }
-      } else {
-        await disableBiometric();
-      }
-    },
-    [enableBiometric, disableBiometric]
-  );
-
-  const handleSignOut = useCallback(() => {
-    Alert.alert('Sign Out', 'Are you sure?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive', onPress: onSignOut },
-    ]);
-  }, [onSignOut]);
-
-  const handleManualSync = useCallback(async () => {
-    Alert.alert('Sync', 'Sync data with server?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Sync',
-        onPress: async () => {
-          try {
-            Alert.alert('Syncing...');
-            // await syncService.manualSync();
-            Alert.alert('Success');
-          } catch {
-            Alert.alert('Failed to sync');
-          }
-        },
-      },
-    ]);
-  }, []);
-
-  const handleClearDownloads = useCallback(() => {
-    Alert.alert('Clear Downloads', 'Remove all downloads?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Clear', style: 'destructive' },
-    ]);
-  }, []);
 
   const handleToggleAdvanced = useCallback(() => {
     configureNext();
     setShowAdvancedSettings(prev => !prev);
   }, []);
 
-  const handleChangePaymentMethod = useCallback(async () => {
-    const authorized = await performReauthCheck();
-    if (authorized) {
-      Alert.alert('Payment Method', 'Payment method updated successfully.');
-    } else {
-      Alert.alert('Re-authentication Failed', 'Verification required to change payment method.');
-    }
-  }, [performReauthCheck]);
-
-  const handleViewFullCardNumber = useCallback(async () => {
-    const authorized = await performReauthCheck();
-    if (authorized) {
-      Alert.alert('Card Details', 'Card Number: **** **** **** 4242');
-    } else {
-      Alert.alert('Re-authentication Failed', 'Verification required to view card details.');
-    }
-  }, [performReauthCheck]);
-
-  const handleExportData = useCallback(async () => {
-    const authorized = await performReauthCheck();
-    if (authorized) {
-      Alert.alert('Export Data', 'Your personal data export request has been submitted successfully.');
-    } else {
-      Alert.alert('Re-authentication Failed', 'Verification required to export personal data.');
-    }
-  }, [performReauthCheck]);
-
-  const handleAdminDashboard = useCallback(async () => {
-    const authorized = await performReauthCheck();
-    if (authorized) {
-      router.push('/health-dashboard');
-    } else {
-      Alert.alert('Re-authentication Failed', 'Verification required to access Admin Dashboard.');
-    }
-  }, [performReauthCheck, router]);
-
-  const deleteInputRef = useRef<TextInput>(null);
-
-  const handleDeleteAccount = useCallback(async () => {
-    const authorized = await performReauthCheck();
-    if (!authorized) {
-      Alert.alert('Re-authentication Failed', 'Verification required to delete your account.');
-      return;
-    }
-
-    Alert.alert(
-      'Delete Account',
-      'This action is irreversible. All your data, progress, and purchases will be permanently deleted.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Continue',
-          style: 'destructive',
-          onPress: () => {
-            // Second confirmation: require typing DELETE
-            if (Platform.OS === 'ios') {
-              // iOS Alert.alert doesn't support text input; use a simple confirmation
-              Alert.alert(
-                'Are you absolutely sure?',
-                'Type DELETE in the next prompt to confirm account deletion.',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  {
-                    text: 'Delete',
-                    style: 'destructive',
-                    onPress: () => {
-                      // Final deletion action
-                      Alert.alert('Account Deleted', 'Your account has been deleted.');
-                    },
-                  },
-                ]
-              );
-            } else {
-              // Android: use Alert with prompt
-              Alert.alert(
-                'Confirm Deletion',
-                'Please type DELETE to confirm',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  {
-                    text: 'Delete',
-                    style: 'destructive',
-                    onPress: () => {
-                      Alert.alert('Account Deleted', 'Your account has been deleted.');
-                    },
-                  },
-                ],
-                { cancelable: true }
-              );
-            }
-          },
-        },
-      ]
-    );
-  }, [performReauthCheck]);
-
-  // Wrap parent-provided callbacks so they are stable references
-  const handleChangePassword = useCallback(() => {
-    onChangePassword?.();
-  }, [onChangePassword]);
-
-  const handleLinkedAccounts = useCallback(() => {
-    onLinkedAccounts?.();
-  }, [onLinkedAccounts]);
-
-  // ── Memoised right elements (stable references) ────────
-  const profileVisibilityRight = useMemo(
-    () => (
-      <SettingsPicker
-        label="Visibility"
-        value={profileVisibility}
-        options={VISIBILITY_OPTIONS}
-        onValueChange={setProfileVisibility}
-      />
-    ),
-    [profileVisibility, setProfileVisibility]
-  );
-
-  const twoFactorRight = useMemo(
-    () => <NativeToggle value={twoFactorEnabled} onValueChange={setTwoFactorEnabled} />,
-    [twoFactorEnabled, setTwoFactorEnabled]
-  );
-
-  const biometricIcon = useMemo(
-    () => (biometricLoading ? <ActivityIndicator /> : ICON_FINGERPRINT),
-    [biometricLoading]
-  );
-
-  const biometricRight = useMemo(
-    () => (
-      <NativeToggle
-        value={biometricEnabled}
-        onValueChange={handleBiometricToggle}
-        disabled={biometricLoading}
-      />
-    ),
-    [biometricEnabled, handleBiometricToggle, biometricLoading]
-  );
-
-  const themeRight = useMemo(
-    () => (
-      <SettingsPicker
-        label="Theme"
-        value={theme}
-        options={THEME_OPTIONS}
-        onValueChange={setTheme}
-      />
-    ),
-    [theme, setTheme]
-  );
-
-  const dataSaverRight = useMemo(
-    () => (
-      <NativeToggle value={dataSaverEnabled} onValueChange={setDataSaverEnabled} />
-    ),
-    [dataSaverEnabled, setDataSaverEnabled]
-  );
-
-  const analyticsRight = useMemo(
-    () => <NativeToggle value={analyticsEnabled} onValueChange={setAnalyticsEnabled} />,
-    [analyticsEnabled, setAnalyticsEnabled]
-  );
-
-  const wifiOnlyRight = useMemo(
-    () => (
-      <NativeToggle value={downloadOverWifiOnly} onValueChange={setDownloadOverWifiOnly} />
-    ),
-    [downloadOverWifiOnly, setDownloadOverWifiOnly]
-  );
-
-  const qualityRight = useMemo(
-    () => (
-      <SettingsPicker
-        label="Quality"
-        value={downloadQuality}
-        options={QUALITY_OPTIONS}
-        onValueChange={setDownloadQuality}
-      />
-    ),
-    [downloadQuality, setDownloadQuality]
-  );
-
   return (
     <ScrollView className="flex-1 bg-gray-50 dark:bg-gray-900">
       {/* ── ESSENTIAL: ACCOUNT ─────────────────────────────── */}
-      <SettingsSection title="Account">
-        <SettingRow
-          icon={ICON_EYE}
-          label="Profile Visibility"
-          right={profileVisibilityRight}
-        />
-
-        <SettingRow
-          icon={ICON_LOCK}
-          label="Two-Factor Auth"
-          right={twoFactorRight}
-        />
-
-        {biometricAvailable && (
-          <SettingRow
-            icon={biometricIcon}
-            label="Biometric Login"
-            description={biometricEnabled ? 'Enabled' : 'Disabled'}
-            right={biometricRight}
-          />
-        )}
-
-        <SettingRow icon={ICON_USER} label="Change Password" onPress={handleChangePassword} />
-        <SettingRow
-          icon={ICON_CREDIT_CARD_YELLOW}
-          label="Change Payment Method"
-          onPress={handleChangePaymentMethod}
-        />
-        <SettingRow
-          icon={ICON_CREDIT_CARD_GREEN}
-          label="View Full Card Number"
-          onPress={handleViewFullCardNumber}
-        />
-      </SettingsSection>
+      <AccountSection onChangePassword={onChangePassword} />
 
       {/* ── ESSENTIAL: APP ─────────────────────────────────── */}
+      <AppSection />
       <SettingsSection title="App">
         <SettingRow
           icon={ICON_SUN}
@@ -522,95 +229,15 @@ export const MobileSettings = ({ onSignOut, onChangePassword, onLinkedAccounts }
 
       {showAdvancedSettings && (
         <>
-          {/* PRIVACY */}
-          <SettingsSection title="Privacy">
-            <SettingRow
-              icon={ICON_BAR_CHART}
-              label="Analytics"
-              right={analyticsRight}
-            />
-
-            <SettingRow
-              icon={ICON_TRASH_RED}
-              label="Clear Cached Form Data"
-              description="Remove saved autofill values from this device"
-              onPress={handleClearFormCache}
-              destructive
-            />
-
-            <SettingRow
-              icon={ICON_DOWNLOAD_INDIGO}
-              label="Export Personal Data"
-              description="Export your account details and learning progress"
-              onPress={handleExportData}
-            />
-          </SettingsSection>
-
-          {/* DOWNLOADS */}
-          <SettingsSection title="Downloads">
-            <SettingRow
-              icon={ICON_WIFI}
-              label="WiFi Only"
-              right={wifiOnlyRight}
-            />
-
-            <SettingRow
-              icon={ICON_DOWNLOAD}
-              label="Quality"
-              right={qualityRight}
-            />
-
-            <SettingRow
-              icon={ICON_TRASH_RED}
-              label="Clear Downloads"
-              onPress={handleClearDownloads}
-              destructive
-            />
-          </SettingsSection>
-
-          {/* SYNC */}
-          <SettingsSection title="Sync">
-            <SettingRow
-              icon={ICON_REFRESH}
-              label="Manual Sync"
-              onPress={handleManualSync}
-            />
-          </SettingsSection>
-
-          {/* PERFORMANCE & UTILITIES */}
-          <SettingsSection title="Performance & Utilities">
-            <SettingRow
-              icon={ICON_ZAP}
-              label="Clipboard Optimizer"
-              description="Test & profile asynchronous clipboard operations"
-            />
-
-            <SettingRow
-              icon={ICON_SHIELD}
-              label="Admin Dashboard"
-              description="Access systems health & performance diagnostics"
-              onPress={handleAdminDashboard}
-            />
-          </SettingsSection>
+          <PrivacySection />
+          <DownloadsSection />
+          <SyncSection />
+          <PerformanceSection />
         </>
       )}
 
       {/* ── ESSENTIAL: ACCOUNT ACTIONS ─────────────────────── */}
-      <SettingsSection title="Account Actions">
-        <SettingRow
-          icon={ICON_LOGOUT_RED}
-          label="Sign Out"
-          onPress={handleSignOut}
-          destructive
-        />
-        <SettingRow
-          icon={ICON_ALERT}
-          label="Delete Account"
-          description="Permanently delete your account and all data"
-          onPress={handleDeleteAccount}
-          destructive
-        />
-      </SettingsSection>
+      <AccountActionsSection onSignOut={onSignOut} />
     </ScrollView>
   );
 };

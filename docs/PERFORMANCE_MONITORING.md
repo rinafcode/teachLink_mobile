@@ -153,6 +153,60 @@ ALERT` warning. In a real deployment this would fan out to a Slack channel or Pa
 
 ---
 
+## Analytics Sampling Policy
+
+Analytics events are sampled at the source to control volume and cost. The policy
+is defined in `src/services/analytics/samplingPolicy.ts` and enforced in
+`MobileAnalyticsService.trackEvent()` and `AnalyticsBatchQueue.enqueue()`.
+
+### Event Frequency Classification
+
+| Frequency | Sampling Rate | Events |
+|---|---|---|
+| `critical` | 100% | Session lifecycle, auth, course/quiz start/end, API errors, crashes |
+| `high` | 20% | Screen views, content views/shares, search, form submits |
+| `medium` | 10% | UI clicks, button clicks, content likes, review prompts |
+| `low` | 5% | Performance metrics, React profiler, A/B tests, web vitals, app lifecycle |
+
+Critical events bypass sampling entirely — they are always sent.
+
+### High-Frequency Throttle
+
+Events tagged with `event_category: 'high_frequency'` in their properties are
+throttled to a maximum of **10 events per second** per event name, applied before
+sampling. This prevents burst spam from cache stats or render profilers.
+
+### Session Event Budget
+
+The `AnalyticsBatchQueue` enforces a per-session budget of **500 events**
+(`SESSION_EVENT_BUDGET`). Once exhausted, all subsequent events are silently
+dropped. The drop count is tracked for observability:
+
+```ts
+import { mobileAnalyticsService } from '@/services/mobileAnalytics';
+
+// After a session, check how many events were dropped
+const dropped = mobileAnalyticsService.getDroppedCount();
+```
+
+Dropped events are logged at WARN level (throttled to every 50th drop) to avoid
+log spam while remaining visible in production monitoring.
+
+### Observability
+
+- **Sampling drops**: logged at DEBUG level with `[${frequency}] dropped by sampling policy`
+- **Throttle drops**: counted in `droppedCount` (no log — by design, these are expected)
+- **Budget drops**: logged at WARN level every 50 drops
+- **Total drops**: accessible via `mobileAnalyticsService.getDroppedCount()`
+
+### Adjusting the Policy
+
+To change sampling rates, edit `SAMPLING_RATES` in `samplingPolicy.ts`. To adjust
+the session budget, change `SESSION_EVENT_BUDGET`. Both are module-level constants
+that take effect without restart when the module is re-evaluated.
+
+---
+
 ## Related Documents
 
 - [PERFORMANCE_TESTING.md](./PERFORMANCE_TESTING.md) — component-level perf test guide

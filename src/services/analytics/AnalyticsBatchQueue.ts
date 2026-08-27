@@ -5,6 +5,7 @@ import { appLogger } from '../../utils/logger';
 import { safeStorageWrite } from '../../utils/storage';
 import { AnalyticsEvent, EventProperties } from '../../utils/trackingEvents';
 import apiClient from '../api/axios.config';
+import { SESSION_EVENT_BUDGET } from './samplingPolicy';
 
 const MAX_BATCH_SIZE = 20;
 const FLUSH_INTERVAL_MS = 30000;
@@ -27,8 +28,23 @@ export class AnalyticsBatchQueue {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private isFlushing = false;
   private currentFlushPromise: Promise<void> | null = null;
+  private sessionEventCount = 0;
+  private droppedCount = 0;
 
   enqueue(event: AnalyticsEvent, properties?: EventProperties): void {
+    // Enforce per-session event budget
+    if (SESSION_EVENT_BUDGET > 0 && this.sessionEventCount >= SESSION_EVENT_BUDGET) {
+      this.droppedCount++;
+      if (this.droppedCount % 50 === 1) {
+        appLogger.warn(
+          `AnalyticsBatchQueue: session budget exhausted (${SESSION_EVENT_BUDGET}), ` +
+          `${this.droppedCount} events dropped this session`
+        );
+      }
+      return;
+    }
+
+    this.sessionEventCount++;
     this.buffer.push({
       event,
       properties: properties as Record<string, unknown> | undefined,
@@ -92,6 +108,11 @@ export class AnalyticsBatchQueue {
 
   get size(): number {
     return this.buffer.length;
+  }
+
+  /** Number of events dropped due to session budget since queue creation. */
+  getDroppedCount(): number {
+    return this.droppedCount;
   }
 
   destroy(): void {

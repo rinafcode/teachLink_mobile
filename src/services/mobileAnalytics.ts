@@ -1,6 +1,11 @@
 import { appLogger } from '../utils/logger';
 import { AnalyticsEvent, EventProperties } from '../utils/trackingEvents';
 import { AnalyticsBatchQueue } from './analytics/AnalyticsBatchQueue';
+import {
+  HIGH_FREQUENCY_MAX_PER_SECOND,
+  getEventFrequency,
+  shouldSampleEvent,
+} from './analytics/samplingPolicy';
 import { DPConfig, privatizeDuration, sanitizeProperties } from '../utils/differentialPrivacy';
 
 /**
@@ -13,9 +18,8 @@ import { DPConfig, privatizeDuration, sanitizeProperties } from '../utils/differ
  * - DP is applied per-event before any external SDK call.
  */
 class MobileAnalyticsService {
-  private static readonly HIGH_FREQUENCY_EVENT_MAX_PER_SECOND = 10;
   private static readonly HIGH_FREQUENCY_EVENT_INTERVAL_MS =
-    1000 / MobileAnalyticsService.HIGH_FREQUENCY_EVENT_MAX_PER_SECOND;
+    1000 / HIGH_FREQUENCY_MAX_PER_SECOND;
   private isInitialized: boolean = false;
   private currentSessionId: string | null = null;
   private currentScreen: string | null = null;
@@ -23,20 +27,11 @@ class MobileAnalyticsService {
   private readonly batchQueue = new AnalyticsBatchQueue();
   private dpConfig: DPConfig = { epsilon: 1.0, sensitivity: 1.0, enabled: true };
 
-  // Critical events that must always be sent (100% volume)
-  private readonly CRITICAL_EVENTS: Set<AnalyticsEvent> = new Set([
-    AnalyticsEvent.APP_LAUNCH,
-    AnalyticsEvent.SESSION_START,
-    AnalyticsEvent.SESSION_END,
-    AnalyticsEvent.AUTH_LOGIN,
-    AnalyticsEvent.AUTH_LOGOUT,
-    AnalyticsEvent.COURSE_STARTED,
-    AnalyticsEvent.COURSE_COMPLETED,
-    AnalyticsEvent.QUIZ_STARTED,
-    AnalyticsEvent.QUIZ_COMPLETED,
-    AnalyticsEvent.API_ERROR,
-    AnalyticsEvent.CRASH_REPORT,
-  ]);
+  /**
+   * Per-session drop counter for observability.
+   * Exposed via getDroppedCount() so callers can measure analytics volume.
+   */
+  private droppedCount = 0;
 
   /**
    * Initialize the analytics SDK.
@@ -101,17 +96,24 @@ class MobileAnalyticsService {
    * Track a custom event with differential privacy applied to all properties.
    * Numeric properties receive Laplace noise; strings are PII-sanitized.
    */
+  /** Return the number of events dropped this session (sampling + throttle + budget). */
+  public getDroppedCount(): number {
+    return this.droppedCount + this.batchQueue.getDroppedCount();
+  }
+
   public trackEvent(event: AnalyticsEvent, properties?: EventProperties): void {
+    // 1. High-frequency throttle (per event_name, applied before sampling)
     if (this.shouldThrottleHighFrequencyEvent(event, properties)) {
+      this.droppedCount++;
       return;
     }
 
-    // Implement sampling for non-critical events (10% rate)
-    if (!this.CRITICAL_EVENTS.has(event)) {
-      if (Math.random() > 0.1) {
-        appLogger.debug(`📊 [Analytics] Event: ${event} skipped due to sampling`);
-        return;
-      }
+    // 2. Per-frequency sampling using the documented policy
+    const frequency = getEventFrequency(event);
+    if (!shouldSampleEvent(frequency)) {
+      this.droppedCount++;
+      appLogger.debug(`📊 [Analytics] Event: ${event} [${frequency}] dropped by sampling policy`);
+      return;
     }
 
     const payload = {
