@@ -27,7 +27,7 @@ const BUDGET_MS = parseInt(
   process.env.STARTUP_BUDGET_MS ||
     (() => {
       try {
-        return require('../performance-budget.json').tti;
+        return require('../performance-budget.json').startupTime?.p95_ms ?? 2000;
       } catch {
         return 2000;
       }
