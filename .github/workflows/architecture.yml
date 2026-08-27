@@ -1,16 +1,16 @@
-name: Syntax Gate
+name: Architecture
 
 on:
   pull_request:
     types: [opened, synchronize]
 
 concurrency:
-  group: syntax-${{ github.event.pull_request.number || github.ref }}
+  group: architecture-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  syntax:
-    name: Syntax & Type Check
+  dependency-boundaries:
+    name: Dependency boundaries
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -27,8 +27,5 @@ jobs:
       - name: Install dependencies
         run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
-      - name: TypeScript type check
-        run: npm run typecheck
-
-      - name: ESLint check (no-fix)
-        run: npx eslint . --max-warnings=0
+      - name: Enforce architecture boundaries
+        run: npm run architecture:check

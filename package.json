@@ -10,6 +10,8 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
+    "typecheck": "tsc --noEmit",
+    "typecheck:watch": "tsc --noEmit --watch",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
     "lint:staged": "lint-staged",
@@ -37,6 +39,7 @@
     "depcheck": "depcheck",
     "license:check": "node scripts/license-audit.js",
     "attribution": "node scripts/license-audit.js --generate-attribution assets/THIRD_PARTY_NOTICES.json",
+    "architecture:check": "depcruise src app components --config dependency-cruiser.config.js",
     "audit:performance": "tsx src/audit/cli.ts",
     "audit:performance:html": "tsx src/audit/cli.ts --format html --output ./reports/audit-report",
     "audit:performance:all": "tsx src/audit/cli.ts --format all --output ./reports/audit-report",
@@ -145,6 +148,7 @@
     "aria-query": "^5.3.0",
     "babel-preset-expo": "^54.0.10",
     "depcheck": "^1.4.7",
+    "dependency-cruiser": "^18.2.0",
     "dequal": "^2.0.3",
     "dom-accessibility-api": "^0.5.16",
     "eslint": "^9.25.0",
@@ -172,11 +176,8 @@
     "yaml": "^2.9.0"
   },
   "overrides": {
-    "@tootallnate/once": "^3.0.1",
     "brace-expansion": "^1.1.13",
     "postcss": "^8.5.12",
-    "tmp": "^0.2.6",
-    "ws": "^8.21.0",
     "uuid": "^11.0.3"
   },
   "private": true,

@@ -66,6 +66,8 @@ const RARITY_LABELS: Record<BadgeRarity, string> = {
   legendary: 'Legendary',
 };
 
+import { VirtualList } from './VirtualList';
+
 const AchievementBadgesComponent: React.FC<AchievementBadgesProps> = ({
   achievements,
   isDark = false,
@@ -83,7 +85,7 @@ const AchievementBadgesComponent: React.FC<AchievementBadgesProps> = ({
     announceToScreenReader(`Opening details for ${achievement.name} badge.`);
   }, []);
 
-  const renderBadge = (achievement: Achievement) => {
+  const renderBadge = useCallback(({ item: achievement }: { item: Achievement }) => {
     const rarity = achievement.rarity ?? 'common';
     const gradColors = RARITY_COLORS[rarity];
     const isLocked = achievement.isLocked;
@@ -171,7 +173,7 @@ const AchievementBadgesComponent: React.FC<AchievementBadgesProps> = ({
         )}
       </TouchableOpacity>
     );
-  };
+  }, [isDark, handleSelectBadge]);
 
   return (
     <View style={[styles.container, { backgroundColor: isDark ? '#0f172a' : '#fff' }]}>
@@ -194,15 +196,20 @@ const AchievementBadgesComponent: React.FC<AchievementBadgesProps> = ({
       </View>
 
       {achievements.length > 0 ? (
-        <ScrollView
+        <VirtualList
+          data={achievements}
+          renderItem={renderBadge}
+          keyExtractor={item => item.id}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
           accessibilityLabel="Horizontal achievements list"
           removeClippedSubviews={true}
-        >
-          {achievements.map(renderBadge)}
-        </ScrollView>
+          initialNumToRender={5}
+          maxToRenderPerBatch={5}
+          windowSize={3}
+          itemSize={72}
+        />
       ) : (
         <View
           style={styles.emptyState}
