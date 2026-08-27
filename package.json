@@ -31,7 +31,7 @@
     "deploy:both": "bash ./scripts/deploy-both.sh",
     "deploy:preview": "bash ./scripts/deploy-preview.sh",
     "prepare": "husky",
-    "fonts:subset": "node ./scripts/subset-fonts.js",
+    "fonts:subset": "python scripts/subset-fonts.py",
     "fonts:analyze": "node ./scripts/analyze-fonts.js",
     "audit": "node scripts/security-audit.js",
     "depcheck": "depcheck",
