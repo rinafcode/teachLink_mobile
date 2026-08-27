@@ -1,0 +1,452 @@
+openapi: '3.0.3'
+info:
+  title: TeachLink API
+  version: '1.0.0'
+  description: TeachLink mobile learning platform API
+servers:
+  - url: https://api.teachlink.com
+    description: Production
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    BaseAPIModel:
+      type: object
+      required: [id, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    UserProfile:
+      allOf:
+        - $ref: '#/components/schemas/BaseAPIModel'
+        - type: object
+          required: [name, email]
+          properties:
+            name:
+              type: string
+            email:
+              type: string
+              format: email
+            avatarUrl:
+              type: string
+              format: uri
+
+    Course:
+      allOf:
+        - $ref: '#/components/schemas/BaseAPIModel'
+        - type: object
+          required: [title, description, instructor, lessons]
+          properties:
+            title:
+              type: string
+            description:
+              type: string
+            instructor:
+              $ref: '#/components/schemas/UserProfile'
+            lessons:
+              type: array
+              items:
+                $ref: '#/components/schemas/Lesson'
+
+    Lesson:
+      allOf:
+        - $ref: '#/components/schemas/BaseAPIModel'
+        - type: object
+          required: [title, content]
+          properties:
+            title:
+              type: string
+            content:
+              type: string
+            videoUrl:
+              type: string
+              format: uri
+            quiz:
+              $ref: '#/components/schemas/Quiz'
+
+    Quiz:
+      allOf:
+        - $ref: '#/components/schemas/BaseAPIModel'
+        - type: object
+          required: [questions]
+          properties:
+            questions:
+              type: array
+              items:
+                $ref: '#/components/schemas/QuizQuestion'
+
+    QuizQuestion:
+      type: object
+      required: [id, question, options, correctAnswer]
+      properties:
+        id:
+          type: string
+        question:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+        correctAnswer:
+          type: integer
+
+    Notification:
+      allOf:
+        - $ref: '#/components/schemas/BaseAPIModel'
+        - type: object
+          required: [read, message, type]
+          properties:
+            read:
+              type: boolean
+            message:
+              type: string
+            type:
+              type: string
+              enum: [new_lesson, quiz_result, system]
+
+    User:
+      allOf:
+        - $ref: '#/components/schemas/UserProfile'
+        - type: object
+          required: [enrolledCourses, notifications]
+          properties:
+            enrolledCourses:
+              type: array
+              items:
+                $ref: '#/components/schemas/Course'
+            notifications:
+              type: array
+              items:
+                $ref: '#/components/schemas/Notification'
+
+    AuthTokens:
+      type: object
+      required: [accessToken, refreshToken, expiresAt]
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    LoginResponse:
+      type: object
+      required: [user, tokens]
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        tokens:
+          $ref: '#/components/schemas/AuthTokens'
+
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+
+    RefreshResponse:
+      type: object
+      required: [tokens]
+      properties:
+        tokens:
+          $ref: '#/components/schemas/AuthTokens'
+
+    ReceiptValidationRequest:
+      type: object
+      required: [receipt, platform]
+      properties:
+        receipt:
+          type: string
+        platform:
+          type: string
+          enum: [ios, android]
+        productId:
+          type: string
+
+    ReceiptValidationResult:
+      type: object
+      required: [valid]
+      properties:
+        valid:
+          type: boolean
+        expiry:
+          type: string
+          format: date-time
+        productId:
+          type: string
+        tier:
+          type: string
+          enum: [free, pro, premium]
+        error:
+          type: string
+
+    ConflictResponse:
+      type: object
+      required: [message, entityType, entityId, serverVersionNumber]
+      properties:
+        message:
+          type: string
+        entityType:
+          type: string
+        entityId:
+          type: string
+        serverVersionNumber:
+          type: integer
+        serverVersion:
+          type: object
+        localVersion:
+          type: object
+
+    BatchRequest:
+      type: object
+      required: [operations]
+      properties:
+        operations:
+          type: array
+          items:
+            $ref: '#/components/schemas/BatchOperation'
+
+    BatchOperation:
+      type: object
+      required: [method, endpoint]
+      properties:
+        method:
+          type: string
+          enum: [GET, POST, PUT, DELETE]
+        endpoint:
+          type: string
+        data:
+          type: object
+
+  responses:
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+    Conflict:
+      description: Version conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConflictResponse'
+    RateLimited:
+      description: Rate limit exceeded
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+              code:
+                type: string
+
+paths:
+  /auth/login:
+    post:
+      operationId: login
+      summary: Authenticate user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /auth/refresh:
+    post:
+      operationId: refreshToken
+      summary: Refresh access token
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/logout:
+    post:
+      operationId: logout
+      summary: Logout user
+      tags: [Auth]
+      responses:
+        '200':
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /api/payments/validate-receipt:
+    post:
+      operationId: validateReceipt
+      summary: Validate a purchase receipt
+      tags: [Payments]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReceiptValidationRequest'
+      responses:
+        '200':
+          description: Receipt validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceiptValidationResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/courses:
+    get:
+      operationId: listCourses
+      summary: List all courses
+      tags: [Courses]
+      responses:
+        '200':
+          description: List of courses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Course'
+
+  /api/users/me:
+    get:
+      operationId: getCurrentUser
+      summary: Get current user profile
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/batch:
+    post:
+      operationId: batchRequest
+      summary: Execute batched API operations
+      tags: [Batch]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchRequest'
+      responses:
+        '200':
+          description: Batch results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: object
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /api/sync/status:
+    get:
+      operationId: getSyncStatus
+      summary: Get sync queue status
+      tags: [Sync]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Sync status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pendingCount:
+                    type: integer
+                  failedCount:
+                    type: integer
+                  isSyncing:
+                    type: boolean
+                  lastSyncTime:
+                    type: string
+                    format: date-time

@@ -1,4 +1,4 @@
-/* global jest */
+/* global jest, afterAll */
 
 // Global mock for react-native to support tests
 jest.mock('react-native', () => ({
@@ -10,10 +10,6 @@ jest.mock('react-native', () => ({
   View: 'View',
   Text: 'Text',
   TouchableOpacity: 'TouchableOpacity',
-  KeyboardAvoidingView: Object.assign(
-    ({ children, ...props }) => children,
-    { displayName: 'KeyboardAvoidingView' }
-  ),
   Modal: 'Modal',
   SafeAreaView: 'SafeAreaView',
   ScrollView: 'ScrollView',
@@ -140,12 +136,10 @@ jest.mock('expo-local-authentication', () => ({
   hasHardwareAsync: jest.fn(() => Promise.resolve(true)),
   isEnrolledAsync: jest.fn(() => Promise.resolve(true)),
   getEnrolledLevelAsync: jest.fn(() => Promise.resolve(1)),
-  getSupportedAuthenticationTypesAsync: jest.fn(() =>
-    Promise.resolve([1]) // BIOMETRIC
+  getSupportedAuthenticationTypesAsync: jest.fn(
+    () => Promise.resolve([1]) // BIOMETRIC
   ),
-  authenticateAsync: jest.fn(() =>
-    Promise.resolve({ success: true, error: null })
-  ),
+  authenticateAsync: jest.fn(() => Promise.resolve({ success: true, error: null })),
   SupportedAuthenticationTypes: {
     BIOMETRIC: 1,
     DEVICE_PASSCODE: 2,
@@ -318,7 +312,6 @@ jest.mock('expo-battery', () => ({
   addLowPowerModeListener: jest.fn(() => ({ remove: jest.fn() })),
 }));
 
-
 // Lightweight mock for expo-router to avoid pulling in navigation internals during tests
 jest.mock(
   'expo-router',
@@ -480,19 +473,56 @@ jest.mock('expo-linear-gradient', () => {
 });
 
 // Mock expo-clipboard for jest tests
-jest.mock('expo-clipboard', () => ({
-  getStringAsync: jest.fn(() => Promise.resolve('')),
-  setStringAsync: jest.fn(() => Promise.resolve(true)),
-  hasStringAsync: jest.fn(() => Promise.resolve(false)),
-  getImageAsync: jest.fn(() => Promise.resolve({ data: '', size: 0 })),
-  setImageAsync: jest.fn(() => Promise.resolve()),
-  hasImageAsync: jest.fn(() => Promise.resolve(false)),
-  addClipboardListener: jest.fn(() => ({ remove: jest.fn() })),
-  removeClipboardListener: jest.fn(),
-}), { virtual: true });
+jest.mock(
+  'expo-clipboard',
+  () => ({
+    getStringAsync: jest.fn(() => Promise.resolve('')),
+    setStringAsync: jest.fn(() => Promise.resolve(true)),
+    hasStringAsync: jest.fn(() => Promise.resolve(false)),
+    getImageAsync: jest.fn(() => Promise.resolve({ data: '', size: 0 })),
+    setImageAsync: jest.fn(() => Promise.resolve()),
+    hasImageAsync: jest.fn(() => Promise.resolve(false)),
+    addClipboardListener: jest.fn(() => ({ remove: jest.fn() })),
+    removeClipboardListener: jest.fn(),
+  }),
+  { virtual: true }
+);
 
-// Clean up any open handles from axios.config.ts interval
-const { stopCacheStatsFlush } = require('./src/services/api/axios.config');
+// Provide _ReactNativeCSSInterop global for nativewind babel transform
+global._ReactNativeCSSInterop = {
+  cssInterop: jest.fn(),
+  remapProps: jest.fn(),
+};
+
+// Clean up any open handles from module-scope subscriptions.
+// Each service that registers timers, listeners, or intervals at module
+// scope must expose a teardown that Jest calls after the suite finishes.
 afterAll(() => {
-  stopCacheStatsFlush();
+  try {
+    const { stopCacheStatsFlush } = require('./src/services/api/axios.config');
+    stopCacheStatsFlush();
+  } catch {
+    /* module may not be imported in every test run */
+  }
+
+  try {
+    const { default: socketService } = require('./src/services/socket');
+    socketService.disconnect();
+  } catch {
+    /* socket not connected in tests */
+  }
+
+  try {
+    const { memoryPressureService } = require('./src/services/memoryPressureService');
+    memoryPressureService.shutdown();
+  } catch {
+    /* service not initialised in tests */
+  }
+
+  try {
+    const { networkMonitor } = require('./src/services/networkMonitor');
+    networkMonitor.destroy();
+  } catch {
+    /* monitor not initialised in tests */
+  }
 });

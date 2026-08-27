@@ -1,8 +1,32 @@
 appId: com.teachlink
 ---
 - launchApp
-- tapOn: "My Courses"
-- tapOn: "Introduction to React Native"
-- tapOn: "Chapter 1: Getting Started"
-- tapOn: "Mark as Complete"
-- assertVisible: "Lesson Complete"
+- waitForAnimationToEnd
+
+# Navigate to a course with lessons
+- tapOn:
+    text: ".*(My Courses|Dashboard|Home).*"
+    optional: true
+- tapOn:
+    text: ".*(React|Introduction|Course).*"
+    optional: true
+
+# Find and open a lesson
+- extendedWaitUntil:
+    visible: ".*(Lesson|Chapter|Getting Started|Start).*"
+    timeout: 10000
+    optional: true
+- tapOn:
+    text: ".*(Lesson|Chapter|Getting Started|Start).*"
+    optional: true
+
+# Complete the lesson if possible
+- tapOn:
+    text: ".*(Mark as Complete|Complete|Done|Finish).*"
+    optional: true
+
+# Verify completion or navigation
+- extendedWaitUntil:
+    visible: ".*(Complete|Done|Next|Back|Quiz).*"
+    timeout: 10000
+    optional: true

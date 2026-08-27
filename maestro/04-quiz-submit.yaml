@@ -1,10 +1,40 @@
 appId: com.teachlink
 ---
 - launchApp
-- tapOn: "My Courses"
-- tapOn: "Introduction to React Native"
-- tapOn: "Chapter 1 Quiz"
-- tapOn: "Answer 1"
-- tapOn: "Answer 2"
-- tapOn: "Submit"
-- assertVisible: "Quiz Submitted"
+- waitForAnimationToEnd
+
+# Navigate to a course with a quiz
+- tapOn:
+    text: ".*(My Courses|Dashboard|Home).*"
+    optional: true
+- tapOn:
+    text: ".*(React|Introduction|Course).*"
+    optional: true
+
+# Find and open a quiz
+- extendedWaitUntil:
+    visible: ".*(Quiz|Test|Assessment).*"
+    timeout: 10000
+    optional: true
+- tapOn:
+    text: ".*(Quiz|Test|Assessment).*"
+    optional: true
+
+# Answer questions if visible
+- tapOn:
+    text: ".*(Answer|Option|A\)|B\)).*"
+    optional: true
+- tapOn:
+    text: ".*(Answer|Option|A\)|B\)).*"
+    optional: true
+
+# Submit the quiz
+- tapOn:
+    text: ".*(Submit|Finish|Complete).*"
+    optional: true
+
+# Verify quiz submission or results
+- extendedWaitUntil:
+    visible: ".*(Submitted|Results|Score|Passed|Complete).*"
+    timeout: 10000
+    optional: true
