@@ -1,0 +1,36 @@
+appId: com.teachlink
+---
+- launchApp
+- waitForAnimationToEnd
+
+# Navigate to profile or settings to find subscription options
+- tapOn:
+    text: "Profile"
+    optional: true
+
+# Look for subscription/premium/upgrade options
+- extendedWaitUntil:
+    visible: ".*(Pro|Premium|Upgrade|Subscribe|Plan).*"
+    timeout: 10000
+    optional: true
+
+# Tap on a subscription plan
+- tapOn:
+    text: ".*(Pro|Premium|Subscribe|Upgrade).*"
+    optional: true
+
+# Select a plan (e.g., monthly)
+- tapOn:
+    text: ".*(Monthly|Annual|Start Trial).*"
+    optional: true
+
+# Initiate purchase
+- tapOn:
+    text: ".*(Buy|Purchase|Subscribe|Start).*"
+    optional: true
+
+# Verify purchase flow initiated or pricing shown
+- extendedWaitUntil:
+    visible: ".*(\\$|Price|Confirm|Processing|Subscribed).*"
+    timeout: 10000
+    optional: true

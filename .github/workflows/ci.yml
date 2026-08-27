@@ -17,28 +17,81 @@ permissions:
 
 jobs:
   test-e2e:
-    runs-on: macos-latest
-    # Skip E2E when MAESTRO_API_KEY secret is absent (fix for issue #915)
-    # The APK must be built before Maestro can test it.
-    if: ${{ secrets.MAESTRO_API_KEY != '' }}
+    runs-on: ubuntu-latest
+    # Skip E2E when secrets are absent
+    if: ${{ secrets.MAESTRO_API_KEY != '' && secrets.EXPO_TOKEN != '' }}
     permissions:
       contents: read
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
+
       - name: Install dependencies
         run: npm ci --prefer-offline --no-audit
-      - name: Build Android APK
-        run: npx expo build:android --type apk --non-interactive
+
+      - name: Build Android preview APK via EAS
+        run: eas build --platform android --profile preview --non-interactive --no-wait
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-      - name: Install Maestro
+          GIT_WORKAROUND: 'true'
+
+      - name: Wait for EAS build
+        id: eas-build
+        run: |
+          BUILD_ID=$(eas build:list --platform android --limit 1 --json --non-interactive | jq -r '.[0].id')
+          echo "build_id=$BUILD_ID" >> "$GITHUB_OUTPUT"
+          echo "Waiting for EAS build $BUILD_ID to complete..."
+          while true; do
+            STATUS=$(eas build:view $BUILD_ID --json --non-interactive | jq -r '.status')
+            if [ "$STATUS" = 'finished' ]; then
+              echo "Build finished"
+              break
+            elif [ "$STATUS" = 'errored' ] || [ "$STATUS" = 'canceled' ]; then
+              echo "Build failed with status: $STATUS"
+              exit 1
+            fi
+            echo "Build status: $STATUS — waiting 60s..."
+            sleep 60
+          done
+
+      - name: Download APK artifact
+        run: |
+          BUILD_ID=${{ steps.eas-build.outputs.build_id }}
+          eas build:download --id $BUILD_ID --platform android --path ./app.apk --non-interactive
+
+      - name: Install Maestro CLI
         run: curl -Ls "https://get.maestro.mobile.dev" | bash
-      - name: Run E2E tests
-        run: maestro cloud --api-key ${{ secrets.MAESTRO_API_KEY }} --app-file ./app.apk maestro/
+
+      - name: Run Maestro E2E tests
+        run: |
+          export PATH="$HOME/.maestro/bin:$PATH"
+          maestro test maestro/ --format junit --output maestro-results.xml || MAESTRO_EXIT=$?
+          echo "maestro_exit=$MAESTRO_EXIT" >> "$GITHUB_OUTPUT"
+          exit 0  # Don't fail yet — upload artifacts first
+        id: maestro
+        continue-on-error: true
+
+      - name: Upload Maestro results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-results
+          path: |
+            maestro-results.xml
+            maestro/**/*.png
+          retention-days: 14
+
+      - name: Fail if Maestro tests failed
+        if: steps.maestro.outputs.maestro_exit != '0'
+        run: |
+          echo "Maestro E2E tests failed (exit code: ${{ steps.maestro.outputs.maestro_exit }})"
+          exit 1
   ci:
     runs-on: ubuntu-latest
     permissions:
@@ -192,6 +245,9 @@ jobs:
 
       - name: Validate OpenAPI Spec
         run: npm run validate:openapi
+
+      - name: Run contract tests
+        run: npm test -- --testPathPattern='openapi.contract|validation' --cache --cacheDirectory=.jest-cache
 
       - name: Cache Expo build output
         uses: actions/cache@v4

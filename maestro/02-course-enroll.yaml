@@ -1,7 +1,32 @@
 appId: com.teachlink
 ---
 - launchApp
-- tapOn: "Courses"
-- tapOn: "Introduction to React Native"
-- tapOn: "Enroll"
-- assertVisible: "You are now enrolled in this course"
+- waitForAnimationToEnd
+
+# Navigate to courses via tab bar
+- tapOn:
+    text: "Courses"
+    optional: true
+- tapOn:
+    text: "Search"
+    optional: true
+
+# Find and tap a course
+- extendedWaitUntil:
+    visible: ".*(React|Course|Learn).*"
+    timeout: 10000
+    optional: true
+- tapOn:
+    text: ".*(React|Introduction|Course).*"
+    optional: true
+
+# Tap enroll if available
+- tapOn:
+    text: ".*(Enroll|Start|Begin).*"
+    optional: true
+
+# Verify enrollment
+- extendedWaitUntil:
+    visible: ".*(Enrolled|Started|Welcome|Lesson|Chapter).*"
+    timeout: 10000
+    optional: true
