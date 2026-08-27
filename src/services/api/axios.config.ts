@@ -17,7 +17,7 @@ import { getEnv } from '../../config';
 import { MUTATION_INVALIDATION_MAP } from '../../config/apiCacheConfig';
 import { SSL_PINNING } from '../../config/security';
 import { useAppStore } from '../../store';
-import { useConflictStore, type ConflictData } from '../../store/conflictStore';
+import { useConflictStore } from '../../store/conflictStore';
 import { appLogger } from '../../utils/logger';
 import { notifyEntry, startTiming } from '../../utils/performanceTiming';
 import { healthMetricsService } from '../healthMetrics';
@@ -30,25 +30,10 @@ import {
 } from './cache';
 import { buildSanitizedApiError } from './errorSanitization';
 import { requestQueue } from './requestQueue';
-
-/**
- * #806: Runtime shape validator for 409 conflict response bodies.
- *
- * Axios casts response.data to `ConflictData` at the TypeScript level, but
- * provides no runtime guarantee. If the server changes its response format the
- * cast silently yields `undefined` field accesses instead of a clear error.
- * This guard validates the minimum structure before we read any field.
- */
-function isConflictResponseShape(data: unknown): data is {
-  serverVersion?: unknown;
-  serverVersionNumber?: number;
-  localVersion?: unknown;
-  entityType?: string;
-  entityId?: string;
-  message?: string;
-} {
-  return data !== null && data !== undefined && typeof data === 'object';
-}
+import {
+  isConflictResponseShape,
+  buildConflictDataFromHttpError,
+} from '../sync/httpConflictDetection';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -629,26 +614,16 @@ apiClient.interceptors.response.use(
         });
       }
 
-      // Extract version metadata from request headers
-      const clientVersionHeader = originalRequest.headers?.['X-Last-Known-Version'];
-      const clientTimestampHeader = originalRequest.headers?.['X-Client-Timestamp'];
-      const entityTypeHeader = originalRequest.headers?.['X-Entity-Type'];
-      const entityIdHeader = originalRequest.headers?.['X-Entity-Id'];
-
-      const conflictData: ConflictData = {
-        id: `conflict_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
-        entityId: responseData?.entityId ?? String(entityIdHeader ?? ''),
-        entityType: responseData?.entityType ?? String(entityTypeHeader ?? 'unknown'),
-        localData: originalRequest.data,
-        serverData: responseData?.serverVersion,
-        localVersion: clientVersionHeader ? Number(clientVersionHeader) : undefined,
-        serverVersion: responseData?.serverVersionNumber,
-        clientTimestamp: clientTimestampHeader ? Number(clientTimestampHeader) : Date.now(),
-        serverTimestamp: Date.now(),
-        endpoint: originalRequest.url ?? '',
-        method: (originalRequest.method ?? 'UNKNOWN').toUpperCase(),
-        detectedAt: Date.now(),
-      };
+      // Build conflict record using the centralised detection utility
+      const conflictData = buildConflictDataFromHttpError({
+        responseData,
+        requestConfig: {
+          data: originalRequest.data,
+          url: originalRequest.url ?? '',
+          method: originalRequest.method ?? 'UNKNOWN',
+          headers: originalRequest.headers as Record<string, unknown>,
+        },
+      });
 
       appLogger.warnSync('409 Conflict - mutation conflicts with server state', {
         endpoint: originalRequest.url,
