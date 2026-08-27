@@ -67,7 +67,7 @@ export enum AnalyticsEvent {
 
   // Core Web Vitals
   WEB_VITALS_LCP = 'web_vitals_lcp',
-  WEB_VITALS_FID = 'web_vitals_fid',
+  WEB_VITALS_INP = 'web_vitals_inp',
   WEB_VITALS_CLS = 'web_vitals_cls',
   WEB_VITALS_FCP = 'web_vitals_fcp',
   WEB_VITALS_TTFB = 'web_vitals_ttfb',
@@ -113,7 +113,7 @@ export enum PerformanceMetric {
 
   // Core Web Vitals
   LCP = 'lcp',
-  FID = 'fid',
+  INP = 'inp',
   CLS = 'cls',
   FCP = 'fcp',
   TTFB = 'ttfb',
