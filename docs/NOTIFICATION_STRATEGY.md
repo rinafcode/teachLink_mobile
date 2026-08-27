@@ -1,27 +1,64 @@
 # Notification Strategy
 
-## Overview
-TeachLink implements a robust notification handling system to prevent notification spam, deduplicate identical alerts, and batch similar notifications. This ensures a high-quality user experience without overwhelming the user or draining their device's battery.
+This document outlines the strategy for handling push notifications in the mobile application.
 
-## Core Features
+## Token Registration
 
-### 1. Deduplication
-Duplicate notifications sent within a **10-minute window** are automatically ignored. 
-- A unique fingerprint is generated for each incoming notification based on its `type`, `targetKey`, `title`, and `body`.
-- We maintain a history of the last 200 notifications. If an incoming notification matches a fingerprint in the history within the deduplication window, it is suppressed.
+When a user enables push notifications, the app generates a unique Expo Push Token. This token is sent to the backend and associated with the user's account.
 
-### 2. Batching (Grouping)
-Similar notifications are grouped together into a single summary notification if they have the same `type` and target data (e.g., multiple messages in the same conversation).
-- Titles and bodies are aggregated (e.g., "2 new messages").
-- The group count is tracked and updated as new notifications for the same group arrive.
+**Endpoint:** `POST /api/notifications/register`
 
-### 3. Adaptive Throttling (Spam Prevention)
-To prevent notification spam, we apply adaptive throttling based on user engagement. The time gap required between notifications of the same type depends on when the user last interacted with a notification:
-- **Active users** (engaged within 24 hours): Throttled to max 1 per 5 minutes.
-- **Recently inactive** (24-72 hours): Throttled to max 1 per 30 minutes.
-- **Inactive** (72+ hours): Throttled to max 1 per 3 hours (180 minutes).
+**Request Body:**
 
-### 4. Storage & History Limit
-- Unread counts and grouped notifications are stored persistently using `Zustand` and `AsyncStorage`.
-- The primary notification queue is capped at **100 stored notifications**.
-- The deduplication history is capped at **200 entries** to ensure fast read/write operations and minimal memory usage.
+```json
+{
+  "token": "ExponentPushToken[...]",
+  "platform": "ios" | "android"
+}
+```
+
+**Response:**
+
+- `200 OK`: If the token is successfully registered.
+- `400 Bad Request`: If the request is malformed.
+- `500 Internal Server Error`: If an error occurs on the backend.
+
+## Token De-registration
+
+When a user logs out or disables push notifications, the app sends a request to the backend to de-register the token.
+
+**Endpoint:** `DELETE /api/notifications/tokens/:token`
+
+**Response:**
+
+- `204 No Content`: If the token is successfully de-registered.
+- `404 Not Found`: If the token does not exist.
+- `500 Internal Server Error`: If an error occurs on the backend.
+
+## Token Refresh
+
+The Expo push token can be rotated by the OS. The app listens for token refresh events and re-registers the new token with the backend automatically.
+
+## Notification Preferences
+
+Users can customize their notification preferences in the app settings. These preferences are stored on the backend and used to determine which notifications to send.
+
+**Endpoint:** `PUT /api/notifications/preferences`
+
+**Request Body:**
+
+```json
+{
+  "courseUpdates": true,
+  "messages": false,
+  "learningReminders": true,
+  "achievementUnlocks": true,
+  "communityActivity": false
+}
+```
+
+**Response:**
+
+- `200 OK`: If the preferences are successfully updated.
+- `400 Bad Request`: If the request is malformed.
+- `500 Internal Server Error`: If an error occurs on the backend.

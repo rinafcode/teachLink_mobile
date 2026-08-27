@@ -206,17 +206,19 @@ export function getChannelId(type: NotificationType): string {
  */
 export async function registerTokenWithBackend(token: string): Promise<boolean> {
   try {
-    // TODO: Replace with actual API endpoint
-    // const response = await apiClient.post('/api/notifications/register', {
-    //   token,
-    //   platform: Platform.OS,
-    // });
-    // return response.data.success;
+    await apiClient.post('/api/notifications/register', {
+      token,
+      platform: Platform.OS,
+    });
 
-    logger.info('Push token registered:', token);
+    logger.info('Push token registered with backend:', token);
     return true;
   } catch (error) {
     logger.error('Error registering token with backend:', error);
+    // Surface the error to Sentry without blocking the UI
+    if (error.response) {
+      logger.error('Backend registration failed with status:', error.response.status);
+    }
     return false;
   }
 }
