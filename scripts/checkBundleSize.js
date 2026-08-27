@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 
-
 const budget = require('../performance-budget.json');
 
 const possibleBuilds = ['dist', 'build', '.next'];
@@ -40,13 +39,14 @@ function getSize(dir) {
 }
 
 const actual = getSize(buildPath);
+const totalBudget = budget.bundleSize?.total_bytes || 52428800;
 
-console.log('Bundle size:', actual);
-console.log('Budget:', budget.bundleSize);
+console.log('Bundle size:', actual, 'bytes');
+console.log('Budget:', totalBudget, 'bytes');
 
-if (actual > budget.bundleSize) {
-  console.error('❌ Bundle too large');
+if (actual > totalBudget) {
+  console.error(`❌ Bundle too large: ${actual} > ${totalBudget} bytes`);
   process.exit(1);
 }
 
-console.log('✅ Bundle OK');
+console.log(`✅ Bundle OK (${((actual / totalBudget) * 100).toFixed(1)}% of budget)`);
