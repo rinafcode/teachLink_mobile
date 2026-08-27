@@ -44,9 +44,6 @@ const KEYS = {
   INSTALL_UUID: 'teachlink_install_uuid',
 } as const;
 
-// ─── Sensitive Keys (enforce Keychain/Keystore) ────────────────────────────────
-const SENSITIVE_KEYS = new Set([KEYS.ACCESS_TOKEN, KEYS.REFRESH_TOKEN, KEYS.USER_DATA]);
-
 // ─── Options ──────────────────────────────────────────────────────────────────
 /**
  * Secure storage options configured for maximum security:
@@ -138,12 +135,7 @@ function auditLog(action: 'read' | 'write' | 'delete', key: string, tag: string)
  * Set item in encrypted secure storage
  * Throws error on failure - no silent fallback
  */
-async function setItem(
-  key: string,
-  value: string,
-  isSensitive: boolean = true,
-  tag: string = 'unknown'
-): Promise<void> {
+async function setItem(key: string, value: string, tag: string = 'unknown'): Promise<void> {
   try {
     auditLog('write', key, tag);
     await SecureStore.setItemAsync(key, value, SECURE_OPTIONS);
@@ -158,13 +150,24 @@ async function setItem(
 
 /**
  * Get item from encrypted secure storage
- * Throws error on failure - no silent fallback for sensitive data
+ * Throws error on failure unless {@link GetItemOptions.throwOnMissing} is false,
+ * in which case a read error is swallowed and `null` is returned.
  */
-async function getItem(
-  key: string,
-  isSensitive: boolean = true,
-  tag: string = 'unknown'
-): Promise<string | null> {
+interface GetItemOptions {
+  /**
+   * A unique identifier for the call-site (e.g., 'session-refresh').
+   */
+  tag?: string;
+  /**
+   * When true (default), rethrow read errors. When false, swallow read errors
+   * and return `null`. Used for non-sensitive reads where a missing value is
+   * an expected outcome rather than a failure.
+   */
+  throwOnMissing?: boolean;
+}
+
+async function getItem(key: string, options: GetItemOptions = {}): Promise<string | null> {
+  const { tag = 'unknown', throwOnMissing = true } = options;
   try {
     auditLog('read', key, tag);
     const value = await SecureStore.getItemAsync(key, SECURE_OPTIONS);
@@ -175,7 +178,7 @@ async function getItem(
     }`;
     logger.error(errorMsg, { key, platform: Platform.OS, tag });
 
-    if (isSensitive) {
+    if (throwOnMissing) {
       throw error;
     }
 
@@ -252,9 +255,9 @@ export async function saveTokens(
   }
 
   await Promise.all([
-    setItem(KEYS.ACCESS_TOKEN, accessToken, true, 'saveTokens'),
-    setItem(KEYS.REFRESH_TOKEN, refreshToken, true, 'saveTokens'),
-    setItem(KEYS.SESSION_EXPIRES_AT, String(expiresAt), false, 'saveTokens'),
+    setItem(KEYS.ACCESS_TOKEN, accessToken, 'saveTokens'),
+    setItem(KEYS.REFRESH_TOKEN, refreshToken, 'saveTokens'),
+    setItem(KEYS.SESSION_EXPIRES_AT, String(expiresAt), 'saveTokens'),
   ]);
 
   tokenCache.set(KEYS.ACCESS_TOKEN, accessToken);
@@ -273,7 +276,7 @@ export async function saveTokens(
 export async function getAccessToken(): Promise<string | null> {
   const cached = tokenCache.get(KEYS.ACCESS_TOKEN);
   if (cached) return cached;
-  const token = await getItem(KEYS.ACCESS_TOKEN, true, 'getAccessToken');
+  const token = await getItem(KEYS.ACCESS_TOKEN, { tag: 'getAccessToken' });
   if (token) tokenCache.set(KEYS.ACCESS_TOKEN, token);
   return token;
 }
@@ -283,14 +286,17 @@ export async function getAccessToken(): Promise<string | null> {
  * Throws error if retrieval fails (sensitive data)
  */
 export async function getRefreshToken(): Promise<string | null> {
-  return getItem(KEYS.REFRESH_TOKEN, true, 'getRefreshToken');
+  return getItem(KEYS.REFRESH_TOKEN, { tag: 'getRefreshToken' });
 }
 
 /**
  * Get session expiration timestamp from secure storage
  */
 export async function getSessionExpiresAt(): Promise<number | null> {
-  const raw = await getItem(KEYS.SESSION_EXPIRES_AT, false, 'getSessionExpiresAt');
+  const raw = await getItem(KEYS.SESSION_EXPIRES_AT, {
+    tag: 'getSessionExpiresAt',
+    throwOnMissing: false,
+  });
   return raw ? Number(raw) : null;
 }
 
@@ -319,7 +325,7 @@ export async function saveUserData(user: Record<string, unknown>): Promise<void>
     throw new Error('SecureStorage not initialized - cannot save user data');
   }
 
-  await setItem(KEYS.USER_DATA, JSON.stringify(user), true, 'saveUserData');
+  await setItem(KEYS.USER_DATA, JSON.stringify(user), 'saveUserData');
   logger.info('✅ User data saved securely to Keychain/Keystore');
 }
 
@@ -327,7 +333,7 @@ export async function saveUserData(user: Record<string, unknown>): Promise<void>
  * Get user profile data from encrypted storage
  */
 export async function getUserData<T = Record<string, unknown>>(): Promise<T | null> {
-  const raw = await getItem(KEYS.USER_DATA, true, 'getUserData');
+  const raw = await getItem(KEYS.USER_DATA, { tag: 'getUserData' });
   if (!raw) return null;
   try {
     return JSON.parse(raw) as T;
@@ -351,7 +357,7 @@ export async function clearUserData(): Promise<void> {
  * Save biometric authentication preference to secure storage
  */
 export async function setBiometricEnabled(enabled: boolean): Promise<void> {
-  await setItem(KEYS.BIOMETRIC_ENABLED, enabled ? '1' : '0', false, 'setBiometricEnabled');
+  await setItem(KEYS.BIOMETRIC_ENABLED, enabled ? '1' : '0', 'setBiometricEnabled');
   logger.info(`Biometric setting updated: ${enabled ? 'enabled' : 'disabled'}`);
 }
 
@@ -359,7 +365,10 @@ export async function setBiometricEnabled(enabled: boolean): Promise<void> {
  * Check if biometric authentication is enabled
  */
 export async function isBiometricEnabled(): Promise<boolean> {
-  const value = await getItem(KEYS.BIOMETRIC_ENABLED, false, 'isBiometricEnabled');
+  const value = await getItem(KEYS.BIOMETRIC_ENABLED, {
+    tag: 'isBiometricEnabled',
+    throwOnMissing: false,
+  });
   return value === '1';
 }
 
@@ -386,7 +395,7 @@ export async function isBiometricEnabled(): Promise<boolean> {
  * @param enrollmentId  A UUID that uniquely identifies the enrollment session.
  */
 export async function saveBiometricEnrollmentId(enrollmentId: string): Promise<void> {
-  await setItem(KEYS.BIOMETRIC_ENROLLMENT_ID, enrollmentId, false, 'saveBiometricEnrollmentId');
+  await setItem(KEYS.BIOMETRIC_ENROLLMENT_ID, enrollmentId, 'saveBiometricEnrollmentId');
   logger.info('Biometric enrollment id saved to secure storage');
 }
 
@@ -396,7 +405,10 @@ export async function saveBiometricEnrollmentId(enrollmentId: string): Promise<v
  * @returns The enrollment id, or `null` if none has been stored.
  */
 export async function getBiometricEnrollmentId(): Promise<string | null> {
-  return getItem(KEYS.BIOMETRIC_ENROLLMENT_ID, false, 'getBiometricEnrollmentId');
+  return getItem(KEYS.BIOMETRIC_ENROLLMENT_ID, {
+    tag: 'getBiometricEnrollmentId',
+    throwOnMissing: false,
+  });
 }
 
 /**
@@ -522,7 +534,7 @@ export async function verifyBiometricOnReinstall(): Promise<void> {
  * Save remembered email to secure storage
  */
 export async function saveRememberedEmail(email: string): Promise<void> {
-  await setItem(KEYS.REMEMBERED_EMAIL, email, false, 'saveRememberedEmail');
+  await setItem(KEYS.REMEMBERED_EMAIL, email, 'saveRememberedEmail');
   logger.info('Email address remembered in secure storage');
 }
 
@@ -530,14 +542,14 @@ export async function saveRememberedEmail(email: string): Promise<void> {
  * Get remembered email from secure storage
  */
 export async function getRememberedEmail(): Promise<string | null> {
-  return getItem(KEYS.REMEMBERED_EMAIL, false, 'getRememberedEmail');
+  return getItem(KEYS.REMEMBERED_EMAIL, { tag: 'getRememberedEmail', throwOnMissing: false });
 }
 
 /**
  * Save remember-me preference to secure storage
  */
 export async function setRememberMe(enabled: boolean): Promise<void> {
-  await setItem(KEYS.REMEMBER_ME, enabled ? '1' : '0', false, 'setRememberMe');
+  await setItem(KEYS.REMEMBER_ME, enabled ? '1' : '0', 'setRememberMe');
   logger.info(`Remember me setting updated: ${enabled ? 'enabled' : 'disabled'}`);
 }
 
@@ -545,7 +557,10 @@ export async function setRememberMe(enabled: boolean): Promise<void> {
  * Check if remember-me is enabled
  */
 export async function isRememberMeEnabled(): Promise<boolean> {
-  const value = await getItem(KEYS.REMEMBER_ME, false, 'isRememberMeEnabled');
+  const value = await getItem(KEYS.REMEMBER_ME, {
+    tag: 'isRememberMeEnabled',
+    throwOnMissing: false,
+  });
   return value === '1';
 }
 
@@ -650,7 +665,6 @@ export async function refreshAccessToken(): Promise<RefreshTokenResponse> {
 // ─── Export manifest (for verification in tests) ────────────────────────────────
 
 export const STORAGE_KEYS = KEYS;
-export const STORAGE_SENSITIVE_KEYS = SENSITIVE_KEYS;
 
 // ─── Test Helpers ─────────────────────────────────────────────────────────────
 export function __resetSecureStorageVerification__(): void {

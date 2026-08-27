@@ -428,17 +428,6 @@ describe('SecureStorage - Keychain/Keystore Verification #140', () => {
       expect(secureStorage.STORAGE_KEYS.REFRESH_TOKEN).toBe('teachlink_refresh_token');
       expect(secureStorage.STORAGE_KEYS.USER_DATA).toBe('teachlink_user_data');
     });
-
-    it('should identify sensitive keys', () => {
-      expect(secureStorage.STORAGE_SENSITIVE_KEYS).toBeDefined();
-      expect(secureStorage.STORAGE_SENSITIVE_KEYS.has('teachlink_access_token')).toBe(
-        true,
-      );
-      expect(secureStorage.STORAGE_SENSITIVE_KEYS.has('teachlink_refresh_token')).toBe(
-        true,
-      );
-      expect(secureStorage.STORAGE_SENSITIVE_KEYS.has('teachlink_user_data')).toBe(true);
-    });
   });
 
   // ─── Security Summary ───────────────────────────────────────────────────
