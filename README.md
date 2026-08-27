@@ -33,7 +33,12 @@ npx expo start --web    # Run in browser (limited functionality)
 
 ## Architecture
 
-We use Architecture Decision Records (ADRs) to document important architectural choices. You can find them in the [docs/adr](docs/adr) directory.
+The intended module structure, layering, dependency direction, and the rule for
+where new code goes are documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+The layering is enforced by `npm run architecture:check` (dependency-cruiser) and
+runs in CI.
+
+We also use Architecture Decision Records (ADRs) to document important architectural choices. You can find them in the [docs/adr](docs/adr) directory.
 
 ## Storybook
 
