@@ -2,6 +2,8 @@
 
 This directory contains Architecture Decision Records (ADRs) for the project. ADRs are short documents that capture important architectural decisions. Each ADR describes the context of a decision, the decision itself, and the consequences of the decision.
 
+For the overall module structure, layering, and dependency direction, see [docs/ARCHITECTURE.md](../ARCHITECTURE.md).
+
 ## Format
 
 Each ADR is a Markdown file with the following sections:

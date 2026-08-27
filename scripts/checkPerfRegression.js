@@ -42,8 +42,16 @@ function regressionPct(baseline, current) {
 }
 
 function check(label, baselineVal, currentVal, threshold) {
-  if (baselineVal == null || currentVal == null) {
-    return { label, status: 'skip', reason: 'missing data' };
+  // Fail loudly when a metric is missing rather than silently skipping.
+  // Missing metrics hide regressions and erode trust in the regression gate.
+  if (baselineVal == null && currentVal == null) {
+    return { label, status: 'fail', reason: 'both baseline and current are missing' };
+  }
+  if (baselineVal == null) {
+    return { label, status: 'fail', reason: `baseline missing for ${label} — cannot gate without a known-good value` };
+  }
+  if (currentVal == null) {
+    return { label, status: 'fail', reason: `current measurement missing for ${label}` };
   }
   const pct = regressionPct(baselineVal, currentVal);
   const regressed = pct > threshold;
@@ -107,7 +115,6 @@ function main() {
 
   const failures = checks.filter(c => c.status === 'fail');
   const passes = checks.filter(c => c.status === 'pass');
-  const skipped = checks.filter(c => c.status === 'skip');
 
   const report = {
     timestamp: new Date().toISOString(),
@@ -116,7 +123,6 @@ function main() {
       total: checks.length,
       passed: passes.length,
       failed: failures.length,
-      skipped: skipped.length,
     },
     checks,
   };
@@ -132,22 +138,18 @@ function main() {
   console.log('─'.repeat(78));
 
   for (const c of checks) {
-    if (c.status === 'skip') {
-      console.log(
-        `${c.label.padEnd(30)} ${'—'.padStart(12)} ${'—'.padStart(12)} ${'—'.padStart(10)} ${'SKIP'.padStart(8)}`
-      );
-      continue;
-    }
-    const changeStr = `${c.change_pct > 0 ? '+' : ''}${c.change_pct}%`;
+    const changeStr = c.reason
+      ? c.reason
+      : `${c.change_pct > 0 ? '+' : ''}${c.change_pct}%`;
     const statusStr = c.status === 'pass' ? '✅ PASS' : '❌ FAIL';
     console.log(
-      `${c.label.padEnd(30)} ${String(c.baseline).padStart(12)} ${String(c.current).padStart(12)} ${changeStr.padStart(10)} ${statusStr.padStart(8)}`
+      `${c.label.padEnd(30)} ${String(c.baseline ?? '—').padStart(12)} ${String(c.current ?? '—').padStart(12)} ${changeStr.padStart(20)} ${statusStr.padStart(8)}`
     );
   }
 
   console.log('─'.repeat(78));
   console.log(
-    `\n  Passed: ${passes.length}  Failed: ${failures.length}  Skipped: ${skipped.length}\n`
+    `\n  Passed: ${passes.length}  Failed: ${failures.length}\n`
   );
 
   if (failures.length > 0) {

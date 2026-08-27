@@ -4,10 +4,12 @@ import * as Application from 'expo-application';
 import * as Updates from 'expo-updates';
 import * as Clipboard from 'expo-clipboard';
 
+import Constants from 'expo-constants';
+
 export const VersionFooter = () => {
   const [copied, setCopied] = useState(false);
 
-  const version = Application.nativeApplicationVersion ?? 'unknown';
+  const version = Constants.expoConfig?.version ?? 'unknown';
   const buildNumber = Application.nativeBuildVersion ?? 'unknown';
   const updateId = Updates.updateId ?? 'N/A';
   const versionString = `v${version} (${buildNumber}) | OTA: ${updateId.slice(0, 8)}`;

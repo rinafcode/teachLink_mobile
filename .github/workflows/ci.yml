@@ -71,7 +71,7 @@ jobs:
             ${{ runner.os }}-pip-
 
       - name: Install subsetting dependencies
-        run: pip install fonttools
+        run: pip install -r requirements.txt
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -89,7 +89,7 @@ jobs:
           path: |
             assets/fonts/*.ttf
             !assets/fonts/original/*.ttf
-          key: ${{ runner.os }}-fonts-${{ hashFiles('assets/fonts/original/*.ttf', 'scripts/subset-fonts.py') }}
+          key: ${{ runner.os }}-fonts-${{ hashFiles('assets/fonts/original/*.ttf', 'scripts/subset-fonts.py', 'requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-fonts-
 
@@ -176,7 +176,10 @@ jobs:
           echo "? No console.* violations found."
 
       - name: Lint
-        run: npm run lint -- --cache --max-warnings=250 --cache-location .eslintcache
+        run: npm run lint -- --cache --max-warnings=$(node -p "require('./lint-budget.json').maxWarnings") --cache-location .eslintcache
+
+      - name: Enforce lint budget ratchet
+        run: npm run lint:budget
 
       - name: Format check
         run: npm run format:check

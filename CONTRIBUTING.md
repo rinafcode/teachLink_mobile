@@ -23,6 +23,21 @@ We have a dedicated **Syntax Gate** workflow (`.github/workflows/syntax.yml`) th
 - Required for branch protection — PRs cannot be merged if it fails
 - Run checks locally before pushing to avoid CI failures
 
+## Architecture
+
+The intended module structure, layering and dependency direction are documented
+in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The layering is enforced locally
+and in CI with dependency-cruiser:
+
+```bash
+npm run architecture:check
+```
+
+Read the architecture doc before adding a new module — the codebase already has
+a single canonical implementation for error handling, logging, location, course
+progress, sync conflict resolution, and feature flags, and duplicating one of
+these is a review blocker.
+
 ## Structured Logging
 
 **Never use `console.*` in `src/`.** The ESLint `no-console` rule is set to `error`, and CI will fail if any `console.*` call is introduced. Use `src/utils/logger` instead.
@@ -81,6 +96,30 @@ npm run lint
 # Check formatting
 npm run format:check
 
-# Run TypeScript type check
-npx tsc --noEmit
+# Run TypeScript type check (same check CI runs)
+npm run typecheck
+
+# Continuously re-run the type check as you edit
+npm run typecheck:watch
 ```
+
+### Lint warning budget
+
+Lint warnings are capped by a single ratcheting budget in `lint-budget.json`
+(`maxWarnings`), enforced by `ci.yml`. There is exactly one lint gate in CI.
+
+- `npm run lint:budget` — fails if the current warning count exceeds the budget,
+  or if the budget is looser than the measured count (so the ceiling can only
+  decrease over time).
+- `npm run lint:budget:record` — measures the warning count and records it as the
+  new, lower budget. Run and commit this after removing warnings so the budget
+  ratchets down instead of silently growing.
+### Git hooks
+
+Husky hooks enforce a baseline before changes reach CI:
+
+- **`pre-commit`** — runs `lint-staged` (Prettier + ESLint) on staged files.
+- **`pre-push`** — runs `npm run typecheck` so type errors are caught before push.
+
+You can bypass the hooks for a one-off push with `git push --no-verify`, but note
+that the same checks still run in CI and will block the pull request.

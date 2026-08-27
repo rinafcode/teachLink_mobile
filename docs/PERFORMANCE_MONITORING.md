@@ -11,7 +11,7 @@ render timing, Core Web Vitals, crash reporting, and production analytics.
 AnalyticsProvider (root)
 ├── mobileAnalyticsService   – event ingestion & sampling
 ├── crashReportingService    – global JS / promise error handlers
-└── webVitalsService         – LCP, FID, CLS, FCP, TTFB (web target)
+└── webVitalsService         – LCP, INP, CLS, FCP, TTFB (web target)
 
 useReactProfiler (hook)
 └── Profiler (React built-in)
@@ -47,7 +47,7 @@ surfaces that use it contribute to the same monitoring stream.
 | Metric | Good | Needs Improvement | Poor | Description |
 |---|---|---|---|---|
 | LCP | ≤ 2500 ms | ≤ 4000 ms | > 4000 ms | Largest Contentful Paint |
-| FID | ≤ 100 ms | ≤ 300 ms | > 300 ms | First Input Delay |
+| INP | ≤ 200 ms | ≤ 500 ms | > 500 ms | Interaction to Next Paint |
 | CLS | ≤ 0.1 | ≤ 0.25 | > 0.25 | Cumulative Layout Shift |
 | FCP | ≤ 1800 ms | ≤ 3000 ms | > 3000 ms | First Contentful Paint |
 | TTFB | ≤ 800 ms | ≤ 1800 ms | > 1800 ms | Time to First Byte |
