@@ -1,89 +1,35 @@
-name: Test Suite
+name: Test
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
-    branches: [main]
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    
-    env:
-      EXPO_PUBLIC_API_BASE_URL: https://api.teachlink.com
-      EXPO_PUBLIC_SOCKET_URL: wss://api.teachlink.com
-      EXPO_PUBLIC_APP_ENV: production
-      EXPO_PUBLIC_ENABLE_PUSH_NOTIFICATIONS: true
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
-          node-version: 20
-
-      # ==============================
-      # 📦 DEPENDENCY CACHING
-      # ==============================
-      - name: Cache node_modules
-        id: cache-deps
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+          node-version: '18'
+          cache: 'npm'
 
       - name: Install dependencies
-        if: steps.cache-deps.outputs.cache-hit != 'true'
-        run: npm ci --prefer-offline --no-audit
+        run: npm ci
 
-      # ==============================
-      # 🧪 JEST CACHE
-      # ==============================
-      - name: Cache Jest
-        uses: actions/cache@v4
-        with:
-          path: |
-            .jest-cache
-            coverage
-          key: ${{ runner.os }}-jest-${{ hashFiles('jest.config.js', 'package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-jest-
+      - name: Run tests
+        run: npm run test:coverage -- --json --outputFile=jest-results.json
 
-      # ==============================
-      # 🧪 RUN TESTS
-      # ==============================
-      - name: Run unit tests
-        run: npm test -- --runInBand --testPathIgnorePatterns=perf --cache --cacheDirectory=.jest-cache
-
-      - name: Run performance regression tests
-        run: npm test -- --testPathPattern=perf --runInBand --verbose --cache --cacheDirectory=.jest-cache
-
-      # ==============================
-      # 📊 COVERAGE REPORT
-      # ==============================
-      - name: Upload coverage to artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: coverage/
-          retention-days: 7
-
-      - name: Generate test summary
-        if: always()
+      - name: Check for zero tests
         run: |
-          echo "## 🧪 Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ All tests passed!" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Cache Hit:** ${{ steps.cache-deps.outputs.cache-hit == 'true' && '✅ Yes' || '❌ No' }}" >> $GITHUB_STEP_SUMMARY
+          if [ $(jq '.numTotalTests' jest-results.json) -eq 0 ]; then
+            echo "Error: Zero tests were executed."
+            exit 1
+          fi
+      
+      - name: Report coverage
+        run: |
+          echo "Coverage Report"
+          cat coverage/lcov-report/index.html

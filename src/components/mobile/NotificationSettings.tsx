@@ -12,7 +12,7 @@ import { useNotificationPermission } from '../../hooks';
 import { useNotificationStore } from '../../store/notificationStore';
 import { NotificationPreferences } from '../../types/notifications';
 import { configureNext } from '../../utils/layoutAnimation';
-import { appLogger } from '../../utils/logger';
+import { apiClient } from '../../services/api/axios.config';
 
 interface SettingRowProps {
   icon: string;
@@ -67,16 +67,18 @@ export const NotificationSettings = () => {
     async (key: keyof NotificationPreferences, value: boolean) => {
       try {
         setSavingKey(key);
-        // Update local preferences (automatically persisted by Zustand)
+        // Optimistically update local state for a responsive UI
         setPreference(key, value);
 
-        // TODO: Sync with backend
-        // try {
-        //   await api.updateNotificationPreferences({ [key]: value });
-        // } catch (error) {
-        //   appLogger.errorSync('Failed to sync notification preferences:', error);
-        //   // Preferences are still saved locally even if sync fails
-        // }
+        // Sync with backend
+        await apiClient.put('/api/notifications/preferences', {
+          [key]: value,
+        });
+      } catch (error) {
+        // Revert local state on failure and show an error
+        setPreference(key, !value);
+        // You might want to show a toast or other error notification here
+        console.error('Failed to sync notification preferences:', error);
       } finally {
         setSavingKey(null);
       }
