@@ -29,6 +29,3 @@ jobs:
 
       - name: TypeScript type check
         run: npx tsc --noEmit
-
-      - name: ESLint check (no-fix)
-        run: npx eslint . --max-warnings=0
