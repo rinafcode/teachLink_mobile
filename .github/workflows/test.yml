@@ -20,7 +20,7 @@ jobs:
         run: npm ci
 
       - name: Run tests
-        run: npm test -- --json --outputFile=jest-results.json
+        run: npm run test:coverage -- --json --outputFile=jest-results.json
 
       - name: Check for zero tests
         run: |
@@ -28,3 +28,8 @@ jobs:
             echo "Error: Zero tests were executed."
             exit 1
           fi
+      
+      - name: Report coverage
+        run: |
+          echo "Coverage Report"
+          cat coverage/lcov-report/index.html
