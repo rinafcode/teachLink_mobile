@@ -25,4 +25,8 @@ module.exports = {
   ],
   collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/*.d.ts', '!src/**/index.ts'],
   testPathIgnorePatterns: ['/node_modules/'],
+  // Leak detection: report open handles so tests don't mask async bugs.
+  detectOpenHandles: true,
+  // Exit cleanly after the suite instead of waiting for stale timers.
+  forceExit: true,
 };

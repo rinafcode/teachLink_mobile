@@ -494,8 +494,35 @@ global._ReactNativeCSSInterop = {
   remapProps: jest.fn(),
 };
 
-// Clean up any open handles from axios.config.ts interval
-const { stopCacheStatsFlush } = require('./src/services/api/axios.config');
+// Clean up any open handles from module-scope subscriptions.
+// Each service that registers timers, listeners, or intervals at module
+// scope must expose a teardown that Jest calls after the suite finishes.
 afterAll(() => {
-  stopCacheStatsFlush();
+  try {
+    const { stopCacheStatsFlush } = require('./src/services/api/axios.config');
+    stopCacheStatsFlush();
+  } catch {
+    /* module may not be imported in every test run */
+  }
+
+  try {
+    const { default: socketService } = require('./src/services/socket');
+    socketService.disconnect();
+  } catch {
+    /* socket not connected in tests */
+  }
+
+  try {
+    const { memoryPressureService } = require('./src/services/memoryPressureService');
+    memoryPressureService.shutdown();
+  } catch {
+    /* service not initialised in tests */
+  }
+
+  try {
+    const { networkMonitor } = require('./src/services/networkMonitor');
+    networkMonitor.destroy();
+  } catch {
+    /* monitor not initialised in tests */
+  }
 });
