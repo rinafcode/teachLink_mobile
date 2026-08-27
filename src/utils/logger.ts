@@ -77,8 +77,7 @@ const LEVEL_EMOJI: Record<LogLevel, string> = {
 import Constants from 'expo-constants';
 import * as Crypto from 'expo-crypto';
 
-const APP_VERSION: string =
-  (Constants.expoConfig?.version as string) ?? '1.0.0';
+const APP_VERSION: string = (Constants.expoConfig?.version as string) ?? 'unknown';
 const SESSION_ID = Crypto.randomUUID();
 
 // ─── LOGGER IMPLEMENTATION ────────────────────────────────────────────────
