@@ -12,6 +12,16 @@
   "packageRules": [
     {
       "matchUpdateTypes": ["patch"],
+      "groupName": "patch dependencies",
+      "groupSlug": "patch-dependencies"
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions",
+      "groupSlug": "github-actions"
+    },
+    {
+      "matchUpdateTypes": ["patch"],
       "matchDepTypes": ["devDependencies"],
       "automerge": true,
       "automergeType": "pr",

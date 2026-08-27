@@ -169,11 +169,8 @@
     "yaml": "^2.9.0"
   },
   "overrides": {
-    "@tootallnate/once": "^3.0.1",
     "brace-expansion": "^1.1.13",
     "postcss": "^8.5.12",
-    "tmp": "^0.2.6",
-    "ws": "^8.21.0",
     "uuid": "^11.0.3"
   },
   "private": true,
