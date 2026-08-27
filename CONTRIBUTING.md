@@ -23,6 +23,21 @@ We have a dedicated **Syntax Gate** workflow (`.github/workflows/syntax.yml`) th
 - Required for branch protection — PRs cannot be merged if it fails
 - Run checks locally before pushing to avoid CI failures
 
+## Architecture
+
+The intended module structure, layering and dependency direction are documented
+in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The layering is enforced locally
+and in CI with dependency-cruiser:
+
+```bash
+npm run architecture:check
+```
+
+Read the architecture doc before adding a new module — the codebase already has
+a single canonical implementation for error handling, logging, location, course
+progress, sync conflict resolution, and feature flags, and duplicating one of
+these is a review blocker.
+
 ## Structured Logging
 
 **Never use `console.*` in `src/`.** The ESLint `no-console` rule is set to `error`, and CI will fail if any `console.*` call is introduced. Use `src/utils/logger` instead.
