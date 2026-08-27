@@ -43,7 +43,7 @@ const INITIAL_COUNTERS: MetricsCounters = {
 
 /**
  * In-memory store for error-boundary retry metrics, scoped to the React tree that
- * mounts it. Wire the returned callbacks into a {@link RetryErrorBoundary}'s
+ * mounts it. Wire the returned callbacks into an {@link ErrorBoundary}'s
  * `onError` / `onRetrySuccess` / `onMaxRetriesReached` props to record events.
  *
  * Counters live in React state (not module-level mutable variables) so each consumer
