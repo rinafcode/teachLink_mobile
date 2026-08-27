@@ -28,7 +28,7 @@ jobs:
         run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
       - name: TypeScript type check
-        run: npx tsc --noEmit
+        run: npm run typecheck
 
       - name: ESLint check (no-fix)
         run: npx eslint . --max-warnings=0
