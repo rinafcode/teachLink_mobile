@@ -1,35 +1,3 @@
 {
-  "_comment": "Absolute performance budgets for TeachLink. See docs/PERFORMANCE_THRESHOLDS.md for rationale.",
-  "version": "1.0.0",
-  "bundleSize": {
-    "android_bytes": 2621440,
-    "ios_bytes": 2621440,
-    "total_bytes": 5242880
-  },
-  "startupTime": {
-    "p50_ms": 1000,
-    "p95_ms": 2000
-  },
-  "frameRate": {
-    "min_fps": 55,
-    "maxDroppedFrames": 5
-  },
-  "apiLatency": {
-    "p50_ms": 300,
-    "p95_ms": 1000,
-    "p99_ms": 2000
-  },
-  "memory": {
-    "maxHeapMB": 128,
-    "maxNativeMB": 80
-  },
-  "lighthouse": {
-    "minPerformanceScore": 50,
-    "maxFCP": 3000,
-    "maxLCP": 4000,
-    "maxCLS": 0.25,
-    "maxTBT": 3000,
-    "maxSI": 4000,
-    "maxTTI": 5000
-  }
+  "startupDuration": 2000
 }

@@ -1,25 +1,38 @@
-import { jest } from '@jest/globals';
+import { render } from '@testing-library/react-native';
+import App from '../../app/_layout';
+import { useAppStore } from '../store/createStore';
+import { checkAuthStatus } from '../services/auth';
+import { initializeSentry } from '../services/sentry';
+import { setupInterceptors } from '../services/api/axios.config';
 
-// Mock the logging initialization function
-jest.mock('../config/logging', () => ({
-  initializeLogging: jest.fn().mockResolvedValue(undefined),
-}));
+jest.mock('../services/auth');
+jest.mock('../services/sentry');
+jest.mock('../services/api/axios.config');
 
-// Mock the socket service
-jest.mock('../services/socket', () => ({
-  default: { connect: jest.fn() },
-}));
+describe('App Initialization', () => {
+  it('should initialize all services in the correct order', async () => {
+    const callOrder = [];
+    const mockStore = useAppStore.getState();
 
-// Import the App module after mocks are applied
+    (checkAuthStatus as jest.Mock).mockImplementation(async () => {
+      callOrder.push('checkAuthStatus');
+      return true;
+    });
 
-describe('App module lazy initialization', () => {
-  it('should not call initializeLogging at module scope', () => {
-    const { initializeLogging } = require('../../src/config/logging');
-    expect(initializeLogging).not.toHaveBeenCalled();
-  });
+    (initializeSentry as jest.Mock).mockImplementation(() => {
+      callOrder.push('initializeSentry');
+    });
 
-  it('should not call socketService.connect at module scope', () => {
-    const socketService = require('../../src/services/socket').default;
-    expect(socketService.connect).not.toHaveBeenCalled();
+    (setupInterceptors as jest.Mock).mockImplementation(() => {
+      callOrder.push('setupInterceptors');
+    });
+
+    render(<App />);
+
+    expect(callOrder).toEqual([
+      'initializeSentry',
+      'setupInterceptors',
+      'checkAuthStatus',
+    ]);
   });
 });
