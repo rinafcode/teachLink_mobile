@@ -234,4 +234,130 @@ describe('requestQueue offline-to-online sync E2E (#840)', () => {
     const queue = await requestQueue.getQueue();
     expect(queue).toHaveLength(0);
   });
+
+  // ─── Deduplication tests ────────────────────────────────────────────────
+
+  it('suppresses duplicate POST requests sharing the same method+URL+body', async () => {
+    const id1 = await requestQueue.addToQueue(
+      mockConfig({ method: 'POST', url: '/api/notes', data: { title: 'A' } })
+    );
+    const id2 = await requestQueue.addToQueue(
+      mockConfig({ method: 'POST', url: '/api/notes', data: { title: 'A' } })
+    );
+
+    // Second call returns the existing id, not a new one
+    expect(id2).toBe(id1);
+
+    const queue = await requestQueue.getQueue();
+    expect(queue).toHaveLength(1);
+  });
+
+  it('allows duplicate POST requests with different bodies', async () => {
+    await requestQueue.addToQueue(
+      mockConfig({ method: 'POST', url: '/api/notes', data: { title: 'A' } })
+    );
+    await requestQueue.addToQueue(
+      mockConfig({ method: 'POST', url: '/api/notes', data: { title: 'B' } })
+    );
+
+    const queue = await requestQueue.getQueue();
+    expect(queue).toHaveLength(2);
+  });
+
+  it('collapses GET requests: replaces older entry with the newest', async () => {
+    await requestQueue.addToQueue(
+      mockConfig({ method: 'GET', url: '/api/feed' })
+    );
+    await requestQueue.addToQueue(
+      mockConfig({ method: 'GET', url: '/api/feed' })
+    );
+    await requestQueue.addToQueue(
+      mockConfig({ method: 'GET', url: '/api/feed' })
+    );
+
+    const queue = await requestQueue.getQueue();
+    // GETs are collapsed to one entry (the most recent)
+    expect(queue).toHaveLength(1);
+  });
+
+  it('reconnection does not produce duplicate writes for idempotent POSTs', async () => {
+    const client = jest.fn().mockResolvedValue({ data: 'ok' });
+
+    // Simulate the same POST being queued multiple times during offline
+    await requestQueue.addToQueue(
+      mockConfig({ method: 'POST', url: '/api/enroll', data: { courseId: 'c1' } })
+    );
+    await requestQueue.addToQueue(
+      mockConfig({ method: 'POST', url: '/api/enroll', data: { courseId: 'c1' } })
+    );
+
+    goOnline();
+    await requestQueue.processQueue(client);
+
+    // Only one network call should have been made
+    expect(client).toHaveBeenCalledTimes(1);
+  });
+
+  // ─── MAX_QUEUE_SIZE eviction tests ──────────────────────────────────────
+
+  it('evicts oldest low-priority requests when queue exceeds MAX_QUEUE_SIZE', async () => {
+    // Fill queue with 100 low-priority requests
+    for (let i = 0; i < 100; i++) {
+      await requestQueue.addToQueue(
+        mockConfig({ url: `/api/item-${i}` }),
+        'low'
+      );
+    }
+
+    let queue = await requestQueue.getQueue();
+    expect(queue).toHaveLength(100);
+
+    // Adding one more should evict the oldest low-priority entry
+    await requestQueue.addToQueue(
+      mockConfig({ url: '/api/item-new' }),
+      'low'
+    );
+
+    queue = await requestQueue.getQueue();
+    expect(queue).toHaveLength(100);
+
+    // The oldest entry (/api/item-0) should have been evicted
+    expect(queue.find(r => r.endpoint === '/api/item-0')).toBeUndefined();
+    // The newest entry should be present
+    expect(queue.find(r => r.endpoint === '/api/item-new')).toBeTruthy();
+  });
+
+  it('never evicts critical requests even when queue is full', async () => {
+    // Fill queue with 100 low-priority requests
+    for (let i = 0; i < 100; i++) {
+      await requestQueue.addToQueue(
+        mockConfig({ url: `/api/low-${i}` }),
+        'low'
+      );
+    }
+
+    // Add a critical request — queue is already full
+    await requestQueue.addToQueue(
+      mockConfig({ url: '/api/critical-payment' }),
+      'critical'
+    );
+
+    const queue = await requestQueue.getQueue();
+    // Critical request should always be present
+    expect(queue.find(r => r.endpoint === '/api/critical-payment')).toBeTruthy();
+  });
+
+  it('tracks dropped request count', async () => {
+    const initialDropped = requestQueue.getDroppedCount();
+
+    // Fill queue past capacity
+    for (let i = 0; i < 101; i++) {
+      await requestQueue.addToQueue(
+        mockConfig({ url: `/api/items-${i}` }),
+        'low'
+      );
+    }
+
+    expect(requestQueue.getDroppedCount()).toBeGreaterThanOrEqual(initialDropped + 1);
+  });
 });

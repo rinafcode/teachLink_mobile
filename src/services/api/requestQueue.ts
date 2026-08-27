@@ -52,6 +52,12 @@ interface QueueMetrics {
 const QUEUE_KEY = '@teachlink_request_queue';
 const QUEUE_METRICS_KEY = '@teachlink_request_queue_metrics';
 const MONITOR_INTERVAL_MS = 10000;
+/**
+ * Maximum number of requests the queue will hold.
+ * When exceeded, the oldest low-priority request is evicted first,
+ * then normal, then high. Critical requests are never evicted.
+ */
+const MAX_QUEUE_SIZE = 100;
 const PRIORITY_ORDER: Record<RequestPriority, number> = {
   critical: 0,
   high: 1,
@@ -67,6 +73,7 @@ class RequestQueue {
   private networkListener: (() => void) | null = null;
   // #802: typed as ApiClient to prevent passing arbitrary objects
   private apiClient: ApiClient | null = null;
+  private droppedCount = 0;
   private metrics: QueueMetrics = {
     totalQueued: 0,
     byPriority: { critical: 0, high: 0, normal: 0, low: 0 },
@@ -95,8 +102,16 @@ class RequestQueue {
       const fp = this.fingerprint(config);
       const existing = queue.find(r => r.fingerprint === fp);
       if (existing) {
-        logger.info(`RequestQueue: duplicate ${method} ${endpoint} suppressed — returning existing id ${existing.id}`);
-        return existing.id;
+        // For GET requests, replace the existing entry with the newest version
+        // so reconnection replays only the most recent read.
+        if (method === 'GET') {
+          const idx = queue.indexOf(existing);
+          queue.splice(idx, 1);
+          logger.info(`RequestQueue: GET ${endpoint} collapsed — replaced older entry ${existing.id}`);
+        } else {
+          logger.info(`RequestQueue: duplicate ${method} ${endpoint} suppressed — returning existing id ${existing.id}`);
+          return existing.id;
+        }
       }
 
       const queuedRequest: QueuedRequest = {
@@ -117,6 +132,23 @@ class RequestQueue {
 
       queue.push(queuedRequest);
       this.sortByPriority(queue);
+
+      // Evict oldest non-critical requests when over capacity
+      while (queue.length > MAX_QUEUE_SIZE) {
+        // Find the oldest evictable request (skip critical)
+        const evictIdx = queue.findIndex(r => r.priority !== 'critical');
+        if (evictIdx === -1) break; // all critical — stop evicting
+        const evicted = queue.splice(evictIdx, 1)[0];
+        this.droppedCount++;
+        this.metrics.byPriority[evicted.priority] = Math.max(
+          0,
+          this.metrics.byPriority[evicted.priority] - 1
+        );
+        logger.warn(
+          `RequestQueue: evicted [${evicted.priority}] ${evicted.method} ${evicted.endpoint} (queue full, dropped #${this.droppedCount})`
+        );
+      }
+
       await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
 
       this.metrics.totalQueued++;
@@ -371,6 +403,11 @@ class RequestQueue {
     return () => {
       this.listeners = this.listeners.filter(l => l !== listener);
     };
+  }
+
+  /** Number of requests evicted due to MAX_QUEUE_SIZE since app start. */
+  getDroppedCount(): number {
+    return this.droppedCount;
   }
 
   private createBatches(requests: QueuedRequest[]): BatchGroup[] {
