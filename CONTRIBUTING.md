@@ -81,6 +81,19 @@ npm run lint
 # Check formatting
 npm run format:check
 
-# Run TypeScript type check
-npx tsc --noEmit
+# Run TypeScript type check (same check CI runs)
+npm run typecheck
+
+# Continuously re-run the type check as you edit
+npm run typecheck:watch
 ```
+
+### Git hooks
+
+Husky hooks enforce a baseline before changes reach CI:
+
+- **`pre-commit`** — runs `lint-staged` (Prettier + ESLint) on staged files.
+- **`pre-push`** — runs `npm run typecheck` so type errors are caught before push.
+
+You can bypass the hooks for a one-off push with `git push --no-verify`, but note
+that the same checks still run in CI and will block the pull request.
