@@ -13,8 +13,17 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import * as Crypto from 'expo-crypto';
 
+import {
+  invalidateByPattern,
+  invalidateCacheForBatchRequests,
+  invalidateCacheForMutation,
+  getCacheStats,
+} from './cache';
+import { buildSanitizedApiError } from './errorSanitization';
+import { requestQueue } from './requestQueue';
 import { getEnv } from '../../config';
 import { MUTATION_INVALIDATION_MAP } from '../../config/apiCacheConfig';
+import { pushLogContext, popLogContext } from '../../config/logging';
 import { SSL_PINNING } from '../../config/security';
 import { useAppStore } from '../../store';
 import { useConflictStore } from '../../store/conflictStore';
@@ -23,13 +32,6 @@ import { notifyEntry, startTiming } from '../../utils/performanceTiming';
 import { healthMetricsService } from '../healthMetrics';
 import { getAccessToken, getRefreshToken, saveTokens } from '../secureStorage';
 import { sentryContextService } from '../sentryContext';
-import {
-  invalidateByPattern,
-  invalidateCacheForBatchRequests,
-  invalidateCacheForMutation,
-} from './cache';
-import { buildSanitizedApiError } from './errorSanitization';
-import { requestQueue } from './requestQueue';
 import {
   isConflictResponseShape,
   buildConflictDataFromHttpError,
@@ -141,8 +143,6 @@ function invalidateSuccessfulMutationCache(config: InternalAxiosRequestConfig): 
 // This module reads those counters on a 60-second interval and logs a summary,
 // avoiding duplicate counter implementations.
 
-import { getCacheStats } from './cache';
-
 const CACHE_STATS_INTERVAL_MS = 60_000;
 
 function flushCacheStats(): void {
@@ -239,6 +239,8 @@ let _getSession: (() => SessionAccessor) | null = null;
 
 export function setSessionAccessor(accessor: () => SessionAccessor): void {
   _getSession = accessor;
+}
+
 // ─── Request ID generation ──────────────────────────────────────────────────
 // One native crypto call per session; derive per-request IDs from a counter.
 
@@ -301,7 +303,11 @@ apiClient.interceptors.request.use(
     // Only call startTiming when _timingFinish is not already set to avoid
     // leaking finalisers on retried requests.
     if (!config._timingFinish) {
-      config._timingFinish = startTiming('api', config.url ?? 'unknown', config.method?.toUpperCase());
+      config._timingFinish = startTiming(
+        'api',
+        config.url ?? 'unknown',
+        config.method?.toUpperCase()
+      );
     }
 
     return config;
@@ -315,7 +321,15 @@ apiClient.interceptors.request.use(
 
 const IMAGE_ACCEPT_HEADER = 'image/avif,image/webp,image/png,image/jpeg,*/*;q=0.8';
 
-const IMAGE_PATH_PREFIXES = ['/images', '/image', '/uploads', '/upload', '/avatars', '/avatar', '/media'];
+const IMAGE_PATH_PREFIXES = [
+  '/images',
+  '/image',
+  '/uploads',
+  '/upload',
+  '/avatars',
+  '/avatar',
+  '/media',
+];
 
 function looksLikeImageUrl(url: string): boolean {
   if (!IMAGE_PATH_PREFIXES.some(p => url.includes(p))) return false;
@@ -486,10 +500,13 @@ apiClient.interceptors.response.use(
         if (isIdempotent || hasIdempotencyKey) {
           await requestQueue.addToQueue(originalRequest);
         } else {
-          appLogger.warnSync('Network error on non-idempotent request — not queueing to prevent duplicate writes', {
-            endpoint: originalRequest.url,
-            method: originalRequest.method,
-          });
+          appLogger.warnSync(
+            'Network error on non-idempotent request — not queueing to prevent duplicate writes',
+            {
+              endpoint: originalRequest.url,
+              method: originalRequest.method,
+            }
+          );
         }
       }
       return Promise.reject(error);
@@ -663,9 +680,12 @@ apiClient.interceptors.response.use(
             endpoint: originalRequest.url,
           });
         } else {
-          appLogger.warnSync('Login rate-limited but no Retry-After header; applying default UX lockout', {
-            endpoint: originalRequest.url,
-          });
+          appLogger.warnSync(
+            'Login rate-limited but no Retry-After header; applying default UX lockout',
+            {
+              endpoint: originalRequest.url,
+            }
+          );
         }
 
         return Promise.reject({
@@ -735,7 +755,11 @@ apiClient.interceptors.response.use(
       const elapsedSinceFirstFailure = Date.now() - originalRequest._retryDeadlineAt;
       const withinDeadline = elapsedSinceFirstFailure < RETRY_DEADLINE_MS;
 
-      if (originalRequest._retryCount < MAX_SERVER_ERROR_RETRIES && (isIdempotent || hasIdempotencyKey) && withinDeadline) {
+      if (
+        originalRequest._retryCount < MAX_SERVER_ERROR_RETRIES &&
+        (isIdempotent || hasIdempotencyKey) &&
+        withinDeadline
+      ) {
         const attempt = originalRequest._retryCount;
         originalRequest._retryCount += 1;
 
