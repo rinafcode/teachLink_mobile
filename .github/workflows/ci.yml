@@ -176,7 +176,10 @@ jobs:
           echo "? No console.* violations found."
 
       - name: Lint
-        run: npm run lint -- --cache --max-warnings=250 --cache-location .eslintcache
+        run: npm run lint -- --cache --max-warnings=$(node -p "require('./lint-budget.json').maxWarnings") --cache-location .eslintcache
+
+      - name: Enforce lint budget ratchet
+        run: npm run lint:budget
 
       - name: Format check
         run: npm run format:check

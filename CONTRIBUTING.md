@@ -103,6 +103,17 @@ npm run typecheck
 npm run typecheck:watch
 ```
 
+### Lint warning budget
+
+Lint warnings are capped by a single ratcheting budget in `lint-budget.json`
+(`maxWarnings`), enforced by `ci.yml`. There is exactly one lint gate in CI.
+
+- `npm run lint:budget` — fails if the current warning count exceeds the budget,
+  or if the budget is looser than the measured count (so the ceiling can only
+  decrease over time).
+- `npm run lint:budget:record` — measures the warning count and records it as the
+  new, lower budget. Run and commit this after removing warnings so the budget
+  ratchets down instead of silently growing.
 ### Git hooks
 
 Husky hooks enforce a baseline before changes reach CI:
