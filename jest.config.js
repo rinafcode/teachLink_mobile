@@ -5,6 +5,12 @@ module.exports = {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   moduleNameMapper: {
+    // Root-level components/hooks/constants imported via @/ alias.
+    // The @/ alias maps to src/, but some legacy modules live at the root.
+    '^@/components/(themed-text|themed-view)$': '<rootDir>/components/$1',
+    '^@/src/hooks$': '<rootDir>/src/hooks/index',
+    '^@/hooks/(.*)$': '<rootDir>/src/hooks/$1',
+    '^@/constants/(.*)$': '<rootDir>/constants/$1',
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@components/(.*)$': '<rootDir>/src/components/$1',
     '^@hooks/(.*)$': '<rootDir>/src/hooks/$1',

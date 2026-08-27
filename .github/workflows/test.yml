@@ -60,6 +60,12 @@ jobs:
             ${{ runner.os }}-jest-
 
       # ==============================
+      # 🚨 SMOKE TEST (runs first for fast feedback)
+      # ==============================
+      - name: Route smoke test
+        run: npx jest tests/routes.smoke.test.ts --runInBand --no-cache
+
+      # ==============================
       # 🧪 RUN TESTS
       # ==============================
       - name: Run unit tests
