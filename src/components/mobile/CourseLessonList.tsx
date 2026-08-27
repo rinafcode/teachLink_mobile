@@ -1,8 +1,8 @@
-import React, { memo } from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import React, { memo, useCallback } from 'react';
+import { FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
 
-import { CourseProgress, Section } from '../../types/course';
-import { AppText as Text } from "../common/AppText";
+import { CourseProgress, Lesson, Section } from '../../types/course';
+import { AppText as Text } from '../common/AppText';
 
 interface CourseLessonListProps {
   sections: Section[];
@@ -11,59 +11,81 @@ interface CourseLessonListProps {
   onLessonSelect: (lessonId: string, sectionId: string) => void;
 }
 
+type ListItem =
+  | { type: 'section'; data: Section }
+  | { type: 'lesson'; data: { lesson: Lesson; sectionId: string; index: number } };
+
 const CourseLessonList = memo(
   ({ sections, progress, currentLessonId, onLessonSelect }: CourseLessonListProps) => {
-    return (
-      <View style={styles.container}>
-        {sections.map(section => (
-          <View key={section.id} style={styles.sectionBlock}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-            {section.lessons.map((lesson, index) => {
-              const isCompleted = progress?.lessons[lesson.id]?.completed ?? false;
-              const isCurrent = lesson.id === currentLessonId;
+    const listData: ListItem[] = sections.flatMap(section => [
+      { type: 'section', data: section },
+      ...section.lessons.map((lesson, index) => ({
+        type: 'lesson',
+        data: { lesson, sectionId: section.id, index },
+      })),
+    ]);
 
-              return (
-                <TouchableOpacity
-                  key={lesson.id}
-                  style={[
-                    styles.lessonRow,
-                    isCurrent && styles.lessonRowActive,
-                  ]}
-                  onPress={() => onLessonSelect(lesson.id, section.id)}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: isCurrent }}
-                  accessibilityLabel={`${lesson.title}, ${isCompleted ? 'completed' : 'incomplete'}`}
-                >
-                  <View
-                    style={[
-                      styles.lessonIndicator,
-                      isCompleted && styles.lessonIndicatorCompleted,
-                      isCurrent && !isCompleted && styles.lessonIndicatorActive,
-                    ]}
-                  >
-                    {isCompleted ? (
-                      <Text style={styles.checkmark}>✓</Text>
-                    ) : (
-                      <Text style={styles.lessonNumber}>{index + 1}</Text>
-                    )}
-                  </View>
-                  <View style={styles.lessonInfo}>
-                    <Text
-                      style={[styles.lessonTitle, isCurrent && styles.lessonTitleActive]}
-                      numberOfLines={2}
-                    >
-                      {lesson.title}
-                    </Text>
-                    {lesson.duration && (
-                      <Text style={styles.lessonDuration}>{lesson.duration}</Text>
-                    )}
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        ))}
-      </View>
+    const keyExtractor = useCallback((item: ListItem) => {
+      return item.type === 'section' ? `section-${item.data.id}` : item.data.lesson.id;
+    }, []);
+
+    const renderItem = useCallback(
+      ({ item }: { item: ListItem }) => {
+        if (item.type === 'section') {
+          return <Text style={styles.sectionTitle}>{item.data.title}</Text>;
+        }
+
+        const { lesson, sectionId, index } = item.data;
+        const isCompleted = progress?.lessons[lesson.id]?.completed ?? false;
+        const isCurrent = lesson.id === currentLessonId;
+
+        return (
+          <TouchableOpacity
+            style={[styles.lessonRow, isCurrent && styles.lessonRowActive]}
+            onPress={() => onLessonSelect(lesson.id, sectionId)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: isCurrent }}
+            accessibilityLabel={`${lesson.title}, ${isCompleted ? 'completed' : 'incomplete'}`}
+          >
+            <View
+              style={[
+                styles.lessonIndicator,
+                isCompleted && styles.lessonIndicatorCompleted,
+                isCurrent && !isCompleted && styles.lessonIndicatorActive,
+              ]}
+            >
+              {isCompleted ? (
+                <Text style={styles.checkmark}>✓</Text>
+              ) : (
+                <Text style={styles.lessonNumber}>{index + 1}</Text>
+              )}
+            </View>
+            <View style={styles.lessonInfo}>
+              <Text
+                style={[styles.lessonTitle, isCurrent && styles.lessonTitleActive]}
+                numberOfLines={2}
+              >
+                {lesson.title}
+              </Text>
+              {lesson.duration && <Text style={styles.lessonDuration}>{lesson.duration}</Text>}
+            </View>
+          </TouchableOpacity>
+        );
+      },
+      [progress, currentLessonId, onLessonSelect]
+    );
+
+    return (
+      <FlatList
+        data={listData}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        style={styles.container}
+        removeClippedSubviews
+        initialNumToRender={20}
+        maxToRenderPerBatch={10}
+        windowSize={21}
+      />
     );
   }
 );
@@ -75,9 +97,6 @@ export default CourseLessonList;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  sectionBlock: {
-    marginBottom: 8,
   },
   sectionTitle: {
     fontSize: 14,

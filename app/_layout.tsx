@@ -6,7 +6,6 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
 import { CacheStatusOverlay, MemoryProfilerOverlay } from '../components/DevTools';
-import { RetryErrorBoundary } from '../components/ErrorBoundary/RetryErrorBoundary';
 import '../global.css'; // NativeWind CSS
 import { AnalyticsProvider, ErrorBoundary, OfflineIndicatorProvider } from '../src/components';
 import AppLifecycleManager from '../src/components/AppLifecycleManager';
@@ -160,36 +159,33 @@ const RootLayout = () => {
   }, [router]);
 
   return (
-    <ErrorBoundary boundaryName="RootLayout">
-      {/* ✅ Wrap with RetryErrorBoundary */}
-      <RetryErrorBoundary>
-        {/*
-         * KeyboardDelegateProvider mounts exactly ONE pair of Keyboard
-         * listeners (show + hide) for the entire app.  All screens read
-         * keyboard state via useKeyboardState() / DelegatedKeyboardAvoidingView
-         * without registering their own listeners.
-         */}
-        <KeyboardDelegateProvider>
-          <AnalyticsProvider>
-            <ScreenTracker />
-            <ThemeSync />
-            <UpdateChecker />
-            <ConflictResolutionModal />
-            <AppLifecycleManager />
-            <GestureHandlerRootView style={{ flex: 1 }}>
-              <OfflineIndicatorProvider>
-                <Stack screenOptions={{ headerShown: false }} />
-              </OfflineIndicatorProvider>
-            </GestureHandlerRootView>
-            {__DEV__ && (
-              <>
-                <MemoryProfilerOverlay />
-                <CacheStatusOverlay />
-              </>
-            )}
-          </AnalyticsProvider>
-        </KeyboardDelegateProvider>
-      </RetryErrorBoundary>
+    <ErrorBoundary boundaryName="RootLayout" autoRetry>
+      {/*
+       * KeyboardDelegateProvider mounts exactly ONE pair of Keyboard
+       * listeners (show + hide) for the entire app.  All screens read
+       * keyboard state via useKeyboardState() / DelegatedKeyboardAvoidingView
+       * without registering their own listeners.
+       */}
+      <KeyboardDelegateProvider>
+        <AnalyticsProvider>
+          <ScreenTracker />
+          <ThemeSync />
+          <UpdateChecker />
+          <ConflictResolutionModal />
+          <AppLifecycleManager />
+          <GestureHandlerRootView style={{ flex: 1 }}>
+            <OfflineIndicatorProvider>
+              <Stack screenOptions={{ headerShown: false }} />
+            </OfflineIndicatorProvider>
+          </GestureHandlerRootView>
+          {__DEV__ && (
+            <>
+              <MemoryProfilerOverlay />
+              <CacheStatusOverlay />
+            </>
+          )}
+        </AnalyticsProvider>
+      </KeyboardDelegateProvider>
     </ErrorBoundary>
   );
 };

@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { InteractionManager } from 'react-native';
 
 import { resolveEndpointPersistence } from '../../config/apiCacheConfig';
+import { runWithConcurrency } from '../../utils/concurrency';
 import { encryptedGetItem, encryptedSetItem } from '../../utils/encryptedStorage';
 import { AnalyticsEvent } from '../../utils/trackingEvents';
 import { mobileAnalyticsService } from '../mobileAnalytics';
@@ -468,10 +470,12 @@ async function getPersistentCacheKeys(): Promise<string[]> {
   }
 }
 
+import { InteractionManager } from 'react-native';
+import { runWithConcurrency } from '../../utils/concurrency';
+
 async function invalidatePersistentWhere(
   predicate: (key: string, entry: CacheEntry<unknown>) => boolean
 ): Promise<void> {
-  // Use the in-memory index to evaluate predicates without reading bodies
   const keysToRemove: string[] = [];
 
   for (const [key, indexEntry] of persistentKeyIndex) {
@@ -496,25 +500,32 @@ async function invalidatePersistentWhere(
 
   if (keysToRemove.length === 0) return;
 
-  // Batch removal with AsyncStorage.multiRemove
-  const storageKeys = keysToRemove.map(key => storageKeyFor(key));
-  try {
-    await AsyncStorage.multiRemove(storageKeys);
-  } catch {
-    // Fallback to per-key removal
-    await Promise.all(keysToRemove.map(key => removePersistentCache(key)));
-  }
+  InteractionManager.runAfterInteractions(async () => {
+    const storageKeys = keysToRemove.map(key => storageKeyFor(key));
+    try {
+      await AsyncStorage.multiRemove(storageKeys);
+    } catch {
+      await runWithConcurrency(keysToRemove, key => removePersistentCache(key));
+    }
 
-  // Remove from in-memory index
-  for (const key of keysToRemove) {
-    persistentKeyIndex.delete(key);
-  }
+    for (const key of keysToRemove) {
+      persistentKeyIndex.delete(key);
+    }
+  });
 }
 
 export async function clearPersistentCache(): Promise<void> {
   const keys = await getPersistentCacheKeys();
-  await Promise.all(keys.map(key => AsyncStorage.removeItem(key)));
-  persistentKeyIndex.clear();
+  if (keys.length === 0) return;
+
+  InteractionManager.runAfterInteractions(async () => {
+    try {
+      await AsyncStorage.multiRemove(keys);
+    } catch {
+      await runWithConcurrency(keys, key => AsyncStorage.removeItem(key));
+    }
+    persistentKeyIndex.clear();
+  });
 }
 
 export function getCache<T>(key: string): T | null {

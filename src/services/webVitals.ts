@@ -2,21 +2,25 @@ import { mobileAnalyticsService } from './mobileAnalytics';
 import { appLogger } from '../utils/logger';
 import { AnalyticsEvent, PerformanceMetric } from '../utils/trackingEvents';
 
-import type { Metric } from 'web-vitals';
+import type { Metric, MetricType } from 'web-vitals';
 
 /**
  * Google's recommended thresholds for Core Web Vitals.
  * "good" = passes, "needsImprovement" = warning, above = poor.
+ *
+ * Note: FID (First Input Delay) was deprecated by web-vitals v5 in favour of
+ * INP (Interaction to Next Paint). The thresholds below reflect the latest
+ * Google recommendations.
  */
 export const WEB_VITALS_THRESHOLDS: Record<
-  PerformanceMetric.LCP | PerformanceMetric.FID | PerformanceMetric.CLS | PerformanceMetric.FCP | PerformanceMetric.TTFB,
+  PerformanceMetric.LCP | PerformanceMetric.INP | PerformanceMetric.CLS | PerformanceMetric.FCP | PerformanceMetric.TTFB,
   { good: number; needsImprovement: number }
 > = {
-  [PerformanceMetric.LCP]:  { good: 2500,  needsImprovement: 4000  },
-  [PerformanceMetric.FID]:  { good: 100,   needsImprovement: 300   },
-  [PerformanceMetric.CLS]:  { good: 0.1,   needsImprovement: 0.25  },
-  [PerformanceMetric.FCP]:  { good: 1800,  needsImprovement: 3000  },
-  [PerformanceMetric.TTFB]: { good: 800,   needsImprovement: 1800  },
+  [PerformanceMetric.LCP]: { good: 2500, needsImprovement: 4000 },
+  [PerformanceMetric.INP]: { good: 200, needsImprovement: 500 },
+  [PerformanceMetric.CLS]: { good: 0.1, needsImprovement: 0.25 },
+  [PerformanceMetric.FCP]: { good: 1800, needsImprovement: 3000 },
+  [PerformanceMetric.TTFB]: { good: 800, needsImprovement: 1800 },
 };
 
 export type VitalRating = 'good' | 'needs-improvement' | 'poor';
@@ -32,10 +36,15 @@ export interface VitalReport {
 /** Stored baselines for regression detection (keyed by metric name). */
 const baselines = new Map<string, number>();
 
-function getRating(
-  metric: PerformanceMetric.LCP | PerformanceMetric.FID | PerformanceMetric.CLS | PerformanceMetric.FCP | PerformanceMetric.TTFB,
-  value: number
-): VitalRating {
+/** Type-safe subset of PerformanceMetric used for rating and thresholds. */
+type RatedMetric =
+  | PerformanceMetric.LCP
+  | PerformanceMetric.INP
+  | PerformanceMetric.CLS
+  | PerformanceMetric.FCP
+  | PerformanceMetric.TTFB;
+
+function getRating(metric: RatedMetric, value: number): VitalRating {
   const { good, needsImprovement } = WEB_VITALS_THRESHOLDS[metric];
   if (value <= good) return 'good';
   if (value <= needsImprovement) return 'needs-improvement';
@@ -44,20 +53,17 @@ function getRating(
 
 function toAnalyticsEvent(metric: PerformanceMetric): AnalyticsEvent {
   const map: Record<string, AnalyticsEvent> = {
-    [PerformanceMetric.LCP]:  AnalyticsEvent.WEB_VITALS_LCP,
-    [PerformanceMetric.FID]:  AnalyticsEvent.WEB_VITALS_FID,
-    [PerformanceMetric.CLS]:  AnalyticsEvent.WEB_VITALS_CLS,
-    [PerformanceMetric.FCP]:  AnalyticsEvent.WEB_VITALS_FCP,
+    [PerformanceMetric.LCP]: AnalyticsEvent.WEB_VITALS_LCP,
+    [PerformanceMetric.INP]: AnalyticsEvent.WEB_VITALS_INP,
+    [PerformanceMetric.CLS]: AnalyticsEvent.WEB_VITALS_CLS,
+    [PerformanceMetric.FCP]: AnalyticsEvent.WEB_VITALS_FCP,
     [PerformanceMetric.TTFB]: AnalyticsEvent.WEB_VITALS_TTFB,
   };
   return map[metric] ?? AnalyticsEvent.PERFORMANCE_METRIC;
 }
 
-function handleMetric(perfMetric: PerformanceMetric, raw: Metric): void {
-  const rating = getRating(
-    perfMetric as PerformanceMetric.LCP | PerformanceMetric.FID | PerformanceMetric.CLS | PerformanceMetric.FCP | PerformanceMetric.TTFB,
-    raw.value
-  );
+function handleMetric(perfMetric: RatedMetric, raw: MetricType): void {
+  const rating = getRating(perfMetric, raw.value);
 
   const report: VitalReport = {
     name: perfMetric,
@@ -97,8 +103,6 @@ function handleMetric(perfMetric: PerformanceMetric, raw: Metric): void {
     // First reading becomes the baseline
     baselines.set(perfMetric, raw.value);
   }
-
-  return report as unknown as void; // typed void for callback compatibility
 }
 
 /**
@@ -110,11 +114,11 @@ export function init(): void {
   // Dynamic import keeps the web-vitals bundle out of the critical path and
   // avoids hard failures in environments where the APIs don't exist.
   import('web-vitals')
-    .then(({ onLCP, onFID, onCLS, onFCP, onTTFB }) => {
-      onLCP((m)  => handleMetric(PerformanceMetric.LCP,  m));
-      onFID((m)  => handleMetric(PerformanceMetric.FID,  m));
-      onCLS((m)  => handleMetric(PerformanceMetric.CLS,  m));
-      onFCP((m)  => handleMetric(PerformanceMetric.FCP,  m));
+    .then(({ onLCP, onINP, onCLS, onFCP, onTTFB }) => {
+      onLCP((m) => handleMetric(PerformanceMetric.LCP, m));
+      onINP((m) => handleMetric(PerformanceMetric.INP, m));
+      onCLS((m) => handleMetric(PerformanceMetric.CLS, m));
+      onFCP((m) => handleMetric(PerformanceMetric.FCP, m));
       onTTFB((m) => handleMetric(PerformanceMetric.TTFB, m));
       appLogger.infoSync('[WebVitals] Monitoring initialised');
     })
