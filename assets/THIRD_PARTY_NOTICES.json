@@ -1,0 +1,336 @@
+{
+  "generatedAt": "2026-08-27T07:23:45.610Z",
+  "note": "Baseline snapshot from package.json direct production dependencies. Run \"npm run attribution\" (scripts/license-audit.js --generate-attribution) to regenerate the full transitive tree with resolved licenses.",
+  "packages": [
+    {
+      "name": "@expo/config-plugins",
+      "version": "56.0.9",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "@expo/vector-icons",
+      "version": "15.0.3",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "@react-native-async-storage/async-storage",
+      "version": "2.2.0",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "@react-native-community/netinfo",
+      "version": "12.0.1",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "@react-navigation/bottom-tabs",
+      "version": "7.4.0",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "@react-navigation/drawer",
+      "version": "7.5.0",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "@react-navigation/elements",
+      "version": "2.6.3",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "@react-navigation/native",
+      "version": "7.1.8",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "@react-navigation/native-stack",
+      "version": "7.3.16",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "@sentry/react-native",
+      "version": "7.2.0",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "axios",
+      "version": "1.7.9",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "axios-mock-adapter",
+      "version": "2.1.0",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "clsx",
+      "version": "2.1.1",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo",
+      "version": "54.0.33",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-asset",
+      "version": "12.0.12",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-av",
+      "version": "16.0.8",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-barcode-scanner",
+      "version": "12.0.0",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-battery",
+      "version": "55.0.13",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-build-properties",
+      "version": "1.0.10",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-constants",
+      "version": "18.0.13",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-crypto",
+      "version": "14.0.1",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-local-authentication",
+      "version": "14.0.1",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-device",
+      "version": "8.0.10",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-document-picker",
+      "version": "14.0.8",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-file-system",
+      "version": "19.0.23",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-font",
+      "version": "14.0.11",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-haptics",
+      "version": "15.0.8",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-image",
+      "version": "3.0.11",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-image-picker",
+      "version": "17.0.11",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-keep-awake",
+      "version": "15.0.8",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-linear-gradient",
+      "version": "15.0.8",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-linking",
+      "version": "8.0.11",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-location",
+      "version": "56.0.18",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-network",
+      "version": "8.0.8",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-notifications",
+      "version": "0.32.16",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-router",
+      "version": "6.0.23",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-secure-store",
+      "version": "15.0.8",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-sensors",
+      "version": "15.0.8",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-speech-recognition",
+      "version": "3.1.3",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-splash-screen",
+      "version": "31.0.13",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-status-bar",
+      "version": "3.0.9",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-symbols",
+      "version": "1.0.8",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-updates",
+      "version": "56.0.19",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-video",
+      "version": "3.0.16",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "expo-web-browser",
+      "version": "15.0.10",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "lucide-react-native",
+      "version": "0.562.0",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "nativewind",
+      "version": "4.2.1",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "prettier-plugin-tailwindcss",
+      "version": "0.5.14",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "react",
+      "version": "19.1.0",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "react-dom",
+      "version": "19.1.0",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "react-hook-form",
+      "version": "7.80.0",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "react-native",
+      "version": "0.81.5",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "react-native-gesture-handler",
+      "version": "2.28.0",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "react-native-iap",
+      "version": "15.2.0",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "react-native-mmkv",
+      "version": "4.3.2",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "react-native-reanimated",
+      "version": "4.1.1",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "react-native-safe-area-context",
+      "version": "5.6.0",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "react-native-screens",
+      "version": "4.16.0",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "react-native-svg",
+      "version": "15.12.1",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "react-native-web",
+      "version": "0.21.0",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "react-native-webview",
+      "version": "14.0.1",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "react-native-worklets",
+      "version": "0.5.1",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "socket.io-client",
+      "version": "4.8.3",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "web-vitals",
+      "version": "5.3.0",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "zod",
+      "version": "3.23.0",
+      "license": "See package / regenerate via npm run attribution"
+    },
+    {
+      "name": "zustand",
+      "version": "5.0.10",
+      "license": "See package / regenerate via npm run attribution"
+    }
+  ]
+}

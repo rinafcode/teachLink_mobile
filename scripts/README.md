@@ -240,6 +240,49 @@ npm run ci:monitor:report
 node scripts/testCacheInvalidation.js
 ```
 
+## Dependency Licensing
+
+Production dependencies are license-scanned on every PR. The scan covers the
+**transitive production tree** (`npm install --production` scope) and fails the
+build on any package whose license is not on the allowlist, unless that package
+has an approved exception.
+
+```bash
+# Validate that every production dependency license is allowed (fails build)
+npm run license:check
+
+# Regenerate the committed attribution file used by the in-app Licenses screen
+npm run attribution
+```
+
+### Policy files
+
+- **`license-allowlist.json`** — the only licenses that may appear in the
+  production tree. Intended to be permissive/OSI-approved and store-safe; it
+  explicitly excludes strong copyleft licenses (GPL, AGPL, SSPL, LGPL, CC-BY-SA).
+  Unknown/missing licenses are never allowed.
+
+### Exception review process
+
+- **`license-exceptions.json`** — any disallowed license requires a `packages`
+  entry mapping the exact dependency name to an approval reason.
+- Adding an exception requires **maintainer sign-off**: the reviewer must verify
+  the package is essential, cannot be replaced by an allowlisted equivalent, and
+  note the reason for the record. Exceptions should be deleted again once the
+  package is replaced or relicensed.
+
+### Reconcile with the in-app auditor
+
+`src/audit/analyzers/NetworkAnalyzer.ts` reads the same two policy files so the
+in-app auditor and the CI merge gate agree on scope (`--production` only) and on
+the allowlist. There is no separate license blacklist to keep in sync.
+
+### In-app attribution
+
+The **Open Source Licenses** entry under *Settings → App* (route `/licenses`)
+renders `assets/THIRD_PARTY_NOTICES.json`, a committed attribution file
+regenerated from the full production tree by `npm run attribution`.
+
 ## Related Documentation
 - [CI/CD Caching Strategy](../docs/CI_CD_CACHING_STRATEGY.md)
 - [Performance Monitoring](../docs/PERFORMANCE_MONITORING.md)

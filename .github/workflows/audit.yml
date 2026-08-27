@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   audit:
-    name: npm audit + depcheck
+    name: npm audit + depcheck + license
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -43,3 +43,6 @@ jobs:
 
       - name: Check for unused dependencies
         run: npm run depcheck
+
+      - name: Check for disallowed dependency licenses
+        run: npm run license:check

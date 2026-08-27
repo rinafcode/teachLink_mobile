@@ -1,0 +1,4 @@
+{
+  "_comment": "Per-package license exceptions. Each key is an exact production dependency name mapped to a short approval reason. Add an entry here ONLY after review by a maintainer; disallowed licenses require explicit sign-off and must be deleted again once the package is replaced or relicensed. See scripts/README.md -> License policy.",
+  "packages": {}
+}
