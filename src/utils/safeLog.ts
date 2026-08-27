@@ -16,9 +16,8 @@ export function safeLog(log: () => void): void {
   try {
     log();
   } catch (loggerError) {
-      void loggerError; // Suppressed
-      // Console is unavailable too — drop it rather than break the caller.
-    }
+    void loggerError; // Suppressed
+    // Console is unavailable too — drop it rather than break the caller.
   }
 }
 
@@ -27,6 +26,8 @@ export async function safeLogAsync(log: () => Promise<void>): Promise<void> {
   try {
     await log();
   } catch (loggerError) {
-    safeLog(() => { void loggerError; });
+    safeLog(() => {
+      void loggerError;
+    });
   }
 }
