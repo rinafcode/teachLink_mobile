@@ -7,6 +7,7 @@ import {
   Database,
   Download,
   Eye,
+  FileText,
   Fingerprint as FingerprintPattern,
   Lock,
   LogOut,
@@ -100,6 +101,7 @@ const ICON_CREDIT_CARD_YELLOW = <CreditCard size={18} color="#f59e0b" />;
 const ICON_CREDIT_CARD_GREEN = <CreditCard size={18} color="#10b981" />;
 const ICON_SUN = <Sun size={18} />;
 const ICON_DATABASE = <Database size={18} color="#eab308" />;
+const ICON_FILE = <FileText size={18} color="#6366f1" />;
 const ICON_BAR_CHART = <BarChart2 size={18} />;
 const ICON_TRASH_RED = <Trash2 size={18} color="red" />;
 const ICON_DOWNLOAD_INDIGO = <Download size={18} color="#6366f1" />;
@@ -505,6 +507,13 @@ export const MobileSettings = ({ onSignOut, onChangePassword, onLinkedAccounts }
           label="Data Saver"
           description="Reduces bandwidth by disabling prefetch and lowering image quality"
           right={dataSaverRight}
+        />
+
+        <SettingRow
+          icon={ICON_FILE}
+          label="Open Source Licenses"
+          description="Third-party software and licenses used by this app"
+          onPress={() => router.push('/licenses')}
         />
       </SettingsSection>
 
