@@ -1,5 +1,6 @@
-import React from 'react';
 import { render, RenderAPI } from '@testing-library/react-native';
+import React from 'react';
+
 import { Skeleton, SkeletonGroup } from '../../src/components/ui/Skeleton';
 
 describe('Skeleton', () => {
@@ -38,6 +39,20 @@ describe('Skeleton', () => {
       const { toJSON } = renderSkeleton({ style: { marginTop: 10 } });
       const json = JSON.stringify(toJSON());
       expect(json).toContain('10');
+    });
+
+    it('accepts isDark prop and applies dark placeholder color', () => {
+      const { toJSON } = renderSkeleton({ isDark: true });
+      const json = JSON.stringify(toJSON());
+      expect(json).toContain('#334155');
+    });
+
+    it('defaults to light placeholder color when isDark is false or omitted', () => {
+      const { toJSON: toJSONDefault } = renderSkeleton();
+      expect(JSON.stringify(toJSONDefault())).toContain('#E5E7EB');
+
+      const { toJSON: toJSONLight } = renderSkeleton({ isDark: false });
+      expect(JSON.stringify(toJSONLight())).toContain('#E5E7EB');
     });
   });
 

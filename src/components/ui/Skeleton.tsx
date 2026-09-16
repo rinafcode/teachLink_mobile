@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, DimensionValue, StyleSheet, View, ViewStyle } from 'react-native';
+import { Animated, DimensionValue, View, ViewStyle } from 'react-native';
 
 import { useAdaptiveFrameRate } from '../../hooks/useAdaptiveFrameRate';
 
@@ -15,6 +15,8 @@ interface SkeletonProps {
   borderRadius?: number;
   /** Whether to render as a circle */
   circle?: boolean;
+  /** Whether dark mode styling is enabled */
+  isDark?: boolean;
   /** Custom style for the skeleton */
   style?: ViewStyle;
 }
@@ -24,6 +26,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   height,
   borderRadius = 8,
   circle = false,
+  isDark = false,
   style,
 }) => {
   const pulseAnim = useRef(new Animated.Value(0.3)).current;
@@ -53,7 +56,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
     width: width,
     height: height,
     borderRadius: circle ? (typeof height === 'number' ? height / 2 : 999) : borderRadius,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: isDark ? '#334155' : '#E5E7EB',
     opacity: pulseAnim as any,
   };
 
