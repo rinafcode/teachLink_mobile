@@ -3,6 +3,7 @@ import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
+  DimensionValue,
   ImageStyle,
   PixelRatio,
   StyleProp,
@@ -15,7 +16,6 @@ import { useSettingsStore } from '../../store/settingsStore';
 import { ImageCache } from '../../utils/imageCache';
 import { buildOptimizedImageSources } from '../../utils/imageOptimization';
 import { logger } from '../../utils/logger';
-import { appLogger } from '../../utils/logger';
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
@@ -153,9 +153,11 @@ const CachedImageComponent: React.FC<CachedImageProps> = ({
   }, [resolvedUri, targetWidth, targetHeight, styleWidth, styleHeight, dataSaverEnabled]);
 
   // These were part of a dimension-detection feature that was removed;
-  // kept as undefined so the JSX guards below remain falsy without ReferenceError.
-  const aspectRatioStyle: undefined = undefined;
-  const detectedDimensions: undefined = undefined;
+  // kept as undefined state so the JSX guards below remain falsy without ReferenceError or dead-code type narrowing.
+  const [aspectRatioStyle] = useState<
+    { width?: DimensionValue; height?: DimensionValue } | undefined
+  >(undefined);
+  const [detectedDimensions] = useState<{ aspectRatio?: number } | undefined>(undefined);
 
   const [isLoading, setIsLoading] = useState(!!resolvedUri);
   const [, setError] = useState<Error | null>(null);
@@ -252,7 +254,7 @@ const CachedImageComponent: React.FC<CachedImageProps> = ({
             startedAtRef.current = Date.now();
             usingFallbackRef.current = false;
           }}
-          onLoadingComplete={handleLoadingComplete}
+          onLoad={handleLoadingComplete}
           onError={handleError}
           accessibilityLabel={alt}
           accessibilityRole="image"
