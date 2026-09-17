@@ -37,7 +37,7 @@ jest.mock('../../../src/services/api/requestQueue', () => ({
 }));
 
 describe('axios.config - Rate Limit Handling (Issue #141)', () => {
-  const delayMs: Record<number, number> = {};
+  const delayMs: { calls: number[] } = { calls: [] };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -46,11 +46,14 @@ describe('axios.config - Rate Limit Handling (Issue #141)', () => {
     // Track delay calls
     delayMs.calls = [];
     const originalSetTimeout = global.setTimeout;
-    jest.spyOn(global, 'setTimeout').mockImplementation((cb: any, ms: number) => {
-      delayMs.calls.push(ms);
-      originalSetTimeout(cb, 0);
-      return 0 as any;
-    });
+    jest
+      .spyOn(global, 'setTimeout')
+      .mockImplementation((cb: (...args: any[]) => void, ms?: number, ...args: any[]) => {
+        if (ms !== undefined) {
+          delayMs.calls.push(ms);
+        }
+        return originalSetTimeout(cb, 0, ...args);
+      });
   });
 
   afterEach(() => {
