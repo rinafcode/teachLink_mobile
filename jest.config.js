@@ -28,9 +28,7 @@ module.exports = {
   detectOpenHandles: true,
   // Exit cleanly after the suite instead of waiting for stale timers.
   forceExit: true,
-};
   collectCoverage: true,
-  collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/*.d.ts'],
   coverageThreshold: {
     global: {
       branches: 75,
