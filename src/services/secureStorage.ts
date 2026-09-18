@@ -4,6 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
 import { getEnv } from '../config';
+import { sentryContextService } from './sentryContext';
 import defaultLogger from '../utils/logger';
 
 const logger = defaultLogger;
@@ -114,20 +115,19 @@ export function getSecureStoragePlatformInfo(): {
  * @param tag - A unique identifier for the call-site (e.g., 'session-refresh').
  */
 function auditLog(action: 'read' | 'write' | 'delete', key: string, tag: string): void {
-  const breadcrumb = {
-    category: 'audit.secure_storage',
+  sentryContextService.addBreadcrumb({
+    category: 'custom',
     message: `[${action.toUpperCase()}] key: ${key}`,
     level: 'info',
     data: {
+      subsystem: 'secure_storage',
       key,
       action,
       tag,
       platform: Platform.OS,
       timestamp: new Date().toISOString(),
     },
-  };
-
-  crashReportingService.addBreadcrumb(breadcrumb);
+  });
   logger.info(`AUDIT: ${action} on ${key} from ${tag}`);
 }
 
@@ -503,6 +503,8 @@ function generateInstallUUID(): string {
 
 async function checkHardwareBiometricEnrollment(): Promise<boolean> {
   try {
+    // Lazy require: keeps the native module out of the startup path.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const LocalAuthentication = require('expo-local-authentication');
     const level = await LocalAuthentication.getEnrolledLevelAsync();
     return level > 0;
@@ -572,9 +574,7 @@ export async function isRememberMeEnabled(): Promise<boolean> {
  */
 export async function clearAllAuthData(): Promise<void> {
   try {
-    await Promise.all(
-      Object.values(KEYS).map(key => removeItem(key, 'clearAllAuthData'))
-    );
+    await Promise.all(Object.values(KEYS).map(key => removeItem(key, 'clearAllAuthData')));
     logger.info('✅ All secure data cleared from Keychain/Keystore');
   } catch (error) {
     logger.error('Error clearing all auth data from secure storage:', error);
