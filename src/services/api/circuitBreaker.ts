@@ -18,8 +18,8 @@ import { appLogger } from '../../utils/logger';
 
 // ─── Config ────────────────────────────────────────────────────────────────
 
-const FAILURE_THRESHOLD = 5;       // failures within the window to open
-const FAILURE_WINDOW_MS = 60_000;  // 60-second rolling window
+const FAILURE_THRESHOLD = 5; // failures within the window to open
+const FAILURE_WINDOW_MS = 60_000; // 60-second rolling window
 const RECOVERY_WINDOW_MS = 30_000; // wait before HALF_OPEN probe
 
 // ─── Errors ────────────────────────────────────────────────────────────────
@@ -86,9 +86,10 @@ export class CircuitBreaker {
       this.onFailure();
       throw err;
     } finally {
-      if (this.state === 'HALF_OPEN') {
-        this.probeInFlight = false;
-      }
+      // onSuccess/onFailure have already left HALF_OPEN by the time the
+      // finally block runs, so the flag must be cleared unconditionally —
+      // otherwise it leaks and the next recovery probe fast-fails forever.
+      this.probeInFlight = false;
     }
   }
 
@@ -135,15 +136,10 @@ export class CircuitBreaker {
     }
 
     // Prune timestamps outside the rolling window
-    this.failureTimestamps = this.failureTimestamps.filter(
-      t => now - t < FAILURE_WINDOW_MS
-    );
+    this.failureTimestamps = this.failureTimestamps.filter(t => now - t < FAILURE_WINDOW_MS);
     this.failureTimestamps.push(now);
 
-    if (
-      this.state === 'CLOSED' &&
-      this.failureTimestamps.length >= FAILURE_THRESHOLD
-    ) {
+    if (this.state === 'CLOSED' && this.failureTimestamps.length >= FAILURE_THRESHOLD) {
       this.openedAt = now;
       this.transition('OPEN');
     }
@@ -154,14 +150,11 @@ export class CircuitBreaker {
     const prev = this.state;
     this.state = next;
 
-    appLogger.warnSync(
-      `[CircuitBreaker] "${this.service}": ${prev} → ${next}`,
-      {
-        service: this.service,
-        failureCount: this.failureTimestamps.length,
-        openedAt: this.openedAt,
-      }
-    );
+    appLogger.warnSync(`[CircuitBreaker] "${this.service}": ${prev} → ${next}`, {
+      service: this.service,
+      failureCount: this.failureTimestamps.length,
+      openedAt: this.openedAt,
+    });
 
     for (const listener of this.listeners) {
       try {
