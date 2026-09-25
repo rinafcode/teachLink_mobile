@@ -92,3 +92,4 @@ GoogleService-Info.plist
 !README.md
 !CONTRIBUTING.md
 !docs/**/*.md
+!Governance/**/*.md
