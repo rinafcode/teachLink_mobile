@@ -86,3 +86,4 @@ GoogleService-Info.plist
 *.md
 !README.md
 !docs/**/*.md
+!Governance/**/*.md
