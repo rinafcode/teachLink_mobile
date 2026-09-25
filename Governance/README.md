@@ -29,7 +29,9 @@ documents are added and refined over time (tracked as issues):
   resolution.
 - **Contribution governance** — review policy, triage, labels, and roadmap governance.
 - **Security & disclosure** — vulnerability reporting, embargo, and advisory processes.
-- **Releases & change** — versioning, release cadence, deprecation, and change policy.
+- **Releases & change** — versioning, release cadence, deprecation, change policy, and
+  OS version support (minimum versions, drop criteria, and notice period — see
+  [`domains/OS_VERSION_SUPPORT.md`](domains/OS_VERSION_SUPPORT.md)).
 - **Legal & IP** — licensing, contributor sign-off, trademark, and attribution.
 - **Community & on-chain governance** — treasury, grants, and proposal governance.
 
