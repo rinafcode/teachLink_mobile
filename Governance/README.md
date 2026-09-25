@@ -33,6 +33,23 @@ documents are added and refined over time (tracked as issues):
 - **Legal & IP** — licensing, contributor sign-off, trademark, and attribution.
 - **Community & on-chain governance** — treasury, grants, and proposal governance.
 
+## Domain documents
+
+Domain-specific policies live in `Governance/domains/`. Each document is
+self-contained and versioned with the repository:
+
+- `domains/APP_REVIEW_COMPLIANCE.md` — store guideline checklist, pre-submission
+  review, and rejection handling for app store submissions.
+- `domains/APP_VERSION_BUMP.md` — build-number and version-name rules.
+- `domains/BACKGROUND_TASK_GOVERNANCE.md` — background task ownership and limits.
+- `domains/BIOMETRIC_AUTH.md` — biometric authentication requirements.
+- `domains/DEVICE_SUPPORT.md` — supported device tiers and testing matrix.
+- `domains/EAS_BUILD_GOVERNANCE.md` — EAS build profiles, secrets, and promotion.
+- `domains/MOBILE_ACCESSIBILITY.md` — accessibility targets and merge gate.
+- `domains/MOBILE_FEATURE_FLAGS.md` — feature-flag lifecycle and ownership.
+- `domains/MOBILE_TELEMETRY.md` — telemetry consent, PII exclusion, and crash reports.
+- `domains/STORYBOOK_GOVERNANCE.md` — Storybook usage and maintenance.
+
 ## Contributing to governance
 
 Proposals to add or change governance are made by opening an issue or a pull
