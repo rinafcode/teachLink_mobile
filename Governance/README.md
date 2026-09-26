@@ -22,11 +22,13 @@ documents are added and refined over time (tracked as issues):
 
 - **Foundations** — charter, mission, values, principles, and glossary.
 - **Roles & membership** — contributor ladder, maintainer/reviewer roles, and the
-  onboarding/offboarding lifecycle.
+  onboarding/offboarding lifecycle. The moderator role — duties, powers and
+  limits, and appointment and removal — is defined in
+  [`roles/MODERATOR.md`](roles/MODERATOR.md).
 - **Decision-making** — consensus and voting rules, the RFC/proposal process, and
   decision records.
-- **Community & conduct** — code of conduct, enforcement, moderation, and conflict
-  resolution.
+- **Community & conduct** — code of conduct, enforcement, moderation (see
+  [`roles/MODERATOR.md`](roles/MODERATOR.md)), and conflict resolution.
 - **Contribution governance** — review policy, triage, labels, and roadmap governance.
 - **Security & disclosure** — vulnerability reporting, embargo, and advisory processes.
 - **Releases & change** — versioning, release cadence, deprecation, change policy, and
