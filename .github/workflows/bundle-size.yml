@@ -31,7 +31,24 @@ jobs:
         run: npm install --no-audit --no-fund
 
       - name: Build web bundle with stats
-        run: npx expo export --platform web --output-dir ./dist --stats-output ./dist/stats.json
+        run: |
+          npx expo export --platform web --output-dir ./dist
+          node -e "
+            const fs = require('fs');
+            const path = require('path');
+            function walk(dir, acc) {
+              for (const name of fs.readdirSync(dir)) {
+                const p = path.join(dir, name);
+                const st = fs.statSync(p);
+                if (st.isDirectory()) walk(p, acc);
+                else acc.push({ name: path.relative('dist', p).split(path.sep).join('/'), size: st.size });
+              }
+              return acc;
+            }
+            const assets = fs.existsSync('dist') ? walk('dist', []) : [];
+            fs.mkdirSync('dist', { recursive: true });
+            fs.writeFileSync('dist/stats.json', JSON.stringify({ assets }, null, 2));
+          "
 
       - name: Lighthouse CI
         run: npx lhci autorun --config=./lighthouserc.json
