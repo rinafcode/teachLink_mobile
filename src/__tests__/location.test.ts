@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 // ==========================================
 // --- 1. CORE IMPLEMENTATION CODE ---
@@ -21,11 +21,13 @@ export class LocationService {
   /**
    * Simulates starting the background location tracking watcher
    */
-  async startWatching(mockWatchPositionAsync: (callback: (pos: any) => void) => Promise<LocationSubscription>) {
+  async startWatching(
+    mockWatchPositionAsync: (callback: (pos: any) => void) => Promise<LocationSubscription>
+  ) {
     this.isWatching = true;
-    
+
     // Simulate position updates firing from the native OS module
-    this.subscription = await mockWatchPositionAsync((position) => {
+    this.subscription = await mockWatchPositionAsync(position => {
       if (this.isWatching) {
         this.locationStore.updateLocation(position);
       }
@@ -57,7 +59,7 @@ export class AuthStore {
   async logoutAction(): Promise<void> {
     // Task: Register locationService.stop() inside the logout action pipeline
     this.locationService.stop();
-    
+
     // Clear user tokens, session maps, etc.
     return Promise.resolve();
   }
@@ -67,7 +69,7 @@ export class AuthStore {
 // --- 2. TDD AUTOMATED TEST SUITE ---
 // ==========================================
 
-describe("TDD - Idempotent Location Service Background Memory Leak Protection", () => {
+describe('TDD - Idempotent Location Service Background Memory Leak Protection', () => {
   let mockLocationStore: any;
   let mockSubscription: LocationSubscription;
   let mockWatchPositionAsync: any;
@@ -78,24 +80,24 @@ describe("TDD - Idempotent Location Service Background Memory Leak Protection", 
   beforeEach(() => {
     // 1. Spy on subscription remove method
     mockSubscription = {
-      remove: vi.fn(),
+      remove: jest.fn(),
     };
 
     // 2. Mock native watch background event runner tracking hooks
-    mockWatchPositionAsync = vi.fn().mockImplementation(async (callback) => {
+    mockWatchPositionAsync = jest.fn().mockImplementation(async (callback: (pos: any) => void) => {
       updateCallback = callback; // Expose stream internally to trigger locations during test cycles
       return mockSubscription;
     });
 
     mockLocationStore = {
-      updateLocation: vi.fn(),
+      updateLocation: jest.fn(),
     };
 
     locationService = new LocationService(mockLocationStore);
     authStore = new AuthStore(locationService);
   });
 
-  it("should confirm locationService.stop() kills subscription and stops store state updates", async () => {
+  it('should confirm locationService.stop() kills subscription and stops store state updates', async () => {
     // Arrange: Start watching position parameters
     await locationService.startWatching(mockWatchPositionAsync);
     expect(locationService.isWatching).toBe(true);
@@ -109,12 +111,12 @@ describe("TDD - Idempotent Location Service Background Memory Leak Protection", 
     expect(locationService.isWatching).toBe(false);
 
     // Assert: Fire another location event post-cleanup, ensure store is never invoked again
-    updateCallback({ latitude: 6.5244, longitude: 3.3792 }); 
+    updateCallback({ latitude: 6.5244, longitude: 3.3792 });
     expect(mockLocationStore.updateLocation).toHaveBeenCalledTimes(1); // Stays at 1, no updates fire after stop()
     expect(mockSubscription.remove).toHaveBeenCalledTimes(1);
   });
 
-  it("should call locationService.stop() automatically when a logout action initiates", async () => {
+  it('should call locationService.stop() automatically when a logout action initiates', async () => {
     // Arrange
     await locationService.startWatching(mockWatchPositionAsync);
 
@@ -126,7 +128,7 @@ describe("TDD - Idempotent Location Service Background Memory Leak Protection", 
     expect(mockSubscription.remove).toHaveBeenCalledTimes(1);
   });
 
-  it("should handle double-stop gracefully without throwing exceptions (Idempotency Rule)", async () => {
+  it('should handle double-stop gracefully without throwing exceptions (Idempotency Rule)', async () => {
     // Arrange
     await locationService.startWatching(mockWatchPositionAsync);
 

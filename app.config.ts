@@ -5,6 +5,7 @@ const packageJson = require('./package.json');
 export default ({ config }: ConfigContext): ExpoConfig => {
   return {
     ...config,
+    userInterfaceStyle: 'automatic',
     version: packageJson.version,
     ios: {
       ...config.ios,

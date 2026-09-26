@@ -11,27 +11,28 @@
  *   <ServiceHealthPanel />
  */
 
-import { useHealthDashboardStore } from '@store/healthDashboardStore';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { ServiceStatus } from '../../types/serviceHealth';
+
 import { ServiceStatusBadge } from './ServiceStatusBadge';
+import { useHealthDashboardStore } from '../../store/healthDashboardStore';
+import { ServiceStatus } from '../../types/serviceHealth';
 
 // ─── Label overrides ───────────────────────────────────────────────────────
 
 const SERVICE_LABELS: Record<string, string> = {
-  auth:          'Auth',
-  sync:          'Sync',
+  auth: 'Auth',
+  sync: 'Sync',
   notifications: 'Notifications',
-  payments:      'Payments',
+  payments: 'Payments',
 };
 
 const STATUS_DESCRIPTIONS: Record<ServiceStatus, string> = {
-  ok:       'Healthy',
-  timeout:  'Slow response',
+  ok: 'Healthy',
+  timeout: 'Slow response',
   degraded: 'Degraded',
-  error:    'Error',
-  unknown:  'Not checked',
+  error: 'Error',
+  unknown: 'Not checked',
 };
 
 // ─── Component ─────────────────────────────────────────────────────────────
@@ -49,24 +50,19 @@ export const ServiceHealthPanel: React.FC = () => {
         <View key={entry.service} style={styles.row}>
           {/* Service name + description */}
           <View style={styles.labelCol}>
-            <Text style={styles.serviceName}>
-              {SERVICE_LABELS[entry.service] ?? entry.service}
-            </Text>
+            <Text style={styles.serviceName}>{SERVICE_LABELS[entry.service] ?? entry.service}</Text>
             <Text style={styles.description}>
               {STATUS_DESCRIPTIONS[entry.status] ?? entry.status}
-              {entry.status === 'timeout' && entry.consecutiveTimeouts != null && (
-                entry.consecutiveTimeouts > 1
+              {entry.status === 'timeout' &&
+                entry.consecutiveTimeouts != null &&
+                (entry.consecutiveTimeouts > 1
                   ? `  ·  ${entry.consecutiveTimeouts}× consecutive`
-                  : ''
-              )}
+                  : '')}
             </Text>
           </View>
 
           {/* Status badge + circuit chip */}
-          <ServiceStatusBadge
-            status={entry.status}
-            circuitState={entry.circuitState}
-          />
+          <ServiceStatusBadge status={entry.status} circuitState={entry.circuitState} />
         </View>
       ))}
     </View>
