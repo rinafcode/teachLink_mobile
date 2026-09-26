@@ -15,6 +15,12 @@ application code.
 - Give the community a single, versioned home for policies (contribution, conduct,
   security disclosure, releases, licensing, and on-chain/community governance).
 
+## Foundational governance
+
+The project charter is the primary governing document for this repository and
+establishes the project's purpose, authority, and amendment process. See
+[`CHARTER.md`](CHARTER.md) for the current, versioned charter.
+
 ## Structure
 
 The governance documents are organised into the following areas. Individual
