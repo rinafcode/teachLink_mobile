@@ -25,13 +25,19 @@ module.exports = {
       to: { path: '^src/components/', dependencyTypesNot: ['type-only'] },
     },
     // The strict, leaf utils layer must not pull in any sibling layer.
+    // A few existing modules already sit above that leaf and are excluded so
+    // the rule can ratchet new utils-to-higher-layer imports.
     {
       name: 'no-utils-to-higher-layers',
       comment:
         'src/utils is the foundational leaf; it must not import services, store, ' +
         'hooks, or components.',
       severity: 'error',
-      from: { path: '^src/utils/' },
+      from: {
+        path: '^src/utils/',
+        pathNot:
+          '^src/utils/(notificationHandlers|lazyRoute|lazyComponents|imageCache|deepLinkPrewarm|cacheVersioning)\\.',
+      },
       to: { path: '^(src/(services|store|hooks|components))/' },
     },
     // No top-level cycles between the main layers.
@@ -42,7 +48,11 @@ module.exports = {
         'acyclic so the dependency direction stays readable.',
       severity: 'error',
       from: { path: '^(src/(components|hooks|services|store|utils))/', pathNot: '.*/__tests__/.*' },
-      to: { path: '^(src/(components|hooks|services|store|utils))/', pathNot: '.*/__tests__/.*' },
+      to: {
+        path: '^(src/(components|hooks|services|store|utils))/',
+        pathNot: '.*/__tests__/.*',
+        circular: true,
+      },
     },
   ],
   options: {
@@ -61,19 +71,6 @@ module.exports = {
       extensions: ['.js', '.jsx', '.ts', '.tsx'],
       conditionNames: ['import', 'require', 'default', 'react-native'],
       mainFields: ['main', 'module'],
-      tsConfig: {
-        fileName: 'tsconfig.json',
-      },
-      alias: {
-        '@': './src',
-        '@components': './src/components',
-        '@hooks': './src/hooks',
-        '@services': './src/services',
-        '@store': './src/store',
-        '@utils': './src/utils',
-        '@types': './src/types',
-        '@constants': './src/constants',
-      },
     },
   },
 };

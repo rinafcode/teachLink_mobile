@@ -1,0 +1,1162 @@
+[
+  {
+    "type": "cycle",
+    "from": "src/components/mobile/MobileCourseViewer.tsx",
+    "to": "src/utils/lazyComponents.ts",
+    "unresolvedTo": "../../utils/lazyComponents",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular-between-layers"
+    },
+    "cycle": [
+      {
+        "name": "src/utils/lazyComponents.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/components/mobile/MobileCourseViewer.tsx",
+        "dependencyTypes": ["local", "dynamic-import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/services/analytics/AnalyticsBatchQueue.ts",
+    "to": "src/services/api/axios.config.ts",
+    "unresolvedTo": "../api/axios.config",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular-between-layers"
+    },
+    "cycle": [
+      {
+        "name": "src/services/api/axios.config.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/index.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/metricsStore.ts",
+        "dependencyTypes": ["local", "export"]
+      },
+      {
+        "name": "src/services/metricsService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/crashReporting.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/mobileAnalytics.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/analytics/AnalyticsBatchQueue.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/services/api/axios.config.ts",
+    "to": "src/services/api/cache.ts",
+    "unresolvedTo": "./cache",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular-between-layers"
+    },
+    "cycle": [
+      {
+        "name": "src/services/api/cache.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/mobileAnalytics.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/analytics/AnalyticsBatchQueue.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/axios.config.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/services/api/axios.config.ts",
+    "to": "src/services/api/requestQueue.ts",
+    "unresolvedTo": "./requestQueue",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular-between-layers"
+    },
+    "cycle": [
+      {
+        "name": "src/services/api/requestQueue.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/index.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/metricsStore.ts",
+        "dependencyTypes": ["local", "export"]
+      },
+      {
+        "name": "src/services/metricsService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/crashReporting.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/mobileAnalytics.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/analytics/AnalyticsBatchQueue.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/axios.config.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/services/api/axios.config.ts",
+    "to": "src/services/healthMetrics.ts",
+    "unresolvedTo": "../healthMetrics",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular-between-layers"
+    },
+    "cycle": [
+      {
+        "name": "src/services/healthMetrics.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/crashReporting.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/mobileAnalytics.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/analytics/AnalyticsBatchQueue.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/axios.config.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/services/api/axios.config.ts",
+    "to": "src/store/conflictStore.ts",
+    "unresolvedTo": "../../store/conflictStore",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular-between-layers"
+    },
+    "cycle": [
+      {
+        "name": "src/store/conflictStore.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/axios.config.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/services/api/batchClient.ts",
+    "to": "src/services/api/axios.config.ts",
+    "unresolvedTo": "./axios.config",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular-between-layers"
+    },
+    "cycle": [
+      {
+        "name": "src/services/api/axios.config.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/index.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/metricsStore.ts",
+        "dependencyTypes": ["local", "export"]
+      },
+      {
+        "name": "src/services/metricsService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/memoryPressureService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/degradationStore.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/featureFlagStore.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/featureFlagService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/index.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/batchClient.ts",
+        "dependencyTypes": ["local", "export"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/services/api/courseApi.ts",
+    "to": "src/services/api/axios.config.ts",
+    "unresolvedTo": "./axios.config",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular-between-layers"
+    },
+    "cycle": [
+      {
+        "name": "src/services/api/axios.config.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/index.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/metricsStore.ts",
+        "dependencyTypes": ["local", "export"]
+      },
+      {
+        "name": "src/services/metricsService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/memoryPressureService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/degradationStore.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/featureFlagStore.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/featureFlagService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/index.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/courseApi.ts",
+        "dependencyTypes": ["local", "export"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/services/api/courseApi.ts",
+    "to": "src/services/api/batchClient.ts",
+    "unresolvedTo": "./batchClient",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular-between-layers"
+    },
+    "cycle": [
+      {
+        "name": "src/services/api/batchClient.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/axios.config.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/index.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/metricsStore.ts",
+        "dependencyTypes": ["local", "export"]
+      },
+      {
+        "name": "src/services/metricsService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/memoryPressureService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/degradationStore.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/featureFlagStore.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/featureFlagService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/index.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/courseApi.ts",
+        "dependencyTypes": ["local", "export"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/services/api/courseApi.ts",
+    "to": "src/services/api/cache.ts",
+    "unresolvedTo": "./cache",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular-between-layers"
+    },
+    "cycle": [
+      {
+        "name": "src/services/api/cache.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/mobileAnalytics.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/analytics/AnalyticsBatchQueue.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/axios.config.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/index.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/metricsStore.ts",
+        "dependencyTypes": ["local", "export"]
+      },
+      {
+        "name": "src/services/metricsService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/memoryPressureService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/degradationStore.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/featureFlagStore.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/featureFlagService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/index.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/courseApi.ts",
+        "dependencyTypes": ["local", "export"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/services/api/index.ts",
+    "to": "src/services/api/axios.config.ts",
+    "unresolvedTo": "./axios.config",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular-between-layers"
+    },
+    "cycle": [
+      {
+        "name": "src/services/api/axios.config.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/index.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/metricsStore.ts",
+        "dependencyTypes": ["local", "export"]
+      },
+      {
+        "name": "src/services/metricsService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/memoryPressureService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/degradationStore.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/featureFlagStore.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/featureFlagService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/index.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/services/api/index.ts",
+    "to": "src/services/api/cache.ts",
+    "unresolvedTo": "./cache",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular-between-layers"
+    },
+    "cycle": [
+      {
+        "name": "src/services/api/cache.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/mobileAnalytics.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/analytics/AnalyticsBatchQueue.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/axios.config.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/index.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/metricsStore.ts",
+        "dependencyTypes": ["local", "export"]
+      },
+      {
+        "name": "src/services/metricsService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/memoryPressureService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/degradationStore.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/featureFlagStore.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/featureFlagService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/index.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/services/api/index.ts",
+    "to": "src/services/api/userApi.ts",
+    "unresolvedTo": "./userApi",
+    "dependencyTypes": ["local", "export"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular-between-layers"
+    },
+    "cycle": [
+      {
+        "name": "src/services/api/userApi.ts",
+        "dependencyTypes": ["local", "export"]
+      },
+      {
+        "name": "src/services/api/batchClient.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/axios.config.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/index.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/metricsStore.ts",
+        "dependencyTypes": ["local", "export"]
+      },
+      {
+        "name": "src/services/metricsService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/memoryPressureService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/degradationStore.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/featureFlagStore.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/featureFlagService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/index.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/services/api/requestQueue.ts",
+    "to": "src/services/mobileAnalytics.ts",
+    "unresolvedTo": "../mobileAnalytics",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular-between-layers"
+    },
+    "cycle": [
+      {
+        "name": "src/services/mobileAnalytics.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/analytics/AnalyticsBatchQueue.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/axios.config.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/requestQueue.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/services/api/userApi.ts",
+    "to": "src/services/api/cache.ts",
+    "unresolvedTo": "./cache",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular-between-layers"
+    },
+    "cycle": [
+      {
+        "name": "src/services/api/cache.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/mobileAnalytics.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/analytics/AnalyticsBatchQueue.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/axios.config.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/index.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/metricsStore.ts",
+        "dependencyTypes": ["local", "export"]
+      },
+      {
+        "name": "src/services/metricsService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/memoryPressureService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/degradationStore.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/featureFlagStore.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/featureFlagService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/index.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/userApi.ts",
+        "dependencyTypes": ["local", "export"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/services/memoryPressureService.ts",
+    "to": "src/services/api/requestQueue.ts",
+    "unresolvedTo": "./api/requestQueue",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular-between-layers"
+    },
+    "cycle": [
+      {
+        "name": "src/services/api/requestQueue.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/index.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/metricsStore.ts",
+        "dependencyTypes": ["local", "export"]
+      },
+      {
+        "name": "src/services/metricsService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/memoryPressureService.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/services/memoryPressureService.ts",
+    "to": "src/services/metricsService.ts",
+    "unresolvedTo": "./metricsService",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular-between-layers"
+    },
+    "cycle": [
+      {
+        "name": "src/services/metricsService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/memoryPressureService.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/services/memoryPressureService.ts",
+    "to": "src/services/preloadService.ts",
+    "unresolvedTo": "./preloadService",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular-between-layers"
+    },
+    "cycle": [
+      {
+        "name": "src/services/preloadService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/index.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/metricsStore.ts",
+        "dependencyTypes": ["local", "export"]
+      },
+      {
+        "name": "src/services/metricsService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/memoryPressureService.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/services/memoryPressureService.ts",
+    "to": "src/services/syncService.ts",
+    "unresolvedTo": "./syncService",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular-between-layers"
+    },
+    "cycle": [
+      {
+        "name": "src/services/syncService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/bookmarkStore.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/index.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/axios.config.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/index.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/metricsStore.ts",
+        "dependencyTypes": ["local", "export"]
+      },
+      {
+        "name": "src/services/metricsService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/memoryPressureService.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/services/memoryPressureService.ts",
+    "to": "src/utils/imageCache.ts",
+    "unresolvedTo": "../utils/imageCache",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular-between-layers"
+    },
+    "cycle": [
+      {
+        "name": "src/utils/imageCache.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/mobileAnalytics.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/analytics/AnalyticsBatchQueue.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/axios.config.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/index.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/metricsStore.ts",
+        "dependencyTypes": ["local", "export"]
+      },
+      {
+        "name": "src/services/metricsService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/memoryPressureService.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/services/preloadService.ts",
+    "to": "src/services/api/courseApi.ts",
+    "unresolvedTo": "./api/courseApi",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular-between-layers"
+    },
+    "cycle": [
+      {
+        "name": "src/services/api/courseApi.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/axios.config.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/index.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/metricsStore.ts",
+        "dependencyTypes": ["local", "export"]
+      },
+      {
+        "name": "src/services/metricsService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/memoryPressureService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/preloadService.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/services/preloadService.ts",
+    "to": "src/services/api/userApi.ts",
+    "unresolvedTo": "./api/userApi",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular-between-layers"
+    },
+    "cycle": [
+      {
+        "name": "src/services/api/userApi.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/batchClient.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/axios.config.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/index.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/metricsStore.ts",
+        "dependencyTypes": ["local", "export"]
+      },
+      {
+        "name": "src/services/metricsService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/memoryPressureService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/preloadService.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/services/preloadService.ts",
+    "to": "src/services/mobileAnalytics.ts",
+    "unresolvedTo": "./mobileAnalytics",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular-between-layers"
+    },
+    "cycle": [
+      {
+        "name": "src/services/mobileAnalytics.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/analytics/AnalyticsBatchQueue.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/axios.config.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/index.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/metricsStore.ts",
+        "dependencyTypes": ["local", "export"]
+      },
+      {
+        "name": "src/services/metricsService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/memoryPressureService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/preloadService.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/services/preloadService.ts",
+    "to": "src/utils/imageCache.ts",
+    "unresolvedTo": "../utils/imageCache",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular-between-layers"
+    },
+    "cycle": [
+      {
+        "name": "src/utils/imageCache.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/mobileAnalytics.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/analytics/AnalyticsBatchQueue.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/axios.config.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/index.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/metricsStore.ts",
+        "dependencyTypes": ["local", "export"]
+      },
+      {
+        "name": "src/services/metricsService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/memoryPressureService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/preloadService.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/services/syncService.ts",
+    "to": "src/services/api/batchClient.ts",
+    "unresolvedTo": "./api/batchClient",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular-between-layers"
+    },
+    "cycle": [
+      {
+        "name": "src/services/api/batchClient.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/axios.config.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/index.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/metricsStore.ts",
+        "dependencyTypes": ["local", "export"]
+      },
+      {
+        "name": "src/services/metricsService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/memoryPressureService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/syncService.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/services/syncService.ts",
+    "to": "src/services/api/index.ts",
+    "unresolvedTo": "./api",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular-between-layers"
+    },
+    "cycle": [
+      {
+        "name": "src/services/api/index.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/api/axios.config.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/index.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/store/metricsStore.ts",
+        "dependencyTypes": ["local", "export"]
+      },
+      {
+        "name": "src/services/metricsService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/memoryPressureService.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/services/syncService.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/store/index.ts",
+    "to": "src/store/selectors.ts",
+    "unresolvedTo": "./selectors",
+    "dependencyTypes": ["local", "export"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular-between-layers"
+    },
+    "cycle": [
+      {
+        "name": "src/store/selectors.ts",
+        "dependencyTypes": ["local", "export"]
+      },
+      {
+        "name": "src/store/index.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/utils/backgroundTaskScheduler.ts",
+    "to": "src/utils/logger.ts",
+    "unresolvedTo": "./logger",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-circular-between-layers"
+    },
+    "cycle": [
+      {
+        "name": "src/utils/logger.ts",
+        "dependencyTypes": ["local", "import"]
+      },
+      {
+        "name": "src/utils/backgroundTaskScheduler.ts",
+        "dependencyTypes": ["local", "import"]
+      }
+    ]
+  }
+]
