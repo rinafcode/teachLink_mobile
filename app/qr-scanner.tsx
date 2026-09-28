@@ -12,6 +12,7 @@ const LazyQRScanner = createLazyRoute({
 });
 
 const QRScannerScreen = () => {
+  
   const router = useRouter();
 
   const handleLinkScanned = (value: string) => {
