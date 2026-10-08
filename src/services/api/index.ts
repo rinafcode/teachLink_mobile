@@ -63,6 +63,7 @@ export {
   invalidateCacheForMutation,
   invalidatePattern,
   resetCacheStats,
+  subscribeToCacheStatus,
 } from './cache';
 export {
   DEFAULT_ENDPOINT_TTL,
